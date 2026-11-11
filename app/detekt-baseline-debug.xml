@@ -24,8 +24,6 @@
     <ID>ImplicitDefaultLocale:ChannelScreen.kt:"%d:%02d".format(clip.durationSeconds / 60, clip.durationSeconds % 60)</ID>
     <ID>ImplicitDefaultLocale:ClipScreen.kt:"%d:%02d".format(total / 60, total % 60)</ID>
     <ID>ImplicitDefaultLocale:TwitchTvApp.kt:String.format(nowLive, stream.name)</ID>
-    <ID>InjectDispatcher:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$IO</ID>
-    <ID>InjectDispatcher:AndroidSnapshotStorage.kt:AndroidSnapshotStorage$IO</ID>
     <ID>InstanceOfCheckForException:ViewerFormatters.kt:e is VirtualMachineError</ID>
     <ID>LambdaParameterEventTrailing:LoadGate.kt:onAction: () -&gt; Unit</ID>
     <ID>LambdaParameterEventTrailing:VodScreen.kt:onBack: () -&gt; Unit</ID>
@@ -44,11 +42,8 @@
     <ID>LongParameterList:TvFocusable.kt:@OptIn(ExperimentalFoundationApi::class) @Composable fun TvFocusable</ID>
     <ID>LongParameterList:TvIconButton.kt:@Composable fun TvIconButton</ID>
     <ID>LongParameterList:VodScreen.kt:@OptIn(UnstableApi::class) @Composable private fun VodPlayback</ID>
-    <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$128</ID>
-    <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$3</ID>
     <ID>MagicNumber:AppKeys.kt:3</ID>
     <ID>MagicNumber:AppKeys.kt:4</ID>
-    <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
     <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
@@ -98,7 +93,6 @@
     <ID>NoNameShadowing:TwitchTvApp.kt:{ navigator.watch(it.login) }</ID>
     <ID>ParameterNaming:ChannelZapper.kt:onRowFocused: (Int) -&gt; Unit</ID>
     <ID>ParameterNaming:ClipScreen.kt:onFailed: () -&gt; Unit</ID>
-    <ID>ParameterNaming:NativeVideoSurface.kt:onQualityPicked: (String) -&gt; Unit</ID>
     <ID>ParameterNaming:PlayerControlBar.kt:onFocused: (PlayerControl) -&gt; Unit</ID>
     <ID>ParameterNaming:PlayerScreen.kt:onFocused: (PlayerControl) -&gt; Unit</ID>
     <ID>ParameterNaming:PlayerScreen.kt:onInfoFocused: (Boolean) -&gt; Unit</ID>
@@ -107,7 +101,6 @@
     <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
     <ID>ThrowsCount:DemoModule.kt:DemoVods$override suspend fun resolve: ResolvedVod</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
-    <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>

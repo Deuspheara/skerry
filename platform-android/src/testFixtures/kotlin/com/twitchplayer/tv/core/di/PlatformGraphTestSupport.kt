@@ -5,17 +5,17 @@ import androidx.lifecycle.SavedStateHandle
 import com.twitchplayer.tv.core.data.model.PlayerEngine
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchPlayerConfig
-import org.junit.Test
 import org.koin.core.annotation.KoinExperimentalAPI
-import org.koin.dsl.module
 import org.koin.test.verify.ParameterTypeInjection
 import org.koin.test.verify.definition
 import org.koin.test.verify.injectedParameters
-import org.koin.test.verify.verify
 import kotlin.coroutines.CoroutineContext
 
+/** A config for graph tests: only its shape matters (blank player host = no WebView embed). */
+fun testPlatformConfig() = PlatformConfig(twitchClientId = "test-client", defaultPlayerEngine = PlayerEngine.Native, playerHost = "", playerParent = "")
+
 /** Types Koin injects itself or that are passed as parameters, not declared as definitions. */
-internal val koinVerifyExtraTypes = listOf(
+val koinVerifyExtraTypes = listOf(
     Context::class,
     TwitchPlayerConfig::class, // built inline (and nullable) in coreModule
     PlayerEngine::class, // PlayerPresenter / SettingsPresenter get AppConfig.defaultPlayerEngine passed explicitly
@@ -32,15 +32,4 @@ internal val koinVerifyExtraTypes = listOf(
 
 /** `EmoteRepository(providers)`: the list is built inline in sharedChatModule. */
 @OptIn(KoinExperimentalAPI::class)
-internal fun koinVerifyInjections(): List<ParameterTypeInjection> = injectedParameters(definition<EmoteRepository>(List::class))
-
-/**
- * Every constructor dependency of every definition must be declared by some module of the production graph
- * ([productionModules], the very list `TwitchPlayerApp` starts Koin with); a missing platform binding fails here, not at launch.
- */
-@OptIn(KoinExperimentalAPI::class)
-class AppKoinGraphTest {
-    @Test fun productionGraphDeclaresEveryDependency() {
-        module { includes(productionModules()) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
-    }
-}
+fun koinVerifyInjections(): List<ParameterTypeInjection> = injectedParameters(definition<EmoteRepository>(List::class))

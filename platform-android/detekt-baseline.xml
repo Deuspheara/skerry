@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$128</ID>
+    <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$3</ID>
+    <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
+    <ID>MatchingDeclarationName:AppModule.kt:PlatformConfig</ID>
+    <ID>ParameterNaming:NativeVideoSurface.kt:onQualityPicked: (String) -&gt; Unit</ID>
+    <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

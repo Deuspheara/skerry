@@ -24,10 +24,11 @@ fun rememberNativeVideoPlayer(
     resolver: TwitchPlaybackResolver,
     preferredQuality: () -> String?,
     onQualityPicked: (String) -> Unit,
+    qualityLabels: () -> QualityLabels,
 ): NativeVideoPlayer {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val player = remember(resolver) { NativeVideoPlayer(context, resolver, scope, preferredQuality, onQualityPicked) }
+    val player = remember(resolver) { NativeVideoPlayer(context, resolver, scope, preferredQuality, onQualityPicked, qualityLabels) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(player, lifecycle) {
         val observer = LifecycleEventObserver { _, event ->

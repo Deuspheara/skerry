@@ -10,6 +10,6 @@ import org.koin.test.verify.verify
 @OptIn(KoinExperimentalAPI::class)
 class DemoKoinGraphTest {
     @Test fun demoOverridesFitTheProductionGraph() {
-        module { includes(productionModules() + demoModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
+        module { includes(productionModules(appPlatformConfig()) + demoModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
     }
 }

@@ -19,7 +19,6 @@ import androidx.media3.exoplayer.hls.HlsManifest
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import com.twitchplayer.tv.R
 import com.twitchplayer.tv.feature.player.data.stream.ChannelOfflineException
 import com.twitchplayer.tv.feature.player.data.stream.QualityPolicy
 import com.twitchplayer.tv.feature.player.data.stream.ResolvedStream
@@ -33,6 +32,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+/** The two quality names the player cannot take from `shared`: they are translated resources of the app. */
+data class QualityLabels(val auto: String, val audioOnly: String)
 
 /** What the native player is doing, for the host: [Failed] hands the channel to the WebView player. */
 sealed interface NativeStatus {
@@ -60,6 +62,8 @@ class NativeVideoPlayer(
     private val scope: CoroutineScope,
     private val preferredQuality: () -> String?,
     private val onQualityPicked: (String) -> Unit,
+    /** Resolved every time the quality list is built (as `context.getString` was), so it follows the current language. */
+    private val qualityLabels: () -> QualityLabels,
 ) : VideoPlayer {
     val exoPlayer: ExoPlayer = ExoPlayer.Builder(
         context,
@@ -267,8 +271,9 @@ class NativeVideoPlayer(
         val variants = stream?.variants.orEmpty()
         if (variants.isEmpty()) return onResult(VideoQualities.None)
         val options = buildList {
-            add(VideoQuality(QualityPolicy.AUTO, context.getString(R.string.quality_auto)))
-            variants.forEach { add(VideoQuality(it.id, it.label())) }
+            val labels = qualityLabels()
+            add(VideoQuality(QualityPolicy.AUTO, labels.auto))
+            variants.forEach { add(VideoQuality(it.id, it.label(labels))) }
         }
         onResult(VideoQualities(options, selected))
     }
@@ -312,7 +317,7 @@ class NativeVideoPlayer(
         exoPlayer.release()
     }
 
-    private fun StreamVariant.label(): String = if (audioOnly) context.getString(R.string.quality_audio_only) else name
+    private fun StreamVariant.label(labels: QualityLabels): String = if (audioOnly) labels.audioOnly else name
 
     private companion object {
         const val TAG = "NativeVideoPlayer"

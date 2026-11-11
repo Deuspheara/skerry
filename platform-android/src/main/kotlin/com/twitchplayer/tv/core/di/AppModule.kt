@@ -2,11 +2,9 @@ package com.twitchplayer.tv.core.di
 
 import android.app.ActivityManager
 import android.util.Log
-import com.twitchplayer.tv.BuildConfig
 import com.twitchplayer.tv.core.data.model.AnimatedEmoteLimit
 import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.data.model.PlayerEngine
-import com.twitchplayer.tv.core.data.model.buildDefault
 import com.twitchplayer.tv.core.data.repository.AndroidSnapshotStorage
 import com.twitchplayer.tv.core.network.auth.AndroidKeystoreTokenStore
 import com.twitchplayer.tv.core.network.auth.TokenStore
@@ -28,12 +26,26 @@ import org.koin.dsl.module
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+/**
+ * What only the app knows (it comes from the app's `BuildConfig`): a library has no BuildConfig values. The TV app builds it
+ * in `AppPlatformConfig.kt`; the phone app provides its own.
+ */
+data class PlatformConfig(
+    /** Public Twitch OAuth client id (no secret exists). */
+    val twitchClientId: String,
+    /** The player engine a fresh install starts with (the Settings tile overrides it). */
+    val defaultPlayerEngine: PlayerEngine,
+    /** HTTPS origin and exact hostname of the hosted Twitch embed page; blank disables the WebView embed. */
+    val playerHost: String,
+    val playerParent: String,
+)
+
 /** Android bindings. The platform-independent ones are in `sharedCoreModule()`. */
-val coreModule = module {
+fun coreModule(config: PlatformConfig) = module {
     // Platform pieces the shared module needs (see sharedCoreModule()).
     single<DeviceProfile> { AndroidDeviceProfile() }
     single<NumberFormatter> { AndroidNumberFormatter() }
-    single { AppConfig(clientId = BuildConfig.TWITCH_CLIENT_ID, defaultPlayerEngine = PlayerEngine.buildDefault()) }
+    single { AppConfig(clientId = config.twitchClientId, defaultPlayerEngine = config.defaultPlayerEngine) }
     single<HttpClientEngineFactory<*>> { OkHttp }
     // Warn level survives R8's stripping of Log.v/d/i (see proguard-rules.pro).
     single<Logger> { Logger { tag, message -> Log.w(tag, message) } }
@@ -49,10 +61,10 @@ val coreModule = module {
     single { EventStreamClientFactory { HttpClient(OkHttp) { engine { config { readTimeout(0, TimeUnit.SECONDS) } } } } }
     single {
         PlayerConfigProvider(
-            if (BuildConfig.TWITCH_PLAYER_HOST.isBlank() || BuildConfig.TWITCH_PLAYER_PARENT.isBlank()) {
+            if (config.playerHost.isBlank() || config.playerParent.isBlank()) {
                 null
             } else {
-                runCatching { TwitchPlayerConfig(BuildConfig.TWITCH_PLAYER_HOST, BuildConfig.TWITCH_PLAYER_PARENT) }.getOrNull()
+                runCatching { TwitchPlayerConfig(config.playerHost, config.playerParent) }.getOrNull()
             },
         )
     }

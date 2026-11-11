@@ -90,6 +90,7 @@ dependencies {
   implementation(composeBom)
   androidTestImplementation(composeBom)
 
+  implementation(project(":platform-android"))
   implementation(project(":shared:core"))
   implementation(project(":shared:stream"))
   implementation(project(":shared:chat"))
@@ -98,7 +99,6 @@ dependencies {
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.profileinstaller)
-  implementation(libs.androidx.datastore.preferences)
 
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.lifecycle.runtime.compose)
@@ -120,6 +120,7 @@ dependencies {
   implementation(libs.coil.compose)
   implementation(libs.coil.network.okhttp)
   implementation(libs.coil.gif)
+  implementation(libs.androidx.datastore.preferences)
   implementation(libs.ktor.client.core)
   implementation(libs.ktor.client.okhttp)
   implementation(libs.ktor.client.content.negotiation)
@@ -137,6 +138,8 @@ dependencies {
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.ktor.client.mock)
   testImplementation(libs.koin.test)
+  testImplementation(libs.androidx.datastore.preferences.core)
+  testImplementation(testFixtures(project(":platform-android")))
 
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)
   debugImplementation(libs.androidx.compose.ui.test.manifest)

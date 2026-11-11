@@ -96,7 +96,7 @@ class ProductionGraphResolutionTest {
     @Test fun everyScreenViewModelResolvesItsPresenterFromTheProductionModules() {
         val koin = startKoin {
             allowOverride(true)
-            modules(productionModules() + androidFakes)
+            modules(productionModules(testPlatformConfig()) + androidFakes)
         }.koin
 
         assertNotNull(koin.get<AuthViewModel>().presenter)

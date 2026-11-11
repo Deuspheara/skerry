@@ -25,7 +25,8 @@ data class TwitchPlayerConfig(
         require(parentDomain.matches(Regex("[A-Za-z0-9.-]+"))) { "Invalid Twitch parent hostname." }
     }
 
-    internal val host: String = URI(hostedPageBaseUrl).host.lowercase()
+    /** The lower-cased hostname of the hosted page (the WebView navigation policy compares against it). */
+    val host: String = URI(hostedPageBaseUrl).host.lowercase()
 
     /** Uses the configured controlled page; the page itself is responsible for loading Twitch's official embed. */
     fun pageUrl(channelLogin: String, autoplay: Boolean = false): String {

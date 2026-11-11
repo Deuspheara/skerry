@@ -70,6 +70,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -108,6 +109,7 @@ import com.twitchplayer.tv.feature.player.playback.AdBreak
 import com.twitchplayer.tv.feature.player.playback.NativeStatus
 import com.twitchplayer.tv.feature.player.playback.NativeVideoSurface
 import com.twitchplayer.tv.feature.player.playback.PlaybackStats
+import com.twitchplayer.tv.feature.player.playback.QualityLabels
 import com.twitchplayer.tv.feature.player.playback.VideoPlayer
 import com.twitchplayer.tv.feature.player.playback.VideoQualities
 import com.twitchplayer.tv.feature.player.playback.rememberNativeVideoPlayer
@@ -172,8 +174,15 @@ private fun PlayerHostContent(
     val engine by presenter.playerEngine.collectAsState()
     val preferredQuality by presenter.preferredQuality.collectAsState()
     val currentPreferred by rememberUpdatedState(preferredQuality)
+    // The two quality names are translated app resources; the player reads the latest value each time it builds the list.
+    val qualityLabels by rememberUpdatedState(QualityLabels(stringResource(R.string.quality_auto), stringResource(R.string.quality_audio_only)))
     val nativePlayer = if (BuildConfig.NATIVE_PLAYER_ENABLED && engine == PlayerEngine.Native) {
-        rememberNativeVideoPlayer(koinInject<TwitchPlaybackResolver>(), { currentPreferred }, { presenter.onEvent(PlayerEvent.SetPreferredQuality(it)) })
+        rememberNativeVideoPlayer(
+            koinInject<TwitchPlaybackResolver>(),
+            { currentPreferred },
+            { presenter.onEvent(PlayerEvent.SetPreferredQuality(it)) },
+            { qualityLabels },
+        )
     } else {
         null
     }
