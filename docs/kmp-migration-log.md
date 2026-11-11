@@ -298,7 +298,7 @@ Behaviour notes (intentional, documented):
 - The app's baseline profile still names the old `*ViewModel` constructors and `VoiceRecognizer`: it is regenerated at the end of
   Phase 1 (planned).
 
-Tests: 39 new/moved presenter tests (Home incl. snapshot flow, Follows, Browse, Category, Channel, Search, Settings, Auth, Load/Loader,
+Tests: 47 presenter tests on each of the JVM and Android-host targets (Home incl. snapshot flow, Follows, Browse, Category, Channel, Search, Settings, Auth, Load/Loader,
 FlowBatch, `SharedPresentersModuleTest`). The app's `AppKoinGraphTest` / `DemoKoinGraphTest` include `sharedPresentersModule()`.
 
 Compose stability: moving the state classes out of the app made `HomeContent`, `FollowsContent`, `BrowseUiState`, `CategoryUiState`,
@@ -308,3 +308,44 @@ Compose stability: moving the state classes out of the app made `HomeContent`, `
 
 detekt: `shared/presenters/detekt-baseline*.xml` hold only the 9 legacy entries that moved with `Load.kt`, `SearchPresenter`,
 `ChannelPresenter` (same rule IDs as in the pre-move app baselines); the app baselines only shrank (removed 10 / 13 / 2 / 13, added 0).
+
+## Step 4a, part 3: verification, and a release-build regression caught by it
+
+**The regression.** The first release build after the presenters commit was 2,045,171 B instead of 3,968,914 B (dex 2.3 MB instead of
+5.1 MB, `baseline.prof` 7 KB instead of 14 KB, Media3 4,796 classes -> 3, `feature.player.ui` 407 -> 18). Cause (found by bisecting in an
+isolated worktree and reading the `-dontobfuscate` dex): `TwitchPlayerApp` started Koin with a hand-written module list that did not
+contain `sharedPresentersModule()`. The graph tests listed the module themselves, so they passed, and `verify` cannot look inside
+`viewModel { ... get<XPresenter>() ... }` lambdas. At runtime the first `koinViewModel()` would have thrown
+`NoDefinitionFoundException`; R8 saw that no presenter could ever be instantiated, rewrote `Scope.resolve(...)` results to
+`throw ClassCastException` and removed everything after the failing call (the whole UI). Debug builds would have crashed at launch.
+Fix and guards:
+- `productionModules()` (app, `core/di/ProductionModules.kt`) is the single list; `TwitchPlayerApp`, `AppKoinGraphTest` and
+  `DemoKoinGraphTest` all use it.
+- `ProductionGraphResolutionTest` starts Koin with the real `productionModules()` (only the Android-`Context` bindings replaced by
+  fakes) and constructs all eight screen ViewModels, so their presenters are resolved. Verified to fail with
+  `NoDefinitionFoundException: AuthPresenter` when the module is removed from the list.
+- Lesson recorded: after a change that adds a Koin module or moves code between modules, compare the release APK size and the dex
+  package census with `docs/perf-baseline.md` (a 50 % drop is never a good sign).
+
+**Numbers on the final tree** (`./gradlew check --rerun-tasks --continue` passed in 1 min 59 s; the Spotless `Could not read path` race
+under `--rerun-tasks` is fixed: the Spotless Kotlin and Gradle-script targets now use file trees that never descend into `build/`):
+- Unit tests, 0 failures, 0 skipped: app 87; shared:core jvm 38 / host 28; shared:stream 40 / 24; shared:chat 41 / 41; shared:player-api 7 / 7;
+  shared:presenters 47 / 47.
+- Release: `:app:assembleRelease :app:bundleRelease :app:analyzeReleaseR8Config` OK. APK 3,968,914 B (+0.41 % vs the 3,952,530 B baseline);
+  `classes.dex` 1,818,908 + `classes2.dex` 3,266,420 = 5,085,328 B (+0.41 %); `baseline.prof` 14,272 B / `baseline.profm` 1,008 B packaged in
+  the APK and in the AAB; no `-keep` rule in `app/proguard-rules.pro`; the R8 configuration is identical to the pre-presenters build
+  (diffed); Media3 4,796 classes, `feature.player.ui` 454 classes (dex census as before).
+- Compose report: 5 unstable parameters (`context`, `preview`, `edgeGuard`, `controller`, `token`), 130 skippable composables, same as
+  before the migration (after adding the presenter state classes to `config/compose/stability.conf`).
+- Lint: no new issues (15 errors + 2 hints baselined; the `NewApi` finding is gone).
+- Emulator (TwitchTV_API33, demo data, debug build, never the TV): screenshots of Home (Following / For you rows), Browse (filters, sort,
+  poster grid), a Category (header, `English` language chip from `DeviceProfile`, Favorite, stream cards), Search (keyboard, mic, Trending)
+  and Settings (account, chat modes, animations, language, player engine, quit) all render as before. Screenshots were reviewed by
+  eye; they are not committed.
+- `:app:connectedDebugAndroidTest` on the emulator: 14 tests, 2 failures, both on the known pre-existing list
+  (`TvFocusFlowTest.searchOpensOnTheVoiceKey`, `TvFocusFlowTest.backClosesTheZapperBeforeLeavingThePlayer`); the third known one
+  (`chatOptionsOpenFromSettings...`) passed on this run. No new failure.
+
+Not verified: the real TV; the R8 analyzer scores (HTML renders them with JS); a long session on the emulator (only a short navigation
+tour); the baseline/startup profiles still name the old `*ViewModel` constructors and `VoiceRecognizer`, so they are stale for those
+classes until they are regenerated at the end of Phase 1 (planned; sizes already show the profile applies: 14,272 B).

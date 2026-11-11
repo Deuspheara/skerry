@@ -40,6 +40,10 @@ class HomeViewModel(create: (CoroutineScope) -> HomePresenter) : ViewModel() { v
 Screens collect `presenter.state` and call `presenter.onEvent(...)`. Navigation, back-stack scoping and configuration-change
 survival are the holder's, as before.
 
+**Registering a presenter:** add its factory to `sharedPresentersModule()` and keep the app's Koin start-up on
+`productionModules()` (never a hand-written list): `ProductionGraphResolutionTest` constructs every screen ViewModel from that list.
+A presenter module missing at runtime fails at the first `koinViewModel()`, and R8 then deletes the UI after the failing call.
+
 ## Testing
 
 Presenter tests run in `commonTest` on the JVM and Android host: `runTest(UnconfinedTestDispatcher())`, `backgroundScope` as the
