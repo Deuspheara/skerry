@@ -22,8 +22,12 @@ spotless {
     ktlint(libs.versions.ktlint.get())
   }
   kotlin {
-    target("build-logic/**/*.kt")
-    targetExclude("**/build/**")
+    target(
+      fileTree(rootDir) {
+        include("build-logic/**/*.kt")
+        exclude("**/build/**", "app/**", "benchmark/**", "shared/**", ".git/**", ".gradle/**", ".kotlin/**")
+      },
+    )
     ktlint(libs.versions.ktlint.get())
   }
 }
