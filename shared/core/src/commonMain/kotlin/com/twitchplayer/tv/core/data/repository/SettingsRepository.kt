@@ -40,19 +40,19 @@ class DataStoreSettingsRepository(
     private val defaultPlayerEngine: PlayerEngine = PlayerEngine.Fallback,
 ) : SettingsRepository {
 
-    override val settings: Flow<AppSettings> = store.data.map { prefs ->
-        AppSettings(
-            chatMode = prefs[CHAT_MODE]?.let { runCatching { ChatMode.valueOf(it) }.getOrNull() } ?: ChatMode.Compact,
-            chat = prefs.toChatSettings(),
-            animationsEnabled = prefs[ANIMATIONS] ?: true,
-            recentSearches = prefs[RECENTS]?.split(SEPARATOR)?.filter(String::isNotBlank).orEmpty(),
-            followedCategories = prefs[CATEGORIES].orEmpty(),
-            playerEngine = prefs[PLAYER_ENGINE].toEnum() ?: defaultPlayerEngine,
-            preferredQuality = prefs[PREFERRED_QUALITY]?.takeIf { it.isNotBlank() },
-            showStats = prefs[SHOW_STATS] ?: false,
-            followRaids = prefs[FOLLOW_RAIDS] ?: false,
-        )
-    }
+    override val settings: Flow<AppSettings> = store.data.map { it.toAppSettings() }
+
+    private fun Preferences.toAppSettings() = AppSettings(
+        chatMode = this[CHAT_MODE]?.let { runCatching { ChatMode.valueOf(it) }.getOrNull() } ?: ChatMode.Compact,
+        chat = toChatSettings(),
+        animationsEnabled = this[ANIMATIONS] ?: true,
+        recentSearches = this[RECENTS]?.split(SEPARATOR)?.filter(String::isNotBlank).orEmpty(),
+        followedCategories = this[CATEGORIES].orEmpty(),
+        playerEngine = this[PLAYER_ENGINE].toEnum() ?: defaultPlayerEngine,
+        preferredQuality = this[PREFERRED_QUALITY]?.takeIf { it.isNotBlank() },
+        showStats = this[SHOW_STATS] ?: false,
+        followRaids = this[FOLLOW_RAIDS] ?: false,
+    )
 
     override suspend fun setChatMode(mode: ChatMode) {
         store.edit { it[CHAT_MODE] = mode.name }

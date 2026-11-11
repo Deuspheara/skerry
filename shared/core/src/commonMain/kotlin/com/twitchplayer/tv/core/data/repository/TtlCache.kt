@@ -6,7 +6,7 @@ import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 /** Single-value cache with a time-to-live; concurrent callers share one in-flight load. */
-internal class TtlCache<T>(private val ttlMs: Long) {
+internal class TtlCache<T>(private val ttlMs: Long, private val timeSource: TimeSource = TimeSource.Monotonic) {
     private val mutex = Mutex()
     private var value: T? = null
     private var loadedAt: TimeMark? = null
@@ -16,7 +16,7 @@ internal class TtlCache<T>(private val ttlMs: Long) {
         if (!force && cached != null && isFresh()) return cached
         load().also {
             value = it
-            loadedAt = TimeSource.Monotonic.markNow()
+            loadedAt = timeSource.markNow()
         }
     }
 

@@ -2,6 +2,8 @@ package com.twitchplayer.tv.core.data.repository
 
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.platform.WallClock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -17,21 +19,26 @@ class SnapshotCache(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun <T> read(name: String, userId: String, serializer: KSerializer<T>, maxAgeMs: Long = DAY_MS): T? = runCatching {
-        val text = storage.read(name) ?: return@runCatching null
-        val entry = json.decodeFromString(Entry.serializer(serializer), text)
-        entry.data.takeIf { entry.userId == userId && clock.nowMillis() - entry.savedAtMs < maxAgeMs }
-    }.getOrNull()
+    // Encoding, decoding and the storage calls all run on the IO dispatcher, never on the caller's (often the main) one.
+    suspend fun <T> read(name: String, userId: String, serializer: KSerializer<T>, maxAgeMs: Long = DAY_MS): T? = withContext(Dispatchers.IO) {
+        runCatching {
+            val text = storage.read(name) ?: return@runCatching null
+            val entry = json.decodeFromString(Entry.serializer(serializer), text)
+            entry.data.takeIf { entry.userId == userId && clock.nowMillis() - entry.savedAtMs < maxAgeMs }
+        }.getOrNull()
+    }
 
     suspend fun <T> write(name: String, userId: String, serializer: KSerializer<T>, data: T) {
-        runCatching {
-            storage.write(name, json.encodeToString(Entry.serializer(serializer), Entry(userId, clock.nowMillis(), data)))
+        withContext(Dispatchers.IO) {
+            runCatching {
+                storage.write(name, json.encodeToString(Entry.serializer(serializer), Entry(userId, clock.nowMillis(), data)))
+            }
         }
     }
 
     /** Drops every snapshot (sign-out). */
     suspend fun clear() {
-        runCatching { storage.clear() }
+        withContext(Dispatchers.IO) { runCatching { storage.clear() } }
     }
 
     @Serializable

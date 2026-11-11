@@ -3,6 +3,7 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>InjectDispatcher:SharedCoreModule.kt:Default</ID>
+    <ID>InjectDispatcher:SnapshotCache.kt:SnapshotCache$IO</ID>
     <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000</ID>
     <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000L</ID>
     <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$5</ID>
@@ -40,7 +41,6 @@
     <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun raw: HttpResponse</ID>
     <ID>TooGenericExceptionCaught:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
     <ID>TooManyFunctions:TwitchApi.kt:TwitchApi</ID>
-    <ID>UnusedPrivateProperty:SettingsRepository.kt:DataStoreSettingsRepository$/** The engine a fresh install starts with (the build's choice, see `AppConfig.defaultPlayerEngine`). */ private val defaultPlayerEngine: PlayerEngine = PlayerEngine.Fallback</ID>
     <ID>UseCheckOrError:TwitchRepository.kt:TwitchRepositoryImpl$throw IllegalStateException("signed out")</ID>
     <ID>UseCheckOrError:TwitchRepository.kt:TwitchRepositoryImpl$throw IllegalStateException("unknown channel")</ID>
   </CurrentIssues>

@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import com.twitchplayer.tv.core.data.model.Account
+import com.twitchplayer.tv.core.platform.StorageNames
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
@@ -16,7 +17,7 @@ import javax.crypto.spec.GCMParameterSpec
 
 /** Ciphertext lives in private preferences; its AES key is generated and retained by Android Keystore. */
 class AndroidKeystoreTokenStore(context: Context) : TokenStore {
-    private val prefs = context.applicationContext.getSharedPreferences("twitch_secure_tokens", Context.MODE_PRIVATE)
+    private val prefs = context.applicationContext.getSharedPreferences(StorageNames.TOKEN_PREFERENCES, Context.MODE_PRIVATE)
 
     override suspend fun save(tokens: TwitchTokens) = withContext(Dispatchers.IO) {
         val clear = listOf(tokens.accessToken, tokens.refreshToken, tokens.expiresAtEpochSeconds.toString(), tokens.scopes.joinToString(" ")).joinToString("\n")

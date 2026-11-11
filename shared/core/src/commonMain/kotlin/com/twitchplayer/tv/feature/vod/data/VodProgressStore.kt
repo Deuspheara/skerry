@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.twitchplayer.tv.core.platform.StorageNames
 import com.twitchplayer.tv.core.platform.WallClock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -57,7 +58,7 @@ class DataStoreVodProgressStore(
     }
 
     private companion object {
-        const val PREFIX = "vod_"
+        const val PREFIX = StorageNames.VOD_PROGRESS_KEY_PREFIX
         const val MAX_ENTRIES = 150
 
         /** "vod_123" + "pos:dur:ts" -> id to (progress to savedAt); null for anything else. */

@@ -1,15 +1,12 @@
 package com.twitchplayer.tv.core.data.repository
 
-import android.content.Context
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Snapshots as JSON files in the app cache directory. */
-class AndroidSnapshotStorage(context: Context) : SnapshotStorage {
-    private val dir = File(context.cacheDir, "snapshots")
-
+/** Snapshots as JSON files in [dir] (the app passes its cache directory's `snapshots` folder). */
+class AndroidSnapshotStorage(private val dir: File) : SnapshotStorage {
     override suspend fun read(name: String): String? = withContext(Dispatchers.IO) {
         File(dir, "$name.json").takeIf { it.isFile }?.readText()
     }
@@ -19,7 +16,7 @@ class AndroidSnapshotStorage(context: Context) : SnapshotStorage {
             dir.mkdirs()
             val tmp = File(dir, "$name.json.tmp")
             tmp.writeText(text)
-            tmp.renameTo(File(dir, "$name.json"))
+            check(tmp.renameTo(File(dir, "$name.json"))) { "Could not replace snapshot $name" }
         }
     }
 

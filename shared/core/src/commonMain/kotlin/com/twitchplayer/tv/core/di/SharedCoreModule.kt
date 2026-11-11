@@ -27,9 +27,16 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
- * The platform-independent bindings of `:shared:core`. Each app must also provide: [AppConfig],
- * `HttpClientEngineFactory<*>`, `TokenStore`, `SnapshotStorage`, `ChatSettings` defaults via [SettingsDefaults], and the
- * two `DataStore<Preferences>` named by [DataStores].
+ * The platform-independent bindings of `:shared:core`. Every app must provide these platform bindings (a test resolves
+ * the whole graph against fakes of exactly this list):
+ *
+ * - [AppConfig]
+ * - `HttpClientEngineFactory<*>` (OkHttp on Android)
+ * - `TokenStore` (secure storage of the OAuth tokens)
+ * - `SnapshotStorage` (cache area for screen snapshots)
+ * - [SettingsDefaults] (per-device starting settings)
+ * - `DataStore<Preferences>` qualified by [DataStores.Settings]
+ * - `DataStore<Preferences>` qualified by [DataStores.VodProgress]
  */
 fun sharedCoreModule(): Module = module {
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }

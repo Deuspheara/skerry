@@ -12,6 +12,7 @@ import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.platform.AppConfig
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.core.platform.SnapshotStorage
+import com.twitchplayer.tv.core.platform.StorageNames
 import com.twitchplayer.tv.feature.player.data.ChatAssetsRepository
 import com.twitchplayer.tv.feature.player.data.ChatAssetsSource
 import com.twitchplayer.tv.feature.player.data.emotes.BttvProvider
@@ -26,22 +27,15 @@ import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.engine.okhttp.OkHttp
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
+import java.io.File
 
 /** Android bindings. The platform-independent ones are in `sharedCoreModule()`. */
 val coreModule = module {
     // Platform pieces the shared module needs (see sharedCoreModule()).
-    single {
-        AppConfig(
-            clientId = BuildConfig.TWITCH_CLIENT_ID,
-            playerHost = BuildConfig.TWITCH_PLAYER_HOST,
-            playerParent = BuildConfig.TWITCH_PLAYER_PARENT,
-            nativePlayerEnabled = BuildConfig.NATIVE_PLAYER_ENABLED,
-            defaultPlayerEngine = PlayerEngine.buildDefault(),
-        )
-    }
+    single { AppConfig(clientId = BuildConfig.TWITCH_CLIENT_ID, defaultPlayerEngine = PlayerEngine.buildDefault()) }
     single<HttpClientEngineFactory<*>> { OkHttp }
     single<TokenStore> { AndroidKeystoreTokenStore(androidContext()) }
-    single<SnapshotStorage> { AndroidSnapshotStorage(androidContext()) }
+    single<SnapshotStorage> { AndroidSnapshotStorage(File(androidContext().cacheDir, StorageNames.SNAPSHOT_DIRECTORY)) }
     single(DataStores.Settings) { androidContext().settingsStore }
     single(DataStores.VodProgress) { androidContext().vodProgressStore }
     single {

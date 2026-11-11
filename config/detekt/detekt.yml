@@ -36,3 +36,8 @@ complexity:
     ignoreAnnotatedFunctions: ['Composable']
     allowedFunctionsPerFile: 20
     allowedFunctionsPerClass: 20
+
+coroutines:
+  InjectDispatcher:
+    # Tests run on real dispatchers on purpose (DataStore scopes, Ktor mock engines); production code injects its own.
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**']

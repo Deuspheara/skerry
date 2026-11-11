@@ -60,9 +60,12 @@ internal fun categoryGroupOf(name: String): CategoryGroup {
     }
 }
 
-/** Helix timestamps ("2026-11-07T09:12:00Z") in epoch milliseconds. 0 when absent or malformed. */
-internal fun parseTwitchTime(value: String): Long = if (value.isEmpty()) {
-    0L
-} else {
+/** The exact Helix shape, e.g. "2026-11-07T09:12:00Z". Offsets and fractions are not produced by Helix and are rejected. */
+private val HelixTimestamp = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z""")
+
+/** Helix timestamps ("2026-11-07T09:12:00Z") in epoch milliseconds. 0 when absent, malformed or not in the exact shape. */
+internal fun parseTwitchTime(value: String): Long = if (HelixTimestamp.matches(value)) {
     runCatching { Instant.parse(value).toEpochMilliseconds() }.getOrDefault(0L)
+} else {
+    0L
 }

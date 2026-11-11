@@ -14,6 +14,7 @@ import com.twitchplayer.tv.core.network.api.HelixPage
 import com.twitchplayer.tv.core.network.api.TwitchApi
 import com.twitchplayer.tv.core.network.api.TwitchApiException
 import com.twitchplayer.tv.core.network.api.TwitchVideo
+import com.twitchplayer.tv.core.platform.WallClock
 import com.twitchplayer.tv.core.ui.formatTwitchDuration
 import com.twitchplayer.tv.core.ui.parseTwitchDurationSeconds
 import com.twitchplayer.tv.feature.player.data.chat.RoomState
@@ -197,7 +198,7 @@ internal fun TwitchVideo.toReplay() = Replay(
 )
 
 /** Segments that are still to come (or running), not cancelled, soonest first. */
-internal fun List<com.twitchplayer.tv.core.network.api.ScheduleSegment>.upcoming(nowMs: Long = System.currentTimeMillis()): List<ScheduledStream> = mapNotNull { seg ->
+internal fun List<com.twitchplayer.tv.core.network.api.ScheduleSegment>.upcoming(nowMs: Long = WallClock.System.nowMillis()): List<ScheduledStream> = mapNotNull { seg ->
     val start = parseTwitchTime(seg.startTime)
     val end = seg.endTime?.let(::parseTwitchTime) ?: 0L
     val cancelled = seg.canceledUntil != null
