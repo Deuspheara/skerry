@@ -14,7 +14,8 @@ val catalog = versionCatalogs.named("libs")
 detekt {
   buildUponDefaultConfig = true
   parallel = true
-  config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+  // The repo-wide rules, then an optional module-level detekt.yml layered on top (a module may relax a rule for its own code only).
+  config.setFrom(listOfNotNull(rootProject.file("config/detekt/detekt.yml"), file("detekt.yml").takeIf { it.exists() }))
   source.setFrom("src")
 }
 

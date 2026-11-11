@@ -29,8 +29,6 @@ complexity:
   LongParameterList:
     allowedFunctionParameters: 8
     allowedConstructorParameters: 10
-    # Slot-based composables take many optional parameters on purpose; only the required ones count.
-    ignoreDefaultParameters: true
     ignoreAnnotatedParameter: ['Composable']
   CyclomaticComplexMethod:
     ignoreAnnotated: ['Composable']

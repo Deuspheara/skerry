@@ -1,0 +1,5 @@
+# Layered over config/detekt/detekt.yml for :phone only.
+complexity:
+  LongParameterList:
+    # The phone's slot-based composables (PlayerScaffold and friends) take many optional parameters on purpose: only the required ones count.
+    ignoreDefaultParameters: true
