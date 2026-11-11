@@ -172,7 +172,7 @@ fixtures as class-path resources (`src/jvmTest/resources/vod`, moved from the ap
 that file belongs to `VodModel` (UI side, still in the app) and moved to `VodModelTest`.
 
 Verification (tree at the step-2 commit):
-- `./gradlew check`: BUILD SUCCESSFUL. `shared:stream` jvmTest 39 tests, Android host tests 23, 0 failures; Lint: no new
+- `./gradlew check`: BUILD SUCCESSFUL. `shared:stream` jvmTest 40 tests, Android host tests 24, 0 failures (corrected after the fact: an earlier version of this line said 39 / 23, counted before `SharedStreamModuleTest` was added); Lint: no new
   issues (17 errors + 2 hints baselined, unchanged). detekt baselines for `shared:stream` contain only moved legacy findings
   (the new files `FormUrlEncoding`, `DeviceId`, `SharedStreamModule` have none: a magic-number finding in `FormUrlEncoding` was
   fixed with named constants); the app baselines only lost the entries of the moved files.
@@ -183,3 +183,66 @@ Verification (tree at the step-2 commit):
 - Compose report (debug, `-PcomposeReports`): 5 unstable parameters, same set (`context`, `controller`, `edgeGuard`,
   `preview`, `token`), 130 restartable skippable composables.
 - Not verified: runtime behaviour on a device/emulator, the profile (not regenerated), R8 analyzer scores.
+
+## Step 3: `:shared:chat`
+
+Moved with `git mv`, package names unchanged: `data/chat/{ChatModels, EventSubChatClient}`, `data/emotes/{Emote, EmoteRepository,
+HttpJson, BttvProvider, FfzProvider, SevenTvProvider}`, `data/{ChatAssetsRepository, ChatSource}` (`ChatSource.kt` also holds
+`EventSubChatSource`). Depends on `:shared:core` (`api`); `ktor-client-websockets`, content negotiation and the Ktor JSON
+serializer are `implementation` (the chat client installs the WebSockets plugin itself); no new catalog entries.
+
+Replacements and behaviour:
+- **Logging.** `EventSubChatClient` takes a `logger: Logger` (4th parameter); the one `Log.w("EventSub", "bonus subscription
+  refused: ...")` is now `logger.warn` with the same tag and message.
+- **HTTP engine.** `EventSubChatClient.createHttpClient()` hardcoded OkHttp; it is now `createHttpClient(engine)` (same WebSockets
+  and JSON plugins). `EventSubChatSource` takes `tokens, clientId, engine, logger` instead of reading `BuildConfig` and OkHttp;
+  the module binds it from `AppConfig.clientId` and the platform `HttpClientEngineFactory`.
+- **7TV event stream.** `SevenTvProvider` built its own OkHttp client with `readTimeout(0)` (the stream is quiet between ~46 s
+  heartbeats). It now takes `eventsHttp: () -> HttpClient` (no default) and the new `EventStreamClientFactory` platform binding
+  provides it; the Android binding is exactly the old client (`HttpClient(OkHttp) { engine { config { readTimeout(0, SECONDS) } } }`).
+- **Shared mutable state.** `EmoteRepository.cache` and `SevenTvProvider.setIds` were `ConcurrentHashMap`s written from concurrent
+  coroutines; both are now copy-on-write `MutableStateFlow<Map>` snapshots updated with `update {}` (lock-free, same visibility;
+  the maps are tiny: three providers times the channels visited). `EmoteRepository` records `now()` once before the update so a
+  CAS retry cannot skew the stored time. Its default clock is `WallClock.System::nowMillis` (what `System::currentTimeMillis`
+  was). `@Volatile` -> `kotlin.concurrent.Volatile`; `java.util.LinkedHashSet` -> `kotlin.collections.LinkedHashSet` (the default).
+- **Time and backoff.** `EventSubChatClient` reconnects with `delay(retry * 1000L)` (retry doubles, capped at 30 s); `SevenTvProvider`
+  with `delay(backoff)` (2 s doubling to 60 s) and a 150 s dead-connection timeout. All are coroutine delays (virtual-time friendly,
+  no wall-clock reads): unchanged.
+- `@Immutable` removed from `Emote` and `ChatAssets`; the stability config lists `Emote` because the Compose report showed it as
+  an unstable composable parameter right after the move (the only regression); `ChatAssets` and the chat models are not
+  composable parameters.
+
+Koin: `sharedChatModule()` binds `EmoteRepository` (providers in precedence order 7TV, BTTV, FFZ), `ChatAssetsSource` and
+`ChatSource` (moved out of `coreModule` and `viewModelModule`). Platform bindings it needs besides `sharedCoreModule()`:
+`HttpClientEngineFactory<*>`, `Logger`, `EventStreamClientFactory` (documented in its KDoc and checked by `SharedChatModuleTest`);
+`AppKoinGraphTest` and `DemoKoinGraphTest` include `sharedChatModule()` (the demo overrides of `ChatSource` / `ChatAssetsSource`
+still win because the demo module loads last).
+
+Tests moved to `shared/chat` (commonTest, kotlin.test + Ktor MockEngine): `ChatModelsTest`, `EventSubSignalsTest`,
+`EmoteProvidersTest`, `EmoteRepositoryTest` (TTL, precedence, provider isolation, refresh). `ChatPayloadTest` stays in the app: it
+tests the presentation mapping (`toLine`). New tests for the new seams: `SevenTvEventStreamTest` (no stream is opened while the
+set id is unknown; after `channel()` learned it, the factory client is used once, the SSE URL is the documented one and a
+`dispatch` event becomes an `EmoteChange`), `ChatHttpClientTest` (the chat client is built on the injected engine with the
+WebSockets and ContentNegotiation plugins), `SharedChatModuleTest`. One existing test that built an OkHttp client now uses a
+Ktor mock engine factory.
+
+Verification (tree at the step-3 commit):
+- `./gradlew check --rerun-tasks --continue`: BUILD SUCCESSFUL (the known spotless / `--rerun-tasks` race did not occur).
+  Tests, 0 failures, 0 skipped: shared:core jvm 38 / Android host 28; shared:stream jvm 40 / host 24; shared:chat jvm 27 / host 27;
+  app debug unit tests 113 (was 167 before steps 2 and 3 moved their tests out). Lint: no new issues (17 errors + 2 hints
+  baselined, unchanged). detekt: baselines for `shared:chat` hold only moved legacy findings (9-10 entries per task: magic numbers
+  and complexity of `EventSubChatClient` / `SevenTvProvider`); the new `EventStreamClientFactory`, `SharedChatModule` have none
+  (a `MatchingDeclarationName` finding on the first draft was fixed by giving the factory its own file); the app baselines only
+  lost entries.
+- `verifyCommonMain` caught two comments of mine that named the forbidden JVM map; reworded.
+- Release: `:app:assembleRelease :app:bundleRelease :app:analyzeReleaseR8Config` OK; APK 3,968,914 B (+0.41 % vs
+  docs/perf-baseline.md; identical to the step-2 total although rebuilt: it is a different dex split); `classes.dex` 1,812,780 +
+  `classes2.dex` 3,259,364 = 5,072,144 B (+0.15 %); `baseline.prof` 14,112 B / `baseline.profm` 992 B packaged in the APK, `baseline.prof`
+  in the AAB; `:shared:core` consumer rules merged in R8's `configuration.txt`; `app/proguard-rules.pro` still has no `-keep` rule
+  (only `-keepattributes`); `:shared:stream` and `:shared:chat` need no consumer rules of their own (no reflection; their
+  `@Serializable` types use the serialization library's rules).
+- Compose report (debug, `-PcomposeReports`): 5 unstable parameters, same set (`context`, `controller`, `edgeGuard`, `preview`,
+  `token`), 130 restartable skippable composables.
+- Not verified: the `EventSubChatClient.run` loop itself (WebSocket session, reconnect, welcome / keepalive / revocation
+  handling) has no test, as before the move (it needs a fake WebSocket server; the logic is byte-identical apart from the logger and
+  the engine); `EventSubChatSource`; runtime behaviour on a device or the TV; the profile (not regenerated); R8 analyzer scores.
