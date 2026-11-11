@@ -133,3 +133,53 @@ Verification (release R8 build, commit state of this step) against `docs/perf-ba
 Verification: `./gradlew check --rerun-tasks` at the final tree: BUILD SUCCESSFUL; shared `jvmTest` 38 tests, shared
 Android host tests 28, app debug unit tests 167, 0 failures, 0 skipped; Lint: no new issues (17 errors + 2 hints
 baselined). The baseline profile was not regenerated (planned for the end of Phase 1).
+
+## Step 2: `:shared:stream`
+
+Moved with `git mv`, package names unchanged: `GqlPlaybackResolver`, `GqlVodResolver`, `GqlClipResolver`, `MasterPlaylistParser`,
+`RetryPolicy`, `StreamModels`, `TwitchPlaybackResolver` (feature/player/data/stream). Depends on `:shared:core` only
+(`api(project(":shared:core"))`; nothing else is exposed or added to the catalog).
+
+Replacements and behaviour:
+- **Logging.** New `fun interface Logger { fun warn(tag, message) }` in `core.platform`. The code only ever logged at warn
+  level (`Log.w`), so the interface has exactly that. The Android binding in `coreModule` calls `Log.w`: warn survives R8's
+  stripping of `Log.v/d/i` (rule untouched). The resolvers' `log: (String) -> Unit` constructor parameter is replaced by a
+  required `logger: Logger` (second parameter), so the shared code cannot silently log nowhere; `GqlClipResolver` gained the
+  same parameter (it used `Log.w` directly). Messages and tags are byte-identical.
+- **Device id.** `UUID.randomUUID().toString().replace("-", "")` -> `Uuid.random().toHexString()` (`kotlin.uuid.Uuid`, stable
+  in Kotlin 2.4.21: compiles with `allWarningsAsErrors` and no opt-in). Same format: 32 lower-case hex characters.
+- **URL encoding.** `java.net.URLEncoder.encode(v, "UTF-8")` -> `formUrlEncode` (own 20-line implementation). Ktor's
+  `encodeURLParameter` was *not* used: it keeps `~` and encodes `*`, the JDK does the opposite, which would change the usher
+  URLs. `FormUrlEncodingTest` pins a table (including `~`, `*`, space, JSON, 2-4 byte UTF-8) and a JVM-only
+  `FormUrlEncodingJdkParityTest` compares against `URLEncoder` for all 128 ASCII characters and 2,000 random strings.
+  Only strings with unpaired surrogates are unsupported (tokens are ASCII); documented in the KDoc.
+- **IOException.** `java.io.IOException` -> `kotlinx.io.IOException` (a typealias of the JDK class on the JVM and Android, so
+  OkHttp errors are still caught by `RetryPolicy.isTransient`; `RetryPolicyTest` and the resolver tests still use real
+  `IOException`s). A new test pins the retry-vs-no-retry split for `StreamAccessException(retryable = ...)`.
+- **Regex.** `[a-z0-9_]{1,25}`, `[A-Za-z0-9_-]{1,100}`, `[0-9]{1,20}` and the playlist attribute pattern use only constructs
+  common regex supports (no look-behind, no inline flags).
+- `@Immutable` removed from `ResolvedVod`, `ResolvedStream`, `StreamVariant`; the stability config lists `ResolvedVod`
+  because the Compose report showed it as an unstable composable parameter right after the move (the only regression).
+
+Koin: `sharedStreamModule()` (needs `HttpClient` from `sharedCoreModule()` and a `Logger`); `SharedStreamModuleTest`
+resolves the three resolvers against exactly those bindings; `AppKoinGraphTest` and `DemoKoinGraphTest` include the module.
+`DemoModule` passes the logger to its wrapped `GqlVodResolver`.
+
+Tests moved to `shared/stream`: `RetryPolicyTest`, `GqlPlaybackResolverTest`, `MasterPlaylistParserTest`, `ClipSourcesTest`,
+`ClipQueryTest` run in `commonTest` (kotlin.test + Ktor `MockEngine`; converted with a script that reorders JUnit's
+message-first assertions and rewrites `assertThrows`); `GqlVodResolverTest` is `jvmTest` because it reads the recorded
+fixtures as class-path resources (`src/jvmTest/resources/vod`, moved from the app). The `VodError` mapping test that lived in
+that file belongs to `VodModel` (UI side, still in the app) and moved to `VodModelTest`.
+
+Verification (tree at the step-2 commit):
+- `./gradlew check`: BUILD SUCCESSFUL. `shared:stream` jvmTest 39 tests, Android host tests 23, 0 failures; Lint: no new
+  issues (17 errors + 2 hints baselined, unchanged). detekt baselines for `shared:stream` contain only moved legacy findings
+  (the new files `FormUrlEncoding`, `DeviceId`, `SharedStreamModule` have none: a magic-number finding in `FormUrlEncoding` was
+  fixed with named constants); the app baselines only lost the entries of the moved files.
+- Release: `:app:assembleRelease :app:bundleRelease :app:analyzeReleaseR8Config` OK; APK 3,968,914 B (+0.41 % vs
+  docs/perf-baseline.md); `classes.dex` 1,824,028 + `classes2.dex` 3,246,308 = 5,070,336 B (+0.11 %); `baseline.prof` 14,167 B /
+  `baseline.profm` 993 B packaged in the APK, `baseline.prof` in the AAB; the `:shared:core` consumer rules are in R8's
+  `configuration.txt`; `app/proguard-rules.pro` still has no `-keep` rule (only `-keepattributes`).
+- Compose report (debug, `-PcomposeReports`): 5 unstable parameters, same set (`context`, `controller`, `edgeGuard`,
+  `preview`, `token`), 130 restartable skippable composables.
+- Not verified: runtime behaviour on a device/emulator, the profile (not regenerated), R8 analyzer scores.
