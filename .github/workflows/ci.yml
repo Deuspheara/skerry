@@ -36,7 +36,7 @@ jobs:
       - name: Format, detekt (type-resolved) and Android Lint
         run: >
           ./gradlew spotlessCheck verifyCommonMain detekt detektDebug detektDebugUnitTest detektRelease
-          detektMainJvm detektMainAndroid detektTestJvm lint :app:compileDebugAndroidTestKotlin
+          detektMainJvm detektMainAndroid detektTestJvm lint :app:compileDebugAndroidTestKotlin :phone:compileDebugAndroidTestKotlin
           --continue --console=plain
       - name: Upload detekt SARIF
         if: ${{ !cancelled() && hashFiles('app/build/reports/detekt/*.sarif') != '' }}
@@ -87,12 +87,26 @@ jobs:
           sarif_file: shared/presenters/build/reports/detekt
           category: detekt-shared-presenters
         continue-on-error: true
+      - name: Upload detekt SARIF (phone)
+        if: ${{ !cancelled() && hashFiles('phone/build/reports/detekt/*.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: phone/build/reports/detekt
+          category: detekt-phone
+        continue-on-error: true
       - name: Upload Lint SARIF
         if: ${{ !cancelled() && hashFiles('app/build/reports/lint-results-debug.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: app/build/reports/lint-results-debug.sarif
           category: android-lint
+        continue-on-error: true
+      - name: Upload Lint SARIF (phone)
+        if: ${{ !cancelled() && hashFiles('phone/build/reports/lint-results-debug.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: phone/build/reports/lint-results-debug.sarif
+          category: android-lint-phone
         continue-on-error: true
       - name: Upload reports
         if: ${{ failure() }}
@@ -149,8 +163,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-      - name: Release APK and AAB (R8 full mode, unsigned)
-        run: ./gradlew :app:assembleRelease :app:bundleRelease --console=plain
+      - name: Release APKs and AABs, TV and phone (R8 full mode, unsigned)
+        run: ./gradlew :app:assembleRelease :app:bundleRelease :phone:assembleRelease :phone:bundleRelease --console=plain
       - name: Check that the baseline profile is packaged
         run: |
           apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
@@ -158,25 +172,37 @@ jobs:
           unzip -l "$apk" | grep -qE 'assets/dexopt/baseline\.prof$' || { echo "baseline.prof missing from APK"; exit 1; }
           unzip -l "$aab" | grep -qE 'BUNDLE-METADATA/com\.android\.tools\.build\.profiles/baseline\.prof$' || { echo "baseline.prof missing from AAB"; exit 1; }
           echo "baseline profile packaged in APK and AAB"
-      - name: Check that the release build contains no demo data
+      - name: Check that the release builds contain no demo data
         run: |
-          if grep -q 'com\.twitchplayer\.tv\.demo' app/build/outputs/mapping/release/mapping.txt; then
-            echo "demo classes found in the release build"; exit 1
+          for module in app phone; do
+            if grep -q 'com\.twitchplayer\.tv\.demo' "$module/build/outputs/mapping/release/mapping.txt"; then
+              echo "demo classes found in the $module release build"; exit 1
+            fi
+            if unzip -l "$module"/build/outputs/apk/release/*.apk | grep -q demo_stream; then
+              echo "demo asset found in the $module release APK"; exit 1
+            fi
+          done
+      - name: Check that the phone APK has no keep rules and the translated strings
+        run: |
+          # R8 prints the merged configuration: any -keep other than -keepattributes would come from a library, not from us.
+          if grep -E '^-keep[^a]' phone/proguard-rules.pro platform-android/consumer-rules.pro shared/*/consumer-rules.pro; then
+            echo "keep rules found in our own rule files"; exit 1
           fi
-          if unzip -l app/build/outputs/apk/release/*.apk | grep -q demo_stream; then
-            echo "demo asset found in the release APK"; exit 1
-          fi
+          locales=$(ls -d phone/build/generated/sharedStrings/release/values* | wc -l)
+          [ "$locales" -ge 36 ] || { echo "only $locales language folders generated from the TV strings"; exit 1; }
       - name: Upload R8 mapping
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: r8-mapping
           path: app/build/outputs/mapping/release/
           retention-days: 30
-      - name: Upload unsigned APK
+      - name: Upload unsigned APKs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: app-release-unsigned
-          path: app/build/outputs/apk/release/*.apk
+          name: release-unsigned
+          path: |
+            app/build/outputs/apk/release/*.apk
+            phone/build/outputs/apk/release/*.apk
           retention-days: 7
 
   # Later, once Apple targets exist:
