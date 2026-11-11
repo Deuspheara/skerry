@@ -26,3 +26,8 @@ extensions.configure<ApplicationExtension> {
 extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinBaseExtension> {
   jvmToolchain(17)
 }
+
+// `check` runs unit tests and lint, not the instrumented tests: compiling them keeps them from breaking silently.
+tasks.named("check") {
+  dependsOn("compileDebugAndroidTestKotlin")
+}
