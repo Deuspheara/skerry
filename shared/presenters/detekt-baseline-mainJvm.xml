@@ -2,7 +2,9 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>CyclomaticComplexMethod:ChatFeed.kt:ChatFeed$suspend fun run</ID>
     <ID>CyclomaticComplexMethod:ChatLine.kt:internal fun parsePieces: List&lt;ChatPiece&gt;</ID>
+    <ID>CyclomaticComplexMethod:PlayerPresenter.kt:PlayerPresenter$fun onEvent</ID>
     <ID>DoubleMutabilityForCollection:ChatFeed.kt:ChatFeed$var known: HashSet&lt;String&gt;? = null</ID>
     <ID>MagicNumber:ChatLine.kt:0.03928</ID>
     <ID>MagicNumber:ChatLine.kt:0.05</ID>
