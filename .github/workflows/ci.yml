@@ -66,6 +66,27 @@ jobs:
           sarif_file: shared/chat/build/reports/detekt
           category: detekt-shared-chat
         continue-on-error: true
+      - name: Upload detekt SARIF (shared:player-api)
+        if: ${{ !cancelled() && hashFiles('shared/player-api/build/reports/detekt/*.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: shared/player-api/build/reports/detekt
+          category: detekt-shared-player-api
+        continue-on-error: true
+      - name: Upload detekt SARIF (shared:testing)
+        if: ${{ !cancelled() && hashFiles('shared/testing/build/reports/detekt/*.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: shared/testing/build/reports/detekt
+          category: detekt-shared-testing
+        continue-on-error: true
+      - name: Upload detekt SARIF (shared:presenters)
+        if: ${{ !cancelled() && hashFiles('shared/presenters/build/reports/detekt/*.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: shared/presenters/build/reports/detekt
+          category: detekt-shared-presenters
+        continue-on-error: true
       - name: Upload Lint SARIF
         if: ${{ !cancelled() && hashFiles('app/build/reports/lint-results-debug.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
