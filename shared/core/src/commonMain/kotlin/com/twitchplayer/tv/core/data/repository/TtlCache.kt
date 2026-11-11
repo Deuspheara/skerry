@@ -5,7 +5,11 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-/** Single-value cache with a time-to-live; concurrent callers share one in-flight load. */
+/**
+ * Single-value cache with a time-to-live; concurrent callers share one in-flight load. Time is monotonic (it may not
+ * advance while the device is in deep sleep, unlike `SystemClock.elapsedRealtime`): a cached value can outlive its TTL
+ * by the sleep time, which only costs one stale read after wake-up.
+ */
 internal class TtlCache<T>(private val ttlMs: Long, private val timeSource: TimeSource = TimeSource.Monotonic) {
     private val mutex = Mutex()
     private var value: T? = null

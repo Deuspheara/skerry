@@ -49,7 +49,10 @@ abstract class VerifyCommonMainIsPlatformFree : DefaultTask() {
 
   @TaskAction
   fun verify() {
-    val forbidden = Regex("""^\s*import (java|javax|android)\.|\bSystem\.(currentTimeMillis|nanoTime)\b|\bString\.format\b|\bSimpleDateFormat\b""")
+    val forbidden = Regex(
+      """^\s*import (java|javax|android)\.|(?<![\w.])(java|javax|android)\.[a-z]|\bSystem\.(currentTimeMillis|nanoTime)\b|""" +
+        """\bString\.format\b|\bSimpleDateFormat\b|\bConcurrentHashMap\b|@Synchronized\b""",
+    )
     val offences = sources.files.filter { it.extension == "kt" }.flatMap { file ->
       file.readLines().withIndex().filter { forbidden.containsMatchIn(it.value) }.map { "${file.name}:${it.index + 1}: ${it.value.trim()}" }
     }
