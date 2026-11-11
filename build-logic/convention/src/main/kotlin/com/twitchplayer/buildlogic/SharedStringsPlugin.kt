@@ -18,10 +18,10 @@ abstract class SharedStringsExtension(private val project: Project) {
 }
 
 /**
- * Reuses the TV app's translated `strings.xml` files in another app (the phone app) WITHOUT copying them into git: one
+ * Reuses the TV app's translated text resources (`strings.xml`, plurals, string arrays: see [SharedStrings]) in another app (the phone app) WITHOUT copying them into git: one
  * generated `res` directory per variant, registered through AGP's variant API, rebuilt by [SyncSharedStringsTask].
  *
- * The consuming module keeps its own strings in a file with a different name (e.g. `phone_strings.xml`): the same resource
+ * The consuming module keeps its own strings in a file with a different name (e.g. `phone_strings.xml`; the plugin takes every text file of the other module's `values*` directories, so avoid reusing a name that module uses): the same resource
  * name defined in both places fails the resource merge on purpose, so a TV string is never silently shadowed. The consumer also
  * declares its own `resources.properties` / `generateLocaleConfig`.
  */
