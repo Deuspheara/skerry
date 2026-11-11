@@ -8,8 +8,10 @@ import com.twitchplayer.tv.core.data.model.Account
 import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.network.auth.TwitchTokens
+import com.twitchplayer.tv.core.platform.NumberFormatter
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.core.platform.SnapshotStorage
+import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.browse.presentation.BrowseViewModel
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
@@ -107,5 +109,8 @@ class ProductionGraphResolutionTest {
         assertNotNull(koin.get<ChannelViewModel> { parametersOf("camille") }.presenter)
         assertNotNull(koin.get<PlayerViewModel> { parametersOf("") }.presenter)
         assertNotNull(koin.get<PlayerViewModel> { parametersOf("camille") }.presenter)
+        // Resolved by koinInject() in the UI (VodScreen), which `verify` cannot see.
+        assertNotNull(koin.get<NumberFormatter>())
+        assertNotNull(koin.get<ChannelKeyBus>())
     }
 }
