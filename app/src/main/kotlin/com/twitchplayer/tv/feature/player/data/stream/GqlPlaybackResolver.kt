@@ -2,8 +2,8 @@ package com.twitchplayer.tv.feature.player.data.stream
 
 import android.util.Log
 import io.ktor.client.HttpClient
-import io.ktor.client.request.header
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -104,14 +104,19 @@ class GqlPlaybackResolver(
     internal class PlaybackToken(val value: String, val signature: String)
 
     @Serializable internal class GqlRequest(val query: String, val variables: Map<String, String>)
+
     @Serializable internal class GqlResponse(val data: GqlData? = null, val errors: List<GqlError>? = null)
+
     @Serializable internal class GqlData(@SerialName("streamPlaybackAccessToken") val streamPlaybackAccessToken: GqlToken? = null)
+
     @Serializable internal class GqlToken(val value: String, val signature: String)
+
     @Serializable internal class GqlError(val message: String = "")
 
     companion object {
         const val GQL_URL = "https://gql.twitch.tv/gql"
         const val USHER_URL = "https://usher.ttvnw.net/api/channel/hls"
+
         /** Twitch's public web player client id. */
         const val WEB_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko"
         private const val PLAYER_TYPE = "site"

@@ -1,12 +1,11 @@
 plugins {
-  alias(libs.plugins.android.application)
-  alias(libs.plugins.compose.compiler)
+  id("twitchplayer.android-application")
+  id("twitchplayer.compose")
   alias(libs.plugins.kotlin.serialization)
 }
 
 android {
   namespace = "com.twitchplayer.tv"
-  compileSdk = 37
   defaultConfig {
     applicationId = "com.twitchplayer.tv"
     minSdk = 24
@@ -72,10 +71,6 @@ android {
       getByName(name).assets.directories.add("src/demo/assets")
     }
   }
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-  }
   buildFeatures {
     compose = true
     aidl = false
@@ -87,18 +82,6 @@ android {
     resources {
       excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
-  }
-}
-
-kotlin {
-  jvmToolchain(17)
-}
-
-// `-PcomposeReports` writes the Compose compiler's stability reports and metrics to app/build/compose_compiler.
-if (providers.gradleProperty("composeReports").isPresent) {
-  composeCompiler {
-    reportsDestination = layout.buildDirectory.dir("compose_compiler")
-    metricsDestination = layout.buildDirectory.dir("compose_compiler")
   }
 }
 

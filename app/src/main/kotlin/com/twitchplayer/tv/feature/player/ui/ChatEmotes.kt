@@ -57,7 +57,10 @@ internal fun EmoteLayer(emote: Emote, animate: Boolean, widthPx: Int, heightPx: 
                 ImageRequest.Builder(context).data(emote.url).size(Size(widthPx, heightPx)).build()
             }
             AsyncImage(
-                model = still, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(),
+                model = still,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
                 onSuccess = { EmoteAspects.learn(emote.url, it.result.image.width, it.result.image.height) },
             )
         }
@@ -70,7 +73,9 @@ internal fun EmoteLayer(emote: Emote, animate: Boolean, widthPx: Int, heightPx: 
                     .build()
             }
             AsyncImage(
-                model = moving, contentDescription = null, contentScale = ContentScale.Fit,
+                model = moving,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
                 onSuccess = { animatedReady = true },
             )

@@ -26,6 +26,7 @@ class StaggerGate {
     companion object {
         const val CARDS = 4
         const val WINDOW_MS = 500L
+
         /** Last card starts here at the latest: the sequence stays inside ~100 ms of delay. */
         const val MAX_DELAY_MS = 100L
     }

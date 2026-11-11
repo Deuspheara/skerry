@@ -145,7 +145,12 @@ fun VodRoute(
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         when (val state = load) {
             VodLoad.Loading -> Box(Modifier.align(Alignment.Center)) { TvSpinner() }
-            is VodLoad.Failed -> VodFailed(state.error, Modifier.align(Alignment.Center), onRetry = { load = VodLoad.Loading; attempt++ }, onBack = onBack)
+
+            is VodLoad.Failed -> VodFailed(state.error, Modifier.align(Alignment.Center), onRetry = {
+                load = VodLoad.Loading
+                attempt++
+            }, onBack = onBack)
+
             is VodLoad.Ready -> VodPlayback(
                 vod = state.vod,
                 progressId = id,
@@ -156,7 +161,10 @@ fun VodRoute(
                 continueAt = continueAt,
                 store = store,
                 settings = settings,
-                onFailed = { error, position -> continueAt = position; load = VodLoad.Failed(error) },
+                onFailed = { error, position ->
+                    continueAt = position
+                    load = VodLoad.Failed(error)
+                },
             )
         }
     }
@@ -167,10 +175,16 @@ private fun VodFailed(error: VodError, modifier: Modifier, onRetry: () -> Unit, 
     val action = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { action.requestFocus() } }
     EmptyState(
-        TvIcons.OffAir, stringResource(error.title), modifier, line = stringResource(error.line),
+        TvIcons.OffAir,
+        stringResource(error.title),
+        modifier,
+        line = stringResource(error.line),
         action = {
-            if (error.retryable) TvButton(stringResource(R.string.state_retry), TvIcons.Replay, onRetry, Modifier.focusRequester(action), primary = true)
-            else TvButton(stringResource(R.string.cd_back), TvIcons.ChevronLeft, onBack, Modifier.focusRequester(action), primary = true)
+            if (error.retryable) {
+                TvButton(stringResource(R.string.state_retry), TvIcons.Replay, onRetry, Modifier.focusRequester(action), primary = true)
+            } else {
+                TvButton(stringResource(R.string.cd_back), TvIcons.ChevronLeft, onBack, Modifier.focusRequester(action), primary = true)
+            }
         },
     )
 }
@@ -219,8 +233,11 @@ private fun VodPlayback(
         val item = MediaItem.Builder().setUri(url).apply {
             if (vod.recording) setLiveConfiguration(MediaItem.LiveConfiguration.Builder().setMinPlaybackSpeed(1f).setMaxPlaybackSpeed(1f).build())
         }.build()
-        return if (url.contains(".m3u8")) HlsMediaSource.Factory(http).createMediaSource(item)
-        else ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context)).createMediaSource(item)
+        return if (url.contains(".m3u8")) {
+            HlsMediaSource.Factory(http).createMediaSource(item)
+        } else {
+            ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context)).createMediaSource(item)
+        }
     }
 
     var playing by remember { mutableStateOf(false) }
@@ -241,11 +258,20 @@ private fun VodPlayback(
             override fun onPlayerError(error: PlaybackException) {
                 Log.w(TAG, "replay ${vod.vodId} player error ${error.errorCodeName}: ${error.message}", error)
                 val failure = if (error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
-                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT) VodError.Network else VodError.Playback
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+                ) {
+                    VodError.Network
+                } else {
+                    VodError.Playback
+                }
                 onFailed(failure, player.currentPosition.coerceAtLeast(0L))
             }
-            override fun onIsPlayingChanged(isPlaying: Boolean) { playing = isPlaying }
-            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) { paused = !playWhenReady }
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                playing = isPlaying
+            }
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                paused = !playWhenReady
+            }
             override fun onPlaybackStateChanged(state: Int) {
                 ended = state == Player.STATE_ENDED
                 if (state == Player.STATE_READY && !initialSeekDone) {
@@ -255,7 +281,9 @@ private fun VodPlayback(
                     if (player.isCurrentMediaItemLive && want != null && kotlin.math.abs(player.currentPosition - want) > 5_000) player.seekTo(want)
                 }
             }
-            override fun onPlaybackParametersChanged(parameters: androidx.media3.common.PlaybackParameters) { speed = parameters.speed }
+            override fun onPlaybackParametersChanged(parameters: androidx.media3.common.PlaybackParameters) {
+                speed = parameters.speed
+            }
         }
         player.addListener(listener)
         player.setMediaSource(source(selected), startAt ?: 0L)
@@ -325,7 +353,10 @@ private fun VodPlayback(
     LaunchedEffect(pendingAt) {
         if (pendingAt == 0L) return@LaunchedEffect
         delay(SEEK_APPLY_DELAY_MS)
-        pending?.let { player.seekTo(it); position = it }
+        pending?.let {
+            player.seekTo(it)
+            position = it
+        }
         pending = null
     }
 
@@ -358,24 +389,61 @@ private fun VodPlayback(
                 val visibleBefore = chromeVisible
                 chromeUntil = System.currentTimeMillis() + CHROME_MS
                 if (rowFocused) {
-                    if (event.key == Key.DirectionUp) { focus.requestFocus(); return@onPreviewKeyEvent true }
+                    if (event.key == Key.DirectionUp) {
+                        focus.requestFocus()
+                        return@onPreviewKeyEvent true
+                    }
                     return@onPreviewKeyEvent false
                 }
                 val repeat = event.nativeKeyEvent.repeatCount
                 when (event.key) {
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.Spacebar, Key.MediaPlayPause -> {
-                        if (player.playbackState == Player.STATE_ENDED) { player.seekTo(0); position = 0; player.playWhenReady = true }
-                        else player.playWhenReady = !player.isPlaying
+                        if (player.playbackState == Player.STATE_ENDED) {
+                            player.seekTo(0)
+                            position = 0
+                            player.playWhenReady = true
+                        } else {
+                            player.playWhenReady = !player.isPlaying
+                        }
                         true
                     }
-                    Key.MediaPlay -> { player.playWhenReady = true; true }
-                    Key.MediaPause -> { player.playWhenReady = false; true }
-                    Key.DirectionRight, Key.MediaFastForward -> { seekBy(vodSeekStep(repeat)); true }
-                    Key.DirectionLeft, Key.MediaRewind -> { seekBy(-vodSeekStep(repeat)); true }
-                    Key.MediaSkipForward, Key.MediaNext -> { seekBy(JUMP_MS); true }
-                    Key.MediaSkipBackward, Key.MediaPrevious -> { seekBy(-JUMP_MS); true }
+
+                    Key.MediaPlay -> {
+                        player.playWhenReady = true
+                        true
+                    }
+
+                    Key.MediaPause -> {
+                        player.playWhenReady = false
+                        true
+                    }
+
+                    Key.DirectionRight, Key.MediaFastForward -> {
+                        seekBy(vodSeekStep(repeat))
+                        true
+                    }
+
+                    Key.DirectionLeft, Key.MediaRewind -> {
+                        seekBy(-vodSeekStep(repeat))
+                        true
+                    }
+
+                    Key.MediaSkipForward, Key.MediaNext -> {
+                        seekBy(JUMP_MS)
+                        true
+                    }
+
+                    Key.MediaSkipBackward, Key.MediaPrevious -> {
+                        seekBy(-JUMP_MS)
+                        true
+                    }
+
                     // Down reaches the buttons when the bar is already up; else the first press only brings the bar back.
-                    Key.DirectionDown -> { if (visibleBefore) runCatching { qualityButton.requestFocus() }; true }
+                    Key.DirectionDown -> {
+                        if (visibleBefore) runCatching { qualityButton.requestFocus() }
+                        true
+                    }
+
                     else -> false
                 }
             }
@@ -397,8 +465,10 @@ private fun VodPlayback(
             onRelease = { it.player = null },
         )
         AnimatedVisibility(
-            (paused || ended) && startAt != null, Modifier.align(Alignment.Center),
-            enter = fadeIn(motion.fast()) + scaleIn(motion.fast(), initialScale = 1.2f), exit = fadeOut(motion.exit()),
+            (paused || ended) && startAt != null,
+            Modifier.align(Alignment.Center),
+            enter = fadeIn(motion.fast()) + scaleIn(motion.fast(), initialScale = 1.2f),
+            exit = fadeOut(motion.exit()),
         ) {
             Box(Modifier.size(80.dp).background(TvColors.Black60, CircleShape), contentAlignment = Alignment.Center) {
                 Icon(if (ended) TvIcons.Replay else TvIcons.Play, stringResource(if (ended) R.string.clip_replay else R.string.player_play), tint = TvColors.Text, modifier = Modifier.size(40.dp))
@@ -407,7 +477,8 @@ private fun VodPlayback(
         AnimatedVisibility(skipVisible, Modifier.align(Alignment.Center), enter = fadeIn(motion.fast()), exit = fadeOut(motion.exit())) {
             Text(
                 (if (skipMs >= 0) "+" else "-") + formatUptime(kotlin.math.abs(skipMs)),
-                style = TvType.Headline, color = TvColors.Text,
+                style = TvType.Headline,
+                color = TvColors.Text,
                 modifier = Modifier.background(TvColors.Black60, TvShapes.Chip).padding(horizontal = 20.dp, vertical = 10.dp),
             )
         }
@@ -458,7 +529,10 @@ private fun VodPlayback(
             VideoQualities(options, selected),
             onPick = { id ->
                 showQuality = false
-                uiScope.launch { delay(50); runCatching { focus.requestFocus() } }
+                uiScope.launch {
+                    delay(50)
+                    runCatching { focus.requestFocus() }
+                }
                 if (id != selected) {
                     selected = id
                     // Same stored choice as the live player: one preferred quality for the whole app.
@@ -471,7 +545,13 @@ private fun VodPlayback(
                     player.playWhenReady = resume
                 }
             },
-            onDismiss = { showQuality = false; uiScope.launch { delay(50); runCatching { focus.requestFocus() } } },
+            onDismiss = {
+                showQuality = false
+                uiScope.launch {
+                    delay(50)
+                    runCatching { focus.requestFocus() }
+                }
+            },
         )
     }
 }

@@ -14,7 +14,10 @@ import org.junit.Test
 
 /** The transport DTOs against the shape of Twitch's documented `channel.chat.message` / `channel.chat.notification` events (nulls included). */
 class ChatPayloadTest {
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
 
     @Test fun aDocumentedChatMessageEventDecodesAndRenders() {
         val event = """

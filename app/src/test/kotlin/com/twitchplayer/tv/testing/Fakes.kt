@@ -21,8 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
-fun stream(id: String, viewers: Int = 100, category: String = "cat") =
-    LiveStream(id, id, id.replaceFirstChar(Char::uppercase), "title $id", category, category, viewers, "", null)
+fun stream(id: String, viewers: Int = 100, category: String = "cat") = LiveStream(id, id, id.replaceFirstChar(Char::uppercase), "title $id", category, category, viewers, "", null)
 
 fun category(id: String, group: CategoryGroup = CategoryGroup.Games) = Category(id, id.replaceFirstChar(Char::uppercase), "", group)
 
@@ -33,8 +32,12 @@ class FakeSession(initial: SessionState = SessionState.SignedIn(Account("me", "c
     override suspend fun refresh(rejected: String?): String? = "token"
     override fun start() = Unit
     override suspend fun signIn(onCode: (DeviceCodeResponse) -> Unit): Boolean = false
-    override suspend fun signOut() { mutable.value = SessionState.SignedOut }
-    fun set(state: SessionState) { mutable.value = state }
+    override suspend fun signOut() {
+        mutable.value = SessionState.SignedOut
+    }
+    fun set(state: SessionState) {
+        mutable.value = state
+    }
 }
 
 class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
@@ -47,10 +50,8 @@ class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
     override suspend fun setPreferredQuality(id: String?) = mutable.update { it.copy(preferredQuality = id) }
     override suspend fun setShowStats(enabled: Boolean) = mutable.update { it.copy(showStats = enabled) }
     override suspend fun setFollowRaids(enabled: Boolean) = mutable.update { it.copy(followRaids = enabled) }
-    override suspend fun addRecentSearch(query: String) =
-        mutable.update { it.copy(recentSearches = (listOf(query) + it.recentSearches.filter { r -> r != query }).take(4)) }
-    override suspend fun toggleCategory(id: String) =
-        mutable.update { it.copy(followedCategories = if (id in it.followedCategories) it.followedCategories - id else it.followedCategories + id) }
+    override suspend fun addRecentSearch(query: String) = mutable.update { it.copy(recentSearches = (listOf(query) + it.recentSearches.filter { r -> r != query }).take(4)) }
+    override suspend fun toggleCategory(id: String) = mutable.update { it.copy(followedCategories = if (id in it.followedCategories) it.followedCategories - id else it.followedCategories + id) }
 }
 
 class FakeRepository(
@@ -61,12 +62,33 @@ class FakeRepository(
 ) : TwitchRepository {
     var failNext = false
     var searchCalls = mutableListOf<String>()
-    private fun check() { if (failNext) { failNext = false; error("boom") } }
-    override suspend fun follows(force: Boolean): Follows { check(); return Follows(live, offline) }
-    override suspend fun recommended(): List<LiveStream> { check(); return live }
-    override suspend fun topCategories(): List<Category> { check(); return categories }
-    override suspend fun categoryStreams(categoryId: String, language: String?): List<LiveStream> { check(); return live.filter { it.categoryId == categoryId } }
-    override suspend fun search(query: String): SearchResults { searchCalls += query; check(); return searchResult }
+    private fun check() {
+        if (failNext) {
+            failNext = false
+            error("boom")
+        }
+    }
+    override suspend fun follows(force: Boolean): Follows {
+        check()
+        return Follows(live, offline)
+    }
+    override suspend fun recommended(): List<LiveStream> {
+        check()
+        return live
+    }
+    override suspend fun topCategories(): List<Category> {
+        check()
+        return categories
+    }
+    override suspend fun categoryStreams(categoryId: String, language: String?): List<LiveStream> {
+        check()
+        return live.filter { it.categoryId == categoryId }
+    }
+    override suspend fun search(query: String): SearchResults {
+        searchCalls += query
+        check()
+        return searchResult
+    }
     override suspend fun channel(login: String): ChannelDetails = error("unused")
     override suspend fun liveStream(login: String): LiveStream? = live.firstOrNull { it.login == login }
 }

@@ -29,5 +29,6 @@ class StartupBenchmarks {
     )
 
     @Test fun coldStartNoCompilation() = startup(CompilationMode.None())
+
     @Test fun coldStartBaselineProfile() = startup(CompilationMode.Partial(BaselineProfileMode.Require))
 }

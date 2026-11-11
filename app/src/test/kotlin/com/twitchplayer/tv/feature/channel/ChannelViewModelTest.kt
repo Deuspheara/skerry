@@ -29,7 +29,9 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChannelViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
+
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     private fun replay(id: String) = Replay(id, "t$id", "1:00:00", "")
@@ -60,7 +62,8 @@ class ChannelViewModelTest {
     private fun viewModel(repo: Repo) = ChannelViewModel("camille", repo, FakeSession(), Progress())
 
     @Test fun pagesAreAppendedInOrderAndStopAtTheEnd() = runTest(dispatcher) {
-        val repo = Repo(); val vm = viewModel(repo)
+        val repo = Repo()
+        val vm = viewModel(repo)
         vm.loadMoreReplays("1", "p2")
         assertEquals(listOf("r3", "r4"), vm.tail.value.replays.map { it.id })
         vm.loadMoreReplays("1", "p2") // the details' cursor is only the first page's: the tail's own cursor wins now
@@ -71,8 +74,11 @@ class ChannelViewModelTest {
     }
 
     @Test fun aPageInFlightIsNotAskedForTwice() = runTest(dispatcher) {
-        val repo = Repo().apply { gate = CompletableDeferred() }; val vm = viewModel(repo)
-        vm.loadMoreReplays("1", "p2"); vm.loadMoreReplays("1", "p2"); vm.loadMoreReplays("1", "p2")
+        val repo = Repo().apply { gate = CompletableDeferred() }
+        val vm = viewModel(repo)
+        vm.loadMoreReplays("1", "p2")
+        vm.loadMoreReplays("1", "p2")
+        vm.loadMoreReplays("1", "p2")
         assertEquals(listOf("p2"), repo.asked)
         assertTrue(vm.tail.value.loading)
         repo.gate!!.complete(Unit)
@@ -80,16 +86,19 @@ class ChannelViewModelTest {
     }
 
     @Test fun aFailedPageKeepsItsCursorSoTheNextFocusRetries() = runTest(dispatcher) {
-        val repo = Repo().apply { fail = true }; val vm = viewModel(repo)
+        val repo = Repo().apply { fail = true }
+        val vm = viewModel(repo)
         vm.loadMoreReplays("1", "p2")
-        assertEquals("p2", vm.tail.value.cursor); assertFalse(vm.tail.value.loading)
+        assertEquals("p2", vm.tail.value.cursor)
+        assertFalse(vm.tail.value.loading)
         repo.fail = false
         vm.loadMoreReplays("1", "p2")
         assertEquals(listOf("r3", "r4"), vm.tail.value.replays.map { it.id })
     }
 
     @Test fun noCursorMeansNoRequest() = runTest(dispatcher) {
-        val repo = Repo(); val vm = viewModel(repo)
+        val repo = Repo()
+        val vm = viewModel(repo)
         vm.loadMoreReplays("1", null)
         assertTrue(repo.asked.isEmpty())
     }
@@ -100,7 +109,8 @@ class ChannelViewModelTest {
             override suspend fun replays(channelId: String, cursor: String) = ReplayPage(listOf(Replay("r3", "t", "", "")), if (cursor == "p2") "p3" else null)
         }
         val vm = ChannelViewModel("camille", repo, FakeSession(), Progress())
-        vm.loadMoreReplays("1", "p2"); vm.loadMoreReplays("1", "p2")
+        vm.loadMoreReplays("1", "p2")
+        vm.loadMoreReplays("1", "p2")
         assertEquals(listOf("r3"), vm.tail.value.replays.map { it.id })
     }
 }

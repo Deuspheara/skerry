@@ -1,22 +1,20 @@
 package com.twitchplayer.tv.feature.player.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.designsystem.component.TvButton
@@ -62,7 +62,9 @@ fun ChatComposeDialog(onSend: (String) -> Unit, onDismiss: () -> Unit) {
     val firstKey = remember { FocusRequester() }
     val mic = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { firstKey.requestFocus() } }
-    fun append(s: String) { if (text.length + s.length <= MAX_CHAT_LENGTH) text += s }
+    fun append(s: String) {
+        if (text.length + s.length <= MAX_CHAT_LENGTH) text += s
+    }
     val title = stringResource(R.string.chat_write)
     val sendable = text.isNotBlank()
 
@@ -70,14 +72,26 @@ fun ChatComposeDialog(onSend: (String) -> Unit, onDismiss: () -> Unit) {
         Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             MessageField(text, listening)
             Keyboard(
-                onKey = { key -> append(key); shift = false },
+                onKey = { key ->
+                    append(key)
+                    shift = false
+                },
                 onSpace = { if (text.isNotEmpty() && !text.endsWith(" ")) append(" ") },
                 onDelete = { text = text.dropLast(1) },
-                onClear = { text = ""; shift = false },
+                onClear = {
+                    text = ""
+                    shift = false
+                },
                 onVoice = {
-                    if (!listening && voice.isAvailable()) scope.launch {
-                        listening = true
-                        try { voice.listen()?.let { append(if (text.isEmpty()) it else " $it") } } finally { listening = false }
+                    if (!listening && voice.isAvailable()) {
+                        scope.launch {
+                            listening = true
+                            try {
+                                voice.listen()?.let { append(if (text.isEmpty()) it else " $it") }
+                            } finally {
+                                listening = false
+                            }
+                        }
                     }
                 },
                 micModifier = Modifier.focusRequester(mic),
@@ -124,8 +138,10 @@ private fun MessageField(text: String, listening: Boolean) {
 @Composable
 private fun Caret() {
     val blink = rememberInfiniteTransition(label = "caret").animateFloat(
-        initialValue = 1f, targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(530, easing = LinearEasing), RepeatMode.Reverse), label = "caret",
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(530, easing = LinearEasing), RepeatMode.Reverse),
+        label = "caret",
     )
     Box(Modifier.padding(start = 2.dp).width(2.dp).height(20.dp).graphicsLayer { alpha = blink.value }.background(TvColors.Purple))
 }

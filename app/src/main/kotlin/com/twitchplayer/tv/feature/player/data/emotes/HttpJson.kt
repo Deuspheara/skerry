@@ -8,7 +8,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
 
-internal val EmoteJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
+internal val EmoteJson = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+    coerceInputValues = true
+}
 
 internal class ProviderHttpException(val status: Int) : Exception("Emote provider answered $status")
 

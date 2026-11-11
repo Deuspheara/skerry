@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.map
  */
 @Immutable
 data class ChatAssets(val badges: Map<String, String>, val emotes: Map<String, Emote>) {
-    companion object { val Empty = ChatAssets(emptyMap(), emptyMap()) }
+    companion object {
+        val Empty = ChatAssets(emptyMap(), emptyMap())
+    }
 }
 
 fun interface ChatAssetsSource {
@@ -39,6 +41,5 @@ class ChatAssetsRepository(private val api: TwitchApi, private val emotes: Emote
         global.await() + channel.await()
     }
 
-    private fun badgeUrls(sets: List<TwitchBadgeSet>): Map<String, String> =
-        sets.flatMap { set -> set.versions.map { "${set.setId}:${it.id}" to it.image2x } }.toMap()
+    private fun badgeUrls(sets: List<TwitchBadgeSet>): Map<String, String> = sets.flatMap { set -> set.versions.map { "${set.setId}:${it.id}" to it.image2x } }.toMap()
 }

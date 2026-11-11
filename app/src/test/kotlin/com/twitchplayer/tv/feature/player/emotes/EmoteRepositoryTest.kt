@@ -32,8 +32,18 @@ private class FakeProvider(
 ) : EmoteProvider {
     var globalCalls = 0
     var channelCalls = 0
-    override suspend fun global(): List<Emote> { globalCalls++; gate?.await(); if (failing) error("down"); return global }
-    override suspend fun channel(channelId: String): List<Emote> { channelCalls++; gate?.await(); if (failing) error("down"); return channel }
+    override suspend fun global(): List<Emote> {
+        globalCalls++
+        gate?.await()
+        if (failing) error("down")
+        return global
+    }
+    override suspend fun channel(channelId: String): List<Emote> {
+        channelCalls++
+        gate?.await()
+        if (failing) error("down")
+        return channel
+    }
     override fun changes(channelId: String): Flow<EmoteChange> = pushes
 }
 
@@ -73,11 +83,14 @@ class EmoteRepositoryTest {
         val fast = FakeProvider(channel = listOf(emote("Early", "fast")))
         val seen = mutableListOf<Set<String>>()
         EmoteRepository(listOf(slow, fast), initialWaitMs = 1_000).emotes("c").onEach { seen += it.keys }.launchIn(backgroundScope)
-        advanceTimeBy(999); runCurrent()
+        advanceTimeBy(999)
+        runCurrent()
         assertTrue("nothing yet: waiting for the providers", seen.isEmpty())
-        advanceTimeBy(2); runCurrent()
+        advanceTimeBy(2)
+        runCurrent()
         assertEquals(listOf(setOf("Early")), seen)
-        gate.complete(Unit); runCurrent()
+        gate.complete(Unit)
+        runCurrent()
         assertEquals(setOf("Early", "Late"), seen.last())
     }
 
@@ -85,7 +98,8 @@ class EmoteRepositoryTest {
         var clock = 0L
         val provider = FakeProvider(global = listOf(emote("G", "p")), channel = listOf(emote("C", "p")))
         val repo = EmoteRepository(listOf(provider), now = { clock })
-        repo.emotes("c").first(); repo.emotes("c").first()
+        repo.emotes("c").first()
+        repo.emotes("c").first()
         assertEquals("zapping back to a channel does not refetch", 1, provider.channelCalls)
         assertEquals(1, provider.globalCalls)
         repo.emotes("other").first()
@@ -103,10 +117,12 @@ class EmoteRepositoryTest {
         EmoteRepository(listOf(provider), refreshMs = 60_000).emotes("c").onEach { seen += it }.launchIn(backgroundScope)
         runCurrent()
         assertEquals(setOf("Old", "Keep"), seen.last().keys)
-        provider.pushes.emit(EmoteChange(added = listOf(emote("New", "p")), removed = setOf("Old"))); runCurrent()
+        provider.pushes.emit(EmoteChange(added = listOf(emote("New", "p")), removed = setOf("Old")))
+        runCurrent()
         assertEquals(setOf("Keep", "New"), seen.last().keys)
         provider.channel = listOf(emote("Keep", "p"), emote("FromRefresh", "p"))
-        advanceTimeBy(60_001); runCurrent()
+        advanceTimeBy(60_001)
+        runCurrent()
         assertEquals(setOf("Keep", "FromRefresh"), seen.last().keys)
     }
 

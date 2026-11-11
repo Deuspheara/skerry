@@ -28,13 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
-import com.twitchplayer.tv.core.ui.FocusMemory
-import com.twitchplayer.tv.core.ui.redirectFocusOnExit
-import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
@@ -59,6 +56,9 @@ import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
+import com.twitchplayer.tv.core.ui.FocusMemory
+import com.twitchplayer.tv.core.ui.redirectFocusOnExit
+import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import com.twitchplayer.tv.feature.search.presentation.ResultsUi
 import com.twitchplayer.tv.feature.search.presentation.SearchUiState
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
@@ -90,8 +90,14 @@ fun SearchRoute(
             }
         },
         onRecent = viewModel::setQuery,
-        onChannel = { viewModel.commitQuery(); onChannel(it) },
-        onCategory = { viewModel.commitQuery(); onCategory(it) },
+        onChannel = {
+            viewModel.commitQuery()
+            onChannel(it)
+        },
+        onCategory = {
+            viewModel.commitQuery()
+            onCategory(it)
+        },
         onCancelVoice = viewModel::cancelVoice,
     )
 }
@@ -121,8 +127,16 @@ private fun SearchScreen(
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 when {
-                    event.key == Key.Backspace -> { onDelete(); true }
-                    event.utf16CodePoint > 0x20 && Character.isLetterOrDigit(event.utf16CodePoint) -> { onKey(String(Character.toChars(event.utf16CodePoint))); true }
+                    event.key == Key.Backspace -> {
+                        onDelete()
+                        true
+                    }
+
+                    event.utf16CodePoint > 0x20 && Character.isLetterOrDigit(event.utf16CodePoint) -> {
+                        onKey(String(Character.toChars(event.utf16CodePoint)))
+                        true
+                    }
+
                     else -> false
                 }
             },
@@ -137,7 +151,11 @@ private fun SearchScreen(
                 Recents(state.recents, onRecent)
                 Spacer12()
                 Keyboard(
-                    onKey, onSpace, onDelete, onClear, onVoice,
+                    onKey,
+                    onSpace,
+                    onDelete,
+                    onClear,
+                    onVoice,
                     micModifier = Modifier.focusRequester(mic),
                     firstKeyModifier = Modifier.focusRequester(firstKey),
                     modifier = Modifier
@@ -149,7 +167,9 @@ private fun SearchScreen(
                 )
             }
             Results(
-                state.results, onChannel, onCategory,
+                state.results,
+                onChannel,
+                onCategory,
                 Modifier.weight(1f),
                 keyboardGroup,
                 resultsMemory,
@@ -219,6 +239,7 @@ private fun Results(
                     ChannelResultRow(channel, { onChannel(channel) }, with(memory) { rowModifier.track("c:${channel.id}", default = channel === results.channels.first()) })
                 }
             }
+
             is ResultsUi.Found -> {
                 if (results.channels.isNotEmpty()) {
                     item(key = "h-ch", contentType = "header") { ResultsHeader(TvIcons.User, stringResource(R.string.sec_channels)) }

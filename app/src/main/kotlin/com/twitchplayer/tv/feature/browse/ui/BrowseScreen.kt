@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import com.twitchplayer.tv.core.ui.staggerIn
-import com.twitchplayer.tv.core.ui.itemMotion
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -23,10 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.input.key.Key
-import com.twitchplayer.tv.core.ui.jumpOnKey
-import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.twitchplayer.tv.R
@@ -40,7 +36,11 @@ import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.ui.LoadGate
+import com.twitchplayer.tv.core.ui.itemMotion
+import com.twitchplayer.tv.core.ui.jumpOnKey
+import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
+import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.browse.presentation.BrowseFilter
 import com.twitchplayer.tv.feature.browse.presentation.BrowseSort
 import com.twitchplayer.tv.feature.browse.presentation.BrowseUiState
@@ -84,7 +84,8 @@ private fun BrowseScreen(
             itemsIndexed(ui.categories, key = { _, it -> it.id }, contentType = { _, _ -> "category" }) { index, category ->
                 with(memory) {
                     CategoryCard(
-                        category, { onCategory(category) },
+                        category,
+                        { onCategory(category) },
                         Modifier.staggerIn(index).itemMotion(this@itemsIndexed).track("b:${category.id}", default = category === ui.categories.first()),
                         width = null,
                     )

@@ -1,32 +1,28 @@
 package com.twitchplayer.tv.feature.clip.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.tv.material3.Icon
-import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,11 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -49,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -59,6 +58,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.designsystem.component.EmptyState
@@ -67,11 +67,11 @@ import com.twitchplayer.tv.core.designsystem.component.TvSpinner
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
+import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.feature.player.data.stream.ClipResolver
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import org.koin.compose.koinInject
 
 private sealed interface ClipLoad {
@@ -110,14 +110,24 @@ fun ClipRoute(slug: String, title: String, onBack: () -> Unit, resolver: ClipRes
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         when (val state = load) {
             ClipLoad.Loading -> Box(Modifier.align(Alignment.Center)) { TvSpinner() }
+
             ClipLoad.Failed -> {
                 val retry = remember { androidx.compose.ui.focus.FocusRequester() }
                 LaunchedEffect(Unit) { runCatching { retry.requestFocus() } }
                 EmptyState(
-                    TvIcons.OffAir, stringResource(R.string.clip_unavailable), Modifier.align(Alignment.Center), line = stringResource(R.string.clip_unavailable_line),
-                    action = { TvButton(stringResource(R.string.state_retry), TvIcons.Replay, onClick = { load = ClipLoad.Loading; attempt++ }, modifier = Modifier.focusRequester(retry), primary = true) },
+                    TvIcons.OffAir,
+                    stringResource(R.string.clip_unavailable),
+                    Modifier.align(Alignment.Center),
+                    line = stringResource(R.string.clip_unavailable_line),
+                    action = {
+                        TvButton(stringResource(R.string.state_retry), TvIcons.Replay, onClick = {
+                            load = ClipLoad.Loading
+                            attempt++
+                        }, modifier = Modifier.focusRequester(retry), primary = true)
+                    },
                 )
             }
+
             is ClipLoad.Ready -> ClipPlayback(state.url, title, onFailed = { load = ClipLoad.Failed })
         }
     }
@@ -135,15 +145,22 @@ private fun ClipPlayback(url: String, title: String, onFailed: () -> Unit) {
     DisposableEffect(player, lifecycle) {
         player.addListener(object : Player.Listener {
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) = onFailed()
-            override fun onIsPlayingChanged(isPlaying: Boolean) { playing = isPlaying }
-            override fun onPlaybackStateChanged(state: Int) { ended = state == Player.STATE_ENDED }
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                playing = isPlaying
+            }
+            override fun onPlaybackStateChanged(state: Int) {
+                ended = state == Player.STATE_ENDED
+            }
         })
         player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()
         player.playWhenReady = true
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) player.pause() }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer); player.release() }
+        onDispose {
+            lifecycle.removeObserver(observer)
+            player.release()
+        }
     }
 
     val motion = com.twitchplayer.tv.core.designsystem.theme.LocalMotion.current
@@ -190,12 +207,25 @@ private fun ClipPlayback(url: String, title: String, onFailed: () -> Unit) {
                 val handled = when (event.key) {
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.Spacebar, Key.MediaPlayPause -> {
                         // A finished clip starts again.
-                        if (player.playbackState == Player.STATE_ENDED) { player.seekTo(0); player.playWhenReady = true }
-                        else player.playWhenReady = !player.isPlaying
+                        if (player.playbackState == Player.STATE_ENDED) {
+                            player.seekTo(0)
+                            player.playWhenReady = true
+                        } else {
+                            player.playWhenReady = !player.isPlaying
+                        }
                         true
                     }
-                    Key.DirectionRight, Key.MediaFastForward -> { seekBy(seekStep(event.nativeKeyEvent.repeatCount)); true }
-                    Key.DirectionLeft, Key.MediaRewind -> { seekBy(-seekStep(event.nativeKeyEvent.repeatCount)); true }
+
+                    Key.DirectionRight, Key.MediaFastForward -> {
+                        seekBy(seekStep(event.nativeKeyEvent.repeatCount))
+                        true
+                    }
+
+                    Key.DirectionLeft, Key.MediaRewind -> {
+                        seekBy(-seekStep(event.nativeKeyEvent.repeatCount))
+                        true
+                    }
+
                     else -> false
                 }
                 chromeUntil = System.currentTimeMillis() + CHROME_MS
@@ -219,9 +249,11 @@ private fun ClipPlayback(url: String, title: String, onFailed: () -> Unit) {
         )
         // Paused or finished: a large glyph in the middle says so (and what OK will do).
         AnimatedVisibility(
-            !playing, Modifier.align(Alignment.Center),
+            !playing,
+            Modifier.align(Alignment.Center),
             // A small settle (1.2 -> 1) so the pause is felt, not just shown.
-            enter = fadeIn(motion.fast()) + androidx.compose.animation.scaleIn(motion.fast(), initialScale = 1.2f), exit = fadeOut(motion.exit()),
+            enter = fadeIn(motion.fast()) + androidx.compose.animation.scaleIn(motion.fast(), initialScale = 1.2f),
+            exit = fadeOut(motion.exit()),
         ) {
             Box(Modifier.size(80.dp).background(TvColors.Black60, CircleShape), contentAlignment = Alignment.Center) {
                 Icon(if (ended) TvIcons.Replay else TvIcons.Play, stringResource(if (ended) R.string.clip_replay else R.string.player_play), tint = TvColors.Text, modifier = Modifier.size(40.dp))
@@ -229,12 +261,15 @@ private fun ClipPlayback(url: String, title: String, onFailed: () -> Unit) {
         }
         // Skip feedback: where the playhead went, so a key press is never silent.
         AnimatedVisibility(
-            skipVisible, Modifier.align(Alignment.Center),
-            enter = fadeIn(motion.fast()), exit = fadeOut(motion.exit()),
+            skipVisible,
+            Modifier.align(Alignment.Center),
+            enter = fadeIn(motion.fast()),
+            exit = fadeOut(motion.exit()),
         ) {
             Text(
                 (if (skipMs >= 0) "+" else "-") + clipTime(kotlin.math.abs(skipMs)),
-                style = TvType.Headline, color = TvColors.Text,
+                style = TvType.Headline,
+                color = TvColors.Text,
                 modifier = Modifier.background(TvColors.Black60, TvShapes.Chip).padding(horizontal = 20.dp, vertical = 10.dp),
             )
         }

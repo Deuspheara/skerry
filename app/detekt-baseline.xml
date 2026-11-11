@@ -1,0 +1,201 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:PlaybackStats.kt:HlsAds$playheadMs &gt;= start &amp;&amp; remaining &gt; 0 &amp;&amp; (best == null || remaining &gt; best.remainingMs)</ID>
+    <ID>ComplexCondition:PlayerScreen.kt:event.type != KeyEventType.KeyDown || dockOpen || interactive || focusInChat</ID>
+    <ID>ComposableParamOrder:PlayerControlBar.kt:@Composable fun PlayerControlBar</ID>
+    <ID>CompositionLocalAllowlist:AppActions.kt:val LocalAppActions = staticCompositionLocalOf&lt;AppActions&gt; { object : AppActions { override fun signIn() = Unit override fun signOut() = Unit override fun requestQuit() = Unit } }</ID>
+    <ID>CompositionLocalAllowlist:SharedArt.kt:/** The shared-transition scope around the NavDisplay (null where there is none: dialogs, previews). */ @OptIn(ExperimentalSharedTransitionApi::class) val LocalSharedTransition = compositionLocalOf&lt;SharedTransitionScope?&gt; { null }</ID>
+    <ID>CompositionLocalAllowlist:Stagger.kt:/** Set by `LoadGate` when its content appears after a loading state; null otherwise (nothing to stagger). */ val LocalStagger = compositionLocalOf&lt;StaggerGate?&gt; { null }</ID>
+    <ID>CompositionLocalAllowlist:StreamPreview.kt:/** Null where previews are off (dialogs, previews, tests): cards then never start one. */ val LocalStreamPreview = staticCompositionLocalOf&lt;StreamPreview?&gt; { null }</ID>
+    <ID>CompositionLocalAllowlist:TvDialog.kt:/** Read inside a [TvDialog]'s content: wrap actions that end the dialog (`close(onCancel)`). Outside a dialog it runs at once. */ val LocalDialogClose = staticCompositionLocalOf { DialogClose { it() } }</ID>
+    <ID>CompositionLocalAllowlist:TvMotion.kt:val LocalMotion = staticCompositionLocalOf { TvMotion(enabled = true) }</ID>
+    <ID>CompositionLocalAllowlist:TvToast.kt:val LocalToast = staticCompositionLocalOf { ToastState() }</ID>
+    <ID>CyclomaticComplexMethod:ChatFeed.kt:ChatFeed$suspend fun run</ID>
+    <ID>CyclomaticComplexMethod:ChatLine.kt:internal fun parsePieces: List&lt;ChatPiece&gt;</ID>
+    <ID>CyclomaticComplexMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
+    <ID>CyclomaticComplexMethod:DemoChat.kt:DemoChat$private fun message: ChatMessage</ID>
+    <ID>CyclomaticComplexMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
+    <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient$private suspend fun handleSession</ID>
+    <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient.Companion$internal fun decodeSignal: ChatEvent?</ID>
+    <ID>CyclomaticComplexMethod:Keyboard.kt:internal fun keyboardRows: List&lt;List&lt;String&gt;&gt;</ID>
+    <ID>CyclomaticComplexMethod:MasterPlaylistParser.kt:MasterPlaylistParser$fun parse: List&lt;StreamVariant&gt;</ID>
+    <ID>CyclomaticComplexMethod:PlaybackStats.kt:HlsAds$fun current: AdBreak?</ID>
+    <ID>ExplicitItLambdaMultipleParameters:BrowseScreen.kt:{ _, it -&gt; it.id }</ID>
+    <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.channelId }</ID>
+    <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.id }</ID>
+    <ID>ExplicitItLambdaMultipleParameters:CategoryScreen.kt:{ _, it -&gt; it.channelId }</ID>
+    <ID>ExplicitItLambdaMultipleParameters:ChannelZapper.kt:{ _, it -&gt; it.channelId }</ID>
+    <ID>ExplicitItLambdaMultipleParameters:FollowsScreen.kt:{ _, it -&gt; it.channelId }</ID>
+    <ID>LambdaParameterEventTrailing:LoadGate.kt:onAction: () -&gt; Unit</ID>
+    <ID>LambdaParameterEventTrailing:VodScreen.kt:onBack: () -&gt; Unit</ID>
+    <ID>LambdaParameterInRestartableEffect:ClipScreen.kt:onFailed: () -&gt; Unit</ID>
+    <ID>LambdaParameterInRestartableEffect:VodScreen.kt:onFailed: (VodError, Long) -&gt; Unit</ID>
+    <ID>LongMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
+    <ID>LongMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
+    <ID>LoopWithTooManyJumpStatements:PlaybackStats.kt:HlsAds$for</ID>
+    <ID>MagicNumber:AppKeys.kt:3</ID>
+    <ID>MagicNumber:AppKeys.kt:4</ID>
+    <ID>MagicNumber:ChatLine.kt:0.03928</ID>
+    <ID>MagicNumber:ChatLine.kt:0.05</ID>
+    <ID>MagicNumber:ChatLine.kt:0.055</ID>
+    <ID>MagicNumber:ChatLine.kt:0.0722</ID>
+    <ID>MagicNumber:ChatLine.kt:0.2126</ID>
+    <ID>MagicNumber:ChatLine.kt:0.7152</ID>
+    <ID>MagicNumber:ChatLine.kt:0xFF000000L</ID>
+    <ID>MagicNumber:ChatLine.kt:1.055</ID>
+    <ID>MagicNumber:ChatLine.kt:10</ID>
+    <ID>MagicNumber:ChatLine.kt:100</ID>
+    <ID>MagicNumber:ChatLine.kt:12</ID>
+    <ID>MagicNumber:ChatLine.kt:12.92</ID>
+    <ID>MagicNumber:ChatLine.kt:15</ID>
+    <ID>MagicNumber:ChatLine.kt:16</ID>
+    <ID>MagicNumber:ChatLine.kt:2.4</ID>
+    <ID>MagicNumber:ChatLine.kt:255</ID>
+    <ID>MagicNumber:ChatLine.kt:4.5</ID>
+    <ID>MagicNumber:ChatLine.kt:6</ID>
+    <ID>MagicNumber:ChatLine.kt:8</ID>
+    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000</ID>
+    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000L</ID>
+    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$5</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$1000L</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$200</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$299</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$30</ID>
+    <ID>MagicNumber:GqlClipResolver.kt:GqlClipResolver$500</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$200</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$2_000</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$403</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$404</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:1000</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:200</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$200</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$299</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$2_000</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$404</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$429</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$500</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver.Companion$403</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:VodAccessException$300</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:MasterPlaylistParser$3</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$1080</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$120</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$49</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$50</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$720</ID>
+    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Few$4</ID>
+    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Many$16</ID>
+    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Some$8</ID>
+    <ID>MagicNumber:Models.kt:ChatDensity.Relaxed$6</ID>
+    <ID>MagicNumber:Models.kt:ChatDensity.Standard$3</ID>
+    <ID>MagicNumber:Models.kt:ChatTextSize.Large$17f</ID>
+    <ID>MagicNumber:Models.kt:ChatTextSize.Medium$15f</ID>
+    <ID>MagicNumber:Models.kt:ChatTextSize.Small$14f</ID>
+    <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
+    <ID>MagicNumber:PlaybackStats.kt:HlsAds$3</ID>
+    <ID>MagicNumber:SettingsRepository.kt:DataStoreSettingsRepository$100</ID>
+    <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$2_000L</ID>
+    <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$60_000L</ID>
+    <ID>MagicNumber:StreamModels.kt:StreamAccessException$300</ID>
+    <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
+    <ID>MagicNumber:TokenStore.kt:TokenStore$128</ID>
+    <ID>MagicNumber:TokenStore.kt:TokenStore$3</ID>
+    <ID>MagicNumber:TokenValidator.kt:TokenValidator$200</ID>
+    <ID>MagicNumber:TokenValidator.kt:TokenValidator$299</ID>
+    <ID>MagicNumber:TokenValidator.kt:TokenValidator$401</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$100</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$200</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$299</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$401</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$404</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$5</ID>
+    <ID>MagicNumber:TwitchMappers.kt:225</ID>
+    <ID>MagicNumber:TwitchMappers.kt:240</ID>
+    <ID>MagicNumber:TwitchMappers.kt:320</ID>
+    <ID>MagicNumber:TwitchMappers.kt:400</ID>
+    <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
+    <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
+    <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$64L</ID>
+    <ID>MagicNumber:TwitchRepository.kt:180</ID>
+    <ID>MagicNumber:TwitchRepository.kt:3</ID>
+    <ID>MagicNumber:TwitchRepository.kt:320</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$180</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$320</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$401</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$403</ID>
+    <ID>MatchingDeclarationName:DemoArt.kt:DemoArtFetcher : Fetcher</ID>
+    <ID>MatchingDeclarationName:FocusRing.kt:FocusProgress</ID>
+    <ID>MatchingDeclarationName:PlayerControlBar.kt:PlayerControl</ID>
+    <ID>MatchingDeclarationName:Retry.kt:RetryPolicy</ID>
+    <ID>MatchingDeclarationName:Stagger.kt:StaggerGate</ID>
+    <ID>MatchingDeclarationName:TvToast.kt:ToastState</ID>
+    <ID>MatchingDeclarationName:TwitchEmbedPlayer.kt:WebViewVideoPlayer : VideoPlayer</ID>
+    <ID>MatchingDeclarationName:VodModel.kt:VodError</ID>
+    <ID>ModifierClickableOrder:TvFocusable.kt:combinedClickable( interactionSource = interaction, indication = null, enabled = enabled, role = role, onLongClick = onLongClick, onClick = onClick, )</ID>
+    <ID>ModifierMissing:AppDialogs.kt:@Composable fun QuitDialog</ID>
+    <ID>ModifierMissing:AppDialogs.kt:@Composable fun SignInDialog</ID>
+    <ID>ModifierMissing:AppDialogs.kt:@Composable fun SignOutDialog</ID>
+    <ID>ModifierMissing:BrowseScreen.kt:@Composable fun BrowseRoute</ID>
+    <ID>ModifierMissing:CategoryScreen.kt:@Composable fun CategoryRoute</ID>
+    <ID>ModifierMissing:ChatComposeDialog.kt:@Composable fun ChatComposeDialog</ID>
+    <ID>ModifierMissing:ClipScreen.kt:@OptIn(UnstableApi::class) @Composable fun ClipRoute</ID>
+    <ID>ModifierMissing:FollowsScreen.kt:@Composable fun FollowsRoute</ID>
+    <ID>ModifierMissing:HomeScreen.kt:@Composable fun HomeRoute</ID>
+    <ID>ModifierMissing:QualityDialog.kt:@Composable fun QualityDialog</ID>
+    <ID>ModifierMissing:TwitchTvApp.kt:@Composable fun TwitchTvApp</ID>
+    <ID>ModifierMissing:VodScreen.kt:@OptIn(UnstableApi::class) @Composable fun VodRoute</ID>
+    <ID>ModifierMissing:VoiceDialog.kt:@Composable fun VoiceDialog</ID>
+    <ID>ModifierNotUsedAtRoot:TvDialog.kt:modifier .graphicsLayer { val p = panel.value alpha = p scaleX = 0.96f + 0.04f * p scaleY = scaleX translationY = (1f - p) * 8.dp.toPx() // Fade each part on its own instead of rendering the panel offscreen first. compositingStrategy = CompositingStrategy.ModulateAlpha } .width(width) .background(TvColors.Base, TvShapes.Dialog) .border(0.5.dp, TvColors.Divider, TvShapes.Dialog) .padding(24.dp) .semantics { paneTitle = description contentDescription = description }</ID>
+    <ID>ModifierWithoutDefault:ChannelZapper.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:ChatPanel.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:Keyboard.kt:micModifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:LoadGate.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:SearchResultRows.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:SearchScreen.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:SettingsScreen.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:Skeletons.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:VodScreen.kt:modifier: Modifier</ID>
+    <ID>MutableStateAutoboxing:ClipScreen.kt:mutableStateOf(0)</ID>
+    <ID>ParameterNaming:ChannelZapper.kt:onRowFocused: (Int) -&gt; Unit</ID>
+    <ID>ParameterNaming:ClipScreen.kt:onFailed: () -&gt; Unit</ID>
+    <ID>ParameterNaming:NativeVideoSurface.kt:onQualityPicked: (String) -&gt; Unit</ID>
+    <ID>ParameterNaming:PlayerControlBar.kt:onFocused: (PlayerControl) -&gt; Unit</ID>
+    <ID>ParameterNaming:PlayerScreen.kt:onFocused: (PlayerControl) -&gt; Unit</ID>
+    <ID>ParameterNaming:PlayerScreen.kt:onInfoFocused: (Boolean) -&gt; Unit</ID>
+    <ID>ParameterNaming:VodScreen.kt:onFailed: (VodError, Long) -&gt; Unit</ID>
+    <ID>StateParam:ChatLineView.kt:animated: State&lt;Int&gt;</ID>
+    <ID>SwallowedException:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
+    <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
+    <ID>SwallowedException:GqlVodResolver.kt:GqlVodResolver$e: StreamAccessException</ID>
+    <ID>SwallowedException:Load.kt:Loader$e: Exception</ID>
+    <ID>SwallowedException:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
+    <ID>SwallowedException:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
+    <ID>ThrowsCount:DemoModule.kt:DemoVods$override suspend fun resolve: ResolvedVod</ID>
+    <ID>ThrowsCount:GqlPlaybackResolver.kt:GqlPlaybackResolver$private suspend fun accessToken: PlaybackToken</ID>
+    <ID>ThrowsCount:GqlVodResolver.kt:GqlVodResolver$private suspend fun fetchMaster: Answer</ID>
+    <ID>ThrowsCount:GqlVodResolver.kt:internal fun parseVodAccess: GqlVodResolver.VodAccess?</ID>
+    <ID>ThrowsCount:Retry.kt:RetryPolicy$suspend fun &lt;T&gt; run: T</ID>
+    <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun post: HttpResponse</ID>
+    <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun raw: HttpResponse</ID>
+    <ID>TooGenericExceptionCaught:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:EventSubChatClient.kt:EventSubChatClient$error: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Formatters.kt:e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Load.kt:Loader$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:Retry.kt:RetryPolicy$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>
+    <ID>TooManyFunctions:PlayerViewModel.kt:PlayerViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:TwitchApi.kt:TwitchApi</ID>
+    <ID>UnusedParameter:Avatar.kt:border: androidx.compose.ui.graphics.Color? = null</ID>
+    <ID>UnusedParameter:DebugModules.kt:DebugModules$context: Context</ID>
+    <ID>ViewModelForwarding:PlayerScreen.kt:ChatLayer(state, chatMode, screenHeight, barAlpha, chatDim, overlayChatAlpha, viewModel, chat)</ID>
+    <ID>ViewModelForwarding:PlayerScreen.kt:FullScreenLayers( state = state, chatMode = chatMode, videoWidth = videoWidth, screenHeight = screenHeight, barAlpha = { barAlpha.value }, chatDim = { chatDim.value }, overlayChatAlpha = { overlayChatAlpha.value }, sheet = sheet, controlsEnabled = controlsEnabled, focus = focus, infoFocus = infoFocus, onFocused = { lastControl = it }, onInfoFocused = { infoFocused = it }, onBack = onBack, onOpenChannel = { onOpenChannel(state.login) }, viewModel = viewModel, onPauseLong = { if (config != null &amp;&amp; !useNative) { interactive = true player.setInteractive(true) } }, onQuality = { player.loadQualities { result -&gt; if (result.options.isEmpty()) toast.show(unavailable) else qualities = result } }, onWrite = { viewModel.ensureChatVisible() composing = true }, chat = ChatLayerSpec( lines = viewModel.chat, style = chatStyle, settings = chatSettings, columnWidth = columnWidth, motion = chatMotion, headerFocus = chatHeaderFocus, panelFocus = chatFocus, optionsFocus = chatOptionsFocus, onLeave = ::restoreControl, onFocusInside = { focusInChat = it }, warm = lastControl == PlayerControl.Chat &amp;&amp; state.controlsVisible, ready = { expand.value &gt; 0.95f }, ), )</ID>
+    <ID>ViewModelForwarding:PlayerScreen.kt:PlayerHostContent(viewModel, fullScreen, dockItems, onDockSelect, onBack, onOpenChannel, onExpand, config)</ID>
+    <ID>ViewModelForwarding:TwitchTvApp.kt:PlayerHost( viewModel = player, fullScreen = playerFullScreen, dockItems = railItems, onDockSelect = { navigator.openTopLevel(TopLevelKeys[it]) }, onBack = leavePlayer, onOpenChannel = { navigator.push(ChannelKey(it)) }, onExpand = { navigator.push(PlayerKey(player.state.value.login)) }, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

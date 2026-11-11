@@ -39,7 +39,10 @@ class TokenStore(context: Context) {
             cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
             val parts = cipher.doFinal(ciphertext).toString(Charsets.UTF_8).split('\n')
             TwitchTokens(parts[0], parts[1], parts[2].toLong(), parts.getOrElse(3) { "" }.split(' ').filter(String::isNotBlank).toSet())
-        }.getOrElse { clear(); null }
+        }.getOrElse {
+            clear()
+            null
+        }
     }
 
     /** The last validated account (public id and login, kept in clear) so the next start does not wait for validation. */
@@ -52,17 +55,24 @@ class TokenStore(context: Context) {
         Account(id, prefs.getString("login", null).orEmpty())
     }
 
-    suspend fun clear() = withContext(Dispatchers.IO) { prefs.edit().clear().commit(); Unit }
+    suspend fun clear() = withContext(Dispatchers.IO) {
+        prefs.edit().clear().commit()
+        Unit
+    }
 
     private fun key(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (ks.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
-            init(KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setRandomizedEncryptionRequired(true).build())
+            init(
+                KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setRandomizedEncryptionRequired(true).build(),
+            )
             generateKey()
         }
     }
-    private companion object { const val KEY_ALIAS = "twitch_player_oauth_tokens" }
+    private companion object {
+        const val KEY_ALIAS = "twitch_player_oauth_tokens"
+    }
 }

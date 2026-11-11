@@ -22,6 +22,7 @@ sealed interface Load<out T> {
     data object Loading : Load<Nothing>
     data object SignedOut : Load<Nothing>
     data object Failed : Load<Nothing>
+
     @Immutable
     data class Ready<T>(val data: T) : Load<T>
 }
@@ -59,10 +60,19 @@ class Loader<T>(
             flow {
                 when (s) {
                     SessionState.Loading -> emit(Load.Loading)
-                    SessionState.SignedOut -> { lastUser = null; lastReady = null; emit(Load.SignedOut) }
+
+                    SessionState.SignedOut -> {
+                        lastUser = null
+                        lastReady = null
+                        emit(Load.SignedOut)
+                    }
+
                     is SessionState.SignedIn -> {
                         val user = s.account.userId
-                        if (user != lastUser) { lastUser = user; lastReady = null }
+                        if (user != lastUser) {
+                            lastUser = user
+                            lastReady = null
+                        }
                         val shown = lastReady ?: cache?.read(user)?.let { Load.Ready(it) }
                         emit(shown ?: Load.Loading)
                         try {
@@ -82,5 +92,7 @@ class Loader<T>(
         .flowOn(dispatcher)
         .stateIn(scope, SharingStarted.Lazily, Load.Loading)
 
-    fun reload() { tick.value++ }
+    fun reload() {
+        tick.value++
+    }
 }

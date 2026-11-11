@@ -1,11 +1,11 @@
 package com.twitchplayer.tv
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.focusable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,7 +17,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.hasContentDescription
@@ -25,6 +24,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.unit.dp
@@ -61,15 +61,24 @@ class ChatPanelTest {
                     .focusProperties { right = chat }.focusable(),
             )
             ChatPanel(
-                lines, remember { ChatSettings().toStyle() },
-                Modifier.width(240.dp).fillMaxHeight(), focusRequester = chat,
+                lines,
+                remember { ChatSettings().toStyle() },
+                Modifier.width(240.dp).fillMaxHeight(),
+                focusRequester = chat,
                 onLeave = { control.requestFocus() },
             )
         }
     }
 
-    private fun press(key: Key) { rule.onRoot().performKeyInput { pressKey(key) }; rule.waitForIdle() }
-    private fun addMessages(count: Int) { val start = lines.size; lines = (lines + (start until start + count).map(::line)).toImmutableList(); rule.waitForIdle() }
+    private fun press(key: Key) {
+        rule.onRoot().performKeyInput { pressKey(key) }
+        rule.waitForIdle()
+    }
+    private fun addMessages(count: Int) {
+        val start = lines.size
+        lines = (lines + (start until start + count).map(::line)).toImmutableList()
+        rule.waitForIdle()
+    }
     private fun pill(text: String) = hasContentDescription(text)
 
     @Test fun theChatNeverTakesFocusWhileMessagesArrive() {

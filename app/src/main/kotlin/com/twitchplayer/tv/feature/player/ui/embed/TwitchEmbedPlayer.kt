@@ -2,7 +2,6 @@ package com.twitchplayer.tv.feature.player.ui.embed
 
 import android.annotation.SuppressLint
 import android.view.ViewGroup
-import android.graphics.Color as AndroidColor
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -18,11 +17,14 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.twitchplayer.tv.BuildConfig
 import com.twitchplayer.tv.feature.player.playback.VideoPlayer
 import com.twitchplayer.tv.feature.player.playback.VideoQualities
+import android.graphics.Color as AndroidColor
 
 /** App-to-page commands for the hosted player page. No-ops if the page predates the controls. */
 class WebViewVideoPlayer : VideoPlayer {
     internal var webView: WebView? = null
-    private fun run(js: String) { webView?.evaluateJavascript("(function(){try{window.tp&&window.tp.$js}catch(e){}})()", null) }
+    private fun run(js: String) {
+        webView?.evaluateJavascript("(function(){try{window.tp&&window.tp.$js}catch(e){}})()", null)
+    }
     override fun play() = run("play()")
     override fun pause() = run("pause()")
     override fun toggleMute() = run("toggleMute()")
@@ -149,8 +151,7 @@ private fun createPlayerWebView(context: android.content.Context, allowedHost: S
         }
 
         // Block main-frame navigation away from the app-controlled page (API 24+).
-        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-            request.isForMainFrame && !isAllowedNavigation(request.url.scheme, request.url.host, allowedHost)
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = request.isForMainFrame && !isAllowedNavigation(request.url.scheme, request.url.host, allowedHost)
 
         // API 23 fallback (minSdk 23) where the WebResourceRequest overload is not invoked.
         @Deprecated("Deprecated in Android API")
@@ -161,6 +162,4 @@ private fun createPlayerWebView(context: android.content.Context, allowedHost: S
     }
 }
 
-internal fun isAllowedNavigation(scheme: String?, host: String?, allowedHost: String): Boolean =
-    scheme.equals("https", ignoreCase = true) && host.equals(allowedHost, ignoreCase = true)
-
+internal fun isAllowedNavigation(scheme: String?, host: String?, allowedHost: String): Boolean = scheme.equals("https", ignoreCase = true) && host.equals(allowedHost, ignoreCase = true)

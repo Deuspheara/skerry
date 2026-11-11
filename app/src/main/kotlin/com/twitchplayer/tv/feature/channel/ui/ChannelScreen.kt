@@ -1,11 +1,12 @@
 package com.twitchplayer.tv.feature.channel.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -13,16 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.foundation.background
-import androidx.compose.foundation.focusGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -33,21 +31,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.data.model.ChannelClip
 import com.twitchplayer.tv.core.data.model.ChannelDetails
-import com.twitchplayer.tv.core.data.model.ScheduledStream
 import com.twitchplayer.tv.core.data.model.ChannelRef
 import com.twitchplayer.tv.core.data.model.Replay
+import com.twitchplayer.tv.core.data.model.ScheduledStream
 import com.twitchplayer.tv.core.designsystem.component.Avatar
 import com.twitchplayer.tv.core.designsystem.component.CardRow
 import com.twitchplayer.tv.core.designsystem.component.HeroBackdrop
-import com.twitchplayer.tv.core.designsystem.component.heroImage
 import com.twitchplayer.tv.core.designsystem.component.LiveBadge
 import com.twitchplayer.tv.core.designsystem.component.LocalToast
 import com.twitchplayer.tv.core.designsystem.component.SectionHeader
@@ -55,20 +54,21 @@ import com.twitchplayer.tv.core.designsystem.component.SkeletonChannel
 import com.twitchplayer.tv.core.designsystem.component.TvButton
 import com.twitchplayer.tv.core.designsystem.component.TvIconButton
 import com.twitchplayer.tv.core.designsystem.component.ViewerCount
+import com.twitchplayer.tv.core.designsystem.component.heroImage
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.LoadGate
-import com.twitchplayer.tv.core.ui.formatViewers
-import com.twitchplayer.tv.feature.vod.data.VodProgress
 import com.twitchplayer.tv.core.ui.TvAsyncImage
 import com.twitchplayer.tv.core.ui.TvFocusable
+import com.twitchplayer.tv.core.ui.formatViewers
 import com.twitchplayer.tv.core.ui.rememberRowSpec
-import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.core.ui.sharedArt
+import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
+import com.twitchplayer.tv.feature.vod.data.VodProgress
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -88,11 +88,17 @@ fun ChannelRoute(
     LoadGate(load, onRetry = viewModel::retry, skeleton = { SkeletonChannel() }) { details ->
         ChannelScreen(
             details, onBack, onWatch, onChannel,
-            onClip = { viewModel.lastClip = it.slug; onClip(it) },
+            onClip = {
+                viewModel.lastClip = it.slug
+                onClip(it)
+            },
             restoreClip = viewModel.lastClip,
             extraReplays = tail.replays,
             progress = progress,
-            onReplay = { viewModel.lastReplay = it.id; onReplay(it) },
+            onReplay = {
+                viewModel.lastReplay = it.id
+                onReplay(it)
+            },
             restoreReplay = viewModel.lastReplay,
             loadMoreReplays = { viewModel.loadMoreReplays(details.channel.id, details.replaysCursor) },
         )
@@ -151,79 +157,79 @@ private fun ChannelScreen(
             contentPadding = PaddingValues(top = TvDimens.SafeTop, bottom = TvDimens.SafeBottom),
         ) {
             item(key = "header", contentType = "header") {
-              Box {
-                // Live: the stream's own picture fills the right of the header, so the page opens on the channel, not on a form.
-                details.stream?.thumbnailUrl?.takeIf { channel.isLive && it.isNotEmpty() }?.let {
-                    Box(Modifier.matchParentSize(), contentAlignment = Alignment.CenterEnd) { HeroBackdrop(heroImage(it)) }
-                }
-                Column(Modifier.staggerIn(0).padding(start = start, end = TvDimens.ContentEnd, top = 12.dp)) {
-                    Box(Modifier.padding(bottom = 12.dp)) {
-                        TvIconButton(TvIcons.ChevronLeft, stringResource(R.string.cd_back), onBack, Modifier.focusRequester(back), size = 40.dp, iconSize = 20.dp, container = TvColors.Alt)
+                Box {
+                    // Live: the stream's own picture fills the right of the header, so the page opens on the channel, not on a form.
+                    details.stream?.thumbnailUrl?.takeIf { channel.isLive && it.isNotEmpty() }?.let {
+                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.CenterEnd) { HeroBackdrop(heroImage(it)) }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
-                        Avatar(channel.name, channel.avatarUrl, Modifier.sharedArt("av:${channel.login}"), size = 80.dp)
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text(channel.name, style = TvType.Display, color = TvColors.Text, maxLines = 1)
-                            Row(Modifier.heightIn(min = 28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                if (channel.isLive) {
-                                    LiveBadge(large = true)
-                                    ViewerCount(channel.viewers)
-                                } else {
-                                    InfoChip(TvIcons.OffAir, stringResource(R.string.sec_offline))
-                                }
-                                details.stream?.categoryName?.takeIf { it.isNotEmpty() }?.let {
-                                    Text(it, style = TvType.Label, color = TvColors.TextSecondary, maxLines = 1)
-                                }
-                                // Following is shown as a fact: Twitch has no follow API for third-party apps.
-                                if (details.isFollowed) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(TvIcons.HeartFilled, null, tint = TvColors.Purple, modifier = Modifier.size(14.dp))
-                                        Text(stringResource(R.string.followed), style = TvType.Label, color = TvColors.TextSecondary, maxLines = 1)
+                    Column(Modifier.staggerIn(0).padding(start = start, end = TvDimens.ContentEnd, top = 12.dp)) {
+                        Box(Modifier.padding(bottom = 12.dp)) {
+                            TvIconButton(TvIcons.ChevronLeft, stringResource(R.string.cd_back), onBack, Modifier.focusRequester(back), size = 40.dp, iconSize = 20.dp, container = TvColors.Alt)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
+                            Avatar(channel.name, channel.avatarUrl, Modifier.sharedArt("av:${channel.login}"), size = 80.dp)
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text(channel.name, style = TvType.Display, color = TvColors.Text, maxLines = 1)
+                                Row(Modifier.heightIn(min = 28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    if (channel.isLive) {
+                                        LiveBadge(large = true)
+                                        ViewerCount(channel.viewers)
+                                    } else {
+                                        InfoChip(TvIcons.OffAir, stringResource(R.string.sec_offline))
+                                    }
+                                    details.stream?.categoryName?.takeIf { it.isNotEmpty() }?.let {
+                                        Text(it, style = TvType.Label, color = TvColors.TextSecondary, maxLines = 1)
+                                    }
+                                    // Following is shown as a fact: Twitch has no follow API for third-party apps.
+                                    if (details.isFollowed) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Icon(TvIcons.HeartFilled, null, tint = TvColors.Purple, modifier = Modifier.size(14.dp))
+                                            Text(stringResource(R.string.followed), style = TvType.Label, color = TvColors.TextSecondary, maxLines = 1)
+                                        }
                                     }
                                 }
-                            }
-                            details.stream?.title?.takeIf { channel.isLive && it.isNotEmpty() }?.let {
-                                Text(it, style = TvType.Body, color = TvColors.TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(560.dp))
-                            }
-                            details.stream?.let { stream ->
-                                // Language and the broadcaster's tags, as one quiet line.
-                                val facts = (listOf(stream.language.uppercase()) + stream.tags.take(4)).filter { it.isNotBlank() }
-                                if (channel.isLive && facts.isNotEmpty()) {
-                                    Text(facts.joinToString(" · "), style = TvType.Meta, color = TvColors.TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(560.dp))
+                                details.stream?.title?.takeIf { channel.isLive && it.isNotEmpty() }?.let {
+                                    Text(it, style = TvType.Body, color = TvColors.TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(560.dp))
                                 }
-                            }
-                            if (channel.isLive) {
-                                Box(Modifier.padding(top = 4.dp, bottom = 4.dp)) {
-                                    TvButton(stringResource(R.string.watch), TvIcons.Play, { onWatch(channel.login) }, Modifier.focusRequester(primary), primary = true)
+                                details.stream?.let { stream ->
+                                    // Language and the broadcaster's tags, as one quiet line.
+                                    val facts = (listOf(stream.language.uppercase()) + stream.tags.take(4)).filter { it.isNotBlank() }
+                                    if (channel.isLive && facts.isNotEmpty()) {
+                                        Text(facts.joinToString(" · "), style = TvType.Meta, color = TvColors.TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(560.dp))
+                                    }
+                                }
+                                if (channel.isLive) {
+                                    Box(Modifier.padding(top = 4.dp, bottom = 4.dp)) {
+                                        TvButton(stringResource(R.string.watch), TvIcons.Play, { onWatch(channel.login) }, Modifier.focusRequester(primary), primary = true)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-              }
             }
             if (details.schedule.isNotEmpty()) {
                 item(key = "schedule", contentType = "section") {
                     Column(Modifier.staggerIn(1)) {
-                    SectionHeader(TvIcons.Clock, stringResource(R.string.channel_schedule), Modifier.padding(start = start, top = 20.dp, bottom = 8.dp))
-                    val context = androidx.compose.ui.platform.LocalContext.current
-                    Column(Modifier.padding(start = start, end = TvDimens.ContentEnd), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        details.schedule.forEachIndexed { index, slot -> ScheduleRow(slot, context, first = index == 0) }
+                        SectionHeader(TvIcons.Clock, stringResource(R.string.channel_schedule), Modifier.padding(start = start, top = 20.dp, bottom = 8.dp))
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        Column(Modifier.padding(start = start, end = TvDimens.ContentEnd), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            details.schedule.forEachIndexed { index, slot -> ScheduleRow(slot, context, first = index == 0) }
+                        }
                     }
-                                    }
-}
+                }
             }
             if (details.clips.isNotEmpty()) {
                 item(key = "clips", contentType = "section") {
                     Column(Modifier.staggerIn(2)) {
-                    SectionHeader(TvIcons.Play, stringResource(R.string.sec_clips), Modifier.padding(start = start, top = 20.dp, bottom = 8.dp))
-                    CardRow(startPadding = start) {
-                        items(details.clips, key = { it.slug }, contentType = { "clip" }) { clip ->
-                            ClipCard(clip, { onClip(clip) }, if (clip.slug == restoreClip) Modifier.focusRequester(clipFocus) else Modifier)
+                        SectionHeader(TvIcons.Play, stringResource(R.string.sec_clips), Modifier.padding(start = start, top = 20.dp, bottom = 8.dp))
+                        CardRow(startPadding = start) {
+                            items(details.clips, key = { it.slug }, contentType = { "clip" }) { clip ->
+                                ClipCard(clip, { onClip(clip) }, if (clip.slug == restoreClip) Modifier.focusRequester(clipFocus) else Modifier)
+                            }
                         }
                     }
-                                    }
-}
+                }
             }
             if (replays.isNotEmpty()) {
                 item(key = "replays", contentType = "section") {
@@ -232,7 +238,9 @@ private fun ChannelScreen(
                         CardRow(state = replayRowState, startPadding = start) {
                             itemsIndexed(replays, key = { _, replay -> replay.id }, contentType = { _, _ -> "replay" }) { index, replay ->
                                 ReplayCard(
-                                    replay, progress[replay.id], { onReplay(replay) },
+                                    replay,
+                                    progress[replay.id],
+                                    { onReplay(replay) },
                                     Modifier
                                         .then(if (replay.id == restoreReplay) Modifier.focusRequester(replayFocus) else Modifier)
                                         // Near the end of what is loaded, ask for the next page (hasFocus: see the TvFocusable note in memory).
@@ -246,12 +254,12 @@ private fun ChannelScreen(
             if (details.similar.isNotEmpty()) {
                 item(key = "similar", contentType = "section") {
                     Column(Modifier.staggerIn(3)) {
-                    SectionHeader(TvIcons.Users, stringResource(R.string.sec_similar), Modifier.padding(start = start, top = 20.dp))
-                    CardRow(startPadding = start) {
-                        items(details.similar, key = { it.id }, contentType = { "similar" }) { other ->
-                            SimilarChannel(other, { onChannel(other.login) }, if (other === details.similar.first() && !channel.isLive) Modifier.focusRequester(primary) else Modifier)
+                        SectionHeader(TvIcons.Users, stringResource(R.string.sec_similar), Modifier.padding(start = start, top = 20.dp))
+                        CardRow(startPadding = start) {
+                            items(details.similar, key = { it.id }, contentType = { "similar" }) { other ->
+                                SimilarChannel(other, { onChannel(other.login) }, if (other === details.similar.first() && !channel.isLive) Modifier.focusRequester(primary) else Modifier)
+                            }
                         }
-                    }
                     }
                 }
             }
@@ -279,7 +287,7 @@ private fun ReplayCard(replay: Replay, progress: VodProgress?, onClick: () -> Un
     }
     val views = stringResource(R.string.replay_views, formatViewers(replay.views))
     val meta = remember(ago, views) { listOf(ago, views).filter { it.isNotEmpty() }.joinToString(" · ") }
-    TvFocusable(onClick = onClick, shape = TvShapes.Card, description = replay.title, focusScale = TvDimens.FocusScaleCard, modifier = modifier.width(TvDimens.LiveCardWidth)) {
+    TvFocusable(onClick = onClick, shape = TvShapes.Card, description = replay.title, focusScale = TvDimens.FOCUS_SCALE_CARD, modifier = modifier.width(TvDimens.LiveCardWidth)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MediaThumb(replay.thumbnailUrl, replay.duration, progress = progress?.fraction ?: 0f)
             Text(replay.title, style = TvType.Title, color = TvColors.TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -306,8 +314,12 @@ private fun SimilarChannel(channel: ChannelRef, onClick: () -> Unit, modifier: M
                 )
             }
             Text(
-                channel.name, style = TvType.Meta.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), color = TvColors.TextSecondary,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                channel.name,
+                style = TvType.Meta.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
+                color = TvColors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
     }
@@ -315,7 +327,7 @@ private fun SimilarChannel(channel: ChannelRef, onClick: () -> Unit, modifier: M
 
 @Composable
 private fun ClipCard(clip: ChannelClip, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    TvFocusable(onClick = onClick, shape = TvShapes.Card, description = clip.title, focusScale = TvDimens.FocusScaleCard, modifier = modifier.width(TvDimens.LiveCardWidth)) {
+    TvFocusable(onClick = onClick, shape = TvShapes.Card, description = clip.title, focusScale = TvDimens.FOCUS_SCALE_CARD, modifier = modifier.width(TvDimens.LiveCardWidth)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MediaThumb(clip.thumbnailUrl, "%d:%02d".format(clip.durationSeconds / 60, clip.durationSeconds % 60))
             Text(clip.title, style = TvType.Title, color = TvColors.TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -333,7 +345,8 @@ private fun ScheduleRow(slot: ScheduledStream, context: android.content.Context,
     val time = android.text.format.DateUtils.formatDateTime(context, slot.startMs, android.text.format.DateUtils.FORMAT_SHOW_TIME)
     Row(
         Modifier.widthIn(max = 600.dp).fillMaxWidth().background(TvColors.Base, TvShapes.Card).padding(horizontal = 16.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.width(132.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(time, style = TvType.Title.copy(fontSize = 20.sp), color = if (first) TvColors.Text else TvColors.TextSecondary, maxLines = 1)
@@ -341,8 +354,12 @@ private fun ScheduleRow(slot: ScheduledStream, context: android.content.Context,
         }
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                slot.title.ifBlank { slot.category }, style = TvType.Title, color = if (first) TvColors.Text else TvColors.TextSecondary,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 520.dp),
+                slot.title.ifBlank { slot.category },
+                style = TvType.Title,
+                color = if (first) TvColors.Text else TvColors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 520.dp),
             )
             if (slot.title.isNotBlank() && slot.category.isNotBlank()) Text(slot.category, style = TvType.Meta, color = TvColors.TextSecondary, maxLines = 1)
         }

@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -30,14 +31,13 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import coil3.size.Size as CoilSize
-import androidx.compose.ui.platform.LocalContext
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.feature.player.presentation.ChatLine
 import com.twitchplayer.tv.feature.player.presentation.ChatLineKind
 import com.twitchplayer.tv.feature.player.presentation.ChatPiece
 import kotlin.math.roundToInt
+import coil3.size.Size as CoilSize
 
 private const val BADGE = "b"
 private const val EMOTE = "e"
@@ -57,17 +57,22 @@ fun ChatLineView(line: ChatLine, style: ChatStyle, animated: State<Int>, modifie
         var animatedIndex = 0
         val text = buildAnnotatedString {
             if (style.showTimestamps) {
-                withStyle(SpanStyle(color = TvColors.Grey, fontSize = (style.textSp - 2f).sp)) { append(line.time); append("  ") }
-            }
-            if (style.showBadges) line.badgeUrls.forEachIndexed { index, url ->
-                val id = "$BADGE$index"
-                appendInlineContent(id, " ")
-                val size = px(style.badgeDp)
-                inline[id] = InlineTextContent(Placeholder(with(density) { style.badgeDp.dp.toSp() }, with(density) { style.badgeDp.dp.toSp() }, PlaceholderVerticalAlign.TextCenter)) {
-                    val request = remember(url, size) { ImageRequest.Builder(context).data(url).size(CoilSize(size, size)).build() }
-                    AsyncImage(request, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                withStyle(SpanStyle(color = TvColors.Grey, fontSize = (style.textSp - 2f).sp)) {
+                    append(line.time)
+                    append("  ")
                 }
-                append(" ")
+            }
+            if (style.showBadges) {
+                line.badgeUrls.forEachIndexed { index, url ->
+                    val id = "$BADGE$index"
+                    appendInlineContent(id, " ")
+                    val size = px(style.badgeDp)
+                    inline[id] = InlineTextContent(Placeholder(with(density) { style.badgeDp.dp.toSp() }, with(density) { style.badgeDp.dp.toSp() }, PlaceholderVerticalAlign.TextCenter)) {
+                        val request = remember(url, size) { ImageRequest.Builder(context).data(url).size(CoilSize(size, size)).build() }
+                        AsyncImage(request, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                    }
+                    append(" ")
+                }
             }
             if (line.kind == ChatLineKind.System) {
                 // Twitch's own sentence (sub, raid...): quieter than a chatter's line.
@@ -81,7 +86,9 @@ fun ChatLineView(line: ChatLine, style: ChatStyle, animated: State<Int>, modifie
             line.pieces.forEachIndexed { index, piece ->
                 when (piece) {
                     is ChatPiece.Text -> append(piece.text)
+
                     is ChatPiece.Strong -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(piece.text) }
+
                     is ChatPiece.Emote -> {
                         val id = "$EMOTE$index"
                         appendInlineContent(id, piece.name)
@@ -94,7 +101,8 @@ fun ChatLineView(line: ChatLine, style: ChatStyle, animated: State<Int>, modifie
                         inline[id] = InlineTextContent(
                             Placeholder(with(density) { width.dp.toSp() }, with(density) { height.dp.toSp() }, PlaceholderVerticalAlign.TextCenter),
                         ) {
-                            val wPx = px(width); val hPx = px(height)
+                            val wPx = px(width)
+                            val hPx = px(height)
                             var seen = 0
                             Box(Modifier.fillMaxSize()) {
                                 piece.layers.forEach { layer ->
@@ -109,8 +117,16 @@ fun ChatLineView(line: ChatLine, style: ChatStyle, animated: State<Int>, modifie
         }
         text to inline
     }
-    val rule = when (line.kind) { ChatLineKind.Mention -> TvColors.Purple; ChatLineKind.Highlight -> TvColors.Focus; else -> null }
-    val tint = when (line.kind) { ChatLineKind.Mention -> TvColors.ChatMention; ChatLineKind.Highlight -> TvColors.ChatHighlight; else -> null }
+    val rule = when (line.kind) {
+        ChatLineKind.Mention -> TvColors.Purple
+        ChatLineKind.Highlight -> TvColors.Focus
+        else -> null
+    }
+    val tint = when (line.kind) {
+        ChatLineKind.Mention -> TvColors.ChatMention
+        ChatLineKind.Highlight -> TvColors.ChatHighlight
+        else -> null
+    }
     Text(
         text = built.first,
         inlineContent = built.second,
@@ -119,9 +135,13 @@ fun ChatLineView(line: ChatLine, style: ChatStyle, animated: State<Int>, modifie
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (tint == null) Modifier else Modifier.drawBehind {
-                    drawRect(tint)
-                    drawRect(rule!!, Offset.Zero, Size(2.dp.toPx(), size.height))
+                if (tint == null) {
+                    Modifier
+                } else {
+                    Modifier.drawBehind {
+                        drawRect(tint)
+                        drawRect(rule!!, Offset.Zero, Size(2.dp.toPx(), size.height))
+                    }
                 },
             )
             .padding(horizontal = 6.dp, vertical = 1.dp),

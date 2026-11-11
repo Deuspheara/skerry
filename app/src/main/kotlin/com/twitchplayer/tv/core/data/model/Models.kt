@@ -115,7 +115,9 @@ data class ChatSettings(
     val animatedEmotes: Boolean = true,
     val animatedLimit: AnimatedEmoteLimit = AnimatedEmoteLimit.Some,
 ) {
-    companion object { val BACKGROUND_OPACITIES = listOf(40, 60, 80, 100) }
+    companion object {
+        val BACKGROUND_OPACITIES = listOf(40, 60, 80, 100)
+    }
 }
 
 /**
@@ -123,7 +125,9 @@ data class ChatSettings(
  * player in a hosted page). A fresh install starts with the build's choice (`-PplayerEngine`, see app/build.gradle.kts).
  */
 enum class PlayerEngine {
-    Native, WebView;
+    Native,
+    WebView,
+    ;
 
     companion object {
         fun buildDefault(): PlayerEngine = if (com.twitchplayer.tv.BuildConfig.PLAYER_ENGINE_DEFAULT == "webview") WebView else Native

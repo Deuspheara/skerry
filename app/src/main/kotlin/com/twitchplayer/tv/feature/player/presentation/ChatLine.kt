@@ -13,8 +13,10 @@ import java.util.Calendar
 @Immutable
 sealed interface ChatPiece {
     @Immutable data class Text(val text: String) : ChatPiece
+
     /** Mentions and cheermotes: plain words with emphasis. */
     @Immutable data class Strong(val text: String) : ChatPiece
+
     /** One emote slot. Zero-width emotes that follow it are extra [layers], drawn on top of the first. */
     @Immutable data class Emote(val layers: List<com.twitchplayer.tv.feature.player.data.emotes.Emote>) : ChatPiece {
         val name: String get() = layers.first().name
@@ -50,8 +52,10 @@ internal fun ChatEvent.toLine(assets: ChatAssets, selfLogin: String?, nowMs: Lon
 
 internal fun ChatMessage.toLine(assets: ChatAssets, selfLogin: String?, nowMs: Long): ChatLine {
     val mentionsSelf = selfLogin != null && !login.equals(selfLogin, true) &&
-        (content.fragments.any { it.type == "mention" && it.mention?.login.equals(selfLogin, true) } ||
-            content.text.contains("@$selfLogin", ignoreCase = true))
+        (
+            content.fragments.any { it.type == "mention" && it.mention?.login.equals(selfLogin, true) } ||
+                content.text.contains("@$selfLogin", ignoreCase = true)
+            )
     return ChatLine(
         id = id,
         kind = when {
@@ -80,7 +84,10 @@ internal fun parsePieces(fragments: List<ChatFragment>, thirdParty: Map<String, 
     val out = ArrayList<ChatPiece>()
     val pending = StringBuilder()
     fun flush() {
-        if (pending.isNotEmpty()) { out += ChatPiece.Text(pending.toString()); pending.setLength(0) }
+        if (pending.isNotEmpty()) {
+            out += ChatPiece.Text(pending.toString())
+            pending.setLength(0)
+        }
     }
     fun addEmote(emote: Emote) {
         val last = out.lastOrNull()
@@ -96,7 +103,12 @@ internal fun parsePieces(fragments: List<ChatFragment>, thirdParty: Map<String, 
         val twitch = fragment.emote
         when {
             fragment.type == "emote" && twitch != null -> addEmote(twitchEmote(fragment.text, twitch))
-            fragment.type == "mention" || fragment.type == "cheermote" -> { flush(); out += ChatPiece.Strong(fragment.text) }
+
+            fragment.type == "mention" || fragment.type == "cheermote" -> {
+                flush()
+                out += ChatPiece.Strong(fragment.text)
+            }
+
             else -> {
                 val text = fragment.text
                 var i = 0
@@ -134,7 +146,8 @@ internal fun parseColor(hex: String?): Long? {
 private const val CHAT_BACKGROUND_RGB = 0x18181B
 
 internal fun contrastRatio(a: Long, b: Long): Double {
-    val la = luminance(a); val lb = luminance(b)
+    val la = luminance(a)
+    val lb = luminance(b)
     return (maxOf(la, lb) + 0.05) / (minOf(la, lb) + 0.05)
 }
 
@@ -151,7 +164,10 @@ internal fun readableColor(argb: Long): Long {
     var color = argb
     repeat(12) {
         if (contrastRatio(color, 0xFF000000L or CHAT_BACKGROUND_RGB.toLong()) >= 4.5) return color
-        fun mix(shift: Int): Long { val c = (color shr shift) and 0xFF; return c + (255 - c) * 15 / 100 }
+        fun mix(shift: Int): Long {
+            val c = (color shr shift) and 0xFF
+            return c + (255 - c) * 15 / 100
+        }
         color = 0xFF000000L or (mix(16) shl 16) or (mix(8) shl 8) or mix(0)
     }
     return color
@@ -166,6 +182,7 @@ internal fun defaultNickColor(login: String): Long = readableColor(DEFAULT_NICK_
 
 internal fun clockText(millis: Long): String {
     val c = Calendar.getInstance().apply { timeInMillis = millis }
-    val h = c.get(Calendar.HOUR_OF_DAY); val m = c.get(Calendar.MINUTE)
+    val h = c.get(Calendar.HOUR_OF_DAY)
+    val m = c.get(Calendar.MINUTE)
     return "${if (h < 10) "0" else ""}$h:${if (m < 10) "0" else ""}$m"
 }

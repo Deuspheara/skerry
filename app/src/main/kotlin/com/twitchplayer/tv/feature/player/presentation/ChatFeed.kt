@@ -7,8 +7,6 @@ import com.twitchplayer.tv.feature.player.data.ChatSource
 import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
 import com.twitchplayer.tv.feature.player.data.chat.ChatEvent
 import com.twitchplayer.tv.feature.player.data.chat.RoomState
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -16,7 +14,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -42,22 +42,34 @@ class ChatFeed(
     val lines: StateFlow<ImmutableList<ChatLine>> = mutableLines.asStateFlow()
 
     private val mutableRoom = MutableStateFlow(RoomState())
+
     /** The room's modes (slow, followers-only...): from [setRoom] at the start, then live. */
     val room: StateFlow<RoomState> = mutableRoom.asStateFlow()
 
     private val mutableNotices = MutableSharedFlow<ChannelNotice>(extraBufferCapacity = 8)
+
     /** Raids, title or category changes and the end of the stream, as they arrive. */
     val notices: SharedFlow<ChannelNotice> = mutableNotices
 
-    fun setRoom(state: RoomState) { mutableRoom.value = state }
+    fun setRoom(state: RoomState) {
+        mutableRoom.value = state
+    }
 
-    fun clear() { mutableLines.value = persistentListOf(); mutableRoom.value = RoomState() }
+    fun clear() {
+        mutableLines.value = persistentListOf()
+        mutableRoom.value = RoomState()
+    }
 
     /** Streams until cancelled. Asset changes (late providers, live emote edits) apply to the messages that follow. */
     suspend fun run(channelId: String, userId: String, selfLogin: String?) = coroutineScope {
         val current = AtomicReference(ChatAssets.Empty)
         val firstAssets = CompletableDeferred<Unit>()
-        launch { assets.assets(channelId).collect { current.set(it); firstAssets.complete(Unit) } }
+        launch {
+            assets.assets(channelId).collect {
+                current.set(it)
+                firstAssets.complete(Unit)
+            }
+        }
         // Chat starts with the badges and emotes when they are quick; a slow provider must not hold messages back.
         withTimeoutOrNull(ASSETS_WAIT_MS) { firstAssets.await() }
         source.events(channelId, userId).batch(batchMs).collect { batch ->
@@ -76,11 +88,20 @@ class ChatFeed(
                         val ids = known ?: list.mapTo(HashSet()) { it.id }.also { known = it }
                         if (ids.add(step.id)) list = (list + step).takeLast(maxLines).toImmutableList()
                     }
+
                     is ChatEvent.Deleted -> list = list.filter { it.id != step.messageId }.toImmutableList().also { known = null }
+
                     is ChatEvent.UserCleared -> list = list.filter { it.login != step.login.lowercase() }.toImmutableList().also { known = null }
-                    ChatEvent.Cleared -> { list = persistentListOf(); known = null }
+
+                    ChatEvent.Cleared -> {
+                        list = persistentListOf()
+                        known = null
+                    }
+
                     is ChatEvent.Room -> mutableRoom.value = step.state
+
                     is ChatEvent.Channel -> mutableNotices.tryEmit(step.notice)
+
                     else -> Unit
                 }
             }

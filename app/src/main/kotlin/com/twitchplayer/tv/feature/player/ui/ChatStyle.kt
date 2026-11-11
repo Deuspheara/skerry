@@ -36,8 +36,7 @@ fun ChatSettings.toStyle() = ChatStyle(
     backgroundAlpha = backgroundOpacity / 100f,
 )
 
-internal fun ChatLine.animatedEmoteCount(): Int =
-    pieces.sumOf { piece -> if (piece is ChatPiece.Emote) piece.layers.count { it.animated } else 0 }
+internal fun ChatLine.animatedEmoteCount(): Int = pieces.sumOf { piece -> if (piece is ChatPiece.Emote) piece.layers.count { it.animated } else 0 }
 
 /**
  * Which visible lines may animate their emotes: the budget goes to the newest lines first (what people are reading),
@@ -50,7 +49,10 @@ internal fun animationAllowance(visibleNewestFirst: List<ChatLine>, limit: Int):
     for (line in visibleNewestFirst) {
         if (left <= 0) break
         val take = minOf(left, line.animatedEmoteCount())
-        if (take > 0) { out[line.id] = take; left -= take }
+        if (take > 0) {
+            out[line.id] = take
+            left -= take
+        }
     }
     return out
 }

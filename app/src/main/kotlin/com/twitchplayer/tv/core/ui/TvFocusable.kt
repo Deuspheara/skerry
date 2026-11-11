@@ -5,9 +5,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.isSpecified
-import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.CornerBasedShape
@@ -15,16 +12,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.twitchplayer.tv.core.designsystem.theme.LocalMotion
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
@@ -49,7 +49,7 @@ fun TvFocusable(
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     role: Role = Role.Button,
-    focusScale: Float = TvDimens.FocusScale,
+    focusScale: Float = TvDimens.FOCUS_SCALE_DEFAULT,
     drawRing: Boolean = true,
     ringStrength: Float = 1f,
     clipContent: Boolean = false,
@@ -122,7 +122,6 @@ fun TvFocusable(
             .then(if (clipContent) Modifier.clip(shape) else Modifier),
     ) { content(progress) }
 }
-
 
 /** A cheap soft shadow: wider, fainter outlines drawn below the element, sliding down 4 dp as focus settles. */
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFocusShadow(shape: CornerBasedShape, amount: Float) {

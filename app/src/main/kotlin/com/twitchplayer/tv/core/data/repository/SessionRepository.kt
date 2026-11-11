@@ -28,11 +28,14 @@ sealed interface SessionState {
 /** The Twitch session as the rest of the app sees it. */
 interface SessionRepository : TokenSource {
     val state: StateFlow<SessionState>
+
     /** Loads the stored session and keeps it valid while the app runs. */
     fun start()
+
     /** Device-code sign-in; [onCode] shows the verification code while polling. */
     suspend fun signIn(onCode: (DeviceCodeResponse) -> Unit): Boolean
     suspend fun signOut()
+
     /** The stored token was granted [scope] (sessions from before a scope was added lack it until the viewer signs in again). */
     fun hasScope(scope: String): Boolean = true
 }
@@ -49,6 +52,7 @@ class TwitchSessionRepository(
     private val mutableState = MutableStateFlow<SessionState>(SessionState.Loading)
     override val state: StateFlow<SessionState> = mutableState.asStateFlow()
     private val lock = Mutex()
+
     @Volatile private var tokens: TwitchTokens? = null
 
     override fun current(): String? = tokens?.accessToken
@@ -59,15 +63,24 @@ class TwitchSessionRepository(
         val stored = tokens ?: return null
         if (rejected != null && stored.accessToken != rejected) return stored.accessToken
         runCatching { auth.refresh(stored) }
-            .onSuccess { tokens = it; tokenStore.save(it) }
-            .onFailure { if (it is CancellationException) throw it; endSession() }
+            .onSuccess {
+                tokens = it
+                tokenStore.save(it)
+            }
+            .onFailure {
+                if (it is CancellationException) throw it
+                endSession()
+            }
             .getOrNull()?.accessToken
     }
 
     override fun start() {
         scope.launch {
             val stored = tokenStore.read()
-            if (stored == null) { mutableState.value = SessionState.SignedOut; return@launch }
+            if (stored == null) {
+                mutableState.value = SessionState.SignedOut
+                return@launch
+            }
             tokens = stored
             // Screens start loading with the last validated account at once; the startup validation Twitch requires
             // runs right after, in parallel with them, and ends the session if the token was revoked (an expired
@@ -89,7 +102,10 @@ class TwitchSessionRepository(
             return
         }
         val validated = result.getOrNull() ?: refresh()?.let { runCatching { validator.validate(it) }.getOrNull() }
-        if (validated?.userId == null) { if (tokens != null) endSession(); return }
+        if (validated?.userId == null) {
+            if (tokens != null) endSession()
+            return
+        }
         val account = Account(validated.userId, validated.login.orEmpty())
         if (account != tokenStore.readAccount()) tokenStore.saveAccount(account)
         mutableState.value = SessionState.SignedIn(account)

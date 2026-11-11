@@ -32,6 +32,7 @@ data class EmoteChange(val added: List<Emote> = emptyList(), val removed: Set<St
 interface EmoteProvider {
     suspend fun global(): List<Emote>
     suspend fun channel(channelId: String): List<Emote>
+
     /** Push updates for the channel's set, for providers that have them. Collected while chat is open. */
     fun changes(channelId: String): Flow<EmoteChange> = emptyFlow()
 }

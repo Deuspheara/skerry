@@ -20,7 +20,9 @@ object MasterPlaylistParser {
                     val group = a["GROUP-ID"]
                     if (a["TYPE"] == "VIDEO" && group != null) names[group] = a["NAME"] ?: group
                 }
+
                 line.startsWith("#EXT-X-STREAM-INF:") -> pending = attributes(line.substringAfter(':'))
+
                 !line.startsWith("#") -> pending?.let { a ->
                     pending = null
                     val id = a["VIDEO"] ?: return@let
@@ -42,8 +44,7 @@ object MasterPlaylistParser {
         return variants.distinctBy { it.id }.sortedWith(compareBy<StreamVariant> { it.audioOnly }.thenByDescending { it.bandwidth })
     }
 
-    private fun attributes(list: String): Map<String, String> =
-        attribute.findAll(list).associate { it.groupValues[1] to (it.groups[3]?.value ?: it.groupValues[2]) }
+    private fun attributes(list: String): Map<String, String> = attribute.findAll(list).associate { it.groupValues[1] to (it.groups[3]?.value ?: it.groupValues[2]) }
 }
 
 /** Which rendition starts a channel: 720p60, else 1080p30, else the best one that is not above 1080p, else whatever exists. */
@@ -57,6 +58,5 @@ object QualityPolicy {
     }
 
     /** The viewer's pick when this stream offers it, else the default. [AUTO] is the adaptive master playlist (returns null). */
-    fun choose(variants: List<StreamVariant>, preferred: String?): StreamVariant? =
-        if (preferred == AUTO) null else variants.firstOrNull { it.id == preferred } ?: default(variants)
+    fun choose(variants: List<StreamVariant>, preferred: String?): StreamVariant? = if (preferred == AUTO) null else variants.firstOrNull { it.id == preferred } ?: default(variants)
 }

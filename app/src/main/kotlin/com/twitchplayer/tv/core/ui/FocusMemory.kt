@@ -52,11 +52,13 @@ class FocusMemory internal constructor(var lastKey: String?) {
         LaunchedEffect(ready, token) {
             if (!ready) return@LaunchedEffect
             try {
-              repeat(8) {
-                if (runCatching { focusRequester.requestFocus() }.getOrDefault(false)) return@LaunchedEffect
-                withFrameNanos { }
-              }
-            } finally { restoring = false }
+                repeat(8) {
+                    if (runCatching { focusRequester.requestFocus() }.getOrDefault(false)) return@LaunchedEffect
+                    withFrameNanos { }
+                }
+            } finally {
+                restoring = false
+            }
         }
     }
 }
@@ -73,7 +75,9 @@ object DirectionKeys {
         when (event.key) {
             androidx.compose.ui.input.key.Key.DirectionUp, androidx.compose.ui.input.key.Key.DirectionDown,
             androidx.compose.ui.input.key.Key.DirectionLeft, androidx.compose.ui.input.key.Key.DirectionRight,
-            androidx.compose.ui.input.key.Key.PageUp, androidx.compose.ui.input.key.Key.PageDown -> lastAt = android.os.SystemClock.uptimeMillis()
+            androidx.compose.ui.input.key.Key.PageUp, androidx.compose.ui.input.key.Key.PageDown,
+            -> lastAt = android.os.SystemClock.uptimeMillis()
+
             else -> Unit
         }
     }

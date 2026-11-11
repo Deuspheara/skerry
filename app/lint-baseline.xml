@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.5.1" type="baseline" client="gradle" dependencies="true" name="AGP (9.5.1)" variant="all" version="9.5.1">
+
+    <issue
+        id="ApplySharedPref"
+        message="Consider using `apply()` instead; `commit` writes its data to persistent storage immediately, whereas `apply` will handle it in the background"
+        errorLine1="        prefs.edit().clear().commit()"
+        errorLine2="                             ~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
+            line="59"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.Instant#parse`"
+        errorLine1="            val start = a[&quot;START-DATE&quot;]?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: continue"
+        errorLine2="                                                                     ~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/player/playback/PlaybackStats.kt"
+            line="46"
+            column="70"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.Instant#toEpochMilli`"
+        errorLine1="            val start = a[&quot;START-DATE&quot;]?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: continue"
+        errorLine2="                                                                               ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/player/playback/PlaybackStats.kt"
+            line="46"
+            column="80"/>
+    </issue>
+
+    <issue
+        id="OldTargetApi"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
+        errorLine1="    targetSdk = 36"
+        errorLine2="    ~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="12"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Optional Modifier parameter should have a default value of `Modifier`"
+        errorLine1="internal fun EmoteLayer(emote: Emote, animate: Boolean, widthPx: Int, heightPx: Int, modifier: Modifier = Modifier.fillMaxSize()) {"
+        errorLine2="                                                                                     ~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/player/ui/ChatEmotes.kt"
+            line="50"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be named modifier"
+        errorLine1="    micModifier: Modifier,"
+        errorLine2="    ~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/search/ui/Keyboard.kt"
+            line="76"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="    modifier: Modifier = Modifier,"
+        errorLine2="    ~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/player/ui/PlayerControlBar.kt"
+            line="52"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="RememberReturnType"
+        message="`remember` calls must not return `Unit`"
+        errorLine1="        androidx.compose.runtime.remember { restoring = true }"
+        errorLine2="                                 ~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/ui/FocusMemory.kt"
+            line="51"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        message="Fixed screen orientations will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios."
+        errorLine1="        &lt;activity android:name=&quot;.MainActivity&quot; android:exported=&quot;true&quot; android:screenOrientation=&quot;landscape&quot; android:configChanges=&quot;orientation|screenSize|screenLayout|keyboardHidden|keyboard|navigation|uiMode|density&quot; android:launchMode=&quot;singleTask&quot;>"
+        errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="8"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
+        errorLine1="    var attempt by remember(slug) { mutableStateOf(0) }"
+        errorLine2="                                    ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/clip/ui/ClipScreen.kt"
+            line="98"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
+        errorLine1="    var chromeUntil by remember { mutableStateOf(System.currentTimeMillis() + CHROME_MS) }"
+        errorLine2="                                  ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/clip/ui/ClipScreen.kt"
+            line="169"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="            activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply { if (tag == null) remove(KEY) else putString(KEY, tag) }.apply()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/ui/AppLocales.kt"
+            line="41"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX function `createBitmap` instead?"
+        errorLine1="        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/demo/kotlin/com/twitchplayer/tv/demo/DemoArt.kt"
+            line="25"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX function `createBitmap` instead?"
+        errorLine1="        val bitmap = Bitmap.createBitmap(w, BASE, Bitmap.Config.ARGB_8888)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/demo/kotlin/com/twitchplayer/tv/demo/DemoEmotes.kt"
+            line="52"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        check(prefs.edit().putString(&quot;payload&quot;, Base64.encodeToString(payload, Base64.NO_WRAP)).commit())"
+        errorLine2="              ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
+            line="29"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        prefs.edit().putString(&quot;user_id&quot;, account.userId).putString(&quot;login&quot;, account.login).apply()"
+        errorLine2="        ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
+            line="50"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        prefs.edit().clear().commit()"
+        errorLine2="        ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
+            line="59"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            val uri = android.net.Uri.parse(url)"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/player/ui/embed/TwitchEmbedPlayer.kt"
+            line="159"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            val uri = android.net.Uri.parse(url)"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/feature/player/ui/embed/TwitchEmbedPlayer.kt"
+            line="159"
+            column="23"/>
+    </issue>
+
+</issues>

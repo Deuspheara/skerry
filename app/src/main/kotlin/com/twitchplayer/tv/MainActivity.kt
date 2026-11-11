@@ -2,7 +2,6 @@ package com.twitchplayer.tv
 
 import android.content.Context
 import android.os.Bundle
-import com.twitchplayer.tv.core.ui.AppLocales
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
@@ -11,6 +10,7 @@ import com.twitchplayer.tv.app.TwitchTvApp
 import com.twitchplayer.tv.core.data.model.AppSettings
 import com.twitchplayer.tv.core.data.repository.SettingsRepository
 import com.twitchplayer.tv.core.designsystem.theme.TvTheme
+import com.twitchplayer.tv.core.ui.AppLocales
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {

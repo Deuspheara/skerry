@@ -1,7 +1,7 @@
 package com.twitchplayer.tv.feature.search
 
-import com.twitchplayer.tv.core.data.model.SearchResults
 import com.twitchplayer.tv.core.data.model.ChannelRef
+import com.twitchplayer.tv.core.data.model.SearchResults
 import com.twitchplayer.tv.feature.search.data.VoiceRecognizer
 import com.twitchplayer.tv.feature.search.presentation.ResultsUi
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
@@ -40,14 +40,15 @@ class SearchViewModelTest {
     }
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
+
     @After fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.viewModel(voice: VoiceRecognizer = FakeVoice(), settings: FakeSettings = FakeSettings()) =
-        SearchViewModel(repo, settings, voice, debounceMs = 300).also { it.state.onEach { }.launchIn(backgroundScope) }
+    private fun TestScope.viewModel(voice: VoiceRecognizer = FakeVoice(), settings: FakeSettings = FakeSettings()) = SearchViewModel(repo, settings, voice, debounceMs = 300).also { it.state.onEach { }.launchIn(backgroundScope) }
 
     @Test fun emptyQueryShowsTrends() = runTest(dispatcher) {
         val vm = viewModel()
-        advanceTimeBy(1); runCurrent()
+        advanceTimeBy(1)
+        runCurrent()
         val results = vm.state.value.results as ResultsUi.Trends
         assertEquals(listOf("a", "b"), results.channels.map { it.id })
         assertEquals(false, results.noResult)
@@ -55,7 +56,11 @@ class SearchViewModelTest {
 
     @Test fun keyboardEditsTheQuery() = runTest(dispatcher) {
         val vm = viewModel()
-        vm.append("e"); vm.append("c"); vm.space(); vm.space(); vm.append("h")
+        vm.append("e")
+        vm.append("c")
+        vm.space()
+        vm.space()
+        vm.append("h")
         assertEquals("ec h", vm.state.value.query)
         vm.delete()
         assertEquals("ec ", vm.state.value.query)
@@ -66,10 +71,16 @@ class SearchViewModelTest {
     @Test fun typingIsDebouncedIntoOneSearch() = runTest(dispatcher) {
         repo.searchResult = SearchResults(listOf(ChannelRef("1", "one", "One", null, true, 5)), listOf(category("one")))
         val vm = viewModel()
-        vm.append("o"); advanceTimeBy(100); vm.append("n"); advanceTimeBy(100); vm.append("e")
-        advanceTimeBy(299); runCurrent()
+        vm.append("o")
+        advanceTimeBy(100)
+        vm.append("n")
+        advanceTimeBy(100)
+        vm.append("e")
+        advanceTimeBy(299)
+        runCurrent()
         assertTrue(repo.searchCalls.isEmpty())
-        advanceTimeBy(2); runCurrent()
+        advanceTimeBy(2)
+        runCurrent()
         assertEquals(listOf("one"), repo.searchCalls)
         assertTrue(vm.state.value.results is ResultsUi.Found)
     }
@@ -77,7 +88,8 @@ class SearchViewModelTest {
     @Test fun noMatchFallsBackToTrendsFlagged() = runTest(dispatcher) {
         val vm = viewModel()
         vm.setQuery("zzz")
-        advanceTimeBy(400); runCurrent()
+        advanceTimeBy(400)
+        runCurrent()
         val results = vm.state.value.results as ResultsUi.Trends
         assertTrue(results.noResult)
         assertEquals(2, results.channels.size)
@@ -92,7 +104,8 @@ class SearchViewModelTest {
         voice.heard.complete("échecs")
         runCurrent()
         assertEquals(VoiceState.Heard("échecs"), vm.state.value.voice)
-        advanceTimeBy(1_001); runCurrent()
+        advanceTimeBy(1_001)
+        runCurrent()
         assertEquals("échecs", vm.state.value.query)
         assertEquals(VoiceState.Idle, vm.state.value.voice)
         assertEquals(listOf("échecs"), vm.state.value.recents)
@@ -104,7 +117,8 @@ class SearchViewModelTest {
         vm.startVoice()
         runCurrent()
         assertEquals(VoiceState.Failed, vm.state.value.voice)
-        advanceTimeBy(1_201); runCurrent()
+        advanceTimeBy(1_201)
+        runCurrent()
         assertEquals(VoiceState.Idle, vm.state.value.voice)
         assertEquals("", vm.state.value.query)
     }
@@ -120,7 +134,10 @@ class SearchViewModelTest {
     @Test fun recentsAreDedupedAndCappedAtFour() = runTest(dispatcher) {
         val settings = FakeSettings()
         val vm = viewModel(settings = settings)
-        listOf("a", "b", "c", "d", "e", "b").forEach { vm.setQuery(it); vm.commitQuery() }
+        listOf("a", "b", "c", "d", "e", "b").forEach {
+            vm.setQuery(it)
+            vm.commitQuery()
+        }
         assertEquals(listOf("b", "e", "d", "c"), vm.state.value.recents)
     }
 }

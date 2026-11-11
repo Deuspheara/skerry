@@ -9,8 +9,7 @@ import kotlinx.serialization.Serializable
  * Updates are refreshed by the repository's periodic reload (the BTTV socket is not used).
  */
 class BttvProvider(private val http: HttpClient) : EmoteProvider {
-    override suspend fun global(): List<Emote> =
-        http.getOrNull<List<BttvEmote>>("https://api.betterttv.net/3/cached/emotes/global").orEmpty().map { it.toEmote() }
+    override suspend fun global(): List<Emote> = http.getOrNull<List<BttvEmote>>("https://api.betterttv.net/3/cached/emotes/global").orEmpty().map { it.toEmote() }
 
     override suspend fun channel(channelId: String): List<Emote> {
         val channel = http.getOrNull<BttvChannel>("https://api.betterttv.net/3/cached/users/twitch/$channelId") ?: return emptyList()
@@ -19,8 +18,14 @@ class BttvProvider(private val http: HttpClient) : EmoteProvider {
 }
 
 @Serializable internal data class BttvEmote(
-    val id: String, val code: String, val animated: Boolean = false, val width: Int = 0, val height: Int = 0, val modifier: Boolean = false,
+    val id: String,
+    val code: String,
+    val animated: Boolean = false,
+    val width: Int = 0,
+    val height: Int = 0,
+    val modifier: Boolean = false,
 )
+
 @Serializable internal data class BttvChannel(val channelEmotes: List<BttvEmote> = emptyList(), val sharedEmotes: List<BttvEmote> = emptyList())
 
 /** BTTV zero-width emotes are the ones its API flags `modifier`. */

@@ -39,6 +39,7 @@ sealed interface VoiceState {
 /** What the right-hand column shows. [trends] fills the empty and no-result states. */
 sealed interface ResultsUi {
     @Immutable data class Trends(val channels: ImmutableList<ChannelRef>, val noResult: Boolean = false) : ResultsUi
+
     @Immutable data class Found(val channels: ImmutableList<ChannelRef>, val categories: ImmutableList<Category>) : ResultsUi
 }
 
@@ -62,22 +63,26 @@ class SearchViewModel(
     private var voiceJob: Job? = null
 
     private val trends = flow {
-        emit(runCatching { repository.recommended().take(4).map { ChannelRef(it.channelId, it.login, it.name, it.avatarUrl, true, it.viewers) } }
-            .getOrDefault(emptyList()).toImmutableList())
+        emit(
+            runCatching { repository.recommended().take(4).map { ChannelRef(it.channelId, it.login, it.name, it.avatarUrl, true, it.viewers) } }
+                .getOrDefault(emptyList()).toImmutableList(),
+        )
     }.stateIn(viewModelScope, SharingStarted.Lazily, persistentListOf())
 
     private val results = query.map { it.trim() }.distinctUntilChanged().debounce { if (it.isEmpty()) 0 else debounceMs }
         .flatMapLatest { q ->
             if (q.isEmpty()) {
                 trends.map<_, ResultsUi> { ResultsUi.Trends(it) }
-            } else flow {
-                val found = runCatching { repository.search(q) }.getOrNull()
-                emit(
-                    when {
-                        found == null || (found.channels.isEmpty() && found.categories.isEmpty()) -> ResultsUi.Trends(trends.value, noResult = true)
-                        else -> ResultsUi.Found(found.channels.toImmutableList(), found.categories.toImmutableList())
-                    },
-                )
+            } else {
+                flow {
+                    val found = runCatching { repository.search(q) }.getOrNull()
+                    emit(
+                        when {
+                            found == null || (found.channels.isEmpty() && found.categories.isEmpty()) -> ResultsUi.Trends(trends.value, noResult = true)
+                            else -> ResultsUi.Found(found.channels.toImmutableList(), found.categories.toImmutableList())
+                        },
+                    )
+                }
             }
         }
 
@@ -100,10 +105,22 @@ class SearchViewModel(
     fun startVoice() {
         if (voiceJob?.isActive == true) return
         voiceJob = viewModelScope.launch {
-            if (!voiceRecognizer.isAvailable()) { failVoice(); return@launch }
+            if (!voiceRecognizer.isAvailable()) {
+                failVoice()
+                return@launch
+            }
             voice.value = VoiceState.Listening
-            val heard = try { voiceRecognizer.listen() } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
-            if (heard == null) { failVoice(); return@launch }
+            val heard = try {
+                voiceRecognizer.listen()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            if (heard == null) {
+                failVoice()
+                return@launch
+            }
             voice.value = VoiceState.Heard(heard)
             delay(HEARD_MS)
             query.value = heard.take(MAX_QUERY)

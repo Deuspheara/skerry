@@ -16,22 +16,25 @@ object TvIcons {
     /** Directional glyphs: flipped in right-to-left languages (Arabic, Hebrew). */
     private val MIRRORED = setOf("ChevronLeft", "ChevronRight", "LogOut", "Backspace")
 
-    private fun icon(name: String, filled: Boolean = false, vararg paths: String): ImageVector =
-        ImageVector.Builder(
-            name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f,
-            autoMirror = name in MIRRORED,
-        ).apply {
-            paths.forEach { d ->
-                addPath(
-                    pathData = PathParser().parsePathString(d).toNodes(),
-                    fill = if (filled) SolidColor(Color.Black) else null,
-                    stroke = SolidColor(Color.Black),
-                    strokeLineWidth = 2f,
-                    strokeLineCap = StrokeCap.Round,
-                    strokeLineJoin = StrokeJoin.Round,
-                )
-            }
-        }.build()
+    private fun icon(name: String, filled: Boolean = false, vararg paths: String): ImageVector = ImageVector.Builder(
+        name = name,
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+        autoMirror = name in MIRRORED,
+    ).apply {
+        paths.forEach { d ->
+            addPath(
+                pathData = PathParser().parsePathString(d).toNodes(),
+                fill = if (filled) SolidColor(Color.Black) else null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }
+    }.build()
 
     val Home: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Home", false, "M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z") }
     val Heart: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Heart", false, "M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 0 0-7.4 7.4L12 21.8l8.8-8.8a5.2 5.2 0 0 0 0-7.4z") }
@@ -44,9 +47,11 @@ object TvIcons {
     val Film: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Film", false, "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4") }
     val Sparkles: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Sparkles", false, "M11 3l1.8 4.7L17.5 9.5l-4.7 1.8L11 16l-1.8-4.7L4.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z") }
     val Clock: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Clock", false, "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2") }
+
     /** "Ad" in a frame: the stream is showing an advertisement. */
     val Ad: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Ad", false, "M3 5h18v14H3z", "M6.5 15l2-6 2 6M7.3 13h2.4", "M14 9v6h1.5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z") }
     val Smile: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Smile", false, "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "M8.5 14a4 4 0 0 0 7 0", "M9 9.5v.5M15 9.5v.5") }
+
     /** A circled 1: every message must be unique. */
     val Unique: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Unique", false, "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "M10.5 9.5L12.5 8v8") }
     val Shift: ImageVector by lazy(LazyThreadSafetyMode.NONE) { icon("Shift", false, "M12 4l8 9h-5v6H9v-6H4z") }

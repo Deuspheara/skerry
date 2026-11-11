@@ -19,10 +19,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -65,42 +65,74 @@ fun ChatSettingsPanel(
         ChatLine("preview", ChatLineKind.Normal, "", 0xFFB57BFF, emptyList(), listOf(ChatPiece.Text("")), "12:34")
     }
     val previewLine = preview.copy(nick = stringResource(R.string.chat_preview_nick), pieces = listOf(ChatPiece.Text(stringResource(R.string.chat_preview_text))))
-    val noAnimation = remember { object : State<Int> { override val value = 0 } }
-    val on = stringResource(R.string.opt_on); val off = stringResource(R.string.opt_off)
+    val noAnimation = remember {
+        object : State<Int> {
+            override val value = 0
+        }
+    }
+    val on = stringResource(R.string.opt_on)
+    val off = stringResource(R.string.opt_off)
     fun flag(v: Boolean) = if (v) on else off
 
     Column(modifier.focusGroup(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         ChatLineView(previewLine, style, noAnimation, Modifier.padding(start = 8.dp, bottom = 2.dp))
         var first = true
-        fun Modifier.initial(): Modifier = if (first) { first = false; focusRequester(firstFocus) } else this
+        fun Modifier.initial(): Modifier = if (first) {
+            first = false
+            focusRequester(firstFocus)
+        } else {
+            this
+        }
 
         OptionRow(
-            TvIcons.TextSize, stringResource(R.string.chat_opt_text),
-            stringResource(when (settings.textSize) { ChatTextSize.Small -> R.string.opt_small; ChatTextSize.Medium -> R.string.opt_medium; ChatTextSize.Large -> R.string.opt_large }),
-            onStep = { d -> onChange { it.copy(textSize = step(ChatTextSize.entries, it.textSize, d)) } }, modifier = Modifier.initial(),
+            TvIcons.TextSize,
+            stringResource(R.string.chat_opt_text),
+            stringResource(
+                when (settings.textSize) {
+                    ChatTextSize.Small -> R.string.opt_small
+                    ChatTextSize.Medium -> R.string.opt_medium
+                    ChatTextSize.Large -> R.string.opt_large
+                },
+            ),
+            onStep = { d -> onChange { it.copy(textSize = step(ChatTextSize.entries, it.textSize, d)) } },
+            modifier = Modifier.initial(),
         )
         OptionRow(
-            TvIcons.SortPopular, stringResource(R.string.chat_opt_spacing),
-            stringResource(when (settings.density) { ChatDensity.Compact -> R.string.opt_tight; ChatDensity.Standard -> R.string.opt_normal; ChatDensity.Relaxed -> R.string.opt_loose }),
-            onStep = { d -> onChange { it.copy(density = step(ChatDensity.entries, it.density, d)) } }, modifier = Modifier.initial(),
+            TvIcons.SortPopular,
+            stringResource(R.string.chat_opt_spacing),
+            stringResource(
+                when (settings.density) {
+                    ChatDensity.Compact -> R.string.opt_tight
+                    ChatDensity.Standard -> R.string.opt_normal
+                    ChatDensity.Relaxed -> R.string.opt_loose
+                },
+            ),
+            onStep = { d -> onChange { it.copy(density = step(ChatDensity.entries, it.density, d)) } },
+            modifier = Modifier.initial(),
         )
         OptionRow(
-            TvIcons.Eye, stringResource(R.string.chat_opt_background), "${settings.backgroundOpacity}%",
-            onStep = { d -> onChange { it.copy(backgroundOpacity = step(ChatSettings.BACKGROUND_OPACITIES, it.backgroundOpacity, d)) } }, modifier = Modifier.initial(),
+            TvIcons.Eye,
+            stringResource(R.string.chat_opt_background),
+            "${settings.backgroundOpacity}%",
+            onStep = { d -> onChange { it.copy(backgroundOpacity = step(ChatSettings.BACKGROUND_OPACITIES, it.backgroundOpacity, d)) } },
+            modifier = Modifier.initial(),
         )
         OptionRow(TvIcons.Shield, stringResource(R.string.chat_opt_badges), flag(settings.showBadges), onStep = { onChange { it.copy(showBadges = !it.showBadges) } }, modifier = Modifier.initial())
         OptionRow(TvIcons.Clock, stringResource(R.string.chat_opt_time), flag(settings.showTimestamps), onStep = { onChange { it.copy(showTimestamps = !it.showTimestamps) } }, modifier = Modifier.initial())
         OptionRow(TvIcons.Sparkles, stringResource(R.string.chat_opt_animated), flag(settings.animatedEmotes), onStep = { onChange { it.copy(animatedEmotes = !it.animatedEmotes) } }, modifier = Modifier.initial())
         OptionRow(
-            TvIcons.Equalizer, stringResource(R.string.chat_opt_limit), settings.animatedLimit.count.toString(), enabled = settings.animatedEmotes,
-            onStep = { d -> onChange { it.copy(animatedLimit = step(AnimatedEmoteLimit.entries, it.animatedLimit, d)) } }, modifier = Modifier.initial(),
+            TvIcons.Equalizer,
+            stringResource(R.string.chat_opt_limit),
+            settings.animatedLimit.count.toString(),
+            enabled = settings.animatedEmotes,
+            onStep = { d -> onChange { it.copy(animatedLimit = step(AnimatedEmoteLimit.entries, it.animatedLimit, d)) } },
+            modifier = Modifier.initial(),
         )
     }
 }
 
 /** Next / previous entry, stopping at the ends for an explicit direction would trap the user, so it wraps. */
-internal fun <T> step(values: List<T>, current: T, delta: Int): T =
-    values[Math.floorMod(values.indexOf(current).coerceAtLeast(0) + delta, values.size)]
+internal fun <T> step(values: List<T>, current: T, delta: Int): T = values[Math.floorMod(values.indexOf(current).coerceAtLeast(0) + delta, values.size)]
 
 @Composable
 private fun OptionRow(
@@ -125,8 +157,16 @@ private fun OptionRow(
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 when (event.key) {
-                    Key.DirectionLeft -> { onStep(-1); true }
-                    Key.DirectionRight -> { onStep(1); true }
+                    Key.DirectionLeft -> {
+                        onStep(-1)
+                        true
+                    }
+
+                    Key.DirectionRight -> {
+                        onStep(1)
+                        true
+                    }
+
                     else -> false
                 }
             },

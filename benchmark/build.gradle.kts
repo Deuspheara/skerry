@@ -1,5 +1,7 @@
 plugins {
   alias(libs.plugins.android.test)
+  id("twitchplayer.detekt")
+  id("twitchplayer.spotless")
 }
 
 android {

@@ -22,7 +22,10 @@ class RetryPolicy(
             } catch (e: Exception) {
                 if (!isTransient(e)) throw e
                 last = e
-                if (attempt < attempts - 1) { sleep(wait); wait = (wait * 2).coerceAtMost(maxDelayMs) }
+                if (attempt < attempts - 1) {
+                    sleep(wait)
+                    wait = (wait * 2).coerceAtMost(maxDelayMs)
+                }
             }
         }
         throw last!!

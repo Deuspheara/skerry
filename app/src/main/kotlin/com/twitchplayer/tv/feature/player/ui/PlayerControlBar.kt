@@ -62,36 +62,50 @@ fun PlayerControlBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ControlBarButton(
-            TvIcons.ChevronLeft, stringResource(R.string.player_back), onBack,
+            TvIcons.ChevronLeft,
+            stringResource(R.string.player_back),
+            onBack,
             Modifier.control(PlayerControl.Back).then(if (onBackLeftTarget != null) Modifier.focusProperties { left = onBackLeftTarget } else Modifier),
         )
         Spacer(Modifier.width(TvDimens.ControlGap * 2))
         ControlBarButton(
             if (state.paused) TvIcons.Play else TvIcons.Pause,
             stringResource(if (state.paused) R.string.player_play else R.string.player_pause),
-            onPause, Modifier.control(PlayerControl.Pause), onLongClick = onPauseLong,
+            onPause,
+            Modifier.control(PlayerControl.Pause),
+            onLongClick = onPauseLong,
         )
         ControlBarButton(
             if (state.muted) TvIcons.Mute else TvIcons.Volume,
             stringResource(if (state.muted) R.string.player_muted else R.string.player_sound),
-            onMute, Modifier.control(PlayerControl.Sound),
+            onMute,
+            Modifier.control(PlayerControl.Sound),
         )
         ControlBarButton(
             if (state.fullscreen) TvIcons.Minimize else TvIcons.Maximize,
             stringResource(if (state.fullscreen) R.string.player_exit_fullscreen else R.string.player_fullscreen),
-            onFullscreen, Modifier.control(PlayerControl.Fullscreen),
+            onFullscreen,
+            Modifier.control(PlayerControl.Fullscreen),
         )
         Spacer(Modifier.width(TvDimens.ControlGap * 2))
         ControlBarButton(TvIcons.ArrowUp, stringResource(R.string.player_next_up), onPrevious, Modifier.control(PlayerControl.Up), enabled = state.canPrevious)
         ControlBarButton(TvIcons.ArrowDown, stringResource(R.string.player_next_down), onNext, Modifier.control(PlayerControl.Down), enabled = state.canNext)
         Spacer(Modifier.width(TvDimens.ControlGap * 2))
         ControlBarButton(
-            when (state.chatMode) { ChatMode.Hidden -> TvIcons.ChatOff; ChatMode.Compact -> TvIcons.ChatCompact; ChatMode.Overlay -> TvIcons.ChatOverlay },
-            stringResource(R.string.player_chat), onChat, Modifier.control(PlayerControl.Chat),
+            when (state.chatMode) {
+                ChatMode.Hidden -> TvIcons.ChatOff
+                ChatMode.Compact -> TvIcons.ChatCompact
+                ChatMode.Overlay -> TvIcons.ChatOverlay
+            },
+            stringResource(R.string.player_chat),
+            onChat,
+            Modifier.control(PlayerControl.Chat),
         )
         ControlBarButton(TvIcons.Edit, stringResource(R.string.chat_write), onWrite, Modifier.control(PlayerControl.Write))
         ControlBarButton(
-            TvIcons.Quality, stringResource(R.string.player_quality), onQuality,
+            TvIcons.Quality,
+            stringResource(R.string.player_quality),
+            onQuality,
             Modifier.control(PlayerControl.Quality).then(if (chatTarget != null) Modifier.focusProperties { right = chatTarget } else Modifier),
         )
     }

@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
-import com.twitchplayer.tv.core.designsystem.theme.interFamily
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
+import com.twitchplayer.tv.core.designsystem.theme.interFamily
 import com.twitchplayer.tv.core.ui.TvAsyncImage
 
 /** Round channel avatar: remote picture when known, otherwise the purple initial. Decorative. */

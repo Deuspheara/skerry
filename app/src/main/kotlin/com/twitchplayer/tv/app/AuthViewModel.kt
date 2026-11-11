@@ -33,5 +33,7 @@ class AuthViewModel(private val session: SessionRepository) : ViewModel() {
         mutable.value = SignInUiState()
     }
 
-    fun signOut() { viewModelScope.launch { session.signOut() } }
+    fun signOut() {
+        viewModelScope.launch { session.signOut() }
+    }
 }

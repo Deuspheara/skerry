@@ -1,8 +1,8 @@
 package com.twitchplayer.tv.core.designsystem.component
 
-import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -22,10 +22,10 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
+import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.TvFocusable
-import androidx.compose.foundation.layout.Arrangement
 
 /**
  * Text chip. Selected = purple fill + check; focus = the shared ring (selected is not focused).
@@ -41,12 +41,24 @@ fun Chip(
     compact: Boolean = false,
 ) {
     // Selected is a tonal purple fill + check, never an outline: only focus draws a ring.
-    val fill = if (selected) TvColors.Purple.copy(alpha = 0.34f).compositeOver(TvColors.Alt2) else if (compact) TvColors.KeyFill else TvColors.Alt2
-    val line = if (selected) TvColors.Purple else if (compact) TvColors.KeyLine else TvColors.ChipLine
+    val fill = if (selected) {
+        TvColors.Purple.copy(alpha = 0.34f).compositeOver(TvColors.Alt2)
+    } else if (compact) {
+        TvColors.KeyFill
+    } else {
+        TvColors.Alt2
+    }
+    val line = if (selected) {
+        TvColors.Purple
+    } else if (compact) {
+        TvColors.KeyLine
+    } else {
+        TvColors.ChipLine
+    }
     TvFocusable(
         onClick = onClick,
         shape = TvShapes.Chip,
-        focusScale = TvDimens.FocusScaleControl,
+        focusScale = TvDimens.FOCUS_SCALE_CONTROL,
         pressOverlay = TvColors.PressTone,
         role = Role.RadioButton,
         modifier = modifier
@@ -74,7 +86,7 @@ fun IconChip(icon: ImageVector, description: String, onClick: () -> Unit, modifi
     TvFocusable(
         onClick = onClick,
         shape = TvShapes.Chip,
-        focusScale = TvDimens.FocusScaleControl,
+        focusScale = TvDimens.FOCUS_SCALE_CONTROL,
         pressOverlay = TvColors.PressTone,
         description = description,
         modifier = modifier

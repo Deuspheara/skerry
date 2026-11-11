@@ -23,12 +23,20 @@ class FfzProvider(private val http: HttpClient) : EmoteProvider {
 }
 
 @Serializable internal data class FfzGlobal(@SerialName("default_sets") val defaultSets: List<Int> = emptyList(), val sets: Map<String, FfzSet> = emptyMap())
+
 @Serializable internal data class FfzRoom(val room: FfzRoomInfo? = null, val sets: Map<String, FfzSet> = emptyMap())
+
 @Serializable internal data class FfzRoomInfo(val set: Int? = null)
+
 @Serializable internal data class FfzSet(val emoticons: List<FfzEmote> = emptyList())
+
 @Serializable internal data class FfzEmote(
-    val name: String, val width: Int = 0, val height: Int = 0, val modifier: Boolean = false,
-    val urls: Map<String, String> = emptyMap(), val animated: Map<String, String>? = null,
+    val name: String,
+    val width: Int = 0,
+    val height: Int = 0,
+    val modifier: Boolean = false,
+    val urls: Map<String, String> = emptyMap(),
+    val animated: Map<String, String>? = null,
 )
 
 private fun Map<String, String>.at2x(): String? = this["2"] ?: this["1"] ?: this["4"]

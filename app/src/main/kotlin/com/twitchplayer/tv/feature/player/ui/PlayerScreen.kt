@@ -7,19 +7,15 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.widthIn
-import com.twitchplayer.tv.feature.player.playback.AdBreak
-import com.twitchplayer.tv.feature.player.playback.PlaybackStats
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,7 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +54,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -71,6 +69,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -78,18 +77,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.util.lerp
-import kotlin.math.roundToInt
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.tv.material3.Text
+import com.twitchplayer.tv.BuildConfig
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
+import com.twitchplayer.tv.core.data.model.PlayerEngine
+import com.twitchplayer.tv.core.data.repository.SendResult
 import com.twitchplayer.tv.core.designsystem.component.EmptyState
 import com.twitchplayer.tv.core.designsystem.component.LocalToast
 import com.twitchplayer.tv.core.designsystem.component.NavRail
@@ -102,30 +101,31 @@ import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.TvFocusable
+import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
+import com.twitchplayer.tv.feature.player.data.chat.RoomState
+import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
+import com.twitchplayer.tv.feature.player.playback.AdBreak
+import com.twitchplayer.tv.feature.player.playback.NativeStatus
+import com.twitchplayer.tv.feature.player.playback.NativeVideoSurface
+import com.twitchplayer.tv.feature.player.playback.PlaybackStats
+import com.twitchplayer.tv.feature.player.playback.VideoPlayer
+import com.twitchplayer.tv.feature.player.playback.VideoQualities
+import com.twitchplayer.tv.feature.player.playback.rememberNativeVideoPlayer
 import com.twitchplayer.tv.feature.player.presentation.ChatLine
 import com.twitchplayer.tv.feature.player.presentation.PlayerCommand
 import com.twitchplayer.tv.feature.player.presentation.PlayerUiState
 import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
-import com.twitchplayer.tv.BuildConfig
-import com.twitchplayer.tv.core.data.model.PlayerEngine
-import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
-import com.twitchplayer.tv.feature.player.playback.NativeStatus
-import com.twitchplayer.tv.feature.player.playback.NativeVideoSurface
-import com.twitchplayer.tv.feature.player.playback.VideoPlayer
-import com.twitchplayer.tv.core.data.repository.SendResult
-import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
-import com.twitchplayer.tv.feature.player.data.chat.RoomState
-import com.twitchplayer.tv.feature.player.playback.VideoQualities
-import com.twitchplayer.tv.feature.player.playback.rememberNativeVideoPlayer
 import com.twitchplayer.tv.feature.player.ui.embed.PlayerConfigProvider
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchEmbedPlayer
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchPlayerConfig
 import com.twitchplayer.tv.feature.player.ui.embed.WebViewVideoPlayer
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
+import kotlin.math.roundToInt
 
 /**
  * The player lives above the navigation stack so playback survives screen changes. [fullScreen] is true while the
@@ -173,7 +173,9 @@ private fun PlayerHostContent(
     val currentPreferred by rememberUpdatedState(preferredQuality)
     val nativePlayer = if (BuildConfig.NATIVE_PLAYER_ENABLED && engine == PlayerEngine.Native) {
         rememberNativeVideoPlayer(koinInject<TwitchPlaybackResolver>(), { currentPreferred }, viewModel::setPreferredQuality)
-    } else null
+    } else {
+        null
+    }
     var fallbackLogin by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(nativePlayer) {
         nativePlayer?.status?.collect { status ->
@@ -223,15 +225,24 @@ private fun PlayerHostContent(
     }
     LaunchedEffect(fullScreen) {
         viewModel.setMinimized(!fullScreen)
-        if (!fullScreen) { dockOpen = false; interactive = false }
+        if (!fullScreen) {
+            dockOpen = false
+            interactive = false
+        }
     }
 
     // Back closes the topmost layer: embed focus mode, dock, suggestions, chat options, the bottom overlay, chat, then the screen.
     val handleBack = {
         when {
-            interactive -> { interactive = false; player.setInteractive(false) }
+            interactive -> {
+                interactive = false
+                player.setInteractive(false)
+            }
+
             dockOpen -> dockOpen = false
+
             viewModel.handleBack() -> Unit
+
             else -> onBack()
         }
     }
@@ -246,11 +257,15 @@ private fun PlayerHostContent(
     var lastControl by remember { mutableStateOf(PlayerControl.Pause) }
     var infoFocused by remember { mutableStateOf(false) }
     var focusInChat by remember { mutableStateOf(false) }
+
     // Never hand focus back to "Back": a stray OK after closing a layer would leave the player.
-    fun restoreControl() { runCatching { focus.getValue(if (lastControl == PlayerControl.Back) PlayerControl.Pause else lastControl).requestFocus() } }
+    fun restoreControl() {
+        runCatching { focus.getValue(if (lastControl == PlayerControl.Back) PlayerControl.Pause else lastControl).requestFocus() }
+    }
     LaunchedEffect(fullScreen) { if (fullScreen) runCatching { focus.getValue(PlayerControl.Pause).requestFocus() } }
 
     val sheet = remember { PlayerSheet() }
+
     // Layers: 0 = video alone, 1 = bottom overlay (stream info + controls), then rows of streams below the controls.
     // Like a feed: Down scrolls further down (controls -> first row -> next rows), Up comes back (rows -> controls ->
     // stream info -> video alone), Back closes the topmost layer.
@@ -259,8 +274,11 @@ private fun PlayerHostContent(
         when {
             // The first row closes the rows (focus search would otherwise land on the controls above it).
             state.zapperOpen -> if (sheet.focusedRow == 0 || !focusManager.moveFocus(FocusDirection.Up)) viewModel.closeZapper()
+
             !state.controlsVisible -> viewModel.wake()
+
             !infoFocused -> runCatching { infoFocus.requestFocus() }
+
             else -> viewModel.hideOverlay()
         }
     }
@@ -286,11 +304,18 @@ private fun PlayerHostContent(
     // The chat column holds a text area of 24 % / 28 % of the screen plus its insets;
     // the video keeps at least 2/3 of the width. Over-the-video chat leaves the video full width.
     val columnWidth = { mode: ChatMode ->
-        val fraction = when (mode) { ChatMode.Compact -> TvDimens.ChatCompactFraction; else -> 0f }
-        if (fraction == 0f) 0.dp else minOf(
-            screenWidth * fraction + TvDimens.ChatInsetStart + TvDimens.ChatInsetEnd,
-            screenWidth * (1f - TvDimens.VideoMinFraction),
-        )
+        val fraction = when (mode) {
+            ChatMode.Compact -> TvDimens.CHAT_COMPACT_FRACTION
+            else -> 0f
+        }
+        if (fraction == 0f) {
+            0.dp
+        } else {
+            minOf(
+                screenWidth * fraction + TvDimens.ChatInsetStart + TvDimens.ChatInsetEnd,
+                screenWidth * (1f - TvDimens.VIDEO_MIN_FRACTION),
+            )
+        }
     }
     // The video is a hardware overlay that Chromium places on its own clock: moving or scaling it frame by frame makes
     // the picture wobble behind the app's frames. So it is resized once, at the start of a chat change, and only the
@@ -302,8 +327,8 @@ private fun PlayerHostContent(
     val videoHeight = minOf(videoWidth * 9f / 16f, screenHeight)
     val videoTop = (screenHeight - videoHeight) / 2
     val controlsEnabled = !state.zapperOpen && !dockOpen
-    val miniWidthPx = with(density) { (TvDimens.MiniWidth * TvDimens.MiniScale).roundToPx() }
-    val miniHeightPx = with(density) { (TvDimens.MiniHeight * TvDimens.MiniScale).roundToPx() }
+    val miniWidthPx = with(density) { (TvDimens.MiniWidth * TvDimens.MINI_SCALE).roundToPx() }
+    val miniHeightPx = with(density) { (TvDimens.MiniHeight * TvDimens.MINI_SCALE).roundToPx() }
     val miniEndPx = with(density) { TvDimens.SafeHorizontal.roundToPx() }
     val miniBottomPx = with(density) { TvDimens.SafeBottom.roundToPx() }
     val columnPx = with(density) { columnWidth(chatMode).toPx() }
@@ -321,7 +346,9 @@ private fun PlayerHostContent(
     val miniSettled by remember { derivedStateOf { expand.value < 0.02f } }
     val visibleChatPx = {
         val m = chatMotion
-        if (m.overlay) 0f else {
+        if (m.overlay) {
+            0f
+        } else {
             val width = if (m.widthPx > 0f) m.widthPx else columnPx
             val column = if (m.column.value == 0f) width else m.column.value
             (column - m.away.value * width).coerceAtLeast(0f)
@@ -332,51 +359,78 @@ private fun PlayerHostContent(
         Modifier
             .fillMaxSize()
             .then(
-                if (!fullScreen) Modifier else Modifier
-                    // Native video: the SurfaceView punches its own hole and the letterbox shows the app root / window (same
-                    // colour), so this fill would only be one more full-screen pass over the picture.
-                    .then(if (useNative) Modifier else Modifier.background(TvColors.Body))
-                    .onPreviewKeyEvent { event ->
-                        // Back is a plain key on a TV remote: handle it here (on release) so consecutive presses are never dropped.
-                        if (event.key == Key.Back || event.key == Key.Escape) {
-                            if (event.type == KeyEventType.KeyUp) handleBack()
-                            return@onPreviewKeyEvent true
+                if (!fullScreen) {
+                    Modifier
+                } else {
+                    Modifier
+                        // Native video: the SurfaceView punches its own hole and the letterbox shows the app root / window (same
+                        // colour), so this fill would only be one more full-screen pass over the picture.
+                        .then(if (useNative) Modifier else Modifier.background(TvColors.Body))
+                        .onPreviewKeyEvent { event ->
+                            // Back is a plain key on a TV remote: handle it here (on release) so consecutive presses are never dropped.
+                            if (event.key == Key.Back || event.key == Key.Escape) {
+                                if (event.type == KeyEventType.KeyUp) handleBack()
+                                return@onPreviewKeyEvent true
+                            }
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            // Layer 0: the first key (Up / Down included) only brings the overlay back, focus stays where it was.
+                            // Chat keeps its keys: scrolling the history never needs a wake-up press.
+                            val hidden = !state.controlsVisible && !state.zapperOpen && !dockOpen
+                            if (hidden && !focusInChat) {
+                                viewModel.wake()
+                                return@onPreviewKeyEvent true
+                            }
+                            viewModel.wake()
+                            false
                         }
-                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                        // Layer 0: the first key (Up / Down included) only brings the overlay back, focus stays where it was.
-                        // Chat keeps its keys: scrolling the history never needs a wake-up press.
-                        val hidden = !state.controlsVisible && !state.zapperOpen && !dockOpen
-                        if (hidden && !focusInChat) { viewModel.wake(); return@onPreviewKeyEvent true }
-                        viewModel.wake()
-                        false
-                    }
-                    .onKeyEvent { event ->
-                        // Only keys nothing else used get here (chat scrolling, option steps and lists consume theirs).
-                        if (event.type != KeyEventType.KeyDown || dockOpen || interactive || focusInChat) return@onKeyEvent false
-                        when (event.key) {
-                            Key.DirectionUp -> { goUp(); true }
-                            Key.DirectionDown -> { goDown(); true }
-                            // Nothing further left (the focus search found no neighbour): reveal the dock.
-                            Key.DirectionLeft -> if (state.zapperOpen) false else { if (!focusManager.moveFocus(FocusDirection.Left)) dockOpen = true; true }
-                            else -> false
+                        .onKeyEvent { event ->
+                            // Only keys nothing else used get here (chat scrolling, option steps and lists consume theirs).
+                            if (event.type != KeyEventType.KeyDown || dockOpen || interactive || focusInChat) return@onKeyEvent false
+                            when (event.key) {
+                                Key.DirectionUp -> {
+                                    goUp()
+                                    true
+                                }
+
+                                Key.DirectionDown -> {
+                                    goDown()
+                                    true
+                                }
+
+                                // Nothing further left (the focus search found no neighbour): reveal the dock.
+                                Key.DirectionLeft -> if (state.zapperOpen) {
+                                    false
+                                } else {
+                                    if (!focusManager.moveFocus(FocusDirection.Left)) dockOpen = true
+                                    true
+                                }
+
+                                else -> false
+                            }
                         }
-                    }
-                    .pointerInput(Unit) {
-                        // Observed on the way down (never consumed): the embed and the buttons still get every event.
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                val change = event.changes.firstOrNull() ?: continue
-                                when (event.type) {
-                                    PointerEventType.Scroll -> if (change.position.x < videoWidthPx && !dockOpen) {
-                                        if (change.scrollDelta.y < 0f) goUp() else if (change.scrollDelta.y > 0f) goDown()
+                        .pointerInput(Unit) {
+                            // Observed on the way down (never consumed): the embed and the buttons still get every event.
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                    val change = event.changes.firstOrNull() ?: continue
+                                    when (event.type) {
+                                        PointerEventType.Scroll -> if (change.position.x < videoWidthPx && !dockOpen) {
+                                            if (change.scrollDelta.y < 0f) {
+                                                goUp()
+                                            } else if (change.scrollDelta.y > 0f) {
+                                                goDown()
+                                            }
+                                        }
+
+                                        PointerEventType.Move, PointerEventType.Press -> if (!state.zapperOpen) viewModel.wake()
+
+                                        else -> Unit
                                     }
-                                    PointerEventType.Move, PointerEventType.Press -> if (!state.zapperOpen) viewModel.wake()
-                                    else -> Unit
                                 }
                             }
                         }
-                    },
+                },
             ),
     ) {
         if (useNative) {
@@ -384,8 +438,12 @@ private fun PlayerHostContent(
             NativeVideoSurface(
                 player = nativePlayer,
                 modifier = Modifier.videoFrame(
-                    expand = { expand.value }, visibleChatPx = visibleChatPx,
-                    miniWidth = miniWidthPx, miniHeight = miniHeightPx, miniEnd = miniEndPx, miniBottom = miniBottomPx,
+                    expand = { expand.value },
+                    visibleChatPx = visibleChatPx,
+                    miniWidth = miniWidthPx,
+                    miniHeight = miniHeightPx,
+                    miniEnd = miniEndPx,
+                    miniBottom = miniBottomPx,
                 ),
             )
         } else if (config == null) {
@@ -405,7 +463,11 @@ private fun PlayerHostContent(
                         .align(Alignment.BottomEnd)
                         .padding(end = TvDimens.SafeHorizontal, bottom = TvDimens.SafeBottom)
                         .size(TvDimens.MiniWidth, TvDimens.MiniHeight)
-                        .graphicsLayer { scaleX = TvDimens.MiniScale; scaleY = TvDimens.MiniScale; transformOrigin = TransformOrigin(1f, 1f) }
+                        .graphicsLayer {
+                            scaleX = TvDimens.MINI_SCALE
+                            scaleY = TvDimens.MINI_SCALE
+                            transformOrigin = TransformOrigin(1f, 1f)
+                        }
                 },
             )
         }
@@ -413,16 +475,16 @@ private fun PlayerHostContent(
         if (!fullScreen) {
             // Native video: the focus frame appears once the picture has landed in its corner.
             if (!useNative || miniSettled) {
-            val miniLabel = stringResource(R.string.player_mini)
-            TvFocusable(
-                onClick = onExpand,
-                shape = TvShapes.Card,
-                description = miniLabel,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = TvDimens.SafeHorizontal, bottom = TvDimens.SafeBottom)
-                    .size(TvDimens.MiniWidth * TvDimens.MiniScale, TvDimens.MiniHeight * TvDimens.MiniScale),
-            ) { Box(Modifier.matchParentSize().border(1.dp, TvColors.Divider, TvShapes.Card)) }
+                val miniLabel = stringResource(R.string.player_mini)
+                TvFocusable(
+                    onClick = onExpand,
+                    shape = TvShapes.Card,
+                    description = miniLabel,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = TvDimens.SafeHorizontal, bottom = TvDimens.SafeBottom)
+                        .size(TvDimens.MiniWidth * TvDimens.MINI_SCALE, TvDimens.MiniHeight * TvDimens.MINI_SCALE),
+                ) { Box(Modifier.matchParentSize().border(1.dp, TvColors.Divider, TvShapes.Card)) }
             }
         } else {
             FullScreenLayers(
@@ -435,13 +497,21 @@ private fun PlayerHostContent(
                 onBack = onBack,
                 onOpenChannel = { onOpenChannel(state.login) },
                 viewModel = viewModel,
-                onPauseLong = { if (config != null && !useNative) { interactive = true; player.setInteractive(true) } },
+                onPauseLong = {
+                    if (config != null && !useNative) {
+                        interactive = true
+                        player.setInteractive(true)
+                    }
+                },
                 onQuality = {
                     player.loadQualities { result ->
                         if (result.options.isEmpty()) toast.show(unavailable) else qualities = result
                     }
                 },
-                onWrite = { viewModel.ensureChatVisible(); composing = true },
+                onWrite = {
+                    viewModel.ensureChatVisible()
+                    composing = true
+                },
                 chat = ChatLayerSpec(
                     lines = viewModel.chat,
                     style = chatStyle,
@@ -469,11 +539,19 @@ private fun PlayerHostContent(
                 NavRail(
                     items = dockItems,
                     selectedIndex = -1,
-                    onSelect = { dockOpen = false; onDockSelect(it) },
+                    onSelect = {
+                        dockOpen = false
+                        onDockSelect(it)
+                    },
                     selectedRequester = dockFocus,
                     compactOnly = true,
                     modifier = Modifier.onKeyEvent { event ->
-                        if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) { dockOpen = false; true } else false
+                        if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) {
+                            dockOpen = false
+                            true
+                        } else {
+                            false
+                        }
                     },
                 )
             }
@@ -481,16 +559,25 @@ private fun PlayerHostContent(
     }
 
     if (composing) {
-        ChatComposeDialog(onSend = { viewModel.sendChat(it); composing = false }, onDismiss = { composing = false })
+        ChatComposeDialog(onSend = {
+            viewModel.sendChat(it)
+            composing = false
+        }, onDismiss = { composing = false })
     }
     qualities?.let { current ->
-        QualityDialog(current, onPick = { id -> player.setQuality(id); qualities = null }, onDismiss = { qualities = null })
+        QualityDialog(current, onPick = { id ->
+            player.setQuality(id)
+            qualities = null
+        }, onDismiss = { qualities = null })
     }
 
     // Opening the dock moves focus into it; closing it (or the suggestions) returns focus to the last used control.
     LaunchedEffect(dockOpen) {
-        if (dockOpen) runCatching { dockFocus.requestFocus() }
-        else if (fullScreen) restoreControl()
+        if (dockOpen) {
+            runCatching { dockFocus.requestFocus() }
+        } else if (fullScreen) {
+            restoreControl()
+        }
     }
     LaunchedEffect(state.zapperOpen) {
         if (!state.zapperOpen && fullScreen) restoreControl()
@@ -520,6 +607,7 @@ private fun PlayerHostContent(
 private class ChatMotion(shown: Boolean) {
     val away = Animatable(if (shown) 0f else 1f)
     val column = Animatable(0f)
+
     /** The column's laid-out width and whether it is the over-the-video kind; set by the chat layer, read by the video's layout. */
     var widthPx = 0f
     var overlay = false
@@ -590,7 +678,10 @@ private fun BoxScope.FullScreenLayers(
         if (state.zapperOpen) sheet.composed = true
         val target = if (state.zapperOpen && sheet.rowHeightPx > 0) (sheet.focusedRow + 1) * sheet.rowHeightPx + gapPx else 0f
         sheet.shift.animateTo(target, if (state.zapperOpen) motion.medium() else motion.exit())
-        if (!state.zapperOpen) { sheet.composed = false; sheet.focusedRow = 0 }
+        if (!state.zapperOpen) {
+            sheet.composed = false
+            sheet.focusedRow = 0
+        }
     }
     val shift = { sheet.shift.value }
     // The controls sit 64 dp above the bottom edge; once the rows are up that is a wide gap above the first row's title.
@@ -601,7 +692,10 @@ private fun BoxScope.FullScreenLayers(
     // One scrim under the bottom overlay, only while it shows: it sits on the video's bottom edge, not its centre.
     Box(
         Modifier.width(videoWidth).height(280.dp).align(Alignment.BottomStart)
-            .graphicsLayer { alpha = barAlpha(); translationY = -shift() }
+            .graphicsLayer {
+                alpha = barAlpha()
+                translationY = -shift()
+            }
             // Below the gradient: the same dark backdrop continues past the bottom edge of the screen, so as the sheet rises
             // for the rows of streams they sit on one continuous backdrop (no seam, no clear picture behind the cards).
             .drawBehind { drawRect(SheetBackdrop, topLeft = Offset(0f, size.height), size = Size(size.width, size.height * 6)) }
@@ -626,11 +720,16 @@ private fun BoxScope.FullScreenLayers(
             .align(Alignment.BottomStart)
             .width(videoWidth - infoEnd)
             .padding(start = TvDimens.SafeHorizontal - 4.dp, bottom = 64.dp)
-            .graphicsLayer { val a = barAlpha(); alpha = a; translationY = (1f - a) * 12.dp.toPx() - shift() + tuck() }
+            .graphicsLayer {
+                val a = barAlpha()
+                alpha = a
+                translationY = (1f - a) * 12.dp.toPx() - shift() + tuck()
+            }
             .focusProperties { canFocus = controlsEnabled },
     ) {
         PlayerHeader(
-            login = state.login, stream = state.current,
+            login = state.login,
+            stream = state.current,
             onOpenChannel = onOpenChannel,
             ticking = state.controlsVisible && !state.zapperOpen,
             modifier = Modifier.focusRequester(infoFocus).onFocusChanged { onInfoFocused(it.hasFocus) },
@@ -695,7 +794,10 @@ private val SheetBackdrop = Color.Black.copy(alpha = 0.92f)
 private fun Modifier.videoFrame(
     expand: () -> Float,
     visibleChatPx: () -> Float,
-    miniWidth: Int, miniHeight: Int, miniEnd: Int, miniBottom: Int,
+    miniWidth: Int,
+    miniHeight: Int,
+    miniEnd: Int,
+    miniBottom: Int,
 ): Modifier = layout { measurable, constraints ->
     val maxW = constraints.maxWidth
     val maxH = constraints.maxHeight
@@ -749,11 +851,17 @@ private fun BoxScope.ChatLayer(
 
     val away = chat.motion.away
     val column = chat.motion.column
-    SideEffect { chat.motion.widthPx = widthPx; chat.motion.overlay = overlay }
+    SideEffect {
+        chat.motion.widthPx = widthPx
+        chat.motion.overlay = overlay
+    }
     var mounted by remember { mutableStateOf(false) }
     LaunchedEffect(shown) {
         if (shown) {
-            if (!mounted) { snapshotFlow(chat.ready).first { it }; mounted = true }
+            if (!mounted) {
+                snapshotFlow(chat.ready).first { it }
+                mounted = true
+            }
             if (away.value > 0f && motion.enabled) awaitSteadyFrames()
         }
         away.animateTo(if (shown) 0f else 1f, if (shown) motion.glide() else motion.glideOut())
@@ -761,8 +869,9 @@ private fun BoxScope.ChatLayer(
     // Width change (the screen size, or compact <-> over-the-video): the column is laid out at the new width at once and
     // its visible width eases from the old one, so it starts from the old left edge and settles on the new one.
     LaunchedEffect(widthPx, overlay) {
-        if (overlay || !shown || column.value == 0f) column.snapTo(widthPx)
-        else if (column.value != widthPx) {
+        if (overlay || !shown || column.value == 0f) {
+            column.snapTo(widthPx)
+        } else if (column.value != widthPx) {
             if (motion.enabled) awaitSteadyFrames()
             column.animateTo(widthPx, motion.glide())
         }
@@ -818,12 +927,18 @@ private fun BoxScope.ChatLayer(
                 modifier = if (overlay) Modifier.graphicsLayer { alpha = maxOf(barAlpha(), if (state.chatSettingsOpen) 1f else 0f) } else Modifier,
             )
             Box(Modifier.weight(1f).fillMaxWidth()) {
-                if (mounted) ChatPanel(
-                    lines, style, Modifier.fillMaxSize(),
-                    focusRequester = chat.panelFocus, onLeave = chat.onLeave,
-                    overlay = overlay, active = shown,
-                    bottomInset = TvDimens.SafeBottom + 6.dp,
-                )
+                if (mounted) {
+                    ChatPanel(
+                        lines,
+                        style,
+                        Modifier.fillMaxSize(),
+                        focusRequester = chat.panelFocus,
+                        onLeave = chat.onLeave,
+                        overlay = overlay,
+                        active = shown,
+                        bottomInset = TvDimens.SafeBottom + 6.dp,
+                    )
+                }
                 if (state.chatSettingsOpen) {
                     ChatSettingsPanel(
                         settings = chat.settings,
@@ -865,7 +980,12 @@ private fun ChatHeader(
             iconSize = 16.dp,
             selected = settingsOpen,
             modifier = Modifier.focusRequester(focusRequester).onKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) { onLeave(); true } else false
+                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
+                    onLeave()
+                    true
+                } else {
+                    false
+                }
             },
         )
     }
@@ -919,7 +1039,8 @@ private fun BoxScope.StatusLayers(player: VideoPlayer, showStats: Boolean, notic
 
     if (stacked) {
         Column(Modifier.align(Alignment.TopStart).padding(start = TvDimens.SafeHorizontal, top = TvDimens.SafeTop), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Pill(); Stats()
+            Pill()
+            Stats()
         }
     } else {
         Box(Modifier.align(Alignment.TopStart).padding(start = TvDimens.SafeHorizontal, top = TvDimens.SafeTop)) { Pill() }
@@ -928,6 +1049,7 @@ private fun BoxScope.StatusLayers(player: VideoPlayer, showStats: Boolean, notic
 }
 
 private const val AD_KIND = "ad"
+
 /** Below this video width the stats block goes under the pill (a large chat column leaves 640 dp). */
 private val NARROW_VIDEO = 660.dp
 
@@ -935,5 +1057,4 @@ private val NARROW_VIDEO = 660.dp
 // The initial value is deliberately read once, when the state is created: the lines to show before the first collection.
 @Suppress("StateFlowValueCalledInComposition")
 @Composable
-private fun rememberChatLines(flow: StateFlow<ImmutableList<ChatLine>>, active: Boolean): State<ImmutableList<ChatLine>> =
-    produceState(flow.value, flow, active) { if (active) flow.collect { value = it } }
+private fun rememberChatLines(flow: StateFlow<ImmutableList<ChatLine>>, active: Boolean): State<ImmutableList<ChatLine>> = produceState(flow.value, flow, active) { if (active) flow.collect { value = it } }

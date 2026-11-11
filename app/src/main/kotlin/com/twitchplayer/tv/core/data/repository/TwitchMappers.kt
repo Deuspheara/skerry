@@ -7,16 +7,14 @@ import com.twitchplayer.tv.core.network.api.TwitchGame
 import com.twitchplayer.tv.core.network.api.TwitchStream
 
 /** Fills Twitch's `{width}x{height}` template (also the `%{width}` form used by videos). */
-internal fun sizedImage(template: String, width: Int, height: Int): String =
-    template.replace("%{width}", width.toString()).replace("%{height}", height.toString())
-        .replace("{width}", width.toString()).replace("{height}", height.toString())
+internal fun sizedImage(template: String, width: Int, height: Int): String = template.replace("%{width}", width.toString()).replace("%{height}", height.toString())
+    .replace("{width}", width.toString()).replace("{height}", height.toString())
 
 /**
  * A live thumbnail URL never changes while the picture does, and Coil caches by URL without HTTP cache headers: a
  * 5-minute bucket in the query makes a new frame load at most every 5 minutes (Twitch refreshes them about that often).
  */
-internal fun freshThumbnail(url: String, nowMs: Long = System.currentTimeMillis()): String =
-    if (url.isEmpty()) url else url + (if ('?' in url) '&' else '?') + "t=" + nowMs / THUMBNAIL_BUCKET_MS
+internal fun freshThumbnail(url: String, nowMs: Long = System.currentTimeMillis()): String = if (url.isEmpty()) url else url + (if ('?' in url) '&' else '?') + "t=" + nowMs / THUMBNAIL_BUCKET_MS
 
 private const val THUMBNAIL_BUCKET_MS = 5 * 60_000L
 
@@ -61,8 +59,12 @@ internal fun categoryGroupOf(name: String): CategoryGroup {
 }
 
 /** Helix timestamps ("2026-11-07T09:12:00Z"); java.time needs API 26 and minSdk is 24. 0 when absent or malformed. */
-internal fun parseTwitchTime(value: String): Long = if (value.isEmpty()) 0L else runCatching {
-    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
-        .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-        .parse(value)!!.time
-}.getOrDefault(0L)
+internal fun parseTwitchTime(value: String): Long = if (value.isEmpty()) {
+    0L
+} else {
+    runCatching {
+        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            .parse(value)!!.time
+    }.getOrDefault(0L)
+}

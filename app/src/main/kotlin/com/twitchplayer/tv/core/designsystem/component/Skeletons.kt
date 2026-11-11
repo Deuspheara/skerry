@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.core.designsystem.component
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,11 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,9 +28,8 @@ import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 
-/**
- * Loading placeholders: the real cards' geometry in one flat tone that breathes slowly (one shared alpha, see [SkeletonPulse]; still when motion is off). They are never focusable and hidden from accessibility.
- */
+// Loading placeholders: the real cards' geometry in one flat tone that breathes slowly (one shared alpha, see
+// SkeletonPulse; still when motion is off). They are never focusable and hidden from accessibility.
 /** The tone of the image placeholder behind every real card ([com.twitchplayer.tv.core.ui.TvAsyncImage]): the handover to the loaded card is invisible. */
 private val Tone = TvColors.Base
 
@@ -43,14 +42,17 @@ fun SkeletonPulse(content: @Composable () -> Unit) {
     val motion = com.twitchplayer.tv.core.designsystem.theme.LocalMotion.current
     val pulse: androidx.compose.runtime.State<Float> = if (motion.enabled) {
         androidx.compose.animation.core.rememberInfiniteTransition(label = "skeleton").animateFloat(
-            initialValue = 0.78f, targetValue = 1f,
+            initialValue = 0.78f,
+            targetValue = 1f,
             animationSpec = androidx.compose.animation.core.infiniteRepeatable(
                 androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.FastOutSlowInEasing),
                 androidx.compose.animation.core.RepeatMode.Reverse,
             ),
             label = "pulse",
         )
-    } else androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
+    } else {
+        androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
+    }
     androidx.compose.runtime.CompositionLocalProvider(LocalSkeletonPulse provides pulse) { content() }
 }
 
@@ -59,9 +61,12 @@ private fun Block(modifier: Modifier, shape: androidx.compose.ui.graphics.Shape 
     val pulse = LocalSkeletonPulse.current
     Box(
         modifier.then(
-            if (pulse == null) Modifier.background(Tone, shape)
-            else Modifier.drawBehind {
-                drawOutline(shape.createOutline(size, layoutDirection, this), Tone, alpha = pulse.value)
+            if (pulse == null) {
+                Modifier.background(Tone, shape)
+            } else {
+                Modifier.drawBehind {
+                    drawOutline(shape.createOutline(size, layoutDirection, this), Tone, alpha = pulse.value)
+                }
             },
         ),
     )
@@ -179,4 +184,3 @@ fun SkeletonChannel(modifier: Modifier = Modifier) {
         SkeletonSection(Modifier.padding(top = 8.dp), cards = 5)
     }
 }
-

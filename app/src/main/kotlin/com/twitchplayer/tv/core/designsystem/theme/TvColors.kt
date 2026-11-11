@@ -9,8 +9,10 @@ import androidx.compose.ui.graphics.compositeOver
 object TvColors {
     val Purple = Color(0xFF9146FF)
     val PurplePressed = Color(0xFF772CE8)
+
     /** Primary fill while focused: a touch toward the focus tone, so the button itself changes, not only its ring. */
     val PurpleFocused = Color(0xFF9B58FF)
+
     /** Veil over a pressed secondary button or chip. */
     val PressTone = Color.Black.copy(alpha = 0.22f)
     val Focus = Color(0xFFBF94FF)
@@ -29,6 +31,7 @@ object TvColors {
     val Hair = Color.White.copy(alpha = 0.12f)
 
     val Text = Color(0xFFEFEFF1)
+
     /** Secondary text, >= #A8A8B3 on every dark surface (WCAG AA). */
     val TextSecondary = Color(0xFFC8C8D0)
     val IconHigh = Color(0xFFE5E5EA)

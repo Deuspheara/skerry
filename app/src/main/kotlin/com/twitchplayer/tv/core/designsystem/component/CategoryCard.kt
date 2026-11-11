@@ -18,9 +18,9 @@ import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.TvAsyncImage
-import com.twitchplayer.tv.core.ui.sharedArt
 import com.twitchplayer.tv.core.ui.TvFocusable
 import com.twitchplayer.tv.core.ui.focusRing
+import com.twitchplayer.tv.core.ui.sharedArt
 
 /** 3:4 category poster with its name. Scale applies to the whole card, the ring to the poster only. */
 @Composable
@@ -33,14 +33,17 @@ fun CategoryCard(
     TvFocusable(
         onClick = onClick,
         shape = TvShapes.Card,
-        focusScale = TvDimens.FocusScalePoster,
+        focusScale = TvDimens.FOCUS_SCALE_POSTER,
         description = category.name,
         drawRing = false,
         modifier = modifier.then(if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()),
     ) { focus ->
         Column {
             TvAsyncImage(
-                category.artUrl, null, TvDimens.CategoryCardWidth, 160.dp,
+                category.artUrl,
+                null,
+                TvDimens.CategoryCardWidth,
+                160.dp,
                 Modifier.fillMaxWidth().aspectRatio(3f / 4f).focusRing(focus, TvShapes.Card).sharedArt("cat:${category.id}").clip(TvShapes.Card),
             )
             Text(

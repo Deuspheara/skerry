@@ -3,29 +3,29 @@ package com.twitchplayer.tv.core.designsystem.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.tv.material3.Text
-import com.twitchplayer.tv.core.designsystem.theme.TvType
+import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
+import androidx.tv.material3.Text
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
+import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.TvFocusable
 
 /**
@@ -50,7 +50,7 @@ fun ControlBarButton(
         shape = CircleShape,
         description = description,
         onLongClick = if (enabled) onLongClick else null,
-        focusScale = if (enabled) TvDimens.FocusScaleControl else 1f,
+        focusScale = if (enabled) TvDimens.FOCUS_SCALE_CONTROL else 1f,
         ringStrength = if (enabled) 1f else DISABLED_ALPHA,
         modifier = modifier
             .size(TvDimens.ControlButton)

@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import com.twitchplayer.tv.core.ui.staggerIn
-import com.twitchplayer.tv.core.ui.itemMotion
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,18 +19,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.input.key.Key
-import com.twitchplayer.tv.core.ui.jumpOnKey
-import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.designsystem.component.BottomFade
+import com.twitchplayer.tv.core.designsystem.component.Chip
 import com.twitchplayer.tv.core.designsystem.component.EmptyState
 import com.twitchplayer.tv.core.designsystem.component.SkeletonGrid
 import com.twitchplayer.tv.core.designsystem.component.StreamCard
@@ -40,14 +38,16 @@ import com.twitchplayer.tv.core.designsystem.component.TvIconButton
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
-import com.twitchplayer.tv.core.designsystem.theme.TvType
-import com.twitchplayer.tv.core.designsystem.component.Chip
-import androidx.compose.ui.draw.clip
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
+import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.LoadGate
-import com.twitchplayer.tv.core.ui.sharedArt
 import com.twitchplayer.tv.core.ui.TvAsyncImage
+import com.twitchplayer.tv.core.ui.itemMotion
+import com.twitchplayer.tv.core.ui.jumpOnKey
+import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
+import com.twitchplayer.tv.core.ui.sharedArt
+import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.category.presentation.CategoryUiState
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -68,7 +68,9 @@ fun CategoryRoute(
     Box(Modifier.fillMaxSize()) {
         // The header stays visible in every state so Back (focus fallback) always exists.
         LoadGate(
-            load, onRetry = viewModel::retry, modifier = Modifier.padding(top = HEADER_HEIGHT),
+            load,
+            onRetry = viewModel::retry,
+            modifier = Modifier.padding(top = HEADER_HEIGHT),
             skeleton = { SkeletonGrid(4, category = false, top = 0.dp) },
         ) { ui ->
             CategoryContent("cat:$categoryId", name, artUrl, ui, languageFilter, viewModel::toggleFavorite, onBack, onWatch)

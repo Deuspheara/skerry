@@ -46,7 +46,7 @@ fun StreamCard(
     TvFocusable(
         onClick = onClick,
         shape = TvShapes.Card,
-        focusScale = TvDimens.FocusScaleCard,
+        focusScale = TvDimens.FOCUS_SCALE_CARD,
         description = description,
         modifier = modifier.then(if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()),
     ) { focus ->

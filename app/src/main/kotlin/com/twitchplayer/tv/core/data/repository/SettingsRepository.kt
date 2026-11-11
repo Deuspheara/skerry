@@ -10,8 +10,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.twitchplayer.tv.core.data.model.AppSettings
 import com.twitchplayer.tv.core.data.model.AnimatedEmoteLimit
+import com.twitchplayer.tv.core.data.model.AppSettings
 import com.twitchplayer.tv.core.data.model.ChatDensity
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
@@ -32,6 +32,7 @@ interface SettingsRepository {
     suspend fun setShowStats(enabled: Boolean)
     suspend fun setFollowRaids(enabled: Boolean)
     suspend fun addRecentSearch(query: String)
+
     /** Twitch has no category-follow API: this is a local favourite. */
     suspend fun toggleCategory(id: String)
 }
@@ -60,7 +61,9 @@ class DataStoreSettingsRepository(
         )
     }
 
-    override suspend fun setChatMode(mode: ChatMode) { store.edit { it[CHAT_MODE] = mode.name } }
+    override suspend fun setChatMode(mode: ChatMode) {
+        store.edit { it[CHAT_MODE] = mode.name }
+    }
 
     override suspend fun updateChat(transform: (ChatSettings) -> ChatSettings) {
         store.edit { prefs ->
@@ -75,15 +78,25 @@ class DataStoreSettingsRepository(
         }
     }
 
-    override suspend fun setAnimations(enabled: Boolean) { store.edit { it[ANIMATIONS] = enabled } }
+    override suspend fun setAnimations(enabled: Boolean) {
+        store.edit { it[ANIMATIONS] = enabled }
+    }
 
-    override suspend fun setPlayerEngine(engine: PlayerEngine) { store.edit { it[PLAYER_ENGINE] = engine.name } }
+    override suspend fun setPlayerEngine(engine: PlayerEngine) {
+        store.edit { it[PLAYER_ENGINE] = engine.name }
+    }
 
-    override suspend fun setPreferredQuality(id: String?) { store.edit { if (id == null) it.remove(PREFERRED_QUALITY) else it[PREFERRED_QUALITY] = id } }
+    override suspend fun setPreferredQuality(id: String?) {
+        store.edit { if (id == null) it.remove(PREFERRED_QUALITY) else it[PREFERRED_QUALITY] = id }
+    }
 
-    override suspend fun setShowStats(enabled: Boolean) { store.edit { it[SHOW_STATS] = enabled } }
+    override suspend fun setShowStats(enabled: Boolean) {
+        store.edit { it[SHOW_STATS] = enabled }
+    }
 
-    override suspend fun setFollowRaids(enabled: Boolean) { store.edit { it[FOLLOW_RAIDS] = enabled } }
+    override suspend fun setFollowRaids(enabled: Boolean) {
+        store.edit { it[FOLLOW_RAIDS] = enabled }
+    }
 
     override suspend fun addRecentSearch(query: String) {
         val clean = query.trim().replace(SEPARATOR, " ")

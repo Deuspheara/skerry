@@ -1,8 +1,8 @@
 package com.twitchplayer.tv.feature.player.ui.embed
 
-import org.junit.Test
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class NavigationPolicyTest {
     @Test fun allowsOnlyHttpsOnConfiguredHost() {

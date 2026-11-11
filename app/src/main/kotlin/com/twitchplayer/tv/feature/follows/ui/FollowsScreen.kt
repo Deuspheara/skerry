@@ -4,15 +4,18 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import com.twitchplayer.tv.core.ui.sharedArt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -20,9 +23,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.data.model.ChannelRef
 import com.twitchplayer.tv.core.data.model.LiveStream
@@ -41,20 +46,15 @@ import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.LoadGate
 import com.twitchplayer.tv.core.ui.TvFocusable
+import com.twitchplayer.tv.core.ui.itemMotion
 import com.twitchplayer.tv.core.ui.rememberAnchoredSpec
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
+import com.twitchplayer.tv.core.ui.sharedArt
+import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.follows.presentation.FollowsContent
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import com.twitchplayer.tv.core.ui.staggerIn
-import com.twitchplayer.tv.core.ui.itemMotion
-import androidx.compose.foundation.lazy.items as lazyItems
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextAlign
-import androidx.tv.material3.Text
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.lazy.items as lazyItems
 
 @Composable
 fun FollowsRoute(
@@ -92,7 +92,8 @@ private fun FollowsScreen(content: FollowsContent, onWatch: (LiveStream) -> Unit
                     itemsIndexed(content.live, key = { _, it -> it.channelId }, contentType = { _, _ -> "stream" }) { index, stream ->
                         with(memory) {
                             StreamCard(
-                                stream, { onWatch(stream) },
+                                stream,
+                                { onWatch(stream) },
                                 Modifier.staggerIn(index).itemMotion(this@itemsIndexed).track("l:${stream.channelId}", default = stream === content.live.first()),
                                 width = null,
                             )

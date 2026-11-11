@@ -5,14 +5,23 @@ import kotlinx.serialization.Serializable
 
 /** Typed destinations (Navigation 3). Top-level keys are rail destinations. */
 @Serializable data object HomeKey : NavKey
+
 @Serializable data object FollowsKey : NavKey
+
 @Serializable data object BrowseKey : NavKey
+
 @Serializable data object SearchKey : NavKey
+
 @Serializable data object ProfileKey : NavKey
+
 @Serializable data class CategoryKey(val id: String, val name: String, val artUrl: String) : NavKey
+
 @Serializable data class ChannelKey(val login: String) : NavKey
+
 @Serializable data class PlayerKey(val login: String) : NavKey
+
 @Serializable data class ClipKey(val slug: String, val title: String) : NavKey
+
 @Serializable data class VodKey(val id: String, val title: String, val durationSeconds: Int) : NavKey
 
 /** Rail order and the key each item opens. */

@@ -83,7 +83,10 @@ fun TvToastHost(state: ToastState, modifier: Modifier = Modifier) {
                 style = TvType.Pill,
                 color = TvColors.Text,
                 modifier = Modifier
-                    .graphicsLayer { this.alpha = alpha.value; translationY = -(1f - alpha.value) * 8.dp.toPx() }
+                    .graphicsLayer {
+                        this.alpha = alpha.value
+                        translationY = -(1f - alpha.value) * 8.dp.toPx()
+                    }
                     .background(TvColors.Alt2, TvShapes.Chip)
                     .padding(horizontal = 20.dp, vertical = 10.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite },

@@ -14,7 +14,10 @@ internal class TtlCache<T>(private val ttlMs: Long) {
         val cached = value
         val now = SystemClock.elapsedRealtime()
         if (!force && cached != null && now - loadedAt < ttlMs) return cached
-        load().also { value = it; loadedAt = SystemClock.elapsedRealtime() }
+        load().also {
+            value = it
+            loadedAt = SystemClock.elapsedRealtime()
+        }
     }
 
     suspend fun invalidate() = mutex.withLock { value = null }

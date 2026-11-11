@@ -62,5 +62,4 @@ data class PlayerUiState(
 }
 
 /** Wrap-around index for CH+/CH-; an unknown current channel (-1) starts from the first/last entry. */
-internal fun cycleIndex(index: Int, delta: Int, size: Int): Int =
-    if (index < 0) (if (delta > 0) 0 else size - 1) else Math.floorMod(index + delta, size)
+internal fun cycleIndex(index: Int, delta: Int, size: Int): Int = if (index < 0) (if (delta > 0) 0 else size - 1) else Math.floorMod(index + delta, size)

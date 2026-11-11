@@ -8,11 +8,11 @@ import com.twitchplayer.tv.core.data.model.ChatDensity
 import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.data.model.ChatTextSize
 import com.twitchplayer.tv.core.data.repository.DataStoreSettingsRepository
+import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import com.twitchplayer.tv.feature.player.presentation.ChatFeed
 import com.twitchplayer.tv.feature.player.presentation.ChatLine
 import com.twitchplayer.tv.feature.player.presentation.ChatLineKind
 import com.twitchplayer.tv.feature.player.presentation.ChatPiece
-import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import com.twitchplayer.tv.feature.player.ui.animationAllowance
 import com.twitchplayer.tv.feature.player.ui.step
 import com.twitchplayer.tv.feature.player.ui.toStyle
@@ -34,11 +34,13 @@ class ChatSettingsTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val file get() = java.io.File(folder.root, "settings.preferences_pb")
     private fun store() = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+
     @After fun tearDown() = scope.cancel()
 
     @Test fun defaultsMatchTheSpec() {
         val s = ChatSettings()
-        assertEquals(ChatTextSize.Medium, s.textSize); assertEquals(ChatDensity.Standard, s.density)
+        assertEquals(ChatTextSize.Medium, s.textSize)
+        assertEquals(ChatDensity.Standard, s.density)
         assertTrue(s.showBadges && s.animatedEmotes && !s.showTimestamps)
         assertEquals(AnimatedEmoteLimit.Some, s.animatedLimit)
     }
@@ -64,12 +66,16 @@ class ChatSettingsTest {
         repo.updateChat { it.copy(textSize = ChatTextSize.Small) }
         repo.updateChat { it.copy(showTimestamps = true) }
         val chat = repo.settings.first().chat
-        assertEquals(ChatTextSize.Small, chat.textSize); assertTrue(chat.showTimestamps)
+        assertEquals(ChatTextSize.Small, chat.textSize)
+        assertTrue(chat.showTimestamps)
     }
 
     @Test fun unknownOrOutOfRangeStoredValuesFallBackToDefaults() = runBlocking {
         val store = store()
-        store.edit { it[stringPreferencesKey("chat_text_size")] = "Huge"; it[androidx.datastore.preferences.core.intPreferencesKey("chat_opacity")] = 3 }
+        store.edit {
+            it[stringPreferencesKey("chat_text_size")] = "Huge"
+            it[androidx.datastore.preferences.core.intPreferencesKey("chat_opacity")] = 3
+        }
         val chat = DataStoreSettingsRepository(store).settings.first().chat
         assertEquals(ChatTextSize.Medium, chat.textSize)
         assertEquals("clamped to the lowest step", 40, chat.backgroundOpacity)

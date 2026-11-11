@@ -97,7 +97,9 @@ private fun ResultRow(
                 }
             }
             Icon(
-                TvIcons.ChevronRight, null, tint = TvColors.Text,
+                TvIcons.ChevronRight,
+                null,
+                tint = TvColors.Text,
                 modifier = Modifier.size(18.dp).graphicsLayer { alpha = focus.value },
             )
         }

@@ -23,14 +23,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -42,7 +43,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlinx.serialization.decodeFromString
 import java.util.LinkedHashSet
 
 sealed interface ChatConnectionState {
@@ -58,7 +58,10 @@ class EventSubChatClient(
     private val clientId: String,
     private val accessToken: () -> String,
     private val maxMessages: Int = 150,
-    private val json: Json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val json: Json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    },
 ) {
     private val ids = LinkedHashSet<String>()
     private val idMutex = Mutex()
@@ -66,6 +69,7 @@ class EventSubChatClient(
     val events: SharedFlow<ChatEvent> = mutableEvents
     private val mutableState = MutableStateFlow<ChatConnectionState>(ChatConnectionState.Disconnected)
     val connectionState: StateFlow<ChatConnectionState> = mutableState.asStateFlow()
+
     @Volatile private var stopped = false
 
     suspend fun run(broadcasterId: String, userId: String) {
@@ -79,16 +83,23 @@ class EventSubChatClient(
                 try {
                     handleSession(socket, broadcasterId, userId)
                     retry = 1L
-                } finally { socket.close() }
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Throwable) { mutableState.value = ChatConnectionState.Error(error.message ?: "Chat connection failed") }
+                } finally {
+                    socket.close()
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Throwable) {
+                mutableState.value = ChatConnectionState.Error(error.message ?: "Chat connection failed")
+            }
             if (!stopped) delay(retry * 1000L)
             retry = (retry * 2).coerceAtMost(30)
         }
         mutableState.value = ChatConnectionState.Disconnected
     }
 
-    fun stop() { stopped = true }
+    fun stop() {
+        stopped = true
+    }
 
     private suspend fun handleSession(initial: WebSocketSession, broadcasterId: String, userId: String) {
         var socket = initial
@@ -110,34 +121,46 @@ class EventSubChatClient(
                             async {
                                 runCatching { createSubscription(id, type, version, conditionFor(type, broadcasterId, userId)) }
                                     // Warn level survives R8: the status says whether a scope or the cost cap is the cause.
-                                    .onFailure { if (it is CancellationException) throw it; android.util.Log.w("EventSub", "bonus subscription refused: ${it.message}") }
+                                    .onFailure {
+                                        if (it is CancellationException) throw it
+                                        android.util.Log.w("EventSub", "bonus subscription refused: ${it.message}")
+                                    }
                             }
                         }.awaitAll()
                     }
                     mutableState.value = ChatConnectionState.Connected
                 }
+
                 "session_keepalive" -> Unit
+
                 "notification" -> envelope.payload.event?.let { event ->
                     // One undecodable message must not take the whole connection down.
                     val chatEvent = runCatching { decodeEvent(envelope.metadata, event) }.getOrNull()
                     val fresh = idMutex.withLock {
-                        if (!ids.add(envelope.metadata.messageId)) false
-                        else { while (ids.size > maxMessages.coerceAtLeast(1)) ids.remove(ids.first()); true }
+                        if (!ids.add(envelope.metadata.messageId)) {
+                            false
+                        } else {
+                            while (ids.size > maxMessages.coerceAtLeast(1)) ids.remove(ids.first())
+                            true
+                        }
                     }
                     if (fresh && chatEvent != null) mutableEvents.emit(chatEvent)
                 }
+
                 "session_reconnect" -> {
                     val url = envelope.payload.session?.reconnectUrl ?: error("Reconnect frame omitted reconnect URL")
                     val migrated = http.webSocketSession(url)
                     // The existing session remains live until the replacement welcomes.
                     val welcome = migrated.incoming.receive()
                     if (welcome !is Frame.Text || json.decodeFromString<EventSubEnvelope>(welcome.readText()).metadata.messageType != "session_welcome") {
-                        migrated.close(); error("Replacement EventSub session did not welcome")
+                        migrated.close()
+                        error("Replacement EventSub session did not welcome")
                     }
                     socket.close()
                     socket = migrated
                     mutableState.value = ChatConnectionState.Connected
                 }
+
                 // Losing the messages ends the session (it reconnects); a bonus subscription (modes, raids...) just goes quiet.
                 "revocation" -> if (envelope.metadata.subscriptionType == "channel.chat.message") error("Twitch revoked the chat subscription")
             }
@@ -146,16 +169,19 @@ class EventSubChatClient(
 
     private fun decodeEvent(metadata: EventSubMetadata, event: kotlinx.serialization.json.JsonElement): ChatEvent? = when (metadata.subscriptionType) {
         "channel.chat.message" -> ChatEvent.Message(json.decodeFromJsonElement<ChatMessage>(event).copy(timestamp = metadata.messageTimestamp))
+
         "channel.chat.notification" -> json.decodeFromJsonElement<ChatNotification>(event).let { n ->
             val text = listOfNotNull(n.systemMessage.takeIf(String::isNotBlank), n.content?.text?.takeIf(String::isNotBlank)).joinToString(" · ")
             if (text.isEmpty()) null else ChatEvent.Notice(metadata.messageId, text)
         }
+
         else -> decodeSignal(metadata.subscriptionType, event.jsonObject)
     }
 
     private suspend fun createSubscription(sessionId: String, type: String, version: String, condition: JsonObject) {
         val response = http.post("https://api.twitch.tv/helix/eventsub/subscriptions") {
-            header("Client-Id", clientId); header(HttpHeaders.Authorization, "Bearer ${accessToken()}")
+            header("Client-Id", clientId)
+            header(HttpHeaders.Authorization, "Bearer ${accessToken()}")
             contentType(ContentType.Application.Json)
             setBody(SubscriptionRequest(type = type, version = version, condition = condition, transport = WebSocketTransport(sessionId = sessionId)))
         }
@@ -180,7 +206,8 @@ class EventSubChatClient(
         )
 
         internal fun chatCondition(broadcasterId: String, userId: String): JsonObject = buildJsonObject {
-            put("broadcaster_user_id", broadcasterId); put("user_id", userId)
+            put("broadcaster_user_id", broadcasterId)
+            put("user_id", userId)
         }
 
         internal fun conditionFor(type: String, broadcasterId: String, userId: String): JsonObject = when (type) {
@@ -196,8 +223,11 @@ class EventSubChatClient(
             fun flag(key: String) = (e[key] as? JsonPrimitive)?.booleanOrNull == true
             return when (type) {
                 "channel.chat.message_delete" -> str("message_id")?.let { ChatEvent.Deleted(it) }
+
                 "channel.chat.clear_user_messages" -> str("target_user_login")?.let { ChatEvent.UserCleared(it) }
+
                 "channel.chat.clear" -> ChatEvent.Cleared
+
                 "channel.chat_settings.update" -> ChatEvent.Room(
                     RoomState(
                         emoteOnly = flag("emote_mode"),
@@ -207,32 +237,56 @@ class EventSubChatClient(
                         uniqueOnly = flag("unique_chat_mode"),
                     ),
                 )
+
                 "stream.offline" -> ChatEvent.Channel(ChannelNotice.Offline)
+
                 "channel.update" -> ChatEvent.Channel(ChannelNotice.Updated(str("title")?.takeIf(String::isNotBlank), str("category_name")?.takeIf(String::isNotBlank)))
+
                 "channel.raid" -> ChatEvent.Channel(
                     ChannelNotice.Raid(
-                        fromName = str("from_broadcaster_user_name").orEmpty(), toName = str("to_broadcaster_user_name").orEmpty(),
-                        toLogin = str("to_broadcaster_user_login").orEmpty(), viewers = int("viewers") ?: 0,
+                        fromName = str("from_broadcaster_user_name").orEmpty(),
+                        toName = str("to_broadcaster_user_name").orEmpty(),
+                        toLogin = str("to_broadcaster_user_login").orEmpty(),
+                        viewers = int("viewers") ?: 0,
                     ),
                 )
+
                 else -> null
             }
         }
 
         fun createHttpClient() = HttpClient(io.ktor.client.engine.okhttp.OkHttp) {
             install(WebSockets)
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; encodeDefaults = true }) }
+            install(ContentNegotiation) {
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        encodeDefaults = true
+                    },
+                )
+            }
         }
     }
 }
 
 @Serializable private data class EventSubEnvelope(val metadata: EventSubMetadata, val payload: EventSubPayload)
-@Serializable private data class EventSubMetadata(@SerialName("message_type") val messageType: String,
-    @SerialName("message_id") val messageId: String = "", @SerialName("subscription_type") val subscriptionType: String? = null,
-    @SerialName("message_timestamp") val messageTimestamp: String? = null)
-@Serializable private data class EventSubPayload(val session: EventSubSession? = null, val event: kotlinx.serialization.json.JsonElement? = null)
-@Serializable private data class EventSubSession(val id: String? = null, @SerialName("reconnect_url") val reconnectUrl: String? = null)
-@Serializable private data class SubscriptionRequest(val type: String, val version: String = "1",
-    val condition: JsonObject, val transport: WebSocketTransport)
-@Serializable private data class WebSocketTransport(val method: String = "websocket", @SerialName("session_id") val sessionId: String)
 
+@Serializable private data class EventSubMetadata(
+    @SerialName("message_type") val messageType: String,
+    @SerialName("message_id") val messageId: String = "",
+    @SerialName("subscription_type") val subscriptionType: String? = null,
+    @SerialName("message_timestamp") val messageTimestamp: String? = null,
+)
+
+@Serializable private data class EventSubPayload(val session: EventSubSession? = null, val event: kotlinx.serialization.json.JsonElement? = null)
+
+@Serializable private data class EventSubSession(val id: String? = null, @SerialName("reconnect_url") val reconnectUrl: String? = null)
+
+@Serializable private data class SubscriptionRequest(
+    val type: String,
+    val version: String = "1",
+    val condition: JsonObject,
+    val transport: WebSocketTransport,
+)
+
+@Serializable private data class WebSocketTransport(val method: String = "websocket", @SerialName("session_id") val sessionId: String)

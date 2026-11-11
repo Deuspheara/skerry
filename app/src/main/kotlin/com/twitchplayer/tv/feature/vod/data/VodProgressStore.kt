@@ -28,6 +28,7 @@ data class VodProgress(val positionMs: Long, val durationMs: Long) {
 /** Last position per replay, kept on the device. Watched-to-the-end replays are forgotten. */
 interface VodProgressStore {
     val progress: Flow<Map<String, VodProgress>>
+
     /** Stores [positionMs]; a position within the last seconds of a known length clears the entry instead. */
     suspend fun save(vodId: String, positionMs: Long, durationMs: Long)
     suspend fun clear(vodId: String)
@@ -52,7 +53,9 @@ class DataStoreVodProgressStore(private val store: DataStore<Preferences>, priva
         }
     }
 
-    override suspend fun clear(vodId: String) { store.edit { it.remove(stringPreferencesKey(PREFIX + vodId)) } }
+    override suspend fun clear(vodId: String) {
+        store.edit { it.remove(stringPreferencesKey(PREFIX + vodId)) }
+    }
 
     private companion object {
         const val PREFIX = "vod_"

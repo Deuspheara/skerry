@@ -16,7 +16,14 @@ class RetryPolicyTest {
 
     @Test fun nonTransientErrorsSurfaceAtOnce() = runTest {
         var calls = 0
-        assertThrows(IllegalStateException::class.java) { kotlinx.coroutines.runBlocking { RetryPolicy(sleep = {}).run<Unit> { calls++; error("no") } } }
+        assertThrows(IllegalStateException::class.java) {
+            kotlinx.coroutines.runBlocking {
+                RetryPolicy(sleep = {}).run<Unit> {
+                    calls++
+                    error("no")
+                }
+            }
+        }
         assertEquals(1, calls)
     }
 }

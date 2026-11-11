@@ -21,7 +21,9 @@ internal fun Throwable.toVodError(): VodError = when {
         VodFailure.SUBSCRIBER_ONLY -> VodError.SubscribersOnly
         VodFailure.TOKEN, VodFailure.UNAVAILABLE -> VodError.Refused
     }
+
     this is IOException -> VodError.Network
+
     else -> VodError.Refused
 }
 
@@ -47,5 +49,4 @@ internal fun nextSpeed(current: Float): Float = PLAYBACK_SPEEDS.firstOrNull { it
 internal fun speedLabel(speed: Float): String = java.text.DecimalFormat("0.##", java.text.DecimalFormatSymbols(java.util.Locale.getDefault())).format(speed) + "×"
 
 /** Where a seek of [deltaMs] from [from] lands inside a replay of [durationMs] (unknown length: no upper bound beyond 0). */
-internal fun seekTarget(from: Long, deltaMs: Long, durationMs: Long): Long =
-    (from + deltaMs).coerceIn(0L, if (durationMs > 0) durationMs else Long.MAX_VALUE)
+internal fun seekTarget(from: Long, deltaMs: Long, durationMs: Long): Long = (from + deltaMs).coerceIn(0L, if (durationMs > 0) durationMs else Long.MAX_VALUE)

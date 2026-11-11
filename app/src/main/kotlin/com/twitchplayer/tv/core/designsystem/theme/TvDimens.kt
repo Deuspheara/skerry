@@ -29,6 +29,7 @@ object TvDimens {
     val RailIcon = 22.dp
     val RailExpandedWidth = 200.dp
     val RailShade = 960.dp
+
     /** Gap between the rail and the first content edge (prototype 144 px = rail 96 + 48). */
     val ContentStart = 24.dp
     val ContentEnd = 48.dp
@@ -36,13 +37,15 @@ object TvDimens {
     val RowGap = 12.dp
     val FocusRing = 2.dp
     val FocusGap = 1.5.dp
+
     /** Extra ring width when animations are off: the ring is the only cue, so it gets bolder instead of the card growing. */
     val FocusRingReduced = 1.dp
+
     /** Default focus growth. Size-aware: the smaller the thing, the more it grows (a poster 120 dp wide reads at 1.08, a 200 dp card at 1.05). */
-    const val FocusScale = 1.04f
-    const val FocusScalePoster = 1.08f
-    const val FocusScaleCard = 1.05f
-    const val FocusScaleControl = 1.06f
+    const val FOCUS_SCALE_DEFAULT = 1.04f
+    const val FOCUS_SCALE_POSTER = 1.08f
+    const val FOCUS_SCALE_CARD = 1.05f
+    const val FOCUS_SCALE_CONTROL = 1.06f
 
     // Cards
     val LiveCardWidth = 200.dp
@@ -56,22 +59,27 @@ object TvDimens {
     val ControlGap = 8.dp
     val ControlIcon = 22.dp
     val ChatCompact = 280.dp
+
     /** Chat drawn over the full-screen video, bottom right, fading out at the middle of the screen. */
     val ChatOverlay = 340.dp
+
     /**
-     * The mini player keeps a 534x300 dp viewport (Twitch's embed minimum is 400x300) shown at [MiniScale]:
+     * The mini player keeps a 534x300 dp viewport (Twitch's embed minimum is 400x300) shown at [MINI_SCALE]:
      * a 320x180 dp picture in the bottom-right corner, with a sharper auto quality than a truly tiny viewport.
      */
     val MiniWidth = 534.dp
     val MiniHeight = 300.dp
-    const val MiniScale = 0.6f
+    const val MINI_SCALE = 0.6f
+
     /** Chat text column as a share of the screen width (the panel adds [ChatInsetStart] and [ChatInsetEnd]). */
-    const val ChatCompactFraction = 0.24f
+    const val CHAT_COMPACT_FRACTION = 0.24f
     val ChatInsetStart = 8.dp
+
     /** Right edge of the chat column: half the safe margin, so the text is not pushed away from the screen edge. */
     val ChatInsetEnd = 24.dp
+
     /** The video always keeps at least this share of the width. */
-    const val VideoMinFraction = 2f / 3f
+    const val VIDEO_MIN_FRACTION = 2f / 3f
 }
 
 @Immutable

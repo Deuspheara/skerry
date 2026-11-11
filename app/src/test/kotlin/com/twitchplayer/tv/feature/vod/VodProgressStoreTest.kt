@@ -19,6 +19,7 @@ import java.io.File
 class VodProgressStoreTest {
     @get:Rule val folder = TemporaryFolder()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     @After fun stop() = scope.cancel()
 
     private fun store(max: Int = 150): DataStoreVodProgressStore {
@@ -46,7 +47,8 @@ class VodProgressStoreTest {
 
     @Test fun clearForgetsOneReplayOnly() = runBlocking {
         val s = store()
-        s.save("1", 40_000, 600_000); s.save("2", 50_000, 600_000)
+        s.save("1", 40_000, 600_000)
+        s.save("2", 50_000, 600_000)
         s.clear("1")
         assertEquals(setOf("2"), s.progress.first().keys)
     }
@@ -59,7 +61,10 @@ class VodProgressStoreTest {
 
     @Test fun theOldestEntriesGoWhenTheStoreIsFull() = runBlocking {
         val s = store(max = 3)
-        for (i in 1..5) { s.save("v$i", 30_000L * i, 6_000_000); Thread.sleep(5) }
+        for (i in 1..5) {
+            s.save("v$i", 30_000L * i, 6_000_000)
+            Thread.sleep(5)
+        }
         assertEquals(setOf("v3", "v4", "v5"), s.progress.first().keys)
     }
 }

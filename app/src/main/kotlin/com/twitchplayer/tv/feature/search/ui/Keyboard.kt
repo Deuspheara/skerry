@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -30,6 +30,7 @@ import com.twitchplayer.tv.core.ui.focusFill
 private val KEY = 48.dp
 private val KEY_GAP = 6.dp
 private val KEY_HEIGHT = 52.dp
+
 /**
  * Letter rows for the app language: AZERTY for French, QWERTZ for German, QWERTY elsewhere with the language's most
  * common extra letters in the last row. Always Latin: Twitch logins are Latin and category names are mostly English;
@@ -40,7 +41,9 @@ internal fun keyboardRows(language: String): List<List<String>> {
     fun row(s: String) = s.map(Char::toString)
     return when (language) {
         "fr" -> listOf(digits, row("azertyuiop"), row("qsdfghjklm"), listOf("w", "x", "c", "v", "b", "n", "é", "è", "'", "-"))
+
         "de" -> listOf(digits, row("qwertzuiop"), row("asdfghjklö"), row("yxcvbnmäüß"))
+
         else -> {
             val extras = when (language) {
                 "es" -> "ñ_-"
@@ -153,7 +156,4 @@ private fun IconKey(
     }
 }
 
-
-
-private fun Modifier.keyBackground(): Modifier =
-    this.background(TvColors.KeyFill, TvShapes.Chip).border(0.5.dp, TvColors.KeyLine, TvShapes.Chip)
+private fun Modifier.keyBackground(): Modifier = this.background(TvColors.KeyFill, TvShapes.Chip).border(0.5.dp, TvColors.KeyLine, TvShapes.Chip)

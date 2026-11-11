@@ -8,8 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EventSubSignalsTest {
-    private fun decode(type: String, json: String) =
-        EventSubChatClient.decodeSignal(type, Json.parseToJsonElement(json).jsonObject)
+    private fun decode(type: String, json: String) = EventSubChatClient.decodeSignal(type, Json.parseToJsonElement(json).jsonObject)
 
     @Test fun moderationEvents() {
         assertEquals(ChatEvent.Deleted("m1"), decode("channel.chat.message_delete", """{"message_id":"m1","target_user_login":"x"}"""))

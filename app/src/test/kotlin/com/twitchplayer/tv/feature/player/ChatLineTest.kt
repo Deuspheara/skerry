@@ -25,8 +25,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChatLineTest {
-    private fun e(name: String, animated: Boolean = false, zeroWidth: Boolean = false) =
-        Emote(name, "https://x/$name", if (animated) "https://x/$name.anim" else null, zeroWidth)
+    private fun e(name: String, animated: Boolean = false, zeroWidth: Boolean = false) = Emote(name, "https://x/$name", if (animated) "https://x/$name.anim" else null, zeroWidth)
     private val assets = ChatAssets(
         badges = mapOf("subscriber:1" to "https://cdn/sub.png"),
         emotes = listOf(e("catJam", animated = true), e("PogU"), e("Rain", animated = true, zeroWidth = true), e("Hat", zeroWidth = true)).associateBy { it.name },
@@ -40,7 +39,9 @@ class ChatLineTest {
 
     @Test fun messageResolvesBadgesColorAndTwitchEmotes() {
         val line = message(
-            text("hi "), ChatFragment("emote", "Kappa", ChatEmote("25", format = listOf("static"))), text(" "),
+            text("hi "),
+            ChatFragment("emote", "Kappa", ChatEmote("25", format = listOf("static"))),
+            text(" "),
             ChatFragment("emote", "Moving", ChatEmote("77", format = listOf("static", "animated"))),
         ).toLine(assets, "me", 0)
         assertEquals(listOf("https://cdn/sub.png"), line.badgeUrls)
@@ -114,7 +115,9 @@ class ChatLineTest {
     }
 
     @Test fun colorParsingIsDefensive() {
-        assertNull(parseColor(null)); assertNull(parseColor("")); assertNull(parseColor("red"))
+        assertNull(parseColor(null))
+        assertNull(parseColor(""))
+        assertNull(parseColor("red"))
         assertEquals(0xFF112233L, parseColor("112233"))
         assertEquals(0xFF112233L, parseColor("#112233"))
     }

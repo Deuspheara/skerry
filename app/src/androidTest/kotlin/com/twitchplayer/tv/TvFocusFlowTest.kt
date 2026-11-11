@@ -11,9 +11,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.twitchplayer.tv.demo.demoModule
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.repository.DataStoreSettingsRepository
+import com.twitchplayer.tv.demo.demoModule
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -47,8 +47,7 @@ class TvFocusFlowTest {
         Thread.sleep(250)
     }
 
-    private fun waitFor(description: String) =
-        rule.waitUntil(8_000) { rule.onAllNodes(hasContentDescription(description, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+    private fun waitFor(description: String) = rule.waitUntil(8_000) { rule.onAllNodes(hasContentDescription(description, substring = true)).fetchSemanticsNodes().isNotEmpty() }
 
     @Test fun homeStartsOnTheFirstFollowedLiveCard() {
         waitFor("Lunaria")
@@ -122,7 +121,7 @@ class TvFocusFlowTest {
         rule.onNodeWithContentDescription("${string(R.string.chat_opt_text)}: ${string(R.string.opt_medium)}").assertIsFocused()
         press(KeyEvent.KEYCODE_DPAD_RIGHT)
         waitFor("${string(R.string.chat_opt_text)}: ${string(R.string.opt_large)}")
-        press(KeyEvent.KEYCODE_DPAD_LEFT)   // put it back: the store outlives the test
+        press(KeyEvent.KEYCODE_DPAD_LEFT) // put it back: the store outlives the test
         waitFor("${string(R.string.chat_opt_text)}: ${string(R.string.opt_medium)}")
         press(KeyEvent.KEYCODE_BACK)
         rule.waitUntil(5_000) { rule.onAllNodes(hasContentDescription("${string(R.string.chat_opt_text)}: ", substring = true)).fetchSemanticsNodes().isEmpty() }
@@ -143,11 +142,10 @@ class TvFocusFlowTest {
         waitFor("Lunaria")
         press(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)
         waitFor("Valmoor")
-        rule.onNodeWithContentDescription("Valmoor").assertIsFocused()      // grid default
+        rule.onNodeWithContentDescription("Valmoor").assertIsFocused() // grid default
         press(KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_UP)
-        rule.onNode(hasText(string(R.string.filter_all))).assertIsFocused()  // selected chip, whatever column we left from
+        rule.onNode(hasText(string(R.string.filter_all))).assertIsFocused() // selected chip, whatever column we left from
         press(KeyEvent.KEYCODE_DPAD_DOWN)
-        rule.onNodeWithContentDescription("Pixel Racers").assertIsFocused()  // back to the remembered poster
+        rule.onNodeWithContentDescription("Pixel Racers").assertIsFocused() // back to the remembered poster
     }
-
 }

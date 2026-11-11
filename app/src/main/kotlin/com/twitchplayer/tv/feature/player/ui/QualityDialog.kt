@@ -15,9 +15,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
+import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
 import com.twitchplayer.tv.core.designsystem.component.TvButton
 import com.twitchplayer.tv.core.designsystem.component.TvDialog
-import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvType

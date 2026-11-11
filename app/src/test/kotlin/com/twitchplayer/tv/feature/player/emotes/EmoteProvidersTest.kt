@@ -29,10 +29,12 @@ import org.junit.Test
 class EmoteProvidersTest {
     private fun client(vararg routes: Pair<String, Pair<HttpStatusCode, String>>): HttpClient {
         val table = routes.toMap()
-        return HttpClient(MockEngine { request ->
-            val (status, body) = table.entries.firstOrNull { request.url.toString().endsWith(it.key) }?.value ?: (HttpStatusCode.NotFound to "{}")
-            respond(body, status, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
-        }) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+        return HttpClient(
+            MockEngine { request ->
+                val (status, body) = table.entries.firstOrNull { request.url.toString().endsWith(it.key) }?.value ?: (HttpStatusCode.NotFound to "{}")
+                respond(body, status, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            },
+        ) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
     }
 
     // ---- 7TV ------------------------------------------------------------------------------------------

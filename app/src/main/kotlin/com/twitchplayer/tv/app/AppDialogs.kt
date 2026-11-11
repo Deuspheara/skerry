@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -13,14 +14,13 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
+import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
 import com.twitchplayer.tv.core.designsystem.component.TvButton
 import com.twitchplayer.tv.core.designsystem.component.TvDialog
-import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.network.auth.DeviceCodeResponse
-import androidx.compose.runtime.LaunchedEffect
 
 /** Quit confirmation: power icon + two buttons, focus on "stay" so a stray OK never quits. */
 @Composable

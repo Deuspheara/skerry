@@ -6,15 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.data.repository.SessionRepository
+import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.presentation.LoadCache
 import com.twitchplayer.tv.core.presentation.Loader
-import com.twitchplayer.tv.core.data.repository.SnapshotCache
-import kotlinx.serialization.Serializable
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.serialization.Serializable
 
 @Immutable
 data class HomeContent(
@@ -27,8 +27,7 @@ data class HomeContent(
 @Serializable
 private class HomeSnapshot(val following: List<LiveStream>, val forYou: List<LiveStream>, val categories: List<Category>)
 
-private fun HomeSnapshot.toContent() =
-    HomeContent(following.toImmutableList(), forYou.toImmutableList(), categories.toImmutableList())
+private fun HomeSnapshot.toContent() = HomeContent(following.toImmutableList(), forYou.toImmutableList(), categories.toImmutableList())
 
 /** Home shows the last session's copy at once (from [snapshots]) and replaces it when the fresh one arrives. */
 class HomeViewModel(repository: TwitchRepository, session: SessionRepository, snapshots: SnapshotCache? = null) : ViewModel() {
@@ -53,5 +52,7 @@ class HomeViewModel(repository: TwitchRepository, session: SessionRepository, sn
     val state = loader.state
     fun retry() = loader.reload()
 
-    private companion object { const val SNAPSHOT = "home" }
+    private companion object {
+        const val SNAPSHOT = "home"
+    }
 }

@@ -16,6 +16,5 @@ object DebugModules {
         builder.add(com.twitchplayer.tv.demo.DemoEmoteFetcher.Factory())
     }
 
-    fun overrides(context: Context): List<Module> =
-        if (File(context.filesDir, "demo").exists()) listOf(demoModule) else emptyList()
+    fun overrides(context: Context): List<Module> = if (File(context.filesDir, "demo").exists()) listOf(demoModule) else emptyList()
 }

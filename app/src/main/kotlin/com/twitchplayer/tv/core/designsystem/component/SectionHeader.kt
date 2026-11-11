@@ -14,12 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
-import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
+import com.twitchplayer.tv.core.designsystem.theme.TvType
 
 /** Section title: icon plus a short label, so a row is identifiable at a glance from the couch. */
 @Composable

@@ -117,7 +117,10 @@ class NativeVideoPlayer(
         })
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_READY) { restarts = 0; mutableStatus.value = NativeStatus.Playing }
+                if (playbackState == Player.STATE_READY) {
+                    restarts = 0
+                    mutableStatus.value = NativeStatus.Playing
+                }
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -129,10 +132,16 @@ class NativeVideoPlayer(
                 }
                 // Dropped network or an expired token: resolve again (new token) after a growing pause, a few times.
                 val name = channel ?: return
-                if (restarts >= MAX_RESTARTS) { mutableStatus.value = NativeStatus.Failed(name, error); return }
+                if (restarts >= MAX_RESTARTS) {
+                    mutableStatus.value = NativeStatus.Failed(name, error)
+                    return
+                }
                 val wait = RESTART_DELAY_MS shl restarts++
                 job?.cancel()
-                job = scope.launch { delay(wait); start(name) }
+                job = scope.launch {
+                    delay(wait)
+                    start(name)
+                }
             }
         })
     }
@@ -177,8 +186,9 @@ class NativeVideoPlayer(
         val item = MediaItem.Builder().setUri(url).setLiveConfiguration(live).build()
         val hls = url.contains(".m3u8")
         val source: MediaSource = (if (hls) hlsFactory else progressiveFactory).createMediaSource(item)
-        exoPlayer.repeatMode = if (hls) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE // a looping clip stands in for a stream (demo)
-        exoPlayer.setMediaSource(source, /* resetPosition = */ true)
+        // A looping clip stands in for a stream (demo).
+        exoPlayer.repeatMode = if (hls) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
+        exoPlayer.setMediaSource(source, true)
         exoPlayer.prepare()
         exoPlayer.playWhenReady = !userPaused
     }
@@ -204,7 +214,9 @@ class NativeVideoPlayer(
     private fun publishAd() {
         val ad = runCatching {
             val tags = (exoPlayer.currentManifest as? HlsManifest)?.mediaPlaylist?.tags.orEmpty()
-            if (tags.isEmpty()) null else {
+            if (tags.isEmpty()) {
+                null
+            } else {
                 val offset = exoPlayer.currentLiveOffset.takeIf { it != C.TIME_UNSET } ?: 0L
                 HlsAds.current(tags, System.currentTimeMillis() - offset)
             }
@@ -237,11 +249,19 @@ class NativeVideoPlayer(
         if (enabled) mutableStats.value = readStats() else mutableStats.value = null
     }
 
-    override fun play() { userPaused = false; exoPlayer.playWhenReady = true }
+    override fun play() {
+        userPaused = false
+        exoPlayer.playWhenReady = true
+    }
 
-    override fun pause() { userPaused = true; exoPlayer.playWhenReady = false }
+    override fun pause() {
+        userPaused = true
+        exoPlayer.playWhenReady = false
+    }
 
-    override fun toggleMute() { exoPlayer.volume = if (exoPlayer.volume > 0f) 0f else 1f }
+    override fun toggleMute() {
+        exoPlayer.volume = if (exoPlayer.volume > 0f) 0f else 1f
+    }
 
     override fun loadQualities(onResult: (VideoQualities) -> Unit) {
         val variants = stream?.variants.orEmpty()
@@ -267,8 +287,12 @@ class NativeVideoPlayer(
 
     /** The app went to the background (false) or came back (true): a live stream never keeps downloading unseen. */
     fun onForeground(visible: Boolean) {
-        if (!visible) exoPlayer.playWhenReady = false
-        else if (!userPaused && channel != null) { exoPlayer.seekToDefaultPosition(); exoPlayer.playWhenReady = true }
+        if (!visible) {
+            exoPlayer.playWhenReady = false
+        } else if (!userPaused && channel != null) {
+            exoPlayer.seekToDefaultPosition()
+            exoPlayer.playWhenReady = true
+        }
     }
 
     /** Stops playing and forgets the channel (the host handed it to another player). */

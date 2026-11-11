@@ -8,7 +8,8 @@ import org.junit.Test
 class ChatModelsTest {
     @Test fun decodesTwitchEventSubMessageIdsBadgesAndFragments() {
         val json = Json { ignoreUnknownKeys = true }
-        val message = json.decodeFromString<ChatMessage>("""
+        val message = json.decodeFromString<ChatMessage>(
+            """
             {
               "broadcaster_user_id":"1971641",
               "chatter_user_id":"4145994",
@@ -23,7 +24,8 @@ class ChatModelsTest {
               "badges":[{"set_id":"moderator","id":"1","info":""}],
               "message_type":"text"
             }
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         assertEquals("cc106a89-1814-919d-454c-f4f2f970aae7", message.id)
         assertEquals("moderator", message.badges.single().setId)

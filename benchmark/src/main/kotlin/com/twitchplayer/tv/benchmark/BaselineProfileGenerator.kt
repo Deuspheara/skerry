@@ -30,7 +30,8 @@ class BaselineProfileGenerator {
         TvScenarios.follows(this)
         TvScenarios.searchKeyboard(this)
         TvScenarios.browseGrid(this)
-        pressBack(); device.waitForIdle() // top-level Back returns to Home
+        pressBack()
+        device.waitForIdle() // top-level Back returns to Home
         TvScenarios.playerChatAndZapper(this)
         // Native player: open a stream, play, expand / collapse the chat, switch channel, leave.
         TvScenarios.openStreamAndPlay(this)

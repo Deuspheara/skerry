@@ -27,8 +27,7 @@ class PlatformVoiceRecognizer(private val context: Context) : VoiceRecognizer {
             recognizer.destroy()
         }
         recognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onResults(results: Bundle?) =
-                finish(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.takeIf { it.isNotBlank() })
+            override fun onResults(results: Bundle?) = finish(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.takeIf { it.isNotBlank() })
             override fun onError(error: Int) = finish(null)
             override fun onReadyForSpeech(params: Bundle?) = Unit
             override fun onBeginningOfSpeech() = Unit
@@ -38,7 +37,12 @@ class PlatformVoiceRecognizer(private val context: Context) : VoiceRecognizer {
             override fun onPartialResults(partialResults: Bundle?) = Unit
             override fun onEvent(eventType: Int, params: Bundle?) = Unit
         })
-        continuation.invokeOnCancellation { runCatching { recognizer.cancel(); recognizer.destroy() } }
+        continuation.invokeOnCancellation {
+            runCatching {
+                recognizer.cancel()
+                recognizer.destroy()
+            }
+        }
         recognizer.startListening(
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)

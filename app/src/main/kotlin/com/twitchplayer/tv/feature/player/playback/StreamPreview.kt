@@ -164,7 +164,10 @@ fun rememberStreamPreview(resolver: TwitchPlaybackResolver): StreamPreview {
     DisposableEffect(preview, lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) preview.halt() }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer); preview.release() }
+        onDispose {
+            lifecycle.removeObserver(observer)
+            preview.release()
+        }
     }
     return preview
 }

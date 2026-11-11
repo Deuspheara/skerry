@@ -1,6 +1,5 @@
 package com.twitchplayer.tv.core.designsystem.component
 
-import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
+import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.TvFocusable
@@ -34,7 +34,7 @@ fun TvButton(
         onClick = onClick,
         shape = TvShapes.Control,
         pressOverlay = if (primary) TvColors.PurplePressed else TvColors.PressTone,
-        focusScale = TvDimens.FocusScaleControl,
+        focusScale = TvDimens.FOCUS_SCALE_CONTROL,
         modifier = modifier.height(40.dp).background(if (primary) TvColors.Purple else TvColors.Alt2, TvShapes.Control),
     ) { focus ->
         Row(

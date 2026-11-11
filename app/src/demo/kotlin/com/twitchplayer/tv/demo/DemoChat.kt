@@ -4,6 +4,7 @@ import android.content.Context
 import com.twitchplayer.tv.feature.player.data.ChatAssets
 import com.twitchplayer.tv.feature.player.data.ChatAssetsSource
 import com.twitchplayer.tv.feature.player.data.ChatSource
+import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
 import com.twitchplayer.tv.feature.player.data.chat.ChatBadge
 import com.twitchplayer.tv.feature.player.data.chat.ChatCheer
 import com.twitchplayer.tv.feature.player.data.chat.ChatEmote
@@ -12,24 +13,23 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMention
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent
+import com.twitchplayer.tv.feature.player.data.chat.RoomState
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.launch
-import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
-import com.twitchplayer.tv.feature.player.data.chat.RoomState
 import kotlinx.coroutines.flow.flowOf
-
+import kotlinx.coroutines.launch
 import java.io.File
 
 /** Messages the viewer "sends" in the demo come back through chat like real ones. */
-internal object DemoBus { val events = MutableSharedFlow<ChatEvent>(extraBufferCapacity = 16) }
+internal object DemoBus {
+    val events = MutableSharedFlow<ChatEvent>(extraBufferCapacity = 16)
+}
 
 /** Demo extras (moderation, room modes, raid, clips): `files/demo-events` or `settings put global twitchtv_demo_events 1`. */
-internal fun demoEvents(context: Context): Boolean =
-    File(context.filesDir, "demo-events").exists() || android.provider.Settings.Global.getInt(context.contentResolver, "twitchtv_demo_events", 0) == 1
+internal fun demoEvents(context: Context): Boolean = File(context.filesDir, "demo-events").exists() || android.provider.Settings.Global.getInt(context.contentResolver, "twitchtv_demo_events", 0) == 1
 
 /**
  * Fictional chat with third-party style emotes, to see and measure the real renderer without an account.
@@ -38,8 +38,14 @@ internal fun demoEvents(context: Context): Boolean =
  */
 internal class DemoChat(private val context: Context) : ChatSource {
     private val users = listOf(
-        "mireille_88" to "#BF94FF", "Tom_Lefebvre" to "#EFEFF1", "ClaraPlays" to "#FF7F50", "nuit_blanche" to "#0000FF",
-        "Gaspard" to "#2E8B57", "petitpois" to null, "Lagom_TV" to "#1E1E8C", "zouzou" to "#FF69B4",
+        "mireille_88" to "#BF94FF",
+        "Tom_Lefebvre" to "#EFEFF1",
+        "ClaraPlays" to "#FF7F50",
+        "nuit_blanche" to "#0000FF",
+        "Gaspard" to "#2E8B57",
+        "petitpois" to null,
+        "Lagom_TV" to "#1E1E8C",
+        "zouzou" to "#FF69B4",
     )
     private val lines = listOf(
         "Salut tout le monde", "Quelqu'un sait quelle musique est en fond ?", "GG bien joué !", "On est combien ce soir ?",
@@ -63,12 +69,14 @@ internal class DemoChat(private val context: Context) : ChatSource {
         while (true) {
             delay(if (heavy) 60 else 1_000)
             send(event(n++, heavy))
-            if (extras) when (n) {
-                16 -> send(ChatEvent.Deleted("demo-15"))
-                18 -> send(ChatEvent.UserCleared("petitpois"))
-                20 -> send(ChatEvent.Channel(ChannelNotice.Updated("Nouveau titre du live", "Échecs")))
-                24 -> send(ChatEvent.Channel(ChannelNotice.Raid("Valmoor", "Lagom_TV", DemoData.recommended.first().login, 342)))
-                40 -> send(ChatEvent.Channel(ChannelNotice.Offline))
+            if (extras) {
+                when (n) {
+                    16 -> send(ChatEvent.Deleted("demo-15"))
+                    18 -> send(ChatEvent.UserCleared("petitpois"))
+                    20 -> send(ChatEvent.Channel(ChannelNotice.Updated("Nouveau titre du live", "Échecs")))
+                    24 -> send(ChatEvent.Channel(ChannelNotice.Raid("Valmoor", "Lagom_TV", DemoData.recommended.first().login, 342)))
+                    40 -> send(ChatEvent.Channel(ChannelNotice.Offline))
+                }
             }
         }
     }
@@ -81,17 +89,31 @@ internal class DemoChat(private val context: Context) : ChatSource {
     private fun message(n: Int, heavy: Boolean): ChatMessage {
         val (name, color) = users[n % users.size]
         var seed = n * 7919 + 17
-        fun rnd(bound: Int): Int { seed = seed * 1103515245 + 12345; return ((seed ushr 16) and 0x7FFF) % bound }
+        fun rnd(bound: Int): Int {
+            seed = seed * 1103515245 + 12345
+            return ((seed ushr 16) and 0x7FFF) % bound
+        }
         val fragments = ArrayList<ChatFragment>()
-        val emoteCount = if (heavy) 1 + rnd(4) else if (rnd(10) < 6) 1 + rnd(2) else 0
+        val emoteCount = if (heavy) {
+            1 + rnd(4)
+        } else if (rnd(10) < 6) {
+            1 + rnd(2)
+        } else {
+            0
+        }
         val builder = StringBuilder(lines[rnd(lines.size)])
-        if (!heavy && n % 11 == 5) { fragments += ChatFragment("mention", "@Camille", mention = ChatMention("camille")); builder.insert(0, "@Camille ") }
+        if (!heavy && n % 11 == 5) {
+            fragments += ChatFragment("mention", "@Camille", mention = ChatMention("camille"))
+            builder.insert(0, "@Camille ")
+        }
         // Words: text, then emotes spread through it (third-party names are plain words, Twitch emotes are fragments).
         fragments += ChatFragment("text", builder.toString().let { if (fragments.isEmpty()) it else it.removePrefix("@Camille") })
         repeat(emoteCount) {
             when (rnd(6)) {
                 0 -> fragments += ChatFragment("emote", "smileTV", ChatEmote("demo-smile", format = listOf("static")))
+
                 1 -> fragments += ChatFragment("emote", "starTV", ChatEmote("demo-star", format = listOf("static")))
+
                 else -> {
                     // Heavy mode: half of the third-party emotes are animated.
                     val pool = if (heavy && rnd(2) == 0) thirdParty.filter { it in animatedNames } else thirdParty
@@ -119,17 +141,20 @@ internal class DemoChat(private val context: Context) : ChatSource {
 
 /** Badges and third-party emotes of the demo channel (the demo analogue of Helix badges + 7TV/BTTV/FFZ). */
 internal object DemoChatAssets : ChatAssetsSource {
-    private fun still(name: String, animated: Boolean = false, zeroWidth: Boolean = false, label: String = name) =
-        Emote(
-            name = label, url = DemoEmoteArt.url(name, false),
-            animatedUrl = if (animated) DemoEmoteArt.url(name, true) else null,
-            zeroWidth = zeroWidth, aspect = DemoEmoteArt.specs.getValue(name).first,
-        )
+    private fun still(name: String, animated: Boolean = false, zeroWidth: Boolean = false, label: String = name) = Emote(
+        name = label,
+        url = DemoEmoteArt.url(name, false),
+        animatedUrl = if (animated) DemoEmoteArt.url(name, true) else null,
+        zeroWidth = zeroWidth,
+        aspect = DemoEmoteArt.specs.getValue(name).first,
+    )
 
     private val assets = ChatAssets(
         badges = mapOf(
-            "subscriber:1" to DemoEmoteArt.url("badge-sub", false), "moderator:1" to DemoEmoteArt.url("badge-mod", false),
-            "vip:1" to DemoEmoteArt.url("badge-vip", false), "broadcaster:1" to DemoEmoteArt.url("badge-bc", false),
+            "subscriber:1" to DemoEmoteArt.url("badge-sub", false),
+            "moderator:1" to DemoEmoteArt.url("badge-mod", false),
+            "vip:1" to DemoEmoteArt.url("badge-vip", false),
+            "broadcaster:1" to DemoEmoteArt.url("badge-bc", false),
         ),
         emotes = listOf(
             still("heart", label = "heartPop"), still("gg", label = "gg"), still("smile", label = "peepoHey"),

@@ -32,12 +32,13 @@ class LiveWatcher(
                     newlyLive(known, live).forEach { emit(it) }
                     known = live.mapTo(HashSet()) { it.channelId }
                 }
-            } else known = null
+            } else {
+                known = null
+            }
             delay(intervalMs)
         }
     }
 }
 
 /** [live] channels that were not in [previous]; none when there was no previous check (everything would look new). */
-internal fun newlyLive(previous: Set<String>?, live: List<LiveStream>): List<LiveStream> =
-    if (previous == null) emptyList() else live.filter { it.channelId !in previous }
+internal fun newlyLive(previous: Set<String>?, live: List<LiveStream>): List<LiveStream> = if (previous == null) emptyList() else live.filter { it.channelId !in previous }

@@ -22,8 +22,7 @@ class LiveWatcherTest {
 
     @Test fun scheduleKeepsUpcomingNotCancelledSlotsSoonestFirst() {
         val now = Instant.parse("2026-11-07T12:00:00Z").toEpochMilli()
-        fun seg(start: String, end: String? = null, cancelled: Boolean = false, title: String = "t") =
-            ScheduleSegment("i", start, end, title, if (cancelled) "2026-12-01T00:00:00Z" else null, ScheduleCategory("1", "Chess"))
+        fun seg(start: String, end: String? = null, cancelled: Boolean = false, title: String = "t") = ScheduleSegment("i", start, end, title, if (cancelled) "2026-12-01T00:00:00Z" else null, ScheduleCategory("1", "Chess"))
         val list = listOf(
             seg("2026-11-09T18:00:00Z", title = "later"),
             seg("2026-11-06T18:00:00Z", end = "2026-11-06T20:00:00Z", title = "past"),

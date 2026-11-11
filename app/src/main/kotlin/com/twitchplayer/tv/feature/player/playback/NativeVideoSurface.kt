@@ -38,7 +38,10 @@ fun rememberNativeVideoPlayer(
             }
         }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer); player.release() }
+        onDispose {
+            lifecycle.removeObserver(observer)
+            player.release()
+        }
     }
     return player
 }

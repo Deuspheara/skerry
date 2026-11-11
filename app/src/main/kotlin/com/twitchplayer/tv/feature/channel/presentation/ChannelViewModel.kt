@@ -61,5 +61,8 @@ class ChannelViewModel(
         }
     }
 
-    fun retry() { mutableTail.value = ReplayTail(); loader.reload() }
+    fun retry() {
+        mutableTail.value = ReplayTail()
+        loader.reload()
+    }
 }

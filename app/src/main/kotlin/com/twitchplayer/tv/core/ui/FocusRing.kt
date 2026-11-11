@@ -5,16 +5,16 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import androidx.compose.ui.unit.dp
+import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 
 /**
@@ -24,6 +24,7 @@ import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 @Stable
 class FocusProgress internal constructor(private val read: () -> Float, private val readPressed: () -> Float = { 0f }) {
     val value: Float get() = read()
+
     /** Animated 0..1 press amount (OK / center held down). */
     val pressed: Float get() = readPressed()
 }
@@ -33,12 +34,11 @@ class FocusProgress internal constructor(private val read: () -> Float, private 
  * never shifts layout. The ring fades with [progress]; [strength] < 1 dims it (disabled controls). Parents must leave
  * ~4 dp of room and must not clip or alpha-layer this node (an alpha layer is an offscreen buffer the size of the bounds).
  */
-fun Modifier.focusRing(progress: FocusProgress, shape: CornerBasedShape, strength: Float = 1f, thick: Boolean = false): Modifier =
-    drawWithContent {
-        drawContent()
-        val p = progress.value * strength
-        if (p > 0f) drawFocusRing(shape, p, thick = thick)
-    }
+fun Modifier.focusRing(progress: FocusProgress, shape: CornerBasedShape, strength: Float = 1f, thick: Boolean = false): Modifier = drawWithContent {
+    drawContent()
+    val p = progress.value * strength
+    if (p > 0f) drawFocusRing(shape, p, thick = thick)
+}
 
 /**
  * Reduced-motion focus cue: the element gets lighter (a white veil over it, clipped to [shape]) instead of growing.

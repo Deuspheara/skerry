@@ -28,10 +28,14 @@ import org.junit.Test
 class BrowseViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val cats = listOf(
-        category("zelda"), category("chat", CategoryGroup.Irl), category("beats", CategoryGroup.Music), category("alpha"),
+        category("zelda"),
+        category("chat", CategoryGroup.Irl),
+        category("beats", CategoryGroup.Music),
+        category("alpha"),
     )
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     @Test fun filterKeepsPopularityOrderAndSortIsAlphabetical() {
@@ -65,6 +69,4 @@ class BrowseViewModelTest {
         advanceUntilIdle()
         assertTrue(vm.state.value is Load.Ready)
     }
-
-
 }

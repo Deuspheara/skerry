@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
-import com.twitchplayer.tv.core.designsystem.component.TvDialog
 import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
+import com.twitchplayer.tv.core.designsystem.component.TvDialog
 import com.twitchplayer.tv.core.designsystem.component.TvIconButton
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.LocalMotion
@@ -58,18 +58,28 @@ fun VoiceDialog(state: VoiceState, onCancel: () -> Unit) {
         Box(Modifier.height(40.dp), contentAlignment = Alignment.Center) {
             when (state) {
                 VoiceState.Listening, VoiceState.Idle -> Bars(animated = true)
+
                 is VoiceState.Heard -> Text(
-                    state.text, style = TvType.Title.copy(fontSize = androidx.compose.ui.unit.TextUnit(16f, androidx.compose.ui.unit.TextUnitType.Sp)),
-                    color = TvColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    state.text,
+                    style = TvType.Title.copy(fontSize = androidx.compose.ui.unit.TextUnit(16f, androidx.compose.ui.unit.TextUnitType.Sp)),
+                    color = TvColors.Text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.background(TvColors.Alt2, RoundedCornerShape(2.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
                 )
+
                 VoiceState.Failed -> Icon(TvIcons.MicOff, stringResource(R.string.voice_not_heard), tint = TvColors.TextSecondary, modifier = Modifier.size(32.dp))
             }
         }
         val dismiss = LocalDialogClose.current
         TvIconButton(
-            TvIcons.Close, stringResource(R.string.voice_close), { dismiss(onCancel) }, Modifier.focusRequester(close),
-            size = 44.dp, iconSize = 22.dp, container = TvColors.Alt2,
+            TvIcons.Close,
+            stringResource(R.string.voice_close),
+            { dismiss(onCancel) },
+            Modifier.focusRequester(close),
+            size = 44.dp,
+            iconSize = 22.dp,
+            container = TvColors.Alt2,
         )
     }
 }
@@ -79,15 +89,22 @@ private fun Microphone(listening: Boolean) {
     val motion = LocalMotion.current
     val pulse = if (listening && motion.enabled) {
         rememberInfiniteTransition(label = "pulse").animateFloat(
-            0f, 1f, infiniteRepeatable(tween(1600), RepeatMode.Restart), label = "ring",
+            0f,
+            1f,
+            infiniteRepeatable(tween(1600), RepeatMode.Restart),
+            label = "ring",
         )
-    } else null
+    } else {
+        null
+    }
     Box(Modifier.size(80.dp), contentAlignment = Alignment.Center) {
         if (pulse != null) {
             Box(
                 Modifier.matchParentSize().graphicsLayer {
                     val p = pulse.value
-                    scaleX = 1f + 0.2f * p; scaleY = 1f + 0.2f * p; alpha = 0.35f * (1f - p)
+                    scaleX = 1f + 0.2f * p
+                    scaleY = 1f + 0.2f * p
+                    alpha = 0.35f * (1f - p)
                 }.background(TvColors.Purple, CircleShape),
             )
         }
@@ -107,14 +124,20 @@ internal fun Bars(animated: Boolean) {
             val amplitude = (0.3f + 0.7f * centre).coerceIn(0.3f, 1f)
             val scale = if (animated && motion.enabled) {
                 rememberInfiniteTransition(label = "bar$index").animateFloat(
-                    0.2f, amplitude,
+                    0.2f,
+                    amplitude,
                     infiniteRepeatable(tween(600 + (index * 37) % 500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
                     label = "scale",
                 )
-            } else null
+            } else {
+                null
+            }
             Box(
                 Modifier.width(6.dp).fillMaxHeight()
-                    .graphicsLayer { val s = scale?.value ?: 0.5f; scaleY = s }
+                    .graphicsLayer {
+                        val s = scale?.value ?: 0.5f
+                        scaleY = s
+                    }
                     .background(TvColors.Purple, RoundedCornerShape(2.dp)),
             )
         }

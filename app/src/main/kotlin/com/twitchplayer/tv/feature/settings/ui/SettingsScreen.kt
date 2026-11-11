@@ -1,31 +1,31 @@
 package com.twitchplayer.tv.feature.settings.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -41,27 +41,26 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.twitchplayer.tv.R
+import com.twitchplayer.tv.app.SignOutDialog
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
-import com.twitchplayer.tv.core.designsystem.component.TvDialog
-import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
-import com.twitchplayer.tv.feature.player.ui.ChatSettingsPanel
 import com.twitchplayer.tv.core.designsystem.component.Avatar
+import com.twitchplayer.tv.core.designsystem.component.LocalDialogClose
 import com.twitchplayer.tv.core.designsystem.component.TileCard
-import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.core.designsystem.component.TopBar
+import com.twitchplayer.tv.core.designsystem.component.TvDialog
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.LocalMotion
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
-import com.twitchplayer.tv.core.ui.LocalAppActions
 import com.twitchplayer.tv.core.ui.AppLocales
-import com.twitchplayer.tv.app.SignOutDialog
-import androidx.compose.ui.focus.onFocusChanged
+import com.twitchplayer.tv.core.ui.LocalAppActions
 import com.twitchplayer.tv.core.ui.TvFocusable
 import com.twitchplayer.tv.core.ui.focusFill
+import com.twitchplayer.tv.core.ui.staggerIn
+import com.twitchplayer.tv.feature.player.ui.ChatSettingsPanel
 import com.twitchplayer.tv.feature.settings.presentation.SettingsUiState
 import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -177,7 +176,10 @@ private fun SettingsScreen(
         TopBar(Modifier.align(Alignment.TopStart))
     }
     if (confirmSignOut && state.account != null) {
-        SignOutDialog(state.account, onCancel = { confirmSignOut = false }, onSignOut = { confirmSignOut = false; onSignOut() })
+        SignOutDialog(state.account, onCancel = { confirmSignOut = false }, onSignOut = {
+            confirmSignOut = false
+            onSignOut()
+        })
     }
     if (playerOptionsOpen) {
         PlayerOptionsDialog(state, onEngine = onPlayerEngine, onStats = onStats, onFollowRaids = onFollowRaids, onDismiss = { playerOptionsOpen = false })
@@ -216,16 +218,36 @@ private fun ChatTile(mode: ChatMode, onMode: (ChatMode) -> Unit, onOptions: () -
                 ChatMode.entries.forEach { entry ->
                     val label = chatModeLabel(entry)
                     Segment(
-                        entry, label, selected = entry == mode, onClick = { onMode(entry) },
+                        entry,
+                        label,
+                        selected = entry == mode,
+                        onClick = { onMode(entry) },
                         modifier = (if (entry == mode) Modifier.focusRequester(firstFocus) else Modifier)
-                            .onFocusChanged { if (it.hasFocus) focusedLabel = label else if (focusedLabel == label) focusedLabel = null },
+                            .onFocusChanged {
+                                if (it.hasFocus) {
+                                    focusedLabel = label
+                                } else if (focusedLabel == label) {
+                                    focusedLabel = null
+                                }
+                            },
                     )
                 }
-                OptionsSegment(onOptions, Modifier.onFocusChanged { if (it.hasFocus) focusedLabel = optionsLabel else if (focusedLabel == optionsLabel) focusedLabel = null })
+                OptionsSegment(
+                    onOptions,
+                    Modifier.onFocusChanged {
+                        if (it.hasFocus) {
+                            focusedLabel = optionsLabel
+                        } else if (focusedLabel == optionsLabel) {
+                            focusedLabel = null
+                        }
+                    },
+                )
             }
             Text(
                 focusedLabel ?: chatModeLabel(mode),
-                style = TvType.Meta, color = TvColors.TextSecondary, maxLines = 1,
+                style = TvType.Meta,
+                color = TvColors.TextSecondary,
+                maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
@@ -253,7 +275,11 @@ private fun OptionsSegment(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 private fun chatModeLabel(mode: ChatMode): String = stringResource(
-    when (mode) { ChatMode.Hidden -> R.string.chat_hidden; ChatMode.Compact -> R.string.chat_compact; ChatMode.Overlay -> R.string.chat_overlay },
+    when (mode) {
+        ChatMode.Hidden -> R.string.chat_hidden
+        ChatMode.Compact -> R.string.chat_compact
+        ChatMode.Overlay -> R.string.chat_overlay
+    },
 )
 
 /** Tile action: small icon plus the verb, so the tile says what OK will do. */
@@ -279,15 +305,24 @@ private fun Segment(mode: ChatMode, label: String, selected: Boolean, onClick: (
             .size(40.dp, 28.dp)
             .background(if (selected) TvColors.Purple else TvColors.Tile, TvShapes.Chip)
             .drawBehind {
-                if (selected) drawRoundRect(androidx.compose.ui.graphics.Color.White, Offset(7.dp.toPx(), size.height - 4.dp.toPx()), Size(size.width - 14.dp.toPx(), 2.dp.toPx()), CornerRadius(1.dp.toPx()))
-                else drawRoundRect(TvColors.ChipLine, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()), cornerRadius = CornerRadius(2.dp.toPx()))
+                if (selected) {
+                    drawRoundRect(androidx.compose.ui.graphics.Color.White, Offset(7.dp.toPx(), size.height - 4.dp.toPx()), Size(size.width - 14.dp.toPx(), 2.dp.toPx()), CornerRadius(1.dp.toPx()))
+                } else {
+                    drawRoundRect(TvColors.ChipLine, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()), cornerRadius = CornerRadius(2.dp.toPx()))
+                }
             }
             .semantics { this.selected = selected },
     ) {
         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
             Icon(
-                when (mode) { ChatMode.Hidden -> TvIcons.ChatOff; ChatMode.Compact -> TvIcons.ChatCompact; ChatMode.Overlay -> TvIcons.ChatOverlay },
-                null, tint = if (selected) androidx.compose.ui.graphics.Color.White else TvColors.TextSecondary, modifier = Modifier.size(18.dp),
+                when (mode) {
+                    ChatMode.Hidden -> TvIcons.ChatOff
+                    ChatMode.Compact -> TvIcons.ChatCompact
+                    ChatMode.Overlay -> TvIcons.ChatOverlay
+                },
+                null,
+                tint = if (selected) androidx.compose.ui.graphics.Color.White else TvColors.TextSecondary,
+                modifier = Modifier.size(18.dp),
             )
         }
     }
@@ -388,7 +423,12 @@ private fun PlayerOptionsDialog(state: SettingsUiState, onEngine: () -> Unit, on
     TvDialog(description = title, onDismiss = onDismiss, width = 360.dp, title = title) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             var firstRow = true
-            fun Modifier.initial(): Modifier = if (firstRow) { firstRow = false; focusRequester(first) } else this
+            fun Modifier.initial(): Modifier = if (firstRow) {
+                firstRow = false
+                focusRequester(first)
+            } else {
+                this
+            }
             if (nativeBuilt) {
                 val engineName = stringResource(if (state.playerEngine == com.twitchplayer.tv.core.data.model.PlayerEngine.Native) R.string.engine_native else R.string.engine_webview)
                 OptionRow(stringResource(R.string.player_engine), engineName, null, onEngine, Modifier.initial())

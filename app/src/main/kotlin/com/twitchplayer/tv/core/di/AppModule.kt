@@ -1,13 +1,13 @@
 package com.twitchplayer.tv.core.di
 
 import com.twitchplayer.tv.BuildConfig
-import com.twitchplayer.tv.core.data.repository.SessionRepository
-import com.twitchplayer.tv.core.data.repository.TwitchSessionRepository
 import com.twitchplayer.tv.core.data.repository.DataStoreSettingsRepository
+import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SettingsRepository
 import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.data.repository.TwitchRepositoryImpl
+import com.twitchplayer.tv.core.data.repository.TwitchSessionRepository
 import com.twitchplayer.tv.core.network.api.TokenSource
 import com.twitchplayer.tv.core.network.api.TwitchApi
 import com.twitchplayer.tv.core.network.api.twitchHttpClient
@@ -53,8 +53,11 @@ val coreModule = module {
     single<com.twitchplayer.tv.feature.player.data.stream.ClipResolver> { com.twitchplayer.tv.feature.player.data.stream.GqlClipResolver(get()) }
     single {
         PlayerConfigProvider(
-            if (BuildConfig.TWITCH_PLAYER_HOST.isBlank() || BuildConfig.TWITCH_PLAYER_PARENT.isBlank()) null
-            else runCatching { TwitchPlayerConfig(BuildConfig.TWITCH_PLAYER_HOST, BuildConfig.TWITCH_PLAYER_PARENT) }.getOrNull(),
+            if (BuildConfig.TWITCH_PLAYER_HOST.isBlank() || BuildConfig.TWITCH_PLAYER_PARENT.isBlank()) {
+                null
+            } else {
+                runCatching { TwitchPlayerConfig(BuildConfig.TWITCH_PLAYER_HOST, BuildConfig.TWITCH_PLAYER_PARENT) }.getOrNull()
+            },
         )
     }
 }

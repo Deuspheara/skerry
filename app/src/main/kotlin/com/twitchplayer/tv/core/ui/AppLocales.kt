@@ -25,13 +25,12 @@ object AppLocales {
     private const val KEY = "tag"
 
     /** The chosen language tag, or null when the app follows the system language. */
-    fun current(context: Context): String? =
-        if (Build.VERSION.SDK_INT >= 33) {
-            context.getSystemService(LocaleManager::class.java).applicationLocales.takeIf { !it.isEmpty }?.get(0)?.toLanguageTag()
-                ?.let(::closestSupported)
-        } else {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
-        }
+    fun current(context: Context): String? = if (Build.VERSION.SDK_INT >= 33) {
+        context.getSystemService(LocaleManager::class.java).applicationLocales.takeIf { !it.isEmpty }?.get(0)?.toLanguageTag()
+            ?.let(::closestSupported)
+    } else {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
+    }
 
     /** Switches the app language ([tag] null = system). Recreates [activity] so every screen picks it up. */
     fun set(activity: Activity, tag: String?) {

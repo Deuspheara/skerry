@@ -35,9 +35,13 @@ class SettingsViewModel(
         SettingsUiState(s.chatMode, s.chat, s.animationsEnabled, s.playerEngine, s.showStats, s.followRaids, (session as? SessionState.SignedIn)?.account?.login)
     }.stateIn(viewModelScope, SharingStarted.Lazily, SettingsUiState())
 
-    fun setChatMode(mode: ChatMode) { viewModelScope.launch { settings.setChatMode(mode) } }
+    fun setChatMode(mode: ChatMode) {
+        viewModelScope.launch { settings.setChatMode(mode) }
+    }
 
-    fun updateChat(transform: (ChatSettings) -> ChatSettings) { viewModelScope.launch { settings.updateChat(transform) } }
+    fun updateChat(transform: (ChatSettings) -> ChatSettings) {
+        viewModelScope.launch { settings.updateChat(transform) }
+    }
 
     fun cycleChatMode() = setChatMode(ChatMode.entries[(state.value.chatMode.ordinal + 1) % ChatMode.entries.size])
 
@@ -46,9 +50,15 @@ class SettingsViewModel(
         viewModelScope.launch { settings.setPlayerEngine(next) }
     }
 
-    fun toggleStats() { viewModelScope.launch { settings.setShowStats(!state.value.showStats) } }
+    fun toggleStats() {
+        viewModelScope.launch { settings.setShowStats(!state.value.showStats) }
+    }
 
-    fun toggleFollowRaids() { viewModelScope.launch { settings.setFollowRaids(!state.value.followRaids) } }
+    fun toggleFollowRaids() {
+        viewModelScope.launch { settings.setFollowRaids(!state.value.followRaids) }
+    }
 
-    fun toggleAnimations() { viewModelScope.launch { settings.setAnimations(!state.value.animationsEnabled) } }
+    fun toggleAnimations() {
+        viewModelScope.launch { settings.setAnimations(!state.value.animationsEnabled) }
+    }
 }

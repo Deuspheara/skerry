@@ -26,8 +26,7 @@ import java.util.concurrent.TimeUnit
 class SevenTvProvider(private val http: HttpClient, private val eventsHttp: () -> HttpClient = ::eventsClient) : EmoteProvider {
     private val setIds = ConcurrentHashMap<String, String>()
 
-    override suspend fun global(): List<Emote> =
-        http.getOrNull<SevenTvSet>("https://7tv.io/v3/emote-sets/global")?.emotes.orEmpty().mapNotNull { it.toEmote() }
+    override suspend fun global(): List<Emote> = http.getOrNull<SevenTvSet>("https://7tv.io/v3/emote-sets/global")?.emotes.orEmpty().mapNotNull { it.toEmote() }
 
     override suspend fun channel(channelId: String): List<Emote> {
         val set = http.getOrNull<SevenTvUser>("https://7tv.io/v3/users/twitch/$channelId")?.emoteSet ?: return emptyList()
@@ -53,8 +52,10 @@ class SevenTvProvider(private val http: HttpClient, private val eventsHttp: () -
                             val line = withTimeoutOrNull(DEAD_AFTER_MS) { lines.readLine() } ?: break
                             when {
                                 line.startsWith("event:") -> event = line.removePrefix("event:").trim()
+
                                 line.startsWith("data:") && event == "dispatch" ->
                                     parseSevenTvChange(line.removePrefix("data:").trim())?.let { send(it) }
+
                                 line.startsWith("data:") && event == "hello" -> backoff = 2_000L
                             }
                         }
@@ -79,10 +80,15 @@ class SevenTvProvider(private val http: HttpClient, private val eventsHttp: () -
 }
 
 @Serializable internal data class SevenTvUser(@SerialName("emote_set") val emoteSet: SevenTvSet? = null)
+
 @Serializable internal data class SevenTvSet(val id: String = "", val emotes: List<SevenTvEmote> = emptyList())
+
 @Serializable internal data class SevenTvEmote(val id: String, val name: String, val flags: Int = 0, val data: SevenTvData? = null)
+
 @Serializable internal data class SevenTvData(val flags: Int = 0, val animated: Boolean = false, val host: SevenTvHost? = null)
+
 @Serializable internal data class SevenTvHost(val url: String = "", val files: List<SevenTvFile> = emptyList())
+
 @Serializable internal data class SevenTvFile(val name: String = "", val width: Int = 0, val height: Int = 0)
 
 private const val ZERO_WIDTH_ACTIVE = 1
@@ -104,11 +110,17 @@ internal fun SevenTvEmote.toEmote(): Emote? {
 }
 
 @Serializable private data class SevenTvDispatch(val type: String = "", val body: SevenTvBody? = null)
+
 @Serializable private data class SevenTvBody(
-    val pushed: List<SevenTvField> = emptyList(), val pulled: List<SevenTvField> = emptyList(), val updated: List<SevenTvField> = emptyList(),
+    val pushed: List<SevenTvField> = emptyList(),
+    val pulled: List<SevenTvField> = emptyList(),
+    val updated: List<SevenTvField> = emptyList(),
 )
+
 @Serializable private data class SevenTvField(
-    val key: String = "", val value: JsonElement? = null, @SerialName("old_value") val oldValue: JsonElement? = null,
+    val key: String = "",
+    val value: JsonElement? = null,
+    @SerialName("old_value") val oldValue: JsonElement? = null,
 )
 
 /** One `emote_set.update` dispatch: pushed = added, pulled = removed, updated = renamed / re-flagged. Null when it changes no emote. */

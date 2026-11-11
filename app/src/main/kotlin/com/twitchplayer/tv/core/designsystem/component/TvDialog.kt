@@ -3,6 +3,7 @@ package com.twitchplayer.tv.core.designsystem.component
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,15 +15,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.CompositingStrategy
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
@@ -34,7 +34,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.twitchplayer.tv.core.designsystem.theme.LocalMotion
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
-import androidx.compose.foundation.layout.Arrangement
+import kotlinx.coroutines.launch
 
 /**
  * Modal overlay in its own window: it traps D-pad focus, Back dismisses it, and focus returns to the
@@ -100,7 +100,10 @@ fun TvDialog(
                     .background(TvColors.Base, TvShapes.Dialog)
                     .border(0.5.dp, TvColors.Divider, TvShapes.Dialog)
                     .padding(24.dp)
-                    .semantics { paneTitle = description; contentDescription = description },
+                    .semantics {
+                        paneTitle = description
+                        contentDescription = description
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {

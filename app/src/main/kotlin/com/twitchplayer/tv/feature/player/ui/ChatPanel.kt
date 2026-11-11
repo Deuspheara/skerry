@@ -9,16 +9,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,19 +40,27 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -115,15 +115,20 @@ fun ChatPanel(
     val newest = lines.lastOrNull()?.id
     LaunchedEffect(newest) {
         // A cleared list means another channel (or chat reopened): start live again, whatever the previous position was.
-        if (newest == null) { following = true; lastSeenId = null }
-        else if (following) {
+        if (newest == null) {
+            following = true
+            lastSeenId = null
+        } else if (following) {
             lastSeenId = newest
             // A new message at index 0 would otherwise scroll the viewer's position away from the bottom. A small arrival glides
             // up into place (the list keeps the old newest line anchored, so the new one enters from below); a big jump
             // (catching up after the chat was hidden) snaps.
             if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
-                if (motion.enabled && listState.firstVisibleItemIndex <= 4) listState.animateScrollToItem(0)
-                else listState.scrollToItem(0)
+                if (motion.enabled && listState.firstVisibleItemIndex <= 4) {
+                    listState.animateScrollToItem(0)
+                } else {
+                    listState.scrollToItem(0)
+                }
             }
         }
     }
@@ -132,7 +137,10 @@ fun ChatPanel(
             if (following) 0 else lastSeenId?.let { seen -> lines.size - 1 - lines.indexOfLast { it.id == seen } }?.coerceAtLeast(0) ?: lines.size
         }
     }
-    fun goLive() { following = true; scope.launch { listState.scrollToItem(0) } }
+    fun goLive() {
+        following = true
+        scope.launch { listState.scrollToItem(0) }
+    }
     // Pointer scrolling (wheel, drag) pauses following too, and coming back to the newest line resumes it. Only user
     // input reaches a nested-scroll connection: the list's own jumps to the newest message never count as scrolling away.
     val pointerScroll = remember(listState) {
@@ -165,11 +173,17 @@ fun ChatPanel(
     var allowance by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     val currentLines by rememberUpdatedState(lines)
     LaunchedEffect(animationsOn, style.animatedLimit) {
-        if (!animationsOn) { allowance = emptyMap(); return@LaunchedEffect }
+        if (!animationsOn) {
+            allowance = emptyMap()
+            return@LaunchedEffect
+        }
         snapshotFlow {
             // Recomputed only when scrolling has settled: during a fling lines keep their stills and nothing flickers.
-            if (listState.isScrollInProgress) null
-            else listState.layoutInfo.visibleItemsInfo.map { it.key as String }.also { currentLines }
+            if (listState.isScrollInProgress) {
+                null
+            } else {
+                listState.layoutInfo.visibleItemsInfo.map { it.key as String }.also { currentLines }
+            }
         }.filterNotNull().distinctUntilChanged().collect { keys ->
             val byId = currentLines.associateBy { it.id }
             allowance = animationAllowance(keys.mapNotNull(byId::get), style.animatedLimit)
@@ -186,11 +200,27 @@ fun ChatPanel(
             .onKeyEvent { event ->
                 when {
                     event.type != KeyEventType.KeyDown -> false
+
                     // Nothing older: let focus move up to the chat header.
-                    event.key == Key.DirectionUp -> if (!listState.canScrollForward) false else { scroll(older = true, repeat = event.nativeKeyEvent.repeatCount > 0); true }
-                    event.key == Key.DirectionDown -> { scroll(older = false, repeat = event.nativeKeyEvent.repeatCount > 0); true }
-                    event.key == Key.DirectionLeft -> { onLeave(); true }
+                    event.key == Key.DirectionUp -> if (!listState.canScrollForward) {
+                        false
+                    } else {
+                        scroll(older = true, repeat = event.nativeKeyEvent.repeatCount > 0)
+                        true
+                    }
+
+                    event.key == Key.DirectionDown -> {
+                        scroll(older = false, repeat = event.nativeKeyEvent.repeatCount > 0)
+                        true
+                    }
+
+                    event.key == Key.DirectionLeft -> {
+                        onLeave()
+                        true
+                    }
+
                     event.key == Key.DirectionRight -> true
+
                     else -> false
                 }
             },
@@ -201,10 +231,14 @@ fun ChatPanel(
                 .fillMaxSize()
                 .nestedScroll(pointerScroll)
                 .then(
-                    if (overlay) Modifier.overlayFade() else Modifier.drawWithContent {
-                        drawContent()
-                        // Flat fade at the top edge: a gradient over the opaque panel, not an offscreen layer.
-                        drawRect(Brush.verticalGradient(0f to TvColors.Base, 1f to Color.Transparent, endY = 28.dp.toPx()), size = Size(size.width, 28.dp.toPx()))
+                    if (overlay) {
+                        Modifier.overlayFade()
+                    } else {
+                        Modifier.drawWithContent {
+                            drawContent()
+                            // Flat fade at the top edge: a gradient over the opaque panel, not an offscreen layer.
+                            drawRect(Brush.verticalGradient(0f to TvColors.Base, 1f to Color.Transparent, endY = 28.dp.toPx()), size = Size(size.width, 28.dp.toPx()))
+                        }
                     },
                 ),
             reverseLayout = true,
@@ -215,7 +249,9 @@ fun ChatPanel(
             items(reversed, key = { it.id }, contentType = { it.kind }) { line ->
                 val animated = remember(line.id) { derivedStateOf { allowance[line.id] ?: 0 } }
                 ChatLineView(
-                    line, style, animated,
+                    line,
+                    style,
+                    animated,
                     // New lines fade in as they rise; no placement animation (the scroll glide moves them) and no exit one.
                     modifier = if (motion.enabled) Modifier.animateItem(fadeInSpec = tween(motion.mediumMs), placementSpec = null, fadeOutSpec = null) else Modifier,
                 )

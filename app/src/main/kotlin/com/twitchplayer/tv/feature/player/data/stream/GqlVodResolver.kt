@@ -74,7 +74,6 @@ class GqlVodResolver(
     private val log: (String) -> Unit = { Log.w(TAG, it) },
 ) : VodResolver {
 
-
     override suspend fun resolve(vodId: String): ResolvedVod {
         require(ID.matches(vodId)) { "Invalid video id." }
         try {
@@ -119,7 +118,9 @@ class GqlVodResolver(
             throw if (response.status.value >= 500 || response.status.value == 429) {
                 log("vod gql refused: HTTP ${response.status.value} ${text.take(500)}")
                 StreamAccessException("gql", response.status.value, text, retryable = true)
-            } else refusal(VodFailure.TOKEN, "gql", response.status.value, text)
+            } else {
+                refusal(VodFailure.TOKEN, "gql", response.status.value, text)
+            }
         }
         return parseVodAccess(text) ?: throw refusal(VodFailure.TOKEN, "gql", response.status.value, text)
     }
@@ -169,11 +170,17 @@ class GqlVodResolver(
 }
 
 @Serializable private class VodResponse(val data: VodData? = null, val errors: List<VodError>? = null)
+
 @Serializable private class VodData(val videoPlaybackAccessToken: VodToken? = null, val video: VodVideo? = null)
+
 @Serializable private class VodToken(val value: String = "", val signature: String = "")
+
 @Serializable private class VodVideo(val lengthSeconds: Long = 0, val status: String = "")
+
 @Serializable private class VodError(val message: String = "")
+
 @Serializable private class VodTokenValue(val authorization: VodAuthorization? = null)
+
 @Serializable private class VodAuthorization(val forbidden: Boolean = false, val reason: String = "")
 
 private val vodJson = Json { ignoreUnknownKeys = true }

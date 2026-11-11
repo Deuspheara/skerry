@@ -1,12 +1,12 @@
 package com.twitchplayer.tv.feature.vod
 
+import com.twitchplayer.tv.core.ui.parseTwitchDurationSeconds
 import com.twitchplayer.tv.feature.vod.data.VodProgress
 import com.twitchplayer.tv.feature.vod.ui.JUMP_MS
 import com.twitchplayer.tv.feature.vod.ui.PLAYBACK_SPEEDS
 import com.twitchplayer.tv.feature.vod.ui.nextSpeed
 import com.twitchplayer.tv.feature.vod.ui.seekTarget
 import com.twitchplayer.tv.feature.vod.ui.vodSeekStep
-import com.twitchplayer.tv.core.ui.parseTwitchDurationSeconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -31,7 +31,10 @@ class VodModelTest {
     @Test fun speedCyclesThroughTheStepsAndWrapsToTheSlowest() {
         var speed = 1f
         val seen = mutableListOf<Float>()
-        repeat(PLAYBACK_SPEEDS.size) { speed = nextSpeed(speed); seen += speed }
+        repeat(PLAYBACK_SPEEDS.size) {
+            speed = nextSpeed(speed)
+            seen += speed
+        }
         assertEquals(listOf(1.25f, 1.5f, 2f, 0.5f, 0.75f, 1f), seen)
         assertEquals(0.5f, nextSpeed(2f), 0f)
         // A speed that is not a step (set elsewhere) goes to the next step above it.

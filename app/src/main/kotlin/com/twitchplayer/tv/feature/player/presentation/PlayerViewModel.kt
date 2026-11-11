@@ -27,16 +27,16 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -67,6 +67,7 @@ class PlayerViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val mutableSent = MutableSharedFlow<SendResult>(extraBufferCapacity = 4)
+
     /** The outcome of each message the viewer sent, for the screen to tell them when it did not go out. */
     val sent: SharedFlow<SendResult> = mutableSent
 
@@ -82,7 +83,9 @@ class PlayerViewModel(
     val preferredQuality: StateFlow<String?> = settings.settings.map { it.preferredQuality }.distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    fun setPreferredQuality(id: String) { viewModelScope.launch { settings.setPreferredQuality(id) } }
+    fun setPreferredQuality(id: String) {
+        viewModelScope.launch { settings.setPreferredQuality(id) }
+    }
 
     private val mutableCommands = MutableSharedFlow<PlayerCommand>(extraBufferCapacity = 8)
     val commands: SharedFlow<PlayerCommand> = mutableCommands
@@ -106,20 +109,24 @@ class PlayerViewModel(
     private val adActive = MutableStateFlow(false)
 
     /** An ad break is on screen: it holds the top corner, so a notice's visible time only counts once the ad is over. */
-    fun setAdActive(active: Boolean) { adActive.value = active }
+    fun setAdActive(active: Boolean) {
+        adActive.value = active
+    }
 
     private fun showNotice(notice: ChannelNotice) {
         mutableState.update { it.copy(notice = notice) }
         noticeJob?.cancel()
         // "Stream ended" stays: nothing else will say why the picture stopped.
-        if (notice !is ChannelNotice.Offline) noticeJob = viewModelScope.launch {
-            var visibleMs = 0L
-            while (visibleMs < NOTICE_MS) {
-                adActive.first { !it }
-                delay(NOTICE_TICK_MS)
-                if (!adActive.value) visibleMs += NOTICE_TICK_MS
+        if (notice !is ChannelNotice.Offline) {
+            noticeJob = viewModelScope.launch {
+                var visibleMs = 0L
+                while (visibleMs < NOTICE_MS) {
+                    adActive.first { !it }
+                    delay(NOTICE_TICK_MS)
+                    if (!adActive.value) visibleMs += NOTICE_TICK_MS
+                }
+                mutableState.update { if (it.notice == notice) it.copy(notice = null) else it }
             }
-            mutableState.update { if (it.notice == notice) it.copy(notice = null) else it }
         }
     }
 
@@ -131,6 +138,7 @@ class PlayerViewModel(
                 }
                 showNotice(notice)
             }
+
             is ChannelNotice.Raid -> viewModelScope.launch {
                 val follow = settings.settings.first().followRaids && notice.toLogin.isNotEmpty()
                 showNotice(notice.copy(following = follow))
@@ -139,6 +147,7 @@ class PlayerViewModel(
                     runCatching { repository.liveStream(notice.toLogin) }.getOrNull()?.let(::zap)
                 }
             }
+
             ChannelNotice.Offline -> showNotice(notice)
         }
     }
@@ -196,14 +205,19 @@ class PlayerViewModel(
      */
     fun attach(login: String) {
         val s = mutableState.value
-        if (!s.active || (!screenKeyed && !s.login.equals(login, true))) open(login)
-        else mutableState.update { it.copy(minimized = false) }
+        if (!s.active || (!screenKeyed && !s.login.equals(login, true))) {
+            open(login)
+        } else {
+            mutableState.update { it.copy(minimized = false) }
+        }
         screenKeyed = true
         wake()
     }
 
     /** No player screen is left in the back stack (a running session is now only a mini player). */
-    fun detach() { screenKeyed = false }
+    fun detach() {
+        screenKeyed = false
+    }
 
     /** The player screen is hidden behind another screen (mini player) or back on top. */
     fun setMinimized(minimized: Boolean) {
@@ -249,14 +263,22 @@ class PlayerViewModel(
         wake()
     }
 
-    fun toggleFullscreen() { mutableState.update { it.copy(fullscreen = !it.fullscreen) }; wake() }
+    fun toggleFullscreen() {
+        mutableState.update { it.copy(fullscreen = !it.fullscreen) }
+        wake()
+    }
 
     /** Writing a message shows the chat first: the viewer sees their message arrive. */
-    fun ensureChatVisible() { if (mutableState.value.chatMode == ChatMode.Hidden) showChat(ChatMode.Compact) }
+    fun ensureChatVisible() {
+        if (mutableState.value.chatMode == ChatMode.Hidden) showChat(ChatMode.Compact)
+    }
 
     fun cycleChat() = showChat(ChatMode.entries[(mutableState.value.chatMode.ordinal + 1) % ChatMode.entries.size])
 
-    fun updateChatSettings(transform: (ChatSettings) -> ChatSettings) { viewModelScope.launch { settings.updateChat(transform) }; wake() }
+    fun updateChatSettings(transform: (ChatSettings) -> ChatSettings) {
+        viewModelScope.launch { settings.updateChat(transform) }
+        wake()
+    }
 
     /** Session only: the chat button and Back never change the saved default. */
     private fun showChat(mode: ChatMode) {
@@ -264,8 +286,14 @@ class PlayerViewModel(
         wake()
     }
 
-    fun openChatSettings() { mutableState.update { it.copy(chatSettingsOpen = it.effectiveChat != ChatMode.Hidden) }; wake() }
-    fun closeChatSettings() { mutableState.update { it.copy(chatSettingsOpen = false) }; wake() }
+    fun openChatSettings() {
+        mutableState.update { it.copy(chatSettingsOpen = it.effectiveChat != ChatMode.Hidden) }
+        wake()
+    }
+    fun closeChatSettings() {
+        mutableState.update { it.copy(chatSettingsOpen = false) }
+        wake()
+    }
 
     fun openZapper() {
         idleJob?.cancel()
@@ -336,11 +364,27 @@ class PlayerViewModel(
     fun handleBack(): Boolean {
         val s = mutableState.value
         return when {
-            s.zapperOpen -> { closeZapper(); true }
-            s.chatSettingsOpen -> { closeChatSettings(); true }
-            s.controlsVisible -> { hideOverlay(); true }
+            s.zapperOpen -> {
+                closeZapper()
+                true
+            }
+
+            s.chatSettingsOpen -> {
+                closeChatSettings()
+                true
+            }
+
+            s.controlsVisible -> {
+                hideOverlay()
+                true
+            }
+
             // The overlay is already hidden here: closing chat must not bring it back.
-            s.effectiveChat != ChatMode.Hidden -> { mutableState.update { it.copy(chatMode = ChatMode.Hidden, fullscreen = false, chatSettingsOpen = false) }; true }
+            s.effectiveChat != ChatMode.Hidden -> {
+                mutableState.update { it.copy(chatMode = ChatMode.Hidden, fullscreen = false, chatSettingsOpen = false) }
+                true
+            }
+
             else -> false
         }
     }
@@ -349,6 +393,7 @@ class PlayerViewModel(
         const val IDLE_MS = 4_000L
         const val NOTICE_MS = 12_000L
         const val NOTICE_TICK_MS = 250L
+
         /** A followed raid starts after the banner has been readable for a moment (Twitch's own page waits too). */
         const val RAID_FOLLOW_DELAY_MS = 6_000L
     }

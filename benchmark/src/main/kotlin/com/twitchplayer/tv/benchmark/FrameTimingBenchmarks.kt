@@ -27,7 +27,10 @@ class FrameTimingBenchmarks {
         compilationMode = mode,
         startupMode = StartupMode.WARM,
         iterations = 5,
-        setupBlock = { pressHome(); TvScenarios.launch(this) },
+        setupBlock = {
+            pressHome()
+            TvScenarios.launch(this)
+        },
         measureBlock = { journey(this) },
     )
 
@@ -38,16 +41,25 @@ class FrameTimingBenchmarks {
         compilationMode = mode,
         startupMode = StartupMode.WARM,
         iterations = 5,
-        setupBlock = { pressHome(); TvScenarios.launch(this); TvScenarios.openStreamAndPlay(this) },
+        setupBlock = {
+            pressHome()
+            TvScenarios.launch(this)
+            TvScenarios.openStreamAndPlay(this)
+        },
         measureBlock = { journey(this) },
     )
 
     @Test fun homeNavigationNoProfile() = run(CompilationMode.None(), TvScenarios::homeNavigation)
+
     @Test fun homeNavigationBaselineProfile() = run(CompilationMode.Partial(BaselineProfileMode.Require), TvScenarios::homeNavigation)
+
     @Test fun browseGridBaselineProfile() = run(CompilationMode.Partial(BaselineProfileMode.Require), TvScenarios::browseGrid)
+
     // Native player over the demo clip: the chat expand / collapse (the jank scenario) and a channel switch.
     @Test fun chatExpandCollapseBaselineProfile() = runPlayer(CompilationMode.Partial(BaselineProfileMode.Require)) { TvScenarios.chatExpandCollapse(it, cycles = 3) }
+
     @Test fun chatExpandCollapseNoProfile() = runPlayer(CompilationMode.None()) { TvScenarios.chatExpandCollapse(it, cycles = 3) }
+
     @Test fun switchChannelBaselineProfile() = runPlayer(CompilationMode.Partial(BaselineProfileMode.Require), TvScenarios::switchChannel)
 
     @Test fun playerChatAndZapperBaselineProfile() = run(CompilationMode.Partial(BaselineProfileMode.Require), TvScenarios::playerChatAndZapper)

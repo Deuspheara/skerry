@@ -9,15 +9,17 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowHardware
 import com.twitchplayer.tv.core.data.repository.SessionRepository
+import com.twitchplayer.tv.core.di.DebugModules
 import com.twitchplayer.tv.core.di.coreModule
 import com.twitchplayer.tv.core.di.viewModelModule
-import com.twitchplayer.tv.core.di.DebugModules
 import okio.Path.Companion.toOkioPath
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
-class TwitchPlayerApp : Application(), SingletonImageLoader.Factory {
+class TwitchPlayerApp :
+    Application(),
+    SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         startKoin {

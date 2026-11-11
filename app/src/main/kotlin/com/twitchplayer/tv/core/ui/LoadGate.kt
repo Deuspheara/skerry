@@ -2,28 +2,28 @@ package com.twitchplayer.tv.core.ui
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.delay
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.twitchplayer.tv.R
 import com.twitchplayer.tv.core.designsystem.component.EmptyState
 import com.twitchplayer.tv.core.designsystem.component.TvButton
 import com.twitchplayer.tv.core.designsystem.component.TvSpinner
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.presentation.Load
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.CompositionLocalProvider
+import kotlinx.coroutines.delay
 
 /**
  * Renders the non-content states of a [Load] with a focused action, so D-pad is never stranded.
@@ -46,20 +46,36 @@ fun <T> LoadGate(
             val gate = remember { if (wasLoading.value) StaggerGate() else null }
             CompositionLocalProvider(LocalStagger provides gate) { ready(load.data) }
         }
+
         // Most loads (and every cached one) finish within a few frames: the placeholder only shows when it takes a while.
         Load.Loading -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             var slow by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) { delay(if (skeleton != null) SKELETON_DELAY_MS else SPINNER_DELAY_MS); slow = true }
-            if (slow) { if (skeleton != null) com.twitchplayer.tv.core.designsystem.component.SkeletonPulse { skeleton() } else TvSpinner() }
+            LaunchedEffect(Unit) {
+                delay(if (skeleton != null) SKELETON_DELAY_MS else SPINNER_DELAY_MS)
+                slow = true
+            }
+            if (slow) {
+                if (skeleton != null) com.twitchplayer.tv.core.designsystem.component.SkeletonPulse { skeleton() } else TvSpinner()
+            }
             FocusHold()
         }
+
         Load.SignedOut -> StateWithAction(
-            modifier, TvIcons.User, stringResource(R.string.state_signin_title),
-            stringResource(R.string.state_signin), TvIcons.User, LocalAppActions.current::signIn,
+            modifier,
+            TvIcons.User,
+            stringResource(R.string.state_signin_title),
+            stringResource(R.string.state_signin),
+            TvIcons.User,
+            LocalAppActions.current::signIn,
         )
+
         Load.Failed -> StateWithAction(
-            modifier, TvIcons.OffAir, stringResource(R.string.state_error),
-            stringResource(R.string.state_retry), TvIcons.Play, onRetry,
+            modifier,
+            TvIcons.OffAir,
+            stringResource(R.string.state_error),
+            stringResource(R.string.state_retry),
+            TvIcons.Play,
+            onRetry,
         )
     }
 }
@@ -77,9 +93,11 @@ private fun StateWithAction(
     LaunchedEffect(Unit) { runCatching { requester.requestFocus() } }
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         // The state arrives with the same short fade and rise as content, instead of popping in.
-        Box(Modifier.staggerIn(0, remember { StaggerGate() })) { EmptyState(icon, title) {
-            TvButton(action, actionIcon, onAction, Modifier.focusRequester(requester), primary = true)
-        } }
+        Box(Modifier.staggerIn(0, remember { StaggerGate() })) {
+            EmptyState(icon, title) {
+                TvButton(action, actionIcon, onAction, Modifier.focusRequester(requester), primary = true)
+            }
+        }
     }
 }
 

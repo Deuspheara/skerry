@@ -51,6 +51,5 @@ object HlsAds {
         return best
     }
 
-    private fun attributes(list: String): Map<String, String> =
-        attribute.findAll(list).associate { it.groupValues[1] to (it.groups[3]?.value ?: it.groupValues[2]) }
+    private fun attributes(list: String): Map<String, String> = attribute.findAll(list).associate { it.groupValues[1] to (it.groups[3]?.value ?: it.groupValues[2]) }
 }

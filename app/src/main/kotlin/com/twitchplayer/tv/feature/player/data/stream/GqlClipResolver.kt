@@ -60,9 +60,13 @@ class GqlClipResolver(
 }
 
 @Serializable private class ClipResponse(val data: ClipData? = null)
+
 @Serializable private class ClipData(val clip: ClipNode? = null)
+
 @Serializable private class ClipNode(val playbackAccessToken: ClipToken? = null, val videoQualities: List<ClipQuality>? = null)
+
 @Serializable private class ClipToken(val value: String = "", val signature: String = "")
+
 @Serializable private class ClipQuality(val quality: String = "", val sourceURL: String = "", val frameRate: Float = 0f)
 
 private val lenient = Json { ignoreUnknownKeys = true }
@@ -77,5 +81,4 @@ internal fun parseClipSources(json: String): List<ClipSource> {
         .sortedByDescending { it.height }
 }
 
-internal fun signedClipUrl(source: String, token: String, signature: String): String =
-    source + (if ('?' in source) '&' else '?') + "sig=" + signature + "&token=" + java.net.URLEncoder.encode(token, "UTF-8")
+internal fun signedClipUrl(source: String, token: String, signature: String): String = source + (if ('?' in source) '&' else '?') + "sig=" + signature + "&token=" + java.net.URLEncoder.encode(token, "UTF-8")

@@ -11,7 +11,6 @@ import com.twitchplayer.tv.core.presentation.Load
 import com.twitchplayer.tv.core.presentation.Loader
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Immutable
 data class CategoryUiState(val streams: ImmutableList<LiveStream>, val favorite: Boolean)
@@ -40,6 +40,7 @@ class CategoryViewModel(
     private val settings: SettingsRepository,
 ) : ViewModel() {
     private val myLanguage = twitchLanguage(Locale.getDefault())
+
     // Starts on the viewer's language: a category's top streams are otherwise mostly in other languages.
     private val languageOnly = MutableStateFlow(true)
     private val loader = Loader(viewModelScope, session) {
@@ -55,7 +56,9 @@ class CategoryViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, Load.Loading)
 
-    fun toggleFavorite() { viewModelScope.launch { settings.toggleCategory(categoryId) } }
+    fun toggleFavorite() {
+        viewModelScope.launch { settings.toggleCategory(categoryId) }
+    }
     fun retry() = loader.reload()
 
     /** The language shown in the header, and whether the list is narrowed to it (also while loading). */

@@ -17,14 +17,13 @@ class SnapshotCache(context: Context) {
     private val dir = File(context.cacheDir, "snapshots")
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun <T> read(name: String, userId: String, serializer: KSerializer<T>, maxAgeMs: Long = DAY_MS): T? =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val file = File(dir, "$name.json").takeIf { it.isFile } ?: return@runCatching null
-                val entry = json.decodeFromString(Entry.serializer(serializer), file.readText())
-                entry.data.takeIf { entry.userId == userId && System.currentTimeMillis() - entry.savedAtMs < maxAgeMs }
-            }.getOrNull()
-        }
+    suspend fun <T> read(name: String, userId: String, serializer: KSerializer<T>, maxAgeMs: Long = DAY_MS): T? = withContext(Dispatchers.IO) {
+        runCatching {
+            val file = File(dir, "$name.json").takeIf { it.isFile } ?: return@runCatching null
+            val entry = json.decodeFromString(Entry.serializer(serializer), file.readText())
+            entry.data.takeIf { entry.userId == userId && System.currentTimeMillis() - entry.savedAtMs < maxAgeMs }
+        }.getOrNull()
+    }
 
     suspend fun <T> write(name: String, userId: String, serializer: KSerializer<T>, data: T) {
         withContext(Dispatchers.IO) {
@@ -38,10 +37,14 @@ class SnapshotCache(context: Context) {
     }
 
     /** Drops every snapshot (sign-out). */
-    suspend fun clear() { withContext(Dispatchers.IO) { runCatching { dir.deleteRecursively() } } }
+    suspend fun clear() {
+        withContext(Dispatchers.IO) { runCatching { dir.deleteRecursively() } }
+    }
 
     @Serializable
     private class Entry<T>(val userId: String, val savedAtMs: Long, val data: T)
 
-    private companion object { const val DAY_MS = 24 * 60 * 60_000L }
+    private companion object {
+        const val DAY_MS = 24 * 60 * 60_000L
+    }
 }

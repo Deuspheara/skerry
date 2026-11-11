@@ -1,10 +1,5 @@
 package com.twitchplayer.tv.core.data.repository
 
-import com.twitchplayer.tv.core.ui.formatTwitchDuration
-import com.twitchplayer.tv.core.ui.parseTwitchDurationSeconds
-import com.twitchplayer.tv.core.network.api.HelixPage
-import com.twitchplayer.tv.core.network.api.TwitchVideo
-
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.core.data.model.ChannelClip
 import com.twitchplayer.tv.core.data.model.ChannelDetails
@@ -15,9 +10,13 @@ import com.twitchplayer.tv.core.data.model.Replay
 import com.twitchplayer.tv.core.data.model.ReplayPage
 import com.twitchplayer.tv.core.data.model.ScheduledStream
 import com.twitchplayer.tv.core.data.model.SearchResults
-import com.twitchplayer.tv.core.network.api.TwitchApiException
-import com.twitchplayer.tv.feature.player.data.chat.RoomState
+import com.twitchplayer.tv.core.network.api.HelixPage
 import com.twitchplayer.tv.core.network.api.TwitchApi
+import com.twitchplayer.tv.core.network.api.TwitchApiException
+import com.twitchplayer.tv.core.network.api.TwitchVideo
+import com.twitchplayer.tv.core.ui.formatTwitchDuration
+import com.twitchplayer.tv.core.ui.parseTwitchDurationSeconds
+import com.twitchplayer.tv.feature.player.data.chat.RoomState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -27,16 +26,21 @@ interface TwitchRepository {
     suspend fun follows(force: Boolean = false): Follows
     suspend fun recommended(): List<LiveStream>
     suspend fun topCategories(): List<Category>
+
     /** Live streams in a category, most viewers first; [language] (Twitch code, e.g. "fr") narrows to one language. */
     suspend fun categoryStreams(categoryId: String, language: String? = null): List<LiveStream>
     suspend fun search(query: String): SearchResults
     suspend fun channel(login: String): ChannelDetails
+
     /** The next page of past broadcasts of [channelId] after [cursor] (see [ChannelDetails.replaysCursor]). */
     suspend fun replays(channelId: String, cursor: String): ReplayPage = ReplayPage(emptyList())
+
     /** The live stream of [login], or null when offline. */
     suspend fun liveStream(login: String): LiveStream?
+
     /** The channel's chat modes, or null when they cannot be read. */
     suspend fun roomState(channelId: String): RoomState? = null
+
     /** Sends [text] to the channel's chat as the signed-in viewer. */
     suspend fun sendChat(channelId: String, text: String): SendResult = SendResult.Failed
 }
@@ -44,8 +48,10 @@ interface TwitchRepository {
 /** What happened to a chat message the viewer sent. */
 sealed interface SendResult {
     data object Sent : SendResult
+
     /** Twitch accepted the call but did not post the message (rules of the room, banned words...); [reason] is its text. */
     data class Dropped(val reason: String) : SendResult
+
     /** The session was created before sending existed: signing in again grants it. */
     data object NeedsSignIn : SendResult
     data object Failed : SendResult
@@ -59,8 +65,7 @@ class TwitchRepositoryImpl(
     private val followsCache = TtlCache<Follows>(60_000)
     private val categoriesCache = TtlCache<List<Category>>(10 * 60_000)
 
-    private fun userId(): String =
-        (session.state.value as? SessionState.SignedIn)?.account?.userId ?: throw IllegalStateException("signed out")
+    private fun userId(): String = (session.state.value as? SessionState.SignedIn)?.account?.userId ?: throw IllegalStateException("signed out")
 
     private suspend fun loadAvatars(ids: Collection<String>) {
         val missing = ids.filter { !avatars.containsKey(it) }.distinct().chunked(100)
@@ -145,8 +150,7 @@ class TwitchRepositoryImpl(
         }
     }
 
-    override suspend fun replays(channelId: String, cursor: String): ReplayPage =
-        api.videos(channelId, after = cursor).let { page -> ReplayPage(page.data.map { it.toReplay() }, page.pagination.cursor) }
+    override suspend fun replays(channelId: String, cursor: String): ReplayPage = api.videos(channelId, after = cursor).let { page -> ReplayPage(page.data.map { it.toReplay() }, page.pagination.cursor) }
 
     override suspend fun channel(login: String): ChannelDetails = coroutineScope {
         val user = api.userByLogin(login) ?: throw IllegalStateException("unknown channel")
@@ -177,15 +181,23 @@ class TwitchRepositoryImpl(
 }
 
 internal fun TwitchVideo.toReplay() = Replay(
-    id, title, formatTwitchDuration(duration), sizedImage(thumbnailUrl, 320, 180), parseTwitchTime(createdAt), parseTwitchDurationSeconds(duration), viewCount,
+    id,
+    title,
+    formatTwitchDuration(duration),
+    sizedImage(thumbnailUrl, 320, 180),
+    parseTwitchTime(createdAt),
+    parseTwitchDurationSeconds(duration),
+    viewCount,
 )
 
 /** Segments that are still to come (or running), not cancelled, soonest first. */
-internal fun List<com.twitchplayer.tv.core.network.api.ScheduleSegment>.upcoming(nowMs: Long = System.currentTimeMillis()): List<ScheduledStream> =
-    mapNotNull { seg ->
-        val start = parseTwitchTime(seg.startTime)
-        val end = seg.endTime?.let(::parseTwitchTime) ?: 0L
-        val cancelled = seg.canceledUntil != null
-        if (start == 0L || cancelled || maxOf(end, start) < nowMs) null
-        else ScheduledStream(seg.title, seg.category?.name.orEmpty(), start, end)
-    }.sortedBy { it.startMs }.take(3)
+internal fun List<com.twitchplayer.tv.core.network.api.ScheduleSegment>.upcoming(nowMs: Long = System.currentTimeMillis()): List<ScheduledStream> = mapNotNull { seg ->
+    val start = parseTwitchTime(seg.startTime)
+    val end = seg.endTime?.let(::parseTwitchTime) ?: 0L
+    val cancelled = seg.canceledUntil != null
+    if (start == 0L || cancelled || maxOf(end, start) < nowMs) {
+        null
+    } else {
+        ScheduledStream(seg.title, seg.category?.name.orEmpty(), start, end)
+    }
+}.sortedBy { it.startMs }.take(3)

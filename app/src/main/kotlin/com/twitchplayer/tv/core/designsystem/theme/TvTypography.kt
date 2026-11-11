@@ -52,6 +52,7 @@ object TvType {
     val MetaNumeric = style(14.sp, FontWeight.Medium, 1.4f, tabular = true)
     val Clock = style(14.sp, FontWeight.Medium, 1.0f, tabular = true)
     val LiveBadge = style(12.sp, FontWeight.Bold, 1.0f).copy(letterSpacing = 0.66.sp)
+
     /** Chat text at a user-chosen size; the line height is a fixed multiple so wrapped lines stay compact (18-22 sp). */
     fun chat(size: TextUnit, lineHeight: TextUnit) = TextStyle(
         fontFamily = interFamily(FontWeight.Normal.weight, size.value),
@@ -61,8 +62,10 @@ object TvType {
         lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
     )
     val PlayerName = style(16.sp, FontWeight.SemiBold, 1.25f)
+
     /** Text of an overlay pill or toast over the video / page: legible at 3 m. */
     val Pill = style(16.sp, FontWeight.Medium, 1.0f)
+
     /** Secondary body text of a header (stream title, tags). */
     val Body = style(16.sp, FontWeight.Normal, 1.35f)
     val ControlLabel = style(14.sp, FontWeight.Medium, 1.6f)

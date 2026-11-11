@@ -7,15 +7,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -30,8 +30,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,9 +47,9 @@ import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
 import com.twitchplayer.tv.core.ui.StaggerGate
 import com.twitchplayer.tv.core.ui.TvAsyncImage
-import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.core.ui.TvFocusable
 import com.twitchplayer.tv.core.ui.rememberRowSpec
+import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.player.presentation.ZapRow
 import com.twitchplayer.tv.feature.player.presentation.ZapRowKind
 
@@ -111,7 +111,10 @@ private fun ZapRowView(row: ZapRow, playingLogin: String, onZap: (LiveStream) ->
     }
     Column(modifier.padding(top = 14.dp)) {
         Text(
-            title, style = TvType.Label, color = TvColors.TextSecondary, maxLines = 1,
+            title,
+            style = TvType.Label,
+            color = TvColors.TextSecondary,
+            maxLines = 1,
             modifier = Modifier.padding(start = TvDimens.SafeHorizontal, bottom = 8.dp),
         )
         CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec(start = 16.dp, peek = 80.dp)) {
@@ -135,7 +138,7 @@ private fun ZapCard(stream: LiveStream, playing: Boolean, onClick: () -> Unit, m
     TvFocusable(
         onClick = onClick,
         shape = TvShapes.Dialog,
-        focusScale = TvDimens.FocusScaleCard,
+        focusScale = TvDimens.FOCUS_SCALE_CARD,
         description = stream.name + if (playing) ", " + stringResource(R.string.player_playing) else "",
         modifier = modifier.width(TvDimens.ZapCardWidth),
     ) { focus ->
