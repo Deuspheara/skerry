@@ -110,7 +110,7 @@ class ActivityPlayerHost(private val activity: ComponentActivity) : PlayerHost {
     private fun params(): PictureInPictureParams {
         val (num, den) = PipPolicy.aspect(width, height)
         val label = activity.getString(if (playing) R.string.player_pause else R.string.player_play)
-        val icon = Icon.createWithResource(activity, if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+        val icon = Icon.createWithResource(activity, if (playing) R.drawable.ic_pip_pause else R.drawable.ic_pip_play)
         val intent = PendingIntent.getBroadcast(
             activity,
             0,

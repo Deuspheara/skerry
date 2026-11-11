@@ -2,6 +2,7 @@ package com.twitchplayer.phone.feature.player
 
 import android.content.Context
 import androidx.annotation.OptIn
+import androidx.compose.runtime.RememberObserver
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -16,15 +17,16 @@ import androidx.media3.exoplayer.source.ProgressiveMediaSource
 
 /**
  * The Media3 player of a replay or a clip: hardware decoders, normal buffering (not a live stream), audio focus and "becoming noisy"
- * handled by Media3. One instance per page; [release] when the page goes.
+ * handled by Media3. One instance per page, kept with `remember`: as a [RememberObserver] it releases itself when it is forgotten or
+ * abandoned. [handleAudioFocus] is off only in tests (a headless emulator denies focus, which would pause the player).
  */
 @OptIn(UnstableApi::class)
-class RecordedPlayback(private val context: Context) {
+class RecordedPlayback(private val context: Context, handleAudioFocus: Boolean = true) : RememberObserver {
     val exo: ExoPlayer = ExoPlayer.Builder(
         context,
         DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF).setEnableDecoderFallback(true),
     )
-        .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
+        .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), handleAudioFocus)
         .setHandleAudioBecomingNoisy(true)
         .build()
 
@@ -48,7 +50,23 @@ class RecordedPlayback(private val context: Context) {
         exo.playWhenReady = playWhenReady
     }
 
-    fun release() = exo.release()
+    /** True once the player is released; releasing again is harmless. */
+    var isReleased: Boolean = false
+        private set
+
+    fun release() {
+        if (isReleased) return
+        isReleased = true
+        exo.release()
+    }
+
+    // Compose releases the player when the page leaves the composition, and also when a composition that created it is abandoned
+    // before it was ever applied (an exception while composing, a cancelled first frame): a plain `DisposableEffect` would miss that.
+    override fun onRemembered() = Unit
+
+    override fun onForgotten() = release()
+
+    override fun onAbandoned() = release()
 
     private companion object {
         const val HTTP_TIMEOUT_MS = 8_000

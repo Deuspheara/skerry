@@ -55,13 +55,14 @@ fun PlayerScaffold(
     subtitle: String?,
     onBack: () -> Unit,
     onTogglePlay: () -> Unit,
+    restoration: PlayerRestoration,
     video: @Composable (Modifier) -> Unit,
     modifier: Modifier = Modifier,
     /** Keeps the control layer up (a sheet is open, a seek is in progress, the viewer is deciding something). */
     pinned: Boolean = false,
     stageOverlay: @Composable BoxScope.(PlayerChrome) -> Unit = {},
-    /** Drawn above the control layer, undimmed and clickable: a failure message with its retry. */
-    stageStatus: @Composable BoxScope.() -> Unit = {},
+    /** Drawn above the control layer, undimmed and clickable: a failure message with its retry, chat laid over the picture. */
+    stageTop: @Composable BoxScope.(PlayerChrome) -> Unit = {},
     topActions: @Composable RowScope.(PlayerChrome) -> Unit = {},
     center: @Composable (PlayerChrome) -> Unit = {},
     bottom: @Composable ColumnScope.(PlayerChrome) -> Unit = {},
@@ -73,12 +74,14 @@ fun PlayerScaffold(
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val inPip by host.inPictureInPicture.collectAsStateWithLifecycle()
     val controls = remember { ControlsVisibility() }
-    val policy = remember { FullscreenPolicy() }
-    var lock by remember { mutableStateOf(OrientationLock.None) }
+    // A lock saved before the process died is applied again (see PlayerRestoration).
+    val policy = remember { FullscreenPolicy(restoration.lock) }
+    var lock by remember { mutableStateOf(policy.lock) }
 
     val onToggleFullscreen = {
         policy.toggle(isLandscape = landscape)
         lock = policy.lock
+        restoration.lock = lock
         host.lockOrientation(lock)
     }
     val chrome = remember(controls, landscape) { PlayerChrome(controls, landscape, onToggleFullscreen) }
@@ -94,6 +97,7 @@ fun PlayerScaffold(
             override fun onOrientationChanged(orientation: Int) {
                 if (policy.onSensor(orientation)) {
                     lock = policy.lock
+                    restoration.lock = lock
                     host.lockOrientation(lock)
                 }
             }
@@ -103,6 +107,7 @@ fun PlayerScaffold(
     }
     DisposableEffect(Unit) {
         host.setVideoSystemBars(true)
+        if (lock != OrientationLock.None) host.lockOrientation(lock)
         onDispose {
             host.setVideoSystemBars(false)
             policy.reset()
@@ -154,7 +159,7 @@ fun PlayerScaffold(
                     center = { center(chrome) },
                     bottom = { bottom(chrome) },
                 )
-                stageStatus()
+                stageTop(chrome)
             }
         }
     }

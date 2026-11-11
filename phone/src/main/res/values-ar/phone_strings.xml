@@ -55,4 +55,6 @@
     <string name="phone_player_back10">رجوع 10 ثوانٍ</string>
     <string name="phone_player_share">مشاركة</string>
     <string name="phone_player_speed">سرعة التشغيل</string>
+    <string name="phone_player_open_channel">فتح القناة</string>
+    <string name="phone_player_more_from">المزيد من %1$s</string>
 </resources>

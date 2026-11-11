@@ -33,20 +33,39 @@ enum class PhoneTab(val root: NavKey) {
 /** The player pages: a live channel, a replay (VOD) or a clip. They open over the tab that launched them, without the tab bar. */
 @Serializable data class LiveKey(val login: String) : NavKey
 
-@Serializable data class ReplayKey(val id: String, val title: String, val durationSeconds: Int) : NavKey
+@Serializable
+data class ReplayKey(
+    val id: String,
+    val title: String,
+    val durationSeconds: Int,
+    val channelLogin: String = "",
+    val channelName: String = "",
+    val channelAvatarUrl: String? = null,
+    val views: Int = 0,
+    val publishedAtMs: Long = 0L,
+) : NavKey
 
 @Serializable data class ClipKey(val slug: String, val title: String) : NavKey
 
 /** What a tap on a stream, replay or clip should play. */
 sealed interface PlaybackTarget {
     data class Live(val login: String) : PlaybackTarget
-    data class Replay(val id: String, val title: String, val durationSeconds: Int) : PlaybackTarget
+    data class Replay(
+        val id: String,
+        val title: String,
+        val durationSeconds: Int,
+        val channelLogin: String = "",
+        val channelName: String = "",
+        val channelAvatarUrl: String? = null,
+        val views: Int = 0,
+        val publishedAtMs: Long = 0L,
+    ) : PlaybackTarget
     data class Clip(val slug: String, val title: String) : PlaybackTarget
 
     /** The destination that plays this target. */
     fun toKey(): NavKey = when (this) {
         is Live -> LiveKey(login)
-        is Replay -> ReplayKey(id, title, durationSeconds)
+        is Replay -> ReplayKey(id, title, durationSeconds, channelLogin, channelName, channelAvatarUrl, views, publishedAtMs)
         is Clip -> ClipKey(slug, title)
     }
 }

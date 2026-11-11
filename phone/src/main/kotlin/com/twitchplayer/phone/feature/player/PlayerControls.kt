@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -114,12 +115,14 @@ fun PlayerControlsLayer(
                 }
                 topActions()
             }
-            Box(Modifier.align(Alignment.Center)) { center() }
+            // A little above the middle: the bottom bar keeps its own space on a short (16:9 portrait) picture.
+            Box(Modifier.align(Alignment.Center).offset(y = CENTER_LIFT)) { center() }
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.Bottom) { bottom() }
         }
     }
 }
 
 private val CENTER_BUTTON = 64.dp
+private val CENTER_LIFT = (-12).dp
 private const val CONTROLS_EDGE_STOP = 0.4f
 private const val SUBTITLE_ALPHA = 0.8f

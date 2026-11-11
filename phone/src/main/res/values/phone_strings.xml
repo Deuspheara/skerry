@@ -67,4 +67,6 @@
     <string name="phone_player_back10">Back 10 seconds</string>
     <string name="phone_player_share">Share</string>
     <string name="phone_player_speed">Playback speed</string>
+    <string name="phone_player_open_channel">Open channel</string>
+    <string name="phone_player_more_from">More from %1$s</string>
 </resources>

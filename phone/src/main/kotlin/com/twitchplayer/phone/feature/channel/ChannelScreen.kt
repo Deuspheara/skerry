@@ -220,7 +220,21 @@ private fun ChannelContent(
                     replay = replay,
                     progress = progress[replay.id],
                     now = now,
-                    onClick = { onPlay(PlaybackTarget.Replay(replay.id, replay.title, replay.durationSeconds)) },
+                    onClick = {
+                        val channel = details.channel
+                        onPlay(
+                            PlaybackTarget.Replay(
+                                replay.id,
+                                replay.title,
+                                replay.durationSeconds,
+                                channel.login,
+                                channel.name,
+                                channel.avatarUrl,
+                                replay.views,
+                                replay.publishedAtMs,
+                            ),
+                        )
+                    },
                 )
             }
             if (loadingMore) {
@@ -325,7 +339,7 @@ private fun ClipCard(clip: ChannelClip, onClick: () -> Unit, modifier: Modifier 
 }
 
 @Composable
-private fun ReplayRow(replay: Replay, progress: VodProgress?, now: Long, onClick: () -> Unit) {
+internal fun ReplayRow(replay: Replay, progress: VodProgress?, now: Long, onClick: () -> Unit) {
     val views = remember(replay.views) { formatViewers(replay.views) }
     val published = remember(replay.publishedAtMs, now) {
         if (replay.publishedAtMs > 0L) DateUtils.getRelativeTimeSpanString(replay.publishedAtMs, now, DateUtils.MINUTE_IN_MILLIS).toString() else ""

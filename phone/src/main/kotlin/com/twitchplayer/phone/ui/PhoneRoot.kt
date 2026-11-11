@@ -57,6 +57,7 @@ import com.twitchplayer.phone.feature.home.HomeRoute
 import com.twitchplayer.phone.feature.player.ClipRoute
 import com.twitchplayer.phone.feature.player.LivePlayerRoute
 import com.twitchplayer.phone.feature.player.ReplayRoute
+import com.twitchplayer.phone.feature.player.toInfo
 import com.twitchplayer.phone.feature.search.SearchRoute
 import com.twitchplayer.phone.feature.settings.SettingsRoute
 import com.twitchplayer.phone.navigation.BrowseKey
@@ -69,6 +70,7 @@ import com.twitchplayer.phone.navigation.LiveKey
 import com.twitchplayer.phone.navigation.NAV_KIND
 import com.twitchplayer.phone.navigation.PhoneNavigator
 import com.twitchplayer.phone.navigation.PhoneTab
+import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.navigation.PlayerLauncher
 import com.twitchplayer.phone.navigation.ReplayKey
 import com.twitchplayer.phone.navigation.SearchKey
@@ -198,7 +200,18 @@ private fun PhoneScaffold(
                         CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
                     }
                     entry<LiveKey> { key -> LivePlayerRoute(key.login, onBack = navigator::pop, onSignIn = onSignIn) }
-                    entry<ReplayKey> { key -> ReplayRoute(key.id, key.title, key.durationSeconds, onBack = navigator::pop) }
+                    entry<ReplayKey> { key ->
+                        ReplayRoute(
+                            info = key.toInfo(),
+                            onBack = navigator::pop,
+                            onOpenChannel = { login -> navigator.push(ChannelKey(login)) },
+                            // Another replay of the same channel replaces this page (Back leads to where this one was opened from).
+                            onOpenReplay = { target ->
+                                navigator.pop()
+                                navigator.push(target.toKey())
+                            },
+                        )
+                    }
                     entry<ClipKey> { key -> ClipRoute(key.slug, key.title, onBack = navigator::pop) }
                     entry<ChannelKey> { key ->
                         ChannelRoute(

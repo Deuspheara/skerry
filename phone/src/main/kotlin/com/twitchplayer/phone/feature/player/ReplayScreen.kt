@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.tv.core.data.repository.SettingsRepository
@@ -73,19 +74,21 @@ private sealed interface ReplayLoad {
  */
 @Composable
 fun ReplayRoute(
-    id: String,
-    title: String,
-    durationSeconds: Int,
+    info: ReplayInfo,
     onBack: () -> Unit,
+    onOpenChannel: (String) -> Unit,
+    onOpenReplay: (PlaybackTarget.Replay) -> Unit,
     modifier: Modifier = Modifier,
     resolver: VodResolver = koinInject(),
     store: VodProgressStore = koinInject(),
     settings: SettingsRepository = koinInject(),
 ) {
+    val id = info.id
     var load by remember(id) { mutableStateOf<ReplayLoad>(ReplayLoad.Loading) }
     var attempt by remember(id) { mutableIntStateOf(0) }
-    // After a playback error: where it stopped, so Retry continues there without asking again.
-    var continueAt by remember(id) { mutableStateOf<Long?>(null) }
+    // Where the replay was: after a playback error Retry continues there without asking again, and after the process was killed the
+    // page comes back at the same place (see PlayerRestoration).
+    val restoration = rememberPlayerRestoration(id)
     LaunchedEffect(id, attempt) {
         load = ReplayLoad.Loading
         load = runCatching {
@@ -115,15 +118,14 @@ fun ReplayRoute(
             }
 
             is ReplayLoad.Ready -> ReplayPlayer(
-                vod = state.vod,
-                saved = state.saved,
-                preferredQuality = state.preferredQuality,
-                title = title,
-                knownDurationMs = durationSeconds * MILLIS,
-                continueAt = continueAt,
+                ready = state,
+                info = info,
+                restoration = restoration,
                 onBack = onBack,
+                onOpenChannel = onOpenChannel,
+                onOpenReplay = onOpenReplay,
                 onFail = { error, at ->
-                    continueAt = at
+                    restoration.positionMs = at
                     load = ReplayLoad.Failed(error)
                 },
             )
@@ -140,40 +142,39 @@ private fun BackOnly(onBack: () -> Unit) {
 
 @Composable
 private fun ReplayPlayer(
-    vod: ResolvedVod,
-    saved: VodProgress?,
-    preferredQuality: String?,
-    title: String,
-    knownDurationMs: Long,
-    continueAt: Long?,
+    ready: ReplayLoad.Ready,
+    info: ReplayInfo,
+    restoration: PlayerRestoration,
     onBack: () -> Unit,
+    onOpenChannel: (String) -> Unit,
+    onOpenReplay: (PlaybackTarget.Replay) -> Unit,
     onFail: (ReplayError, Long) -> Unit,
     store: VodProgressStore = koinInject(),
+    settings: SettingsRepository = koinInject(),
     appScope: CoroutineScope = koinInject(),
     numbers: NumberFormatter = koinInject(),
 ) {
+    val vod = ready.vod
     val context = LocalContext.current
     val autoLabel = stringResource(R.string.quality_auto)
     val currentOnFail by rememberUpdatedState(onFail)
     val playback = remember(vod.vodId) { RecordedPlayback(context) }
     val exo = playback.exo
     val snapshot = rememberPlayerSnapshot(exo, pollMs = POLL_MS)
-    val decision = remember(vod.vodId) { decideStart(saved, continueAt) }
+    PauseWhenInBackground(exo)
+    val qualityChoice = remember(settings, appScope) { QualityChoice(settings, appScope) }
+    val decision = remember(vod.vodId) { decideStart(ready.saved, restoration.positionMs) }
     var startAt by remember(vod.vodId) { mutableStateOf((decision as? StartDecision.Start)?.atMs) }
-    var selected by remember(vod.vodId) { mutableStateOf(QualityPolicy.choose(vod.variants, preferredQuality)?.id ?: QualityPolicy.AUTO) }
+    var selected by remember(vod.vodId) { mutableStateOf(ReplayQuality.initial(vod.variants, ready.preferredQuality)) }
     var started by remember(vod.vodId) { mutableStateOf(false) }
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     var dragging by remember { mutableStateOf(false) }
-    val duration = if (snapshot.durationMs > 0) snapshot.durationMs else maxOf(knownDurationMs, vod.durationMs)
-
-    fun urlFor(id: String) = vod.variants.firstOrNull { it.id == id }?.url ?: vod.masterUrl
+    val duration = if (snapshot.durationMs > 0) snapshot.durationMs else maxOf(info.durationSeconds * MILLIS, vod.durationMs)
 
     DisposableEffect(exo) {
         val listener = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
-                val network = error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
-                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
-                currentOnFail(if (network) ReplayError.Network else ReplayError.Playback, exo.currentPosition.coerceAtLeast(0L))
+                currentOnFail(error.toReplayError(), exo.currentPosition.coerceAtLeast(0L))
             }
         }
         exo.addListener(listener)
@@ -187,14 +188,14 @@ private fun ReplayPlayer(
                 ProgressAction.Clear -> appScope.launch { store.clear(vod.vodId) }
                 ProgressAction.Skip -> Unit
             }
-            playback.release()
+            // The player itself is released by `playback` (a RememberObserver) right after this, when the page leaves the composition.
         }
     }
     // Playback begins when the start position is known (immediately, or after the viewer answers "resume?").
     DisposableEffect(startAt) {
         startAt?.let { at ->
             started = true
-            playback.setSource(urlFor(selected), at, vod.recording, playWhenReady = true)
+            playback.setSource(ReplayQuality.urlFor(vod.variants, vod.masterUrl, selected), at, vod.recording, playWhenReady = true)
         }
         onDispose { }
     }
@@ -206,6 +207,7 @@ private fun ReplayPlayer(
                 val at = exo.currentPosition
                 val total = if (exo.duration > 0 && !vod.recording) exo.duration else duration
                 appScope.launch { store.save(vod.vodId, at, total) }
+                restoration.positionMs = at
             }
         }
     }
@@ -218,10 +220,11 @@ private fun ReplayPlayer(
     PlayerScaffold(
         snapshot = snapshot,
         failed = false,
-        title = title,
+        title = info.title,
         subtitle = null,
         onBack = onBack,
         onTogglePlay = togglePlay,
+        restoration = restoration,
         pinned = dragging || qualities != null || (decision is StartDecision.Ask && startAt == null),
         video = { videoModifier -> ExoVideoSurface(exo, videoModifier) },
         stageOverlay = {
@@ -246,55 +249,51 @@ private fun ReplayPlayer(
         },
         bottom = { chrome ->
             if (startAt != null) {
-                SeekRow(snapshot, onSeek = { exo.seekTo(it) }, onDragging = { dragging = it }, durationMs = duration)
-                Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (!vod.recording && chrome.landscape) {
-                        androidx.compose.material3.TextButton(
-                            onClick = {
-                                chrome.controls.touch()
-                                exo.setPlaybackSpeed(nextSpeed(exo.playbackParameters.speed))
-                            },
-                        ) { Text(speedLabel(snapshot.speed, numbers), color = Color.White) }
-                    }
-                    Box(Modifier.weight(1f))
-                    if (vod.variants.size > 1) {
-                        ControlButton(
-                            PhoneIcons.Quality,
-                            stringResource(R.string.player_quality),
-                            {
-                                chrome.controls.touch()
-                                qualities = VideoQualities(
-                                    listOf(VideoQuality(QualityPolicy.AUTO, autoLabel)) + vod.variants.map { VideoQuality(it.id, it.name) },
-                                    selected,
-                                )
-                            },
-                        )
-                    }
-                    FullscreenButton(chrome)
-                }
+                RecordedBottom(
+                    snapshot = snapshot,
+                    durationMs = duration,
+                    onSeek = { exo.seekTo(it) },
+                    onDragging = { dragging = it },
+                    chrome = chrome,
+                    landscapeStart = {
+                        // The speed chips live under the picture in portrait; landscape has no room for them, so one button steps through.
+                        if (!vod.recording) {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    chrome.controls.touch()
+                                    exo.setPlaybackSpeed(nextSpeed(exo.playbackParameters.speed))
+                                },
+                            ) { Text(speedLabel(snapshot.speed, numbers), color = Color.White) }
+                        }
+                    },
+                    trailing = {
+                        if (vod.variants.size > 1) {
+                            ControlButton(
+                                PhoneIcons.Quality,
+                                stringResource(R.string.player_quality),
+                                {
+                                    chrome.controls.touch()
+                                    qualities = ReplayQuality.options(vod.variants, autoLabel, selected)
+                                },
+                            )
+                        }
+                        FullscreenButton(chrome)
+                    },
+                )
             }
         },
         portraitContent = {
-            Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(title, style = MaterialTheme.typography.headlineSmall)
-                if (duration > 0) Text(formatUptime(duration), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                // A replay still being recorded is pinned to normal speed.
-                if (!vod.recording && startAt != null) {
-                    Text(stringResource(R.string.phone_player_speed), style = MaterialTheme.typography.labelLarge)
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PLAYBACK_SPEEDS.forEach { speed ->
-                            FilterChip(
-                                selected = abs(snapshot.speed - speed) < SPEED_EPSILON,
-                                onClick = { exo.setPlaybackSpeed(speed) },
-                                label = { Text(speedLabel(speed, numbers)) },
-                            )
-                        }
-                    }
-                }
-            }
+            ReplayDetails(
+                info = info,
+                durationMs = duration,
+                speed = snapshot.speed,
+                speedsEnabled = !vod.recording && startAt != null,
+                numbers = numbers,
+                onSpeed = { chosen -> exo.setPlaybackSpeed(chosen) },
+                onOpenChannel = onOpenChannel,
+                onOpenReplay = onOpenReplay,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            )
         },
     )
     qualities?.let { options ->
@@ -303,7 +302,8 @@ private fun ReplayPlayer(
             onPick = { picked ->
                 qualities = null
                 selected = picked
-                playback.setSource(if (picked == QualityPolicy.AUTO) vod.masterUrl else urlFor(picked), exo.currentPosition, vod.recording, exo.playWhenReady)
+                qualityChoice.pick(picked)
+                playback.setSource(ReplayQuality.urlFor(vod.variants, vod.masterUrl, picked), exo.currentPosition, vod.recording, exo.playWhenReady)
             },
             onDismiss = { qualities = null },
         )
@@ -311,6 +311,5 @@ private fun ReplayPlayer(
 }
 
 private const val MILLIS = 1_000L
-private const val SPEED_EPSILON = 0.01f
 private const val POLL_MS = 500L
 private const val SAVE_EVERY_MS = 10_000L

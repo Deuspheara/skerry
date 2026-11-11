@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,12 +40,13 @@ import com.twitchplayer.tv.core.ui.formatUptime
 import com.twitchplayer.tv.feature.player.data.stream.ClipResolver
 import com.twitchplayer.tv.feature.vod.ui.seekTarget
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 private sealed interface ClipLoad {
     data object Loading : ClipLoad
     data class Ready(val url: String) : ClipLoad
-    data object Failed : ClipLoad
+    data class Failed(val failure: ClipFailure) : ClipLoad
 }
 
 /** A clip: plays the best MP4, seek bar, +/-10 s, replay at the end, share. */
@@ -62,7 +64,7 @@ fun ClipRoute(
         load = ClipLoad.Loading
         load = runCatching { ClipLoad.Ready(resolver.resolve(slug).first().url) as ClipLoad }.getOrElse { error ->
             if (error is CancellationException) throw error
-            ClipLoad.Failed
+            ClipLoad.Failed(error.toClipFailure())
         }
     }
     Box(modifier.fillMaxSize().background(Color.Black)) {
@@ -72,10 +74,10 @@ fun ClipRoute(
                 ClipBack(onBack)
             }
 
-            ClipLoad.Failed -> {
+            is ClipLoad.Failed -> {
                 MessageState(
-                    title = stringResource(R.string.clip_unavailable),
-                    body = stringResource(R.string.clip_unavailable_line),
+                    title = stringResource(state.failure.title),
+                    body = stringResource(state.failure.line),
                     modifier = Modifier.align(Alignment.Center).background(MaterialTheme.colorScheme.background),
                     actionLabel = stringResource(R.string.state_retry),
                     onAction = { attempt++ },
@@ -83,7 +85,13 @@ fun ClipRoute(
                 ClipBack(onBack)
             }
 
-            is ClipLoad.Ready -> ClipPlayer(slug, state.url, title, onBack)
+            is ClipLoad.Ready -> ClipPlayer(
+                slug,
+                state.url,
+                title,
+                onBack,
+                onFail = { failure -> load = ClipLoad.Failed(failure) },
+            )
         }
     }
 }
@@ -96,24 +104,31 @@ private fun ClipBack(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> Unit) {
+private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> Unit, onFail: (ClipFailure) -> Unit) {
+    val restoration = rememberPlayerRestoration(slug)
     val context = LocalContext.current
     val playback = remember(url) { RecordedPlayback(context) }
     val exo = playback.exo
     val snapshot = rememberPlayerSnapshot(exo, pollMs = POLL_MS)
-    var failed by remember(url) { mutableStateOf(false) }
     var dragging by remember { mutableStateOf(false) }
+    val currentOnFail by rememberUpdatedState(onFail)
+    PauseWhenInBackground(exo)
     DisposableEffect(exo) {
         val listener = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
-                failed = true
+                currentOnFail(error.toClipFailure())
             }
         }
         exo.addListener(listener)
-        playback.setSource(url, 0L, recording = false, playWhenReady = true)
-        onDispose {
-            exo.removeListener(listener)
-            playback.release()
+        playback.setSource(url, restoration.positionMs ?: 0L, recording = false, playWhenReady = true)
+        // The player itself is released by `playback` (a RememberObserver) when this page leaves the composition.
+        onDispose { exo.removeListener(listener) }
+    }
+    // Where the clip is, kept for a page brought back after the process was killed.
+    LaunchedEffect(exo) {
+        while (true) {
+            delay(POSITION_SAVE_MS)
+            if (exo.isPlaying) restoration.positionMs = exo.currentPosition
         }
     }
     val togglePlay = { exo.playWhenReady = !exo.playWhenReady }
@@ -121,18 +136,14 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
     val shareLabel = stringResource(R.string.phone_player_share)
     PlayerScaffold(
         snapshot = snapshot,
-        failed = failed,
+        failed = false,
         title = title,
         subtitle = null,
         onBack = onBack,
         onTogglePlay = togglePlay,
+        restoration = restoration,
         pinned = dragging,
         video = { videoModifier -> ExoVideoSurface(exo, videoModifier) },
-        stageOverlay = {
-            if (failed) {
-                Text(stringResource(R.string.clip_unavailable), color = Color.White, modifier = Modifier.align(Alignment.Center))
-            }
-        },
         topActions = { chrome ->
             if (shareText != null) {
                 ControlButton(
@@ -159,8 +170,15 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
             )
         },
         bottom = { chrome ->
-            SeekRow(snapshot, onSeek = { exo.seekTo(it) }, onDragging = { dragging = it })
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { FullscreenButton(chrome) }
+            RecordedBottom(
+                snapshot = snapshot,
+                durationMs = snapshot.durationMs,
+                onSeek = { exo.seekTo(it) },
+                onDragging = { dragging = it },
+                chrome = chrome,
+                landscapeStart = {},
+                trailing = { FullscreenButton(chrome) },
+            )
         },
         portraitContent = {
             Column(Modifier.weight(1f).fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -174,3 +192,4 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
 }
 
 private const val POLL_MS = 500L
+private const val POSITION_SAVE_MS = 5_000L

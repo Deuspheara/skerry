@@ -60,4 +60,6 @@
     <string name="phone_player_back10">Reculer de 10 secondes</string>
     <string name="phone_player_share">Partager</string>
     <string name="phone_player_speed">Vitesse de lecture</string>
+    <string name="phone_player_open_channel">Ouvrir la chaîne</string>
+    <string name="phone_player_more_from">Autres vidéos de %1$s</string>
 </resources>

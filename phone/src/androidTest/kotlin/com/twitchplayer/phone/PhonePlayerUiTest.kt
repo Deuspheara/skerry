@@ -257,8 +257,64 @@ class PhonePlayerUiTest {
         java.io.File(dir, "$name.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** The area that answers a touch (a 24 dp glyph sits in a 48 dp button), not the visible bounds. */
+    private fun assertTouchTarget(description: String) {
+        val node = rule.onNodeWithContentDescription(description).fetchSemanticsNode()
+        val minPx = MIN_TARGET_DP * context.resources.displayMetrics.density
+        val bounds = node.touchBoundsInRoot
+        check(bounds.width >= minPx - 1 && bounds.height >= minPx - 1) {
+            "'$description' touch target ${bounds.width} x ${bounds.height} px is under 48 dp ($minPx px)"
+        }
+    }
+
+    @Test fun everyControlOnThePictureHasAtLeastA48DpTouchTarget() {
+        launch()
+        openLivePlayer()
+        showControls()
+
+        listOf(R.string.player_back, R.string.player_fullscreen, R.string.player_quality).forEach { assertTouchTarget(string(it)) }
+        assertTouchTarget(string(R.string.phone_player_chat_toggle))
+        assertTouchTarget(string(R.string.player_sound))
+    }
+
+    @Test fun aReplayPageNamesItsChannelAndOffersTheChannelsOtherReplays() {
+        launch()
+        waitForDescription("Lunaria")
+        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        waitForText("Session du mardi soir")
+        rule.onNodeWithText("Session du mardi soir").performClick()
+
+        waitForText(string(R.string.phone_player_open_channel))
+        rule.onNodeWithText(string(R.string.phone_player_open_channel)).assertIsDisplayed()
+        // The channel's other replays are listed under "More from Lunaria" (the one playing is not repeated).
+        waitForText(context.getString(R.string.phone_player_more_from, "Lunaria"))
+        waitForText("Suite et fin")
+    }
+
+    @Test fun aReplayThePersonPausedIsStillPausedAfterTheAppWasStoppedAndStartedAgain() {
+        launch()
+        waitForDescription("Lunaria")
+        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        waitForText("Session du mardi soir")
+        rule.onNodeWithText("Session du mardi soir").performClick()
+        waitForText(string(R.string.phone_player_speed))
+        // Pause on purpose. (A playing video would turn into a Picture-in-Picture window on leaving, not stop the activity.)
+        if (rule.onAllNodes(hasContentDescription(string(R.string.player_pause))).fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithContentDescription(string(R.string.player_pause)).performClick()
+        }
+        waitForDescription(string(R.string.player_play))
+
+        scenario!!.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        scenario!!.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+
+        waitForDescription(string(R.string.player_play))
+        assertEquals("it did not start by itself", 0, rule.onAllNodes(hasContentDescription(string(R.string.player_pause))).fetchSemanticsNodes().size)
+        rule.onNodeWithTag(STAGE_TAG).assertIsDisplayed()
+    }
+
     private companion object {
         const val WAIT_MS = 20_000L
         const val EMPTY_BAND = 0.28f
+        const val MIN_TARGET_DP = 48f
     }
 }

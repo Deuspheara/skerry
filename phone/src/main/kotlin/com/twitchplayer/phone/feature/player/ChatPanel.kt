@@ -37,11 +37,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -107,7 +115,7 @@ fun PhoneChatList(
             reverseLayout = true,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(style.gapDp.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().fadeTopEdge(TOP_FADE),
         ) {
             items(newestFirst, key = { it.id }) { line ->
                 val animated = remember(line.id) { derivedStateOf { allowance[line.id] ?: 0 } }
@@ -182,3 +190,16 @@ fun ChatSignInPrompt(onSignIn: () -> Unit, modifier: Modifier = Modifier) {
 fun overVideoPanelColor(style: PhoneChatStyle) = MaterialTheme.colorScheme.scrim.copy(alpha = style.backgroundAlpha * OVER_VIDEO_MAX)
 
 private const val OVER_VIDEO_MAX = 0.75f
+
+/** Fades the top [height] of a list into its background, so a line clipped by the edge fades out instead of being cut in half. */
+private fun Modifier.fadeTopEdge(height: Dp): Modifier = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.drawWithContent {
+    drawContent()
+    val fade = height.toPx()
+    drawRect(
+        brush = Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black, startY = 0f, endY = fade),
+        size = Size(size.width, fade),
+        blendMode = BlendMode.DstIn,
+    )
+}
+
+private val TOP_FADE = 20.dp

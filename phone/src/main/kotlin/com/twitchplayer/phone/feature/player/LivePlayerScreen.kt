@@ -121,6 +121,16 @@ fun LivePlayerRoute(
     }
 
     val snackbar = remember { SnackbarHostState() }
+    // What survives the process being killed in the background: the chat mode chosen for this session and the fullscreen lock.
+    val restoration = rememberPlayerRestoration(login)
+    DisposableEffect(Unit) {
+        restoredChatMode(restoration.chatMode)?.takeIf { it != state.chatMode }?.let { presenter.onEvent(PlayerEvent.SetChatMode(it)) }
+        onDispose { }
+    }
+    DisposableEffect(state.chatMode) {
+        restoration.chatMode = state.chatMode.name
+        onDispose { }
+    }
     val needsSignIn = stringResource(R.string.chat_needs_signin)
     val failedText = stringResource(R.string.chat_send_failed)
     val droppedText = stringResource(R.string.chat_dropped)
@@ -151,13 +161,14 @@ fun LivePlayerRoute(
             subtitle = current?.title?.ifBlank { null },
             onBack = onBack,
             onTogglePlay = { presenter.onEvent(PlayerEvent.TogglePause) },
+            restoration = restoration,
             pinned = qualities != null,
             video = { videoModifier -> NativeVideoSurface(player, videoModifier) },
-            stageStatus = { StageStatus(status = status, hasPicture = snapshot.hasPicture, onRetry = { player.load(state.login) }) },
-            stageOverlay = { chrome ->
-                // Chat laid over the video (landscape only): the viewer's background opacity behind the lines.
+            stageTop = { chrome ->
+                // Above the control layer: undimmed (the scrim would grey the last lines) and tappable (Retry).
+                StageStatus(status = status, hasPicture = snapshot.hasPicture, onRetry = { player.load(state.login) })
+                // Chat laid over the video (landscape only): the viewer's background opacity behind the lines, above the bottom bar.
                 if (overlayChatVisible(state.chatMode, chrome.landscape, signedIn, inPip)) {
-                    // While the control layer is up its bottom bar owns the lower edge: the chat panel sits above it.
                     val lift by animateDpAsState(if (chrome.controls.visible) CONTROLS_BAR else 0.dp, label = "chat-lift")
                     Box(
                         Modifier.align(Alignment.BottomStart).safeDrawingPadding().padding(bottom = lift).fillMaxWidth(OVERLAY_WIDTH).fillMaxHeight(OVERLAY_HEIGHT)
@@ -347,6 +358,6 @@ private val SIDE_PANEL = 320.dp
 private val CONTROLS_BAR = 56.dp
 private val BADGE_GAP = 8.dp
 private const val RETRY_BORDER_ALPHA = 0.7f
-private const val OVERLAY_WIDTH = 0.45f
-private const val OVERLAY_HEIGHT = 0.6f
+private const val OVERLAY_WIDTH = 0.34f
+private const val OVERLAY_HEIGHT = 0.5f
 private const val UPTIME_TICK_MS = 30_000L

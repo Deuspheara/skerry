@@ -8,8 +8,8 @@ enum class OrientationLock { None, Landscape, Portrait }
  * phone is held the other way; the lock is released as soon as the phone's own sensor agrees, so auto-rotate works again and the
  * screen does not flip straight back.
  */
-class FullscreenPolicy {
-    var lock: OrientationLock = OrientationLock.None
+class FullscreenPolicy(initial: OrientationLock = OrientationLock.None) {
+    var lock: OrientationLock = initial
         private set
 
     /** The fullscreen button: leave landscape for portrait, or enter landscape from portrait. */

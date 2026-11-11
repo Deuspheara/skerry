@@ -2,7 +2,9 @@ package com.twitchplayer.phone.feature.player
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -94,7 +96,7 @@ fun SeekRow(
     val shownMs = if (drag != null) SeekModel.positionFor(drag ?: 0f, duration) else snapshot.positionMs
     val time = formatUptime(shownMs)
     val total = formatUptime(duration)
-    Row(modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(time, style = MaterialTheme.typography.labelMedium, color = PhoneColors.OnScrim)
         Slider(
             value = fraction,
@@ -136,3 +138,32 @@ fun ResumeOffer(savedMs: Long, onResume: () -> Unit, onStartOver: () -> Unit, mo
 private val CENTER_SIZE = 64.dp
 private const val TRACK_ALPHA = 0.35f
 private const val OFFER_ALPHA = 0.95f
+
+/**
+ * The bottom of a replay or clip. Landscape has the room for two rows (the seek bar, then the speed and the buttons); in portrait the
+ * picture is only about 230 dp tall, so everything shares one row and nothing meets the big buttons in the middle.
+ */
+@Composable
+fun RecordedBottom(
+    snapshot: PlayerSnapshot,
+    durationMs: Long,
+    onSeek: (Long) -> Unit,
+    onDragging: (Boolean) -> Unit,
+    chrome: PlayerChrome,
+    landscapeStart: @Composable RowScope.() -> Unit,
+    trailing: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth()) {
+        if (chrome.landscape) SeekRow(snapshot, onSeek, onDragging, Modifier.fillMaxWidth(), durationMs)
+        Row(Modifier.fillMaxWidth().padding(start = if (chrome.landscape) 12.dp else 0.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (chrome.landscape) {
+                landscapeStart()
+                Box(Modifier.weight(1f))
+            } else {
+                SeekRow(snapshot, onSeek, onDragging, Modifier.weight(1f), durationMs)
+            }
+            trailing()
+        }
+    }
+}
