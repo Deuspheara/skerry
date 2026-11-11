@@ -227,3 +227,88 @@ Test harness note: unloading a Koin module that *overrides* a production definit
 ### Unchanged, still unverified
 
 The real phone (not connected; an early build installed and never launched), TalkBack output (semantics checked, not the screen reader), reduced motion seen running, a completed sign-in with an account, phone performance (no baseline profile or benchmark), CI on GitHub.
+
+---
+
+# Phase 3, step C: playback on the phone
+
+Live streams, replays and clips, with chat, Picture-in-Picture and fullscreen, plus the step-B review leftovers. Branch `feat/phone-ui`.
+
+## What was built
+
+| Piece | Where | Notes |
+|---|---|---|
+| Live page | `feature/player/LivePlayerScreen.kt` | `PlayerPresenter` through the holder ViewModel of `:platform-android` (one per page: leaving the page ends the session and chat disconnects), native Media3 playback (`NativeVideoPlayer`). **Native only**: the phone has no WebView embed engine (that fallback needs a hosted page and exists for the TV). |
+| Replay and clip pages | `ReplayScreen.kt`, `ClipScreen.kt`, `RecordedPlayback.kt` | Resume offer (a saved position past 15 s and not in the last 15 s), seek bar, +/-10 s, speed chips (portrait) / button (landscape), quality sheet, progress saved every 10 s and on leaving, cleared at the end; clip: replay and share (link built only from a plain clip id). |
+| Frame shared by the three | `PlayerScaffold.kt`, `PlayerChrome.kt`, `PlayerControls.kt` | Portrait (picture on top, content below) and landscape (picture fills the screen, optional side panel); control layer that fades in and out; fullscreen button, immersive bars, keep-screen-on, Picture-in-Picture, Back leaves fullscreen first. |
+| Chat | `ChatPanel.kt`, `ChatLineView.kt`, `PhoneChatStyle.kt`, `NickContrast.kt` | Newest at the bottom, follows new lines, "Back to live" pill with the count when the viewer scrolls up, badges, emotes (animated ones only on the newest visible lines, up to the viewer's limit, never while scrolling or in Picture-in-Picture), mention highlight, text size / spacing / badges / timestamps / opacity from the chat settings, sending through the presenter. Chat shows beside the picture (landscape side panel), over it (landscape "over the video") or under it (portrait). |
+| Activity glue | `PlayerHost.kt`, `ActivityPlayerHost.kt`, `MainActivity.kt`, manifest | An interface (no-op default for tests) over the activity: Picture-in-Picture (`supportsPictureInPicture`, auto-enter on Android 12+ with a source-rect hint, before that on `onUserLeaveHint`, a play/pause remote action), orientation lock, immersive mode, light status-bar icons over the black picture area. `configChanges` handles rotation, size, font scale, density and UI mode in place, so a rotation keeps the player (no rebuffer) and the state. |
+| Pure logic (all unit tested) | `ControlsVisibility`, `FullscreenPolicy`, `PipPolicy`, `ChatScrollPolicy`, `ChatModeCycle`, `PlaybackStart` (+`SeekModel`), `ReplayError`, `NickContrast`, `PhoneChatStyle` | |
+| Shared code touched | `PlayerEvent.SetChatMode` (+test), `animationAllowance` moved to `shared:presenters`, `EmoteLayer` / `EmoteAspects` moved to `:platform-android` | The phone picks hidden / side panel / overlay directly (the TV cycles). The emote layers and the animation budget had no TV dependency: both apps now share them (package names unchanged; the TV APK is byte-identical, 4,001,682 B). |
+
+## Decisions and deviations
+
+- **No stream zapper, no mini player, no stats overlay on the phone.** The phone reaches another channel by going back; the stats toggle and the player-engine choice are TV settings.
+- **Follow**: the live page has "Open on Twitch" (an icon button) instead of the channel page's Follow button, because the player does not know whether the viewer follows the channel (see the follow note in docs/TWITCH_INTEGRATION.md).
+- **Chat needs a signed-in viewer** (the same rule as the TV: Twitch's chat API is account-bound). A signed-out viewer sees a prompt with a sign-in button; the message box exists only when signed in. In "over the video" mode there is no message box (the side panel and portrait have one).
+- **Chat colours**: nickname colours come from the shared mapping, tuned for a dark chat. `readableOn` moves them as little as needed to reach 4.5:1 on the actual surface (light theme), found by looking: some nicknames were nearly invisible on white.
+- **Message direction**: each chat line takes its direction from its text (`TextDirection.Content`): French lines stay left-to-right inside the Arabic layout.
+- **Compose stability**: `androidx.media3.common.Player` is declared stable in `config/compose/stability.conf` (same reasoning as the presenters: one instance per page, never reassigned; everything the UI draws from it goes through `rememberPlayerSnapshot`).
+- **detekt**: `LocalPlayerHost` joins `LocalReducedMotion` in the composition-local allowlist; `LongParameterList` ignores defaulted parameters (slot-based composables), which can only reduce findings repo-wide.
+- **Debug fixture** `files/demo-stream-offline` (debug source set only) makes the player fail, to look at the offline page.
+- **Benchmark build type** (`:phone:assembleBenchmark`): release rules and R8, debug-signed, always on the demo data; the release build is untouched (0 `-keep` rules, no demo classes).
+- **`PhoneUiTest`'s language test** was stale since the step-B follow-up (the Language row now shows the language in use, "System language", not the word "Language"): updated.
+
+## Step-B review leftovers
+
+| Finding | Fix |
+|---|---|
+| Arabic UI half English | All phone-only strings now have an Arabic translation (`values-ar`); a unit test fails if English, French or Arabic differ in keys or placeholders, or if code uses a `phone_*` string that is not in English |
+| LIVE badge colour / contrast | One red (`#EB0400`) with white text in both themes: 4.6:1 |
+| Large-text nav labels clipping | Bar labels are one line and their text scale is capped at 1.3x (page content keeps the full scale) |
+| Medium-width channel page void | Content is a centred column of at most 640 dp (the older 560 dp card cap that left-aligned it inside was removed) |
+| Sign-in dialog | The code is `headlineLarge`, full-contrast `onSurface` |
+| Home header gap | App bar height 52 dp instead of 64 dp |
+| Search hint spacing | The hint only shows on an empty screen (it repeated the field with trending channels listed); the "Trending" header has top spacing |
+
+## Looked at (final build, Pixel 8 emulator API 36, demo data)
+
+`docs/screenshots/phone/player-*.png`, `channel-medium-width-centered.png`, `home-large-text-bar-labels.png`: live portrait with controls, landscape with chat over the video, the quality sheet, a replay (seek bar, speed chips), the offline page, the light theme, Arabic right-to-left, Picture-in-Picture, medium width, 1.8x text.
+
+What looking changed: the controls scrim was too weak under the title over bright video; the "Back to live" pill had no background (chat showed through its label); chat over the video ran under the bottom control bar; the offline message and Retry were dimmed by the scrim and the big play button covered Retry (a tap never reached it); a stream that cannot play still showed LIVE and a viewer count; nicknames were unreadable on the light theme; the status-bar clock disappeared over the black picture area in the light theme; French lines had their punctuation on the wrong side in the Arabic layout; the replay page was a title and a void.
+
+## Tests
+
+| Layer | Count |
+|---|---|
+| Unit tests, whole build (`./gradlew check --rerun-tasks`, fresh daemon) | **648, 0 failures**: phone 97, presenters 274 (jvm and Android host), core 68, chat 82, stream 64, player-api 14, platform-android 15, app 23, build-logic 11 |
+| Shared | `SetChatMode` presenter test, `ChatAnimationTest` (budget moved next to its code) |
+| Phone UI tests on the Pixel 8 emulator | **26 of 26** (17 existing + 9 player), run on the final build: the live page shows picture, chat and message box; a tap toggles the controls; quality sheet; fullscreen locks landscape and Back returns to portrait without leaving the page; sending clears the box; sign-out on the player shows the sign-in prompt; replay speed chips; offline channel and failed resolve with Retry |
+
+Not testable under instrumentation: the control **auto-hide timer** (Media3 is paused by audio-focus loss in the test harness, which by design keeps the controls up). It is unit tested with virtual time (`ControlsVisibilityTest`) and was seen working on the emulator.
+
+## Numbers
+
+| Check | Result |
+|---|---|
+| Compose report `:phone` | **77 composables, 72 skippable, 0 unstable parameters** |
+| TV app | 141 composables / 127 skippable in `:app`, the same 5 unstable parameters; **release APK 4,001,682 B, identical** |
+| Phone release APK / AAB | **3,777,699 B / 8,670,010 B** (was 2,547,611 / 5,931,734 before the player: Media3 + HLS + chat rendering + animated emote decoding); `classes.dex` 5,522,484 B; 0 demo classes in the mapping; 0 `-keep` rules; `baseline.prof` from the libraries (Media3, Compose) packaged |
+| Lint and detekt `:phone` | clean, no baseline |
+
+### Phone performance baseline (emulator, so indicative: fast host CPU, GPU pinned to vsync)
+
+Pixel 8 AVD (API 36, arm64), `benchmark` build type (R8 on, demo data), no baseline profile yet (step D).
+
+| Measure | Result |
+|---|---|
+| Cold start `am start -W` TotalTime, 10 runs, as installed (no AOT) | median **186 ms** excluding the first run after install (743 ms); runs 169-212 ms |
+| Same after `cmd package compile -m speed -f` (full AOT, an upper bound for a profile) | median **173 ms** (142-239) |
+| Live page: chat updating (2 UI frames/s) | UI thread p50 1.87 / p90 3.79 / p99 10.45 ms, no frame over 16.7 ms; RenderThread p50 1.14 / p99 9.96 ms |
+| Home scrolling (back and forth, 8 times) | UI p50 0.67 / p90 1.92 / p99 7.86 ms (2 frames over 16.7 ms, image decodes on first display), RenderThread p50 1.04 / p99 4.04 ms |
+
+Tools: `PKG=com.twitchplayer.phone ANDROID_SERIAL=emulator-5554 benchmark/tools/framestats.py --watch <s>` (the script now takes the package from `PKG`).
+
+## Unverified
+
+The real phone (screen locked, not used); TalkBack output (semantics checked, not the screen reader); reduced motion seen running; a completed sign-in and real chat sending with a Twitch account (chat and sending run on demo data); Picture-in-Picture before Android 12 and on devices without the feature (code path guarded and reviewed, not run); real streams (the demo clip is a 12-second looping test pattern: live-edge behaviour, ad breaks and quality switching on real HLS are the TV player's, reused, not re-measured on the phone); phone performance on hardware (emulator numbers only); no phone baseline profile yet (step D); CI on GitHub (no remote).

@@ -115,3 +115,7 @@ the 36 languages, plurals and `translatable="false"` entries stay in one place. 
 `phone/src/main/res/values/phone_strings.xml` (English) and `values-fr/` (French): 34 other languages fall back to English for those
 keys until they are translated (`MissingTranslation` is ignored for that one file, and a unit test keeps English and French in step, with
 the same placeholders). When the strings move to Compose Multiplatform resources (this plan), the plugin goes away.
+
+## Addendum: phone-only strings (Phase 3, step C)
+
+The phone's own `phone_*` strings (about 60) are now available in **English, French and Arabic** (`phone/src/main/res/values{,-fr,-ar}/phone_strings.xml`). A unit test (`PhoneStringsTest`) fails if French or Arabic miss a key or change a placeholder, or if the code uses a `phone_*` string that English does not define. The other **33 languages** (the 36 of the TV app minus English, French and Arabic) fall back to English for these keys until they are translated; every other string comes from the TV app's reviewed-by-nobody translations as before. When the single-source migration above happens, the `phone_*` keys move with the rest.
