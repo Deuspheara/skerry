@@ -10,11 +10,7 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowHardware
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.di.DebugModules
-import com.twitchplayer.tv.core.di.coreModule
-import com.twitchplayer.tv.core.di.sharedCoreModule
-import com.twitchplayer.tv.core.di.viewModelModule
-import com.twitchplayer.tv.feature.player.data.sharedChatModule
-import com.twitchplayer.tv.feature.player.data.stream.sharedStreamModule
+import com.twitchplayer.tv.core.di.productionModules
 import okio.Path.Companion.toOkioPath
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
@@ -27,7 +23,7 @@ class TwitchPlayerApp :
         super.onCreate()
         startKoin {
             androidContext(this@TwitchPlayerApp)
-            modules(listOf(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), coreModule, viewModelModule) + DebugModules.overrides(this@TwitchPlayerApp))
+            modules(productionModules() + DebugModules.overrides(this@TwitchPlayerApp))
         }
         get<SessionRepository>().start()
     }

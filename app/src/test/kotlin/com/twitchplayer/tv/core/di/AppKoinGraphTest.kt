@@ -3,8 +3,6 @@ package com.twitchplayer.tv.core.di
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
-import com.twitchplayer.tv.feature.player.data.sharedChatModule
-import com.twitchplayer.tv.feature.player.data.stream.sharedStreamModule
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchPlayerConfig
 import org.junit.Test
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -36,11 +34,11 @@ internal fun koinVerifyInjections(): List<ParameterTypeInjection> = injectedPara
 
 /**
  * Every constructor dependency of every definition must be declared by some module of the production graph
- * (`sharedCoreModule` + `sharedStreamModule` + `sharedChatModule` + `sharedPresentersModule` + the Android `coreModule` + the view models); a missing platform binding fails here, not at launch.
+ * ([productionModules], the very list `TwitchPlayerApp` starts Koin with); a missing platform binding fails here, not at launch.
  */
 @OptIn(KoinExperimentalAPI::class)
 class AppKoinGraphTest {
     @Test fun productionGraphDeclaresEveryDependency() {
-        module { includes(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), sharedPresentersModule(), coreModule, viewModelModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
+        module { includes(productionModules()) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
     }
 }
