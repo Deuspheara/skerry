@@ -4,19 +4,26 @@ import android.content.Context
 import com.twitchplayer.phone.ui.theme.ThemeMode
 import com.twitchplayer.phone.ui.theme.ThemePreference
 import com.twitchplayer.tv.app.AuthViewModel
+import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.di.androidPlatformFakes
 import com.twitchplayer.tv.core.di.koinVerifyExtraTypes
 import com.twitchplayer.tv.core.di.koinVerifyInjections
 import com.twitchplayer.tv.core.di.productionModules
 import com.twitchplayer.tv.core.di.testPlatformConfig
+import com.twitchplayer.tv.core.platform.NumberFormatter
 import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.browse.presentation.BrowseViewModel
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
+import com.twitchplayer.tv.feature.player.data.stream.ClipResolver
+import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
+import com.twitchplayer.tv.feature.player.data.stream.VodResolver
+import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
 import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
+import com.twitchplayer.tv.feature.vod.data.VodProgressStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,7 +100,24 @@ class PhoneGraphTest {
         assertNotNull(koin.get<SettingsViewModel>().presenter)
         assertNotNull(koin.get<CategoryViewModel> { parametersOf("509658") }.presenter)
         assertNotNull(koin.get<ChannelViewModel> { parametersOf("camille") }.presenter)
+        assertNotNull(koin.get<PlayerViewModel> { parametersOf("camille") }.presenter)
         assertNotNull(koin.get<ThemePreference>())
         assertNotNull(koin.get<ChannelKeyBus>())
+    }
+
+    /** What the player pages `koinInject()` (not through a ViewModel): all of it resolves from the phone's list. */
+    @Test fun theBindingsThePlayerPagesInjectResolve() {
+        val koin = startKoin {
+            allowOverride(true)
+            modules(phoneModules() + androidPlatformFakes(tmp.root, scope) + fakeTheme)
+        }.koin
+
+        assertNotNull(koin.get<TwitchPlaybackResolver>())
+        assertNotNull(koin.get<VodResolver>())
+        assertNotNull(koin.get<ClipResolver>())
+        assertNotNull(koin.get<VodProgressStore>())
+        assertNotNull(koin.get<SessionRepository>())
+        assertNotNull(koin.get<NumberFormatter>())
+        assertNotNull(koin.get<CoroutineScope>())
     }
 }

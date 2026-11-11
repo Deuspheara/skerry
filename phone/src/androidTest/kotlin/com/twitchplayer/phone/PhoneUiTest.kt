@@ -166,7 +166,7 @@ class PhoneUiTest {
         rule.onNode(isSelectable() and hasText(string(R.string.nav_browse))).assertIsDisplayed()
     }
 
-    @Test fun aChannelPageOffersWatchAndTheStubSaysThePlayerIsComing() {
+    @Test fun aChannelPageOffersWatchAndWatchOpensThePlayer() {
         launch()
         waitForDescription("Lunaria")
         rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
@@ -175,7 +175,7 @@ class PhoneUiTest {
         rule.onNodeWithText(string(R.string.sec_replays)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.watch)).performClick()
 
-        waitForText(string(R.string.phone_player_soon))
+        waitForText(string(R.string.phone_player_chat_hint))
     }
 
     @Test fun theChannelPageKeepsItsBackStackAcrossARotation() {
@@ -220,9 +220,10 @@ class PhoneUiTest {
     @Test fun theLanguageChoiceListsEveryTranslatedLanguage() {
         launch()
         openTab(R.string.phone_nav_settings)
-        waitForText(string(R.string.tile_language))
+        // The Language group's one row names the language in use ("System language" until the viewer picks one).
+        waitForText(string(R.string.lang_system))
 
-        rule.onNode(hasText(string(R.string.tile_language)) and hasClickAction()).performClick()
+        rule.onNode(hasText(string(R.string.lang_system)) and hasClickAction()).performClick()
 
         // Lazy list: the entries far down are composed once scrolled to.
         rule.onNodeWithTag(CHOICE_LIST_TAG).performScrollToNode(hasText("Français"))
