@@ -246,3 +246,23 @@ Verification (tree at the step-3 commit):
 - Not verified: the `EventSubChatClient.run` loop itself (WebSocket session, reconnect, welcome / keepalive / revocation
   handling) has no test, as before the move (it needs a fake WebSocket server; the logic is byte-identical apart from the logger and
   the engine); `EventSubChatSource`; runtime behaviour on a device or the TV; the profile (not regenerated); R8 analyzer scores.
+
+## Step 4a, part 0: follow-ups from the review of steps 2-3
+
+- `EventSubChatClient.run` is now covered. The session loop talks to an internal `EventSubTransport` (`connect(url)`,
+  `subscribe(...)`) and `EventSubSocket` (`receive(): String?`, `close()`); `KtorEventSubTransport` is the thin real adapter
+  (same Ktor calls and Helix request as before). The public constructor is unchanged, an `internal` primary constructor takes the
+  transport. The loop body only changed where it touched the socket type. `EventSubSessionTest` (virtual time, scripted sockets)
+  covers: welcome -> chat subscription first, then the bonus ones with their conditions and versions; notifications and the
+  dedup window (`maxMessages`); keepalive and non-text frames ignored; an undecodable event does not end the session;
+  `session_reconnect` migration (old socket closed only after the replacement welcomed), a replacement that does not welcome,
+  a reconnect frame without URL; revocation of the chat subscription (ends the session) vs a bonus revocation (ignored);
+  a refused chat subscription (error + retry) vs refused bonus subscriptions (warnings only); a welcome without session id;
+  backoff 1, 2, 4, 8, 16, 30, 30 s; `stop()`; blank ids.
+- Behaviour notes found while writing them (unchanged, documented): the state turns `Connected` as soon as the socket opens (before the
+  welcome); the original has no keepalive timeout (`session_keepalive` is ignored), so a silent dead socket is only noticed when the
+  socket closes. A keepalive watchdog would be a behaviour change and is left for a later step.
+- `SharedChatModule` builds the 7TV stream client provider with an explicit lambda.
+- Follow-up recorded: **detekt baseline burn-down.** `shared/{core,stream,chat}/detekt-baseline*.xml` and `app/detekt-baseline*.xml`
+  hold only moved/legacy findings (MagicNumber, complexity, generic exception handling). They should shrink over time: when a
+  file is touched for a feature, fix its baselined findings in the same PR; never add entries.

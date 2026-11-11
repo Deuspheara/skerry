@@ -5,20 +5,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.plugins.websocket.webSocketSession
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.websocket.Frame
-import io.ktor.websocket.WebSocketSession
-import io.ktor.websocket.close
-import io.ktor.websocket.readText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -55,10 +42,8 @@ sealed interface ChatConnectionState {
 }
 
 /** A single active chat connection. Own its coroutine in the selected-channel lifecycle. */
-class EventSubChatClient(
-    private val http: HttpClient,
-    private val clientId: String,
-    private val accessToken: () -> String,
+class EventSubChatClient internal constructor(
+    private val transport: EventSubTransport,
     private val logger: Logger,
     private val maxMessages: Int = 150,
     private val json: Json = Json {
@@ -66,6 +51,18 @@ class EventSubChatClient(
         isLenient = true
     },
 ) {
+    constructor(
+        http: HttpClient,
+        clientId: String,
+        accessToken: () -> String,
+        logger: Logger,
+        maxMessages: Int = 150,
+        json: Json = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        },
+    ) : this(KtorEventSubTransport(http, clientId, accessToken), logger, maxMessages, json)
+
     private val ids = LinkedHashSet<String>()
     private val idMutex = Mutex()
     private val mutableEvents = MutableSharedFlow<ChatEvent>(extraBufferCapacity = maxMessages.coerceAtLeast(1))
@@ -82,7 +79,7 @@ class EventSubChatClient(
         while (!stopped) {
             mutableState.value = ChatConnectionState.Connecting
             try {
-                val socket = http.webSocketSession("wss://eventsub.wss.twitch.tv/ws")
+                val socket = transport.connect(EVENTSUB_URL)
                 try {
                     handleSession(socket, broadcasterId, userId)
                     retry = 1L
@@ -104,25 +101,24 @@ class EventSubChatClient(
         stopped = true
     }
 
-    private suspend fun handleSession(initial: WebSocketSession, broadcasterId: String, userId: String) {
+    private suspend fun handleSession(initial: EventSubSocket, broadcasterId: String, userId: String) {
         var socket = initial
         var sessionId: String? = null
         mutableState.value = ChatConnectionState.Connected
         while (!stopped) {
-            val frame = socket.incoming.receive()
-            if (frame !is Frame.Text) continue
-            val envelope = json.decodeFromString<EventSubEnvelope>(frame.readText())
+            val text = socket.receive() ?: continue
+            val envelope = json.decodeFromString<EventSubEnvelope>(text)
             when (envelope.metadata.messageType) {
                 "session_welcome" -> {
                     val id = envelope.payload.session?.id ?: error("EventSub welcome omitted session ID")
                     sessionId = id
-                    createSubscription(id, "channel.chat.message", "1", chatCondition(broadcasterId, userId))
+                    transport.subscribe(id, "channel.chat.message", "1", chatCondition(broadcasterId, userId))
                     // Everything else is a bonus: chat works without it (older tokens without a scope, the 10-point cost cap).
                     // Twitch wants every subscription within 10 s of the welcome: they go out together.
                     coroutineScope {
                         OPTIONAL.map { (type, version) ->
                             async {
-                                runCatching { createSubscription(id, type, version, conditionFor(type, broadcasterId, userId)) }
+                                runCatching { transport.subscribe(id, type, version, conditionFor(type, broadcasterId, userId)) }
                                     // Warnings are kept on purpose: the status says whether a scope or the cost cap is the cause.
                                     .onFailure {
                                         if (it is CancellationException) throw it
@@ -152,10 +148,10 @@ class EventSubChatClient(
 
                 "session_reconnect" -> {
                     val url = envelope.payload.session?.reconnectUrl ?: error("Reconnect frame omitted reconnect URL")
-                    val migrated = http.webSocketSession(url)
+                    val migrated = transport.connect(url)
                     // The existing session remains live until the replacement welcomes.
-                    val welcome = migrated.incoming.receive()
-                    if (welcome !is Frame.Text || json.decodeFromString<EventSubEnvelope>(welcome.readText()).metadata.messageType != "session_welcome") {
+                    val welcome = migrated.receive()
+                    if (welcome == null || json.decodeFromString<EventSubEnvelope>(welcome).metadata.messageType != "session_welcome") {
                         migrated.close()
                         error("Replacement EventSub session did not welcome")
                     }
@@ -181,17 +177,9 @@ class EventSubChatClient(
         else -> decodeSignal(metadata.subscriptionType, event.jsonObject)
     }
 
-    private suspend fun createSubscription(sessionId: String, type: String, version: String, condition: JsonObject) {
-        val response = http.post("https://api.twitch.tv/helix/eventsub/subscriptions") {
-            header("Client-Id", clientId)
-            header(HttpHeaders.Authorization, "Bearer ${accessToken()}")
-            contentType(ContentType.Application.Json)
-            setBody(SubscriptionRequest(type = type, version = version, condition = condition, transport = WebSocketTransport(sessionId = sessionId)))
-        }
-        if (response.status.value !in 200..299) error("EventSub subscription $type failed (${response.status.value})")
-    }
-
     companion object {
+        private const val EVENTSUB_URL = "wss://eventsub.wss.twitch.tv/ws"
+
         /**
          * Subscriptions after the message one: (type, version). Moderation and room modes need `user:read:chat` like the
          * messages; stream.offline / channel.update / channel.raid need no scope but cost 1 each of the connection's 10 points.
@@ -285,12 +273,3 @@ class EventSubChatClient(
 @Serializable private data class EventSubPayload(val session: EventSubSession? = null, val event: kotlinx.serialization.json.JsonElement? = null)
 
 @Serializable private data class EventSubSession(val id: String? = null, @SerialName("reconnect_url") val reconnectUrl: String? = null)
-
-@Serializable private data class SubscriptionRequest(
-    val type: String,
-    val version: String = "1",
-    val condition: JsonObject,
-    val transport: WebSocketTransport,
-)
-
-@Serializable private data class WebSocketTransport(val method: String = "websocket", @SerialName("session_id") val sessionId: String)

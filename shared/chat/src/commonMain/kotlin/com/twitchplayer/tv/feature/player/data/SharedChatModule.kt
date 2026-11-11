@@ -19,7 +19,10 @@ import org.koin.dsl.module
  * Third-party emote providers are listed here in precedence order: the first one wins a name collision.
  */
 fun sharedChatModule(): Module = module {
-    single { EmoteRepository(listOf(SevenTvProvider(get(), get<EventStreamClientFactory>()::create), BttvProvider(get()), FfzProvider(get()))) }
+    single {
+        val streamClients = get<EventStreamClientFactory>()
+        EmoteRepository(listOf(SevenTvProvider(get(), { streamClients.create() }), BttvProvider(get()), FfzProvider(get())))
+    }
     single<ChatAssetsSource> { ChatAssetsRepository(get(), get()) }
     single<ChatSource> { EventSubChatSource(tokens = get(), clientId = get<AppConfig>().clientId, engine = get(), logger = get()) }
 }
