@@ -9,3 +9,10 @@ useDefault = true
 description = "Public Twitch Client ID"
 paths = ['''^gradle\.properties$''']
 regexes = ['''twitchClientId=[a-z0-9]{30}''']
+
+# Prose in docs/ARCHITECTURE.md (a table row naming the platform key stores) looks like a key to the generic rule.
+[[allowlists]]
+description = "Architecture doc wording"
+paths = ['''^docs/ARCHITECTURE\.md$''']
+regexTarget = "line"
+regexes = ['''Keychain, DPAPI/libsecret''']

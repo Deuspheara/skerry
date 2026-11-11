@@ -4,11 +4,13 @@ Measured 2026-11-11 on `5505b10` (HEAD, branch `feat/kmp-shared`) against the ba
 [perf-baseline.md](perf-baseline.md) (commit `e9a6534`, code identical to `917acaa`). Same emulator (TwitchTV_API33,
 arm64, host GPU), same commands. Profiles were **regenerated** first (`benchmark/tools/generate-profiles.sh`).
 
-**Verdict: no regression against the policy.** Startup is faster than the pre-migration code in a same-session A/B,
-frame timing is unchanged within noise, size growth is 1.2 % (APK) / 1.6 % (dex), the R8 analyzer scores did not drop and
-the app has no `-keep` rules. One strict reading of the absolute cold-start threshold is not met in one of two full-suite
-runs; why that is a session effect and not a regression is shown below. **The real TV has not been re-measured**
-(see "Not measured").
+**Verdict: no regression demonstrated, none proven absent.** In a same-session A/B (three alternating runs per side)
+startup is not slower than the pre-migration code, frame timing is unchanged within noise, size growth is 1.2 % (APK) /
+1.6 % (dex), the R8 analyzer scores did not drop and the app has no `-keep` rules. The absolute cold-start threshold
+(340 ms) is not met in one of two full-suite runs; the A/B below argues this is a session effect, but three runs per
+side sit inside the session-to-session spread, so the gains quoted are indicative, not proven. **The real TV has not been
+re-measured** (see "Not measured"); the raw benchmark JSON of the startup runs was not retained, so only the
+tables in this file are available. Keep the JSON next time (`benchmark/build/outputs/connected_android_test_additional_output/`).
 
 ## Build size and packaging
 
