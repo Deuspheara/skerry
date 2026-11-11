@@ -29,6 +29,10 @@ For this client, configure the Twitch app as a public client and serialize token
 
 ## Helix mapping
 
+Following or unfollowing a channel is not possible from a third-party app: Twitch removed the Helix follow/unfollow
+endpoint for third parties, and only "Get Followed Channels" is available. The phone app's "Follow" button therefore
+opens the channel page on twitch.tv, and the TV app has no follow action.
+
 Base URL `https://api.twitch.tv/helix`. Typed client uses Twitch's documented request headers and response envelopes. Relevant documented operations include Get Users, Get Followed Channels, Get Followed Streams, Get Streams, Get Top Games, Search Channels, Search Categories, Get Channel Information, Get Global/Channel Chat Emotes, Get Global/Channel Chat Badges, and Send Chat Message. Use `after` cursors for pagination and return cursors to the UI repository. Expand thumbnail template dimensions only using documented template placeholders. Handle empty data as offline/no-results; tolerate absent artwork. Cache small, short-lived discovery results and cancel obsolete search requests. Respect rate-limit headers and avoid per-card detail requests when list responses already contain fields.
 
 Endpoint availability, required token type, user scope and condition fields are endpoint-specific; consult current reference at implementation. Do not infer fields or scopes from names.

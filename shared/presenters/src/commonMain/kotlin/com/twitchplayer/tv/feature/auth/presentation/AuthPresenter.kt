@@ -59,7 +59,7 @@ class AuthPresenter(private val session: SessionRepository, private val scope: C
         job = scope.launch {
             // A sign-in must end in a result, whatever went wrong inside it; only a cancel passes through.
             val signedIn = runCatching { session.signIn { code -> mutable.value = SignInUiState(code) } }
-                .onFailure { if (it is CancellationException) throw it }
+                .onFailure { if (it is CancellationException || it is Error) throw it }
                 .getOrDefault(false)
             mutable.value = SignInUiState(result = if (signedIn) SignInResult.Success else SignInResult.Failed)
         }
