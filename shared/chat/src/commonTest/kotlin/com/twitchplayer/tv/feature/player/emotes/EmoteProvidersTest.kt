@@ -18,12 +18,12 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /** Parsing against payloads shaped like the live APIs (trimmed from real responses of 7tv.io, api.betterttv.net, api.frankerfacez.com). */
 class EmoteProvidersTest {
@@ -37,6 +37,8 @@ class EmoteProvidersTest {
         ) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
     }
 
+    private fun sevenTv(http: HttpClient) = SevenTvProvider(http) { error("no event stream in this test") }
+
     // ---- 7TV ------------------------------------------------------------------------------------------
     private val sevenTvUser = """
         {"id":"01FE","platform":"TWITCH","emote_set":{"id":"SET1","name":"Channel","emotes":[
@@ -47,26 +49,26 @@ class EmoteProvidersTest {
     """.trimIndent()
 
     @Test fun sevenTvChannelEmotesCarryStillAnimatedZeroWidthAndAspect() = runTest {
-        val emotes = SevenTvProvider(client("/v3/users/twitch/42" to (HttpStatusCode.OK to sevenTvUser))).channel("42").associateBy { it.name }
+        val emotes = sevenTv(client("/v3/users/twitch/42" to (HttpStatusCode.OK to sevenTvUser))).channel("42").associateBy { it.name }
         assertEquals(Emote("HeartPop", "https://cdn.7tv.app/emote/E1/2x.webp", null, false, 1f), emotes["HeartPop"])
         val rain = emotes.getValue("RainTime")
         assertEquals("https://cdn.7tv.app/emote/E2/2x_static.webp", rain.url)
         assertEquals("https://cdn.7tv.app/emote/E2/2x.webp", rain.animatedUrl)
-        assertTrue("zero width from the set flag and the emote flag", rain.zeroWidth)
+        assertTrue(rain.zeroWidth, "zero width from the set flag and the emote flag")
         assertEquals(2f, rain.aspect, 0f)
     }
 
     @Test fun sevenTvZeroWidthIsReadFromEitherFlag() = runTest {
         val onlyEmoteFlag = """{"emote_set":{"id":"S","emotes":[{"id":"Z","name":"Zed","flags":0,"data":{"flags":256,"animated":false}}]}}"""
-        val zed = SevenTvProvider(client("/v3/users/twitch/1" to (HttpStatusCode.OK to onlyEmoteFlag))).channel("1").single()
+        val zed = sevenTv(client("/v3/users/twitch/1" to (HttpStatusCode.OK to onlyEmoteFlag))).channel("1").single()
         assertTrue(zed.zeroWidth)
-        assertEquals("a push that omits the host falls back to the canonical CDN layout", "https://cdn.7tv.app/emote/Z/2x.webp", zed.url)
+        assertEquals("https://cdn.7tv.app/emote/Z/2x.webp", zed.url, "a push that omits the host falls back to the canonical CDN layout")
     }
 
     @Test fun sevenTvChannelWithoutAnAccountIsEmptyAndServerErrorsThrow() = runTest {
-        assertEquals(emptyList<Emote>(), SevenTvProvider(client()).channel("404"))
+        assertEquals(emptyList<Emote>(), sevenTv(client()).channel("404"))
         try {
-            SevenTvProvider(client("/v3/users/twitch/500" to (HttpStatusCode.InternalServerError to "{}"))).channel("500")
+            sevenTv(client("/v3/users/twitch/500" to (HttpStatusCode.InternalServerError to "{}"))).channel("500")
             fail("a 5xx must surface so the repository keeps the previous layer")
         } catch (_: Exception) { /* expected */ }
     }
@@ -128,6 +130,15 @@ class EmoteProvidersTest {
 
     @Test fun theSharedTwitchClientCanBeUsedAsIs() = runTest {
         // The providers reuse the app's Twitch HTTP client (same JSON settings); constructing it must stay side-effect free.
-        twitchHttpClient(io.ktor.client.engine.okhttp.OkHttp).close()
+        twitchHttpClient(
+            object : io.ktor.client.engine.HttpClientEngineFactory<io.ktor.client.engine.mock.MockEngineConfig> {
+                override fun create(block: io.ktor.client.engine.mock.MockEngineConfig.() -> Unit): io.ktor.client.engine.HttpClientEngine = MockEngine(
+                    io.ktor.client.engine.mock.MockEngineConfig().apply {
+                        addHandler { respond("{}") }
+                        block()
+                    },
+                )
+            },
+        ).close()
     }
 }

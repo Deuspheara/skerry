@@ -2,8 +2,8 @@ package com.twitchplayer.tv.feature.player.data.chat
 
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class ChatModelsTest {
     @Test fun decodesTwitchEventSubMessageIdsBadgesAndFragments() {

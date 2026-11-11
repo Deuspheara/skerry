@@ -1,0 +1,25 @@
+package com.twitchplayer.tv.feature.player.data
+
+import com.twitchplayer.tv.core.platform.AppConfig
+import com.twitchplayer.tv.feature.player.data.emotes.BttvProvider
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
+import com.twitchplayer.tv.feature.player.data.emotes.FfzProvider
+import com.twitchplayer.tv.feature.player.data.emotes.SevenTvProvider
+import org.koin.core.module.Module
+import org.koin.dsl.module
+
+/**
+ * The platform-independent bindings of `:shared:chat`. Needs from the app, besides `sharedCoreModule()` (which provides the
+ * `HttpClient`, `TwitchApi`, `TokenSource` and [AppConfig]):
+ *
+ * - `HttpClientEngineFactory<*>` (the chat connection builds its own WebSocket client on it)
+ * - [com.twitchplayer.tv.core.platform.Logger]
+ * - [EventStreamClientFactory]
+ *
+ * Third-party emote providers are listed here in precedence order: the first one wins a name collision.
+ */
+fun sharedChatModule(): Module = module {
+    single { EmoteRepository(listOf(SevenTvProvider(get(), get<EventStreamClientFactory>()::create), BttvProvider(get()), FfzProvider(get()))) }
+    single<ChatAssetsSource> { ChatAssetsRepository(get(), get()) }
+    single<ChatSource> { EventSubChatSource(tokens = get(), clientId = get<AppConfig>().clientId, engine = get(), logger = get()) }
+}

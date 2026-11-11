@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient$private suspend fun handleSession</ID>
+    <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient.Companion$internal fun decodeSignal: ChatEvent?</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$1000L</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$200</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$299</ID>
+    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$30</ID>
+    <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$2_000L</ID>
+    <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$60_000L</ID>
+    <ID>TooGenericExceptionCaught:EventSubChatClient.kt:EventSubChatClient$error: Throwable</ID>
+    <ID>UseOrEmpty:ChatAssetsRepository.kt:ChatAssetsRepository$globalBadges ?: runCatching { badgeUrls(api.globalBadges().data) }.getOrNull()?.also { globalBadges = it } ?: emptyMap()</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,6 +1,7 @@
 package com.twitchplayer.tv.core.di
 
 import com.twitchplayer.tv.demo.demoModule
+import com.twitchplayer.tv.feature.player.data.sharedChatModule
 import com.twitchplayer.tv.feature.player.data.stream.sharedStreamModule
 import org.junit.Test
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -11,6 +12,6 @@ import org.koin.test.verify.verify
 @OptIn(KoinExperimentalAPI::class)
 class DemoKoinGraphTest {
     @Test fun demoOverridesFitTheProductionGraph() {
-        module { includes(sharedCoreModule(), sharedStreamModule(), coreModule, viewModelModule, demoModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
+        module { includes(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), coreModule, viewModelModule, demoModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
     }
 }

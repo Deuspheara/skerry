@@ -14,8 +14,6 @@
     <ID>CompositionLocalAllowlist:TvToast.kt:val LocalToast = staticCompositionLocalOf { ToastState() }</ID>
     <ID>CyclomaticComplexMethod:ChatFeed.kt:ChatFeed$suspend fun run</ID>
     <ID>CyclomaticComplexMethod:ChatLine.kt:internal fun parsePieces: List&lt;ChatPiece&gt;</ID>
-    <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient$private suspend fun handleSession</ID>
-    <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient.Companion$internal fun decodeSignal: ChatEvent?</ID>
     <ID>CyclomaticComplexMethod:Keyboard.kt:internal fun keyboardRows: List&lt;List&lt;String&gt;&gt;</ID>
     <ID>CyclomaticComplexMethod:PlaybackStats.kt:HlsAds$fun current: AdBreak?</ID>
     <ID>DoubleMutabilityForCollection:ChatFeed.kt:ChatFeed$var known: HashSet&lt;String&gt;? = null</ID>
@@ -72,14 +70,8 @@
     <ID>MagicNumber:ChatLine.kt:4.5</ID>
     <ID>MagicNumber:ChatLine.kt:6</ID>
     <ID>MagicNumber:ChatLine.kt:8</ID>
-    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$1000L</ID>
-    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$200</ID>
-    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$299</ID>
-    <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$30</ID>
     <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
     <ID>MagicNumber:PlaybackStats.kt:HlsAds$3</ID>
-    <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$2_000L</ID>
-    <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$60_000L</ID>
     <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
@@ -139,7 +131,6 @@
     <ID>SwallowedException:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
-    <ID>TooGenericExceptionCaught:EventSubChatClient.kt:EventSubChatClient$error: Throwable</ID>
     <ID>TooGenericExceptionCaught:Load.kt:Loader$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
@@ -158,7 +149,6 @@
     <ID>UnusedPrivateProperty:SearchViewModel.kt:SearchViewModel$private val repository: TwitchRepository</ID>
     <ID>UnusedPrivateProperty:SettingsScreen.kt:/** Two tiles filling the width of three (with the 16 dp gap): the grid has no empty cell. */ private val WIDE_TILE_WIDTH = (TILE_WIDTH * 3 + 16.dp * 2 - 16.dp) / 2</ID>
     <ID>UnusedVariable:TvFocusable.kt:val scope = rememberCoroutineScope()</ID>
-    <ID>UseOrEmpty:ChatAssetsRepository.kt:ChatAssetsRepository$globalBadges ?: runCatching { badgeUrls(api.globalBadges().data) }.getOrNull()?.also { globalBadges = it } ?: emptyMap()</ID>
     <ID>UseOrEmpty:FocusMemory.kt:it.lastKey ?: ""</ID>
     <ID>VarsWithoutStateBacking:ChatLineView.kt:var seen = 0</ID>
     <ID>VarsWithoutStateBacking:ChatSettingsPanel.kt:var first = true</ID>

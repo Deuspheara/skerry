@@ -1,6 +1,5 @@
 package com.twitchplayer.tv.feature.player.data.emotes
 
-import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -9,7 +8,6 @@ import kotlinx.coroutines.flow.emptyFlow
  * emotes that have an animated variant, so a renderer can pick the cheap still when it has no animation budget.
  * [aspect] is width / height, or 0 when the provider does not say.
  */
-@Immutable
 data class Emote(
     val name: String,
     val url: String,

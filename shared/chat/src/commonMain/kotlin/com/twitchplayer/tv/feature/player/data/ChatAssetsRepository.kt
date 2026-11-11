@@ -1,6 +1,5 @@
 package com.twitchplayer.tv.feature.player.data
 
-import androidx.compose.runtime.Immutable
 import com.twitchplayer.tv.core.network.api.TwitchApi
 import com.twitchplayer.tv.core.network.api.TwitchBadgeSet
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.map
  * What a chat line needs to be drawn: badge image URLs by "set:version" and third-party emotes by word.
  * Twitch's own emotes need no lookup: the message names the emote id and its formats, and the CDN URL is a template.
  */
-@Immutable
 data class ChatAssets(val badges: Map<String, String>, val emotes: Map<String, Emote>) {
     companion object {
         val Empty = ChatAssets(emptyMap(), emptyMap())

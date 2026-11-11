@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.emotes
 
+import com.twitchplayer.tv.core.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -12,7 +13,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Third-party emotes of a channel as one name -> [Emote] map that follows the channel's sets.
@@ -24,12 +24,14 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class EmoteRepository(
     private val providers: List<EmoteProvider>,
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = WallClock.System::nowMillis,
     private val initialWaitMs: Long = INITIAL_WAIT_MS,
     private val refreshMs: Long = REFRESH_MS,
 ) {
     private class Cached(val at: Long, val emotes: List<Emote>)
-    private val cache = ConcurrentHashMap<String, Cached>()
+
+    // Copy-on-write snapshot: layers load concurrently on several threads (a JVM-only concurrent map before the move to common).
+    private val cache = MutableStateFlow<Map<String, Cached>>(emptyMap())
 
     /**
      * Emits once every provider answered (or [initialWaitMs] passed: slow providers must not hold chat back),
@@ -40,9 +42,12 @@ class EmoteRepository(
 
         suspend fun load(index: Int, scope: Scope, ttl: Long, fetch: suspend () -> List<Emote>) {
             val key = "$index:${scope.name}:${if (scope == Scope.Channel) channelId else ""}"
-            val hit = cache[key]?.takeIf { now() - it.at < ttl }
+            val hit = cache.value[key]?.takeIf { now() - it.at < ttl }
             val emotes = hit?.emotes ?: try {
-                fetch().also { cache[key] = Cached(now(), it) }
+                fetch().also { fetched ->
+                    val at = now()
+                    cache.update { it + (key to Cached(at, fetched)) }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

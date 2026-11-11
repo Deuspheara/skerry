@@ -1,7 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.emotes
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
@@ -10,33 +9,38 @@ import io.ktor.utils.io.readLine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 /**
  * 7TV, REST v3 + EventAPI v3 (https://github.com/SevenTV/EventAPI, server-sent events, the documented default).
  * Zero-width ("overlay") emotes are flagged on the emote (1 shl 8) and on its activation in the set (1).
  */
-class SevenTvProvider(private val http: HttpClient, private val eventsHttp: () -> HttpClient = ::eventsClient) : EmoteProvider {
-    private val setIds = ConcurrentHashMap<String, String>()
+class SevenTvProvider(
+    private val http: HttpClient,
+    /** A client for the long-lived event stream: one without a read timeout, built by the platform. */
+    private val eventsHttp: () -> HttpClient,
+) : EmoteProvider {
+    // Copy-on-write snapshot: channel() and changes() run on different threads (a JVM-only concurrent map before the move to common).
+    private val setIds = MutableStateFlow<Map<String, String>>(emptyMap())
 
     override suspend fun global(): List<Emote> = http.getOrNull<SevenTvSet>("https://7tv.io/v3/emote-sets/global")?.emotes.orEmpty().mapNotNull { it.toEmote() }
 
     override suspend fun channel(channelId: String): List<Emote> {
         val set = http.getOrNull<SevenTvUser>("https://7tv.io/v3/users/twitch/$channelId")?.emoteSet ?: return emptyList()
-        if (set.id.isNotEmpty()) setIds[channelId] = set.id
+        if (set.id.isNotEmpty()) setIds.update { it + (channelId to set.id) }
         return set.emotes.mapNotNull { it.toEmote() }
     }
 
     /** Follows the channel's set until cancelled; reconnects with backoff, and quietly gives up on a set it never learned. */
     override fun changes(channelId: String): Flow<EmoteChange> = channelFlow {
-        val setId = setIds[channelId] ?: return@channelFlow
+        val setId = setIds.value[channelId] ?: return@channelFlow
         val client = eventsHttp()
         try {
             var backoff = 2_000L
@@ -75,7 +79,6 @@ class SevenTvProvider(private val http: HttpClient, private val eventsHttp: () -
 
     private companion object {
         const val DEAD_AFTER_MS = 150_000L
-        fun eventsClient() = HttpClient(OkHttp) { engine { config { readTimeout(0, TimeUnit.SECONDS) } } }
     }
 }
 

@@ -17,9 +17,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 private fun emote(name: String, from: String) = Emote(name, "https://$from/$name")
 
@@ -54,9 +54,9 @@ class EmoteRepositoryTest {
         val bttv = FakeProvider(global = listOf(emote("Same", "bttv-global"), emote("Both", "bttv-global")), channel = listOf(emote("Both", "bttv-channel"), emote("OnlyChannel", "bttv-channel")))
         val ffz = FakeProvider(channel = listOf(emote("Both", "ffz-channel"), emote("Solo", "ffz-channel")))
         val merged = EmoteRepository(listOf(sevenTv, bttv, ffz)).emotes("c").first()
-        assertEquals("7TV is first in the list: wins the channel tie", "https://7tv-channel/OnlyChannel", merged.getValue("OnlyChannel").url)
-        assertEquals("a channel emote of a lower-priority provider still beats a global one", "https://bttv-channel/Both", merged.getValue("Both").url)
-        assertEquals("global tie: 7TV before BTTV", "https://7tv-global/Same", merged.getValue("Same").url)
+        assertEquals("https://7tv-channel/OnlyChannel", merged.getValue("OnlyChannel").url, "7TV is first in the list: wins the channel tie")
+        assertEquals("https://bttv-channel/Both", merged.getValue("Both").url, "a channel emote of a lower-priority provider still beats a global one")
+        assertEquals("https://7tv-global/Same", merged.getValue("Same").url, "global tie: 7TV before BTTV")
         assertEquals("https://ffz-channel/Solo", merged.getValue("Solo").url)
     }
 
@@ -85,7 +85,7 @@ class EmoteRepositoryTest {
         EmoteRepository(listOf(slow, fast), initialWaitMs = 1_000).emotes("c").onEach { seen += it.keys }.launchIn(backgroundScope)
         advanceTimeBy(999)
         runCurrent()
-        assertTrue("nothing yet: waiting for the providers", seen.isEmpty())
+        assertTrue(seen.isEmpty(), "nothing yet: waiting for the providers")
         advanceTimeBy(2)
         runCurrent()
         assertEquals(listOf(setOf("Early")), seen)
@@ -100,14 +100,14 @@ class EmoteRepositoryTest {
         val repo = EmoteRepository(listOf(provider), now = { clock })
         repo.emotes("c").first()
         repo.emotes("c").first()
-        assertEquals("zapping back to a channel does not refetch", 1, provider.channelCalls)
+        assertEquals(1, provider.channelCalls, "zapping back to a channel does not refetch")
         assertEquals(1, provider.globalCalls)
         repo.emotes("other").first()
-        assertEquals("another channel fetches its own set, the global one is shared", 2, provider.channelCalls)
+        assertEquals(2, provider.channelCalls, "another channel fetches its own set, the global one is shared")
         assertEquals(1, provider.globalCalls)
         clock += EmoteRepository.CHANNEL_TTL_MS + 1
         repo.emotes("c").first()
-        assertEquals("expired channel metadata is fetched again", 3, provider.channelCalls)
+        assertEquals(3, provider.channelCalls, "expired channel metadata is fetched again")
         assertEquals(1, provider.globalCalls)
     }
 

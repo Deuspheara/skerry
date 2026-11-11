@@ -1,6 +1,8 @@
 package com.twitchplayer.tv.feature.player.data.chat
 
+import com.twitchplayer.tv.core.platform.Logger
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
@@ -43,7 +45,7 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import java.util.LinkedHashSet
+import kotlin.concurrent.Volatile
 
 sealed interface ChatConnectionState {
     data object Disconnected : ChatConnectionState
@@ -57,6 +59,7 @@ class EventSubChatClient(
     private val http: HttpClient,
     private val clientId: String,
     private val accessToken: () -> String,
+    private val logger: Logger,
     private val maxMessages: Int = 150,
     private val json: Json = Json {
         ignoreUnknownKeys = true
@@ -120,10 +123,10 @@ class EventSubChatClient(
                         OPTIONAL.map { (type, version) ->
                             async {
                                 runCatching { createSubscription(id, type, version, conditionFor(type, broadcasterId, userId)) }
-                                    // Warn level survives R8: the status says whether a scope or the cost cap is the cause.
+                                    // Warnings are kept on purpose: the status says whether a scope or the cost cap is the cause.
                                     .onFailure {
                                         if (it is CancellationException) throw it
-                                        android.util.Log.w("EventSub", "bonus subscription refused: ${it.message}")
+                                        logger.warn("EventSub", "bonus subscription refused: ${it.message}")
                                     }
                             }
                         }.awaitAll()
@@ -255,7 +258,8 @@ class EventSubChatClient(
             }
         }
 
-        fun createHttpClient() = HttpClient(io.ktor.client.engine.okhttp.OkHttp) {
+        /** The client chat needs: the platform's [engine] plus the WebSockets and JSON plugins. */
+        fun createHttpClient(engine: HttpClientEngineFactory<*>) = HttpClient(engine) {
             install(WebSockets)
             install(ContentNegotiation) {
                 json(

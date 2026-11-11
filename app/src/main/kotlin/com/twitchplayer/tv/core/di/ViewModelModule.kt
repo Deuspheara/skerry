@@ -8,7 +8,6 @@ import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
 import com.twitchplayer.tv.feature.player.data.ChatSource
-import com.twitchplayer.tv.feature.player.data.EventSubChatSource
 import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import com.twitchplayer.tv.feature.search.data.PlatformVoiceRecognizer
 import com.twitchplayer.tv.feature.search.data.VoiceRecognizer
@@ -20,7 +19,6 @@ import org.koin.dsl.module
 
 val viewModelModule = module {
     single { ChannelKeyBus() }
-    single<ChatSource> { EventSubChatSource(get()) }
     factory<VoiceRecognizer> { PlatformVoiceRecognizer(androidContext()) }
 
     viewModel { AuthViewModel(get()) }

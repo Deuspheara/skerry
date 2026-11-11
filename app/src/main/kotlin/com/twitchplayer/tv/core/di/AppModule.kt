@@ -15,19 +15,16 @@ import com.twitchplayer.tv.core.platform.Logger
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.platform.StorageNames
-import com.twitchplayer.tv.feature.player.data.ChatAssetsRepository
-import com.twitchplayer.tv.feature.player.data.ChatAssetsSource
-import com.twitchplayer.tv.feature.player.data.emotes.BttvProvider
-import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
-import com.twitchplayer.tv.feature.player.data.emotes.FfzProvider
-import com.twitchplayer.tv.feature.player.data.emotes.SevenTvProvider
+import com.twitchplayer.tv.feature.player.data.EventStreamClientFactory
 import com.twitchplayer.tv.feature.player.ui.embed.PlayerConfigProvider
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchPlayerConfig
+import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.engine.okhttp.OkHttp
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /** Android bindings. The platform-independent ones are in `sharedCoreModule()`. */
 val coreModule = module {
@@ -44,9 +41,8 @@ val coreModule = module {
         val lowRam = androidContext().getSystemService(ActivityManager::class.java).isLowRamDevice
         SettingsDefaults(if (lowRam) ChatSettings(animatedLimit = AnimatedEmoteLimit.Few) else ChatSettings())
     }
-    // Third-party emote providers in precedence order: the first one wins a name collision.
-    single { EmoteRepository(listOf(SevenTvProvider(get()), BttvProvider(get()), FfzProvider(get()))) }
-    single<ChatAssetsSource> { ChatAssetsRepository(get(), get()) }
+    // 7TV's event stream is quiet between heartbeats: no read timeout (the client is closed by its collector).
+    single { EventStreamClientFactory { HttpClient(OkHttp) { engine { config { readTimeout(0, TimeUnit.SECONDS) } } } } }
     single {
         PlayerConfigProvider(
             if (BuildConfig.TWITCH_PLAYER_HOST.isBlank() || BuildConfig.TWITCH_PLAYER_PARENT.isBlank()) {
