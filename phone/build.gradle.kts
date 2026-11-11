@@ -45,6 +45,18 @@ android {
       signingConfig = signingConfigs.getByName("debug")
       matchingFallbacks += listOf("release")
     }
+    // Same code without R8: Baseline Profiles must be recorded against original (un-obfuscated) names (benchmark-phone).
+    create("nonMinified") {
+      initWith(getByName("release"))
+      isMinifyEnabled = false
+      isShrinkResources = false
+      signingConfig = signingConfigs.getByName("debug")
+      matchingFallbacks += listOf("release")
+    }
+  }
+  sourceSets {
+    // The nonMinified variant also runs on the demo data: it reuses the benchmark variant's DebugModules.
+    getByName("nonMinified").kotlin.directories.add("src/benchmark/kotlin")
   }
   buildFeatures {
     compose = true
@@ -80,9 +92,12 @@ dependencies {
   // Fictional demo data (no network, no account): debug only, never release.
   debugImplementation(project(":demo-android"))
   "benchmarkImplementation"(project(":demo-android"))
+  "nonMinifiedImplementation"(project(":demo-android"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
+  // Installs the packaged Baseline Profile when the app first runs (sideloaded installs are not compiled by Play).
+  implementation(libs.androidx.profileinstaller)
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.androidx.navigation3.runtime)

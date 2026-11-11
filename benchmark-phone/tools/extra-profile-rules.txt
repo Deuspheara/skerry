@@ -1,0 +1,7 @@
+# Hand-written Baseline Profile rules merged by generate-profiles.sh. The recorded journeys run on demo data, so the code that only
+# exists against the real service is never executed by them: the Twitch stream resolver (GQL token, usher, master playlist parsing,
+# quality policy) and the native player's non-demo paths. Same rules as the TV's (the code is shared, in :app and :platform-android).
+Lcom/twitchplayer/tv/feature/player/data/stream/**;
+HSPLcom/twitchplayer/tv/feature/player/data/stream/**->**(**)**
+Lcom/twitchplayer/tv/feature/player/playback/**;
+HSPLcom/twitchplayer/tv/feature/player/playback/**->**(**)**

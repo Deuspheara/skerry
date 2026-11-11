@@ -1,5 +1,6 @@
 package com.twitchplayer.phone.feature.home
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +47,7 @@ import com.twitchplayer.phone.ui.components.sectionHeader
 import com.twitchplayer.phone.ui.components.streamLayout
 import com.twitchplayer.phone.ui.components.streamRowSpacing
 import com.twitchplayer.tv.core.data.model.Category
+import com.twitchplayer.tv.core.presentation.Load
 import com.twitchplayer.tv.feature.follows.presentation.FollowsEvent
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomeContent
@@ -67,6 +69,8 @@ fun HomeRoute(
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val home by homeViewModel.presenter.state.collectAsStateWithLifecycle()
     val follows by followsViewModel.presenter.state.collectAsStateWithLifecycle()
+    // Tells the system (and the startup benchmark's timeToFullDisplay) when Home shows its data, not just its skeleton.
+    ReportDrawnWhen { home !is Load.Loading }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
