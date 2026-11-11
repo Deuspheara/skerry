@@ -1,6 +1,6 @@
 # Architecture proposal
 
-Status: implemented. Platform-independent logic lives in the Kotlin Multiplatform modules under `shared/`; `:app` is the Android TV UI on top of them. The sections below keep the original rationale; "Modules" and "Code layout" are the current shape.
+Status: implemented. Platform-independent logic lives in the Kotlin Multiplatform modules under `shared/`; Android glue that is not UI lives in `:platform-android`; `:app` is the Android TV UI on top of them (the phone app arrives as a second app on the same two layers). The sections below keep the original rationale; "Modules" and "Code layout" are the current shape.
 
 ## Modules
 
@@ -12,16 +12,40 @@ shared/chat        EventSub chat client, chat models, emote providers (7TV, BTTV
 shared/player-api  VideoPlayer interface, playback stats / quality models, HLS ad parsing
 shared/presenters  one presenter per screen (state + onEvent), Loader / Load, ChatFeed, ChatLine, player state, VOD helpers
 shared/testing     fakes for the repositories and session (test fixtures, not shipped)
-app                Compose TV UI, Media3 + WebView players, Android implementations of the platform interfaces, Koin wiring, demo data
+platform-android   Android library, no UI of its own: Android implementations of the platform interfaces (Keystore token store,
+                   snapshot files, DataStores, device profile, number formatter), the Koin wiring (`productionModules(config)`),
+                   holder ViewModels, speech recognizer, AppLocales, KeepScreenOn, the Media3 player + surface, embed player config
+demo-android       fictional demo data (no network, no account) + its video asset; debug, benchmark and nonMinified variants only
+app                Compose TV UI, WebView + clip/VOD players, StreamPreview, design system, `BuildConfig` -> `PlatformConfig`
 benchmark          Macrobenchmark + Baseline Profile generation
+build-logic        convention plugins (kmp-library, android-library, android-application, detekt, spotless, compose, shared-strings)
 ```
 
 Dependency direction (no cycles, nothing depends on `app`):
 
 ```
 presenters -> chat -> core          stream -> core          player-api (standalone)
-app -> presenters, chat, stream, player-api, core
+platform-android -> presenters, chat, stream, player-api, core
+demo-android -> platform-android (+ shared)      app -> platform-android, shared/*, and demo-android (debug/benchmark/nonMinified only)
 ```
+
+What each app supplies: its `PlatformConfig` (Twitch client id, default player engine, hosted embed page host/parent: a library has
+no `BuildConfig`), its UI, and its two translated quality names (`QualityLabels`) for the Media3 player. `productionModules(config)`
+is the single Koin list the app starts with and the graph tests verify.
+
+### Reusing the TV translations in another app
+
+`twitchplayer.shared-strings` (build-logic) generates a `res` directory per variant from another module's `values*/strings.xml`
+(AGP `addGeneratedSourceDirectory`), so the phone app uses the same 36 languages without copying them into git:
+
+```kotlin
+plugins { id("com.android.application"); id("twitchplayer.shared-strings") }
+sharedStrings { fromModule(":app") }
+```
+
+Only `strings.xml` files are taken (never drawables, fonts, styles or `resources.properties`). The consumer keeps its own strings in a
+file with another name (e.g. `phone_strings.xml`): the same name defined twice fails the resource merge, so a TV string is never shadowed
+silently. The consumer declares its own `generateLocaleConfig`/`resources.properties`. Unit tests: `build-logic/convention/src/test`.
 
 Rules (AGENTS.md): no Android or `java.*` in `commonMain` (enforced by the `verifyCommonMain` task, part of `check` in every
 shared module: `./gradlew verifyCommonMain`), platform code behind an interface or `expect/actual`, presenters expose
@@ -47,32 +71,30 @@ module whose bindings use the interface (the interfaces themselves are declared 
 | `EventStreamClientFactory` | chat | HTTP client for the 7TV event stream (no read timeout) |
 | `DeviceProfile` | presenters | interface language tag (empty for the root locale) |
 | `VoiceInput` | presenters | speech recognition for search |
-| `NumberFormatter` | UI only | locale decimal text; no shared Koin module resolves it, the UI hands it to the VOD helpers. Covered by the app's `ProductionGraphResolutionTest`, not by a shared test |
+| `NumberFormatter` | UI only | locale decimal text; no shared Koin module resolves it, the UI hands it to the VOD helpers. Covered by `:platform-android`'s `ProductionGraphResolutionTest`, not by a shared test |
 
 Then: `startKoin { modules(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), sharedPresentersModule(), <platform module>) }`
 and create each screen's presenter with `get<XPresenter> { parametersOf(..., scope) }`, passing the `CoroutineScope` the UI
-cancels. The Android app keeps its list in `productionModules()` and tests it (`ProductionGraphResolutionTest`).
+cancels. The Android apps use `productionModules(PlatformConfig(...))` from `:platform-android`, tested by `ProductionGraphResolutionTest` and `AppKoinGraphTest` there (their helpers are `:platform-android` test fixtures, reused by the app's `DemoKoinGraphTest`).
 
 ## Code layout (`app`)
 
 ```
 com.twitchplayer.tv
-  app/            TwitchTvApp (rail + Navigation 3 host), dialogs, AuthViewModel (holder)
+  app/            TwitchTvApp (rail + Navigation 3 host), dialogs, `PlatformConfig` from BuildConfig (core/di)
   navigation/     typed NavKeys, AppNavigator (back-stack rules, unit tested)
   core/
     designsystem/ theme (colors, dimens, type, motion), icon (one 24 dp family), component (cards, chips, buttons, rail, dialog, toast)
     ui/           TvFocusable + focus ring, FocusMemory (restoration), BringIntoView specs, LoadGate, image + formatting helpers
-    data/         Android storage implementations (snapshot files), Keystore token store
-    di/           Koin modules: Android bindings, ViewModel holders, productionModules()
-  feature/<home|follows|browse|category|search|settings|channel|player|vod|clip>/ {ui, presentation (thin holder ViewModels), data (Android only)}
-    player/playback     Media3 and WebView players behind VideoPlayer, StreamPreview
+  feature/<home|follows|browse|category|search|settings|channel|player|vod|clip>/ {ui}  (the thin holder ViewModels are in :platform-android, same packages)
+    player/playback     WebView player behind VideoPlayer, StreamPreview (Media3 NativeVideoPlayer is in :platform-android)
     player/ui           PlayerScreen, ChatPanel (list, focus, live pill), ChatLineView (one Text per message), ChatEmotes, ChatSettingsPanel
 ```
 
 The presenters, repositories and chat pipeline described in the sections below now live in `shared/*` under the same package names
 (for example `feature/player/data/chat` is in `shared/chat`).
 
-DI is Koin (no annotation processing, no KSP on AGP 9). Screens are `XRoute` (ViewModel + state collection) over a stateless `XScreen`. Debug and benchmark builds can run on fictional demo data (`app/src/demo`).
+DI is Koin (no annotation processing, no KSP on AGP 9). Screens are `XRoute` (ViewModel + state collection) over a stateless `XScreen`. Debug and benchmark builds can run on fictional demo data (`:demo-android`).
 
 ## Shape
 

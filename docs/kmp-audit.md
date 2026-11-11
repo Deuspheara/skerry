@@ -130,7 +130,7 @@ targets are added later; `core` is the first candidate for an Apple umbrella fra
 - Playback: `NativeVideoPlayer.kt`, `NativeVideoSurface.kt`, `StreamPreview.kt` (Media3), `ui/embed/TwitchEmbedPlayer.kt` (WebView),
   `ui/embed/TwitchPlayerConfig.kt` (uses `java.net.URI`, tiny, can go common later).
 - Platform services: `feature/search/data/VoiceRecognizer.kt` (SpeechRecognizer), `AppLocales.kt`, `TokenStore` implementation.
-- `app/src/demo` (5 files) and `app/src/release`: stay; the demo module re-implements the shared interfaces.
+- `app/src/demo` (5 files) and `app/src/release`: stay; the demo module re-implements the shared interfaces. (Phase 3 step A later moved the demo data to `:demo-android`, see docs/phone-log.md.)
 
 Status counts (approximate): about 48 files / 4.5k lines move, about 80 files / 10k lines stay.
 

@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.twitchplayer.tv.core.platform.StorageNames
 
-/** The two preference files, created once per process by the DataStore delegates. */
-internal val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(StorageNames.SETTINGS_DATASTORE)
+// The two preference files, created once per process by the DataStore delegates.
+
+/** The app settings DataStore. Public so the apps' instrumented tests can seed settings before launching the UI. */
+val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(StorageNames.SETTINGS_DATASTORE)
 internal val Context.vodProgressStore: DataStore<Preferences> by preferencesDataStore(StorageNames.VOD_PROGRESS_DATASTORE)

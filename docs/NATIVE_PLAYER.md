@@ -94,7 +94,7 @@ benchmark/tools/generate-profiles.sh emulator-5554
 The demo build normally "streams" a looping MP4, which has no playlist, so the ad marker and the latency cannot be checked. `benchmark/tools/hls-server.py` serves a real sliding HLS live playlist (wall-clock `EXT-X-PROGRAM-DATE-TIME`, and a stitched-ad `EXT-X-DATERANGE` covering the first 20 s of every minute) over looping segments:
 
 ```
-ffmpeg -y -stream_loop 1 -i app/src/demo/assets/demo_stream.mp4 -t 20 -c:v libx264 -g 60 -keyint_min 60 -sc_threshold 0 -c:a aac \
+ffmpeg -y -stream_loop 1 -i demo-android/src/main/assets/demo_stream.mp4 -t 20 -c:v libx264 -g 60 -keyint_min 60 -sc_threshold 0 -c:a aac \
   -f hls -hls_time 2 -hls_list_size 0 -hls_flags independent_segments -hls_segment_filename 'SEG_DIR/s%d.ts' SEG_DIR/base.m3u8
 python3 benchmark/tools/hls-server.py SEG_DIR 8099 $(( $(adb shell date +%s) - $(date +%s) ))   # last argument: device clock - host clock
 adb shell settings put global twitchtv_demo_hls http://10.0.2.2:8099/live.m3u8                  # demo build only; `settings delete global twitchtv_demo_hls` to stop

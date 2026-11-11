@@ -36,7 +36,7 @@ jobs:
       - name: Format, detekt (type-resolved) and Android Lint
         run: >
           ./gradlew spotlessCheck verifyCommonMain detekt detektDebug detektDebugUnitTest detektRelease
-          detektMainJvm detektMainAndroid detektTestJvm lint
+          detektMainJvm detektMainAndroid detektTestJvm lint :app:compileDebugAndroidTestKotlin
           --continue --console=plain
       - name: Upload detekt SARIF
         if: ${{ !cancelled() && hashFiles('app/build/reports/detekt/*.sarif') != '' }}
@@ -128,8 +128,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-      - name: Unit tests (app, shared modules)
-        run: ./gradlew testDebugUnitTest jvmTest testAndroidHostTest --continue --console=plain
+      - name: Unit tests (app, platform, shared modules, build-logic)
+        run: ./gradlew testDebugUnitTest jvmTest testAndroidHostTest :build-logic:convention:test --continue --console=plain
       - name: Upload test reports
         if: ${{ failure() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
