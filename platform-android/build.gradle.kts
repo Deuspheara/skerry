@@ -15,8 +15,9 @@ android {
 }
 
 dependencies {
+  // Exported (api) so consumers resolve the unversioned Compose artifacts of this module's public API.
   val composeBom = platform(libs.androidx.compose.bom)
-  implementation(composeBom)
+  api(composeBom)
 
   // Types in this module's public API (bindings, holder ViewModels, the Media3 player and its surface).
   api(project(":shared:core"))

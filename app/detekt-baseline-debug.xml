@@ -11,9 +11,6 @@
     <ID>CompositionLocalAllowlist:TvDialog.kt:/** Read inside a [TvDialog]'s content: wrap actions that end the dialog (`close(onCancel)`). Outside a dialog it runs at once. */ val LocalDialogClose = staticCompositionLocalOf { DialogClose { it() } }</ID>
     <ID>CompositionLocalAllowlist:TvMotion.kt:val LocalMotion = staticCompositionLocalOf { TvMotion(enabled = true) }</ID>
     <ID>CompositionLocalAllowlist:TvToast.kt:val LocalToast = staticCompositionLocalOf { ToastState() }</ID>
-    <ID>CyclomaticComplexMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
-    <ID>CyclomaticComplexMethod:DemoChat.kt:DemoChat$private fun message: ChatMessage</ID>
-    <ID>CyclomaticComplexMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
     <ID>CyclomaticComplexMethod:Keyboard.kt:internal fun keyboardRows: List&lt;List&lt;String&gt;&gt;</ID>
     <ID>ExplicitItLambdaMultipleParameters:BrowseScreen.kt:{ _, it -&gt; it.id }</ID>
     <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.channelId }</ID>
@@ -29,8 +26,6 @@
     <ID>LambdaParameterEventTrailing:VodScreen.kt:onBack: () -&gt; Unit</ID>
     <ID>LambdaParameterInRestartableEffect:ClipScreen.kt:onFailed: () -&gt; Unit</ID>
     <ID>LambdaParameterInRestartableEffect:VodScreen.kt:onFailed: (VodError, Long) -&gt; Unit</ID>
-    <ID>LongMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
-    <ID>LongMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
     <ID>LongParameterList:CategoryScreen.kt:@Composable private fun CategoryHeader</ID>
     <ID>LongParameterList:ChannelScreen.kt:@OptIn(ExperimentalFoundationApi::class) @Composable private fun ChannelScreen</ID>
     <ID>LongParameterList:Keyboard.kt:@Composable fun Keyboard</ID>
@@ -48,7 +43,6 @@
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$64L</ID>
-    <ID>MatchingDeclarationName:DemoArt.kt:DemoArtFetcher : Fetcher</ID>
     <ID>MatchingDeclarationName:FocusRing.kt:FocusProgress</ID>
     <ID>MatchingDeclarationName:PlayerControlBar.kt:PlayerControl</ID>
     <ID>MatchingDeclarationName:Stagger.kt:StaggerGate</ID>
@@ -85,7 +79,6 @@
     <ID>NoNameShadowing:ChatSettingsPanel.kt:{ it.copy(animatedEmotes = !it.animatedEmotes) }</ID>
     <ID>NoNameShadowing:ChatSettingsPanel.kt:{ it.copy(showBadges = !it.showBadges) }</ID>
     <ID>NoNameShadowing:ChatSettingsPanel.kt:{ it.copy(showTimestamps = !it.showTimestamps) }</ID>
-    <ID>NoNameShadowing:DemoChat.kt:DemoChat${ it in animatedNames }</ID>
     <ID>NoNameShadowing:NavRail.kt:item</ID>
     <ID>NoNameShadowing:PlayerScreen.kt:{ it }</ID>
     <ID>NoNameShadowing:TwitchTvApp.kt:{ navigator.push(CategoryKey(it.id, it.name, it.artUrl)) }</ID>
@@ -99,7 +92,6 @@
     <ID>ParameterNaming:VodScreen.kt:onFailed: (VodError, Long) -&gt; Unit</ID>
     <ID>StateParam:ChatLineView.kt:animated: State&lt;Int&gt;</ID>
     <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
-    <ID>ThrowsCount:DemoModule.kt:DemoVods$override suspend fun resolve: ResolvedVod</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
@@ -109,7 +101,6 @@
     <ID>UnnecessaryLaunchedEffect:VodScreen.kt:LaunchedEffect</ID>
     <ID>UnsafeCallOnNullableType:ChatLineView.kt:rule!!</ID>
     <ID>UnusedParameter:Avatar.kt:border: androidx.compose.ui.graphics.Color? = null</ID>
-    <ID>UnusedPrivateProperty:DemoEmotes.kt:DemoEmoteFetcher$private val options: Options</ID>
     <ID>UnusedPrivateProperty:SettingsScreen.kt:/** Two tiles filling the width of three (with the 16 dp gap): the grid has no empty cell. */ private val WIDE_TILE_WIDTH = (TILE_WIDTH * 3 + 16.dp * 2 - 16.dp) / 2</ID>
     <ID>UnusedVariable:TvFocusable.kt:val scope = rememberCoroutineScope()</ID>
     <ID>UseOrEmpty:FocusMemory.kt:it.lastKey ?: ""</ID>

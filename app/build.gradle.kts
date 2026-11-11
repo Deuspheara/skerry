@@ -62,13 +62,9 @@ android {
     }
   }
   sourceSets {
-    // Fictional demo data (no network, no account) is shared by the debug and benchmark variants only.
-    getByName("debug").kotlin.directories.add("src/demo/kotlin")
-    getByName("debug").assets.directories.add("src/demo/assets")
+    // The benchmark variants always run on the demo data: their DebugModules (src/demoAlways) switches it on.
     for (name in listOf("benchmark", "nonMinified")) {
-      getByName(name).kotlin.directories.add("src/demo/kotlin")
       getByName(name).kotlin.directories.add("src/demoAlways/kotlin")
-      getByName(name).assets.directories.add("src/demo/assets")
     }
   }
   buildFeatures {
@@ -91,6 +87,10 @@ dependencies {
   androidTestImplementation(composeBom)
 
   implementation(project(":platform-android"))
+  // Fictional demo data (no network, no account): debug and the release-like benchmark variants only, never release.
+  debugImplementation(project(":demo-android"))
+  "benchmarkImplementation"(project(":demo-android"))
+  "nonMinifiedImplementation"(project(":demo-android"))
   implementation(project(":shared:core"))
   implementation(project(":shared:stream"))
   implementation(project(":shared:chat"))

@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
+    <ID>CyclomaticComplexMethod:DemoChat.kt:DemoChat$private fun message: ChatMessage</ID>
+    <ID>CyclomaticComplexMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
+    <ID>LongMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
+    <ID>LongMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
+    <ID>MatchingDeclarationName:DemoArt.kt:DemoArtFetcher : Fetcher</ID>
+    <ID>ThrowsCount:DemoModule.kt:DemoVods$override suspend fun resolve: ResolvedVod</ID>
+  </CurrentIssues>
+</SmellBaseline>
