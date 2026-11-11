@@ -57,6 +57,7 @@ class CategoryPresenterTest {
         assertEquals("he", twitchLanguage("iw-IL"))
         assertEquals("pt", twitchLanguage("pt_BR"))
         assertEquals("FR".lowercase(), twitchLanguage("FR"))
+        assertEquals("", twitchLanguage(""), "an empty tag stays empty, as `Locale.ROOT.language` did")
     }
 
     @Test fun startsNarrowedToTheDeviceLanguageAndTheToggleReloadsWithoutIt() = runTest(dispatcher) {
