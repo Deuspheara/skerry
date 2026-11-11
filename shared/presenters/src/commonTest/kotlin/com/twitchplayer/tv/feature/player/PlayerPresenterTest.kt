@@ -29,8 +29,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -63,7 +65,7 @@ class PlayerPresenterTest {
 
     private fun message(id: String) = ChatEvent.Message(ChatMessage(id, "b", "u", "nick", "nick", ChatMessageContent("hi $id", listOf(ChatFragment("text", "hi $id")))))
 
-    private fun TestScope.vm(login: String = "b", chat: ChatMode = ChatMode.Hidden, settingsOverride: FakeSettings? = null, repository: TwitchRepository = repo): PlayerPresenter = PlayerPresenter(
+    private fun TestScope.vm(login: String = "b", chat: ChatMode = ChatMode.Hidden, settingsOverride: SettingsRepository? = null, repository: TwitchRepository = repo): PlayerPresenter = PlayerPresenter(
         login, repository, FakeSession(), settingsOverride ?: FakeSettings(AppSettings(chatMode = chat)),
         chatAssets = ChatAssetsSource { flowOf(ChatAssets.Empty) },
         chatSource = ChatSource { _, _ -> chatFlow as Flow<ChatEvent> },
@@ -180,6 +182,23 @@ class PlayerPresenterTest {
         runCurrent()
         assertEquals(ChatMode.Hidden, vm.state.value.chatMode)
         assertEquals(ChatMode.Compact, saved.settings.value.chatMode, "like the chat button, it never changes the saved default")
+    }
+
+    /** Settings that answer after [delayMs]: the real store reads from disk, the fake one answers at once. */
+    private class LateSettings(private val inner: FakeSettings, private val delayMs: Long) : SettingsRepository by inner {
+        override val settings = flow {
+            delay(delayMs)
+            emitAll(inner.settings)
+        }
+    }
+
+    @Test fun theSavedChatModeLoadingLateNeverOverwritesAModeChosenBeforeIt() = runTest(dispatcher) {
+        val vm = vm(chat = ChatMode.Compact, settingsOverride = LateSettings(FakeSettings(AppSettings(chatMode = ChatMode.Compact)), delayMs = 1_000))
+        // Chosen while the saved default is still loading: a screen restoring its own choice does this.
+        vm.onEvent(PlayerEvent.SetChatMode(ChatMode.Hidden))
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertEquals(ChatMode.Hidden, vm.state.value.chatMode)
     }
 
     @Test fun fullscreenSuppressesChatWithoutLosingTheChoice() = runTest(dispatcher) {

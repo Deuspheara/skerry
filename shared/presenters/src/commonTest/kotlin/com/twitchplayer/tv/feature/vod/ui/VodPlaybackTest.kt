@@ -20,6 +20,25 @@ class VodPlaybackTest {
         assertEquals(1_010_000L, seekTarget(1_000_000, 10_000, 0))
     }
 
+    @Test fun aBackwardSeekNeverGoesBelowTheStart() {
+        assertEquals(0L, seekTarget(0, -10_000, 600_000))
+        assertEquals(0L, seekTarget(3_000, -1_000_000, 600_000))
+    }
+
+    @Test fun aSeekFromBeyondTheEndLandsOnTheEnd() {
+        assertEquals(600_000L, seekTarget(900_000, 10_000, 600_000))
+        assertEquals(600_000L, seekTarget(900_000, -10_000, 600_000))
+    }
+
+    @Test fun aSeekThatLandsExactlyOnTheEndStaysThere() {
+        assertEquals(600_000L, seekTarget(590_000, 10_000, 600_000))
+    }
+
+    @Test fun anUnknownOrNegativeLengthMeansNoUpperLimit() {
+        assertEquals(0L, seekTarget(2_000, -10_000, 0))
+        assertEquals(50_000L, seekTarget(40_000, 10_000, -1))
+    }
+
     @Test fun speedCyclesThroughTheStepsAndWrapsToTheSlowest() {
         var speed = 1f
         val seen = mutableListOf<Float>()

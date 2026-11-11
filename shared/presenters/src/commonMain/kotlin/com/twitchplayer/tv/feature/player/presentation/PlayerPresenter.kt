@@ -101,12 +101,15 @@ class PlayerPresenter(
     val commands: SharedFlow<PlayerCommand> = mutableCommands
 
     private var idleJob: Job? = null
+    private var chatModeChosen = false
     private var screenKeyed = initialLogin.isNotEmpty()
 
     init {
         scope.launch {
             val mode = settings.settings.first().chatMode
-            mutableState.update { it.copy(chatMode = mode) }
+            // The saved default only fills in a mode nobody chose yet: a screen that restored its own choice (the phone, after the
+            // process was killed) must not have it overwritten when the settings finish loading.
+            mutableState.update { if (chatModeChosen) it else it.copy(chatMode = mode) }
         }
         if (initialLogin.isNotEmpty()) scope.launch { loadChannels(initialLogin) }
         scope.launch { channelKeys.events.collect { if (!mutableState.value.minimized) cycleChannel(it) } }
@@ -321,6 +324,7 @@ class PlayerPresenter(
 
     /** Session only: the chat button and Back never change the saved default. */
     private fun showChat(mode: ChatMode) {
+        chatModeChosen = true
         mutableState.update { it.copy(chatMode = mode, fullscreen = false, chatSettingsOpen = it.chatSettingsOpen && mode != ChatMode.Hidden) }
         wake()
     }
