@@ -1,0 +1,51 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", ":semanticCommitTypeAll(build)"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 8am on monday"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Kotlin, its Compose compiler plugin, KSP and SKIE must move together",
+      "groupName": "kotlin toolchain",
+      "matchPackageNames": [
+        "org.jetbrains.kotlin{/,}**",
+        "com.google.devtools.ksp{/,}**",
+        "co.touchlab.skie{/,}**",
+        "dev.detekt{/,}**"
+      ]
+    },
+    {
+      "description": "Compose Multiplatform and AndroidX Compose",
+      "groupName": "compose",
+      "matchPackageNames": ["org.jetbrains.compose{/,}**", "androidx.compose{/,}**"]
+    },
+    {
+      "description": "Android Gradle Plugin",
+      "groupName": "android gradle plugin",
+      "matchPackageNames": ["com.android.tools.build{/,}**", "com.android.{application,library,test,kotlin.multiplatform.library}"]
+    },
+    {
+      "groupName": "ktor",
+      "matchPackageNames": ["io.ktor{/,}**"]
+    },
+    {
+      "groupName": "koin",
+      "matchPackageNames": ["io.insert-koin{/,}**"]
+    },
+    {
+      "groupName": "media3",
+      "matchPackageNames": ["androidx.media3{/,}**"]
+    },
+    {
+      "groupName": "github actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "Never take pre-releases unless already on one",
+      "matchDatasources": ["maven", "gradle-version"],
+      "ignoreUnstable": true
+    }
+  ]
+}
