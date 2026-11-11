@@ -4,6 +4,7 @@ import com.twitchplayer.tv.feature.player.presentation.clockText
 import com.twitchplayer.tv.feature.player.presentation.cycleIndex
 import com.twitchplayer.tv.feature.player.presentation.defaultNickColor
 import java.util.Calendar
+import java.util.TimeZone
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,6 +37,23 @@ class ChatLineJvmParityTest {
             val c = Calendar.getInstance().apply { timeInMillis = millis }
             val old = "${if (c.get(Calendar.HOUR_OF_DAY) < 10) "0" else ""}${c.get(Calendar.HOUR_OF_DAY)}:${if (c.get(Calendar.MINUTE) < 10) "0" else ""}${c.get(Calendar.MINUTE)}"
             assertEquals(old, clockText(millis), "millis=$millis")
+        }
+    }
+
+    @Test fun clockTextEqualsTheOldCalendarFormatInSeveralZonesAroundTheirTransitions() {
+        val zones = listOf("UTC", "Europe/Paris", "America/Los_Angeles", "Asia/Kolkata", "Asia/Kathmandu", "Pacific/Chatham", "Australia/Lord_Howe", "Pacific/Kiritimati")
+        val random = Random(11)
+        for (zone in zones) {
+            val tz = TimeZone.getTimeZone(zone)
+            // Instants within a day of every transition of 2025-2027, then a spread over the whole range.
+            val transitions = generateSequence(1_735_689_600_000L) { it + 3_600_000L }.takeWhile { it < 1_830_000_000_000L }
+                .filter { tz.getOffset(it) != tz.getOffset(it - 3_600_000L) }.toList()
+            val instants = transitions.flatMap { t -> listOf(t - 3_600_000L, t - 1000L, t, t + 1000L, t + 3_600_000L) } + List(200) { random.nextLong(0, 4_100_000_000_000) }
+            for (millis in instants) {
+                val c = Calendar.getInstance(tz).apply { timeInMillis = millis }
+                val old = "${c.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')}:${c.get(Calendar.MINUTE).toString().padStart(2, '0')}"
+                assertEquals(old, clockText(millis, zone), "$zone @ $millis")
+            }
         }
     }
 }
