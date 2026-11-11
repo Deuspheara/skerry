@@ -14,8 +14,6 @@ kotlin {
       // The player presenter exposes the chat models (ChatEvent, ChannelNotice, Emote...) in its public API.
       api(project(":shared:chat"))
       api(libs.kotlinx.collections.immutable)
-      // ChatLine formats each line's arrival time in the device's time zone.
-      implementation(libs.kotlinx.datetime)
     }
     commonTest.dependencies {
       implementation(project(":shared:testing"))

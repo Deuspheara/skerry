@@ -6,10 +6,7 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatEvent
 import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.math.pow
-import kotlin.time.Instant
 
 /** A piece of a message, in reading order. Everything the renderer needs is here: it knows nothing of providers or transport. */
 sealed interface ChatPiece {
@@ -183,8 +180,8 @@ private val DEFAULT_NICK_COLORS = longArrayOf(
 /** Twitch gives users without a chosen colour a stable one; we do the same so a quiet chatter keeps their hue. */
 internal fun defaultNickColor(login: String): Long = readableColor(DEFAULT_NICK_COLORS[login.lowercase().hashCode().mod(DEFAULT_NICK_COLORS.size)])
 
-/** "HH:mm" of [millis] in [zone] (the device's time zone by default), as the line's arrival time. */
-internal fun clockText(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {
-    val time = Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone)
-    return "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
+/** "HH:mm" of [millis] in the zone [zoneId] (the device's time zone when null), as the line's arrival time. */
+internal fun clockText(millis: Long, zoneId: String? = null): String {
+    val (hour, minute) = timeOfDay(millis, zoneId)
+    return "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
 }

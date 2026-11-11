@@ -20,7 +20,6 @@ import com.twitchplayer.tv.feature.player.presentation.parseColor
 import com.twitchplayer.tv.feature.player.presentation.parsePieces
 import com.twitchplayer.tv.feature.player.presentation.readableColor
 import com.twitchplayer.tv.feature.player.presentation.toLine
-import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -146,11 +145,11 @@ class ChatLineTest {
     }
 
     @Test fun theArrivalTimeIsHoursAndMinutesInTheGivenZoneAlwaysTwoDigits() {
-        assertEquals("00:00", clockText(0, TimeZone.UTC))
-        assertEquals("22:13", clockText(1_700_000_000_000, TimeZone.UTC)) // 2023-11-14T22:13:20Z
-        assertEquals("03:43", clockText(1_700_000_000_000, TimeZone.of("Asia/Kolkata"))) // +05:30, next day
-        assertEquals("14:13", clockText(1_700_000_000_000, TimeZone.of("America/Los_Angeles"))) // -08:00
-        assertEquals("09:05", clockText(1_699_952_700_000, TimeZone.UTC)) // single-digit hour and minute are padded
+        assertEquals("00:00", clockText(0, "UTC"))
+        assertEquals("22:13", clockText(1_700_000_000_000, "UTC")) // 2023-11-14T22:13:20Z
+        assertEquals("03:43", clockText(1_700_000_000_000, "Asia/Kolkata")) // +05:30, next day
+        assertEquals("14:13", clockText(1_700_000_000_000, "America/Los_Angeles")) // -08:00
+        assertEquals("09:05", clockText(1_699_952_700_000, "UTC")) // single-digit hour and minute are padded
     }
 
     @Test fun linesCarryTheArrivalTimeOfTheirBatch() {

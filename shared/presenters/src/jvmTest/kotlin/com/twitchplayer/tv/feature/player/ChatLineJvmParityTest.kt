@@ -3,7 +3,6 @@ package com.twitchplayer.tv.feature.player
 import com.twitchplayer.tv.feature.player.presentation.clockText
 import com.twitchplayer.tv.feature.player.presentation.cycleIndex
 import com.twitchplayer.tv.feature.player.presentation.defaultNickColor
-import kotlinx.datetime.TimeZone
 import java.util.Calendar
 import kotlin.random.Random
 import kotlin.test.Test
@@ -36,7 +35,7 @@ class ChatLineJvmParityTest {
             val millis = random.nextLong(0, 4_100_000_000_000)
             val c = Calendar.getInstance().apply { timeInMillis = millis }
             val old = "${if (c.get(Calendar.HOUR_OF_DAY) < 10) "0" else ""}${c.get(Calendar.HOUR_OF_DAY)}:${if (c.get(Calendar.MINUTE) < 10) "0" else ""}${c.get(Calendar.MINUTE)}"
-            assertEquals(old, clockText(millis, TimeZone.currentSystemDefault()), "millis=$millis")
+            assertEquals(old, clockText(millis), "millis=$millis")
         }
     }
 }
