@@ -7,9 +7,10 @@
 The framestats ring buffer keeps only the last 120 frames (~2 s at 60 Hz), so for a longer window use
   framestats.py --watch <seconds>      (samples every second and merges frames by their intended vsync)
 and `--input-only` restores the older numbers (frames that handled input only)."""
-import subprocess, sys
+import os, subprocess, sys
 
-pkg = "com.twitchplayer.tv"
+# The TV app by default; `PKG=com.twitchplayer.phone framestats.py ...` measures the phone app.
+pkg = os.environ.get("PKG", "com.twitchplayer.tv")
 INPUT_ONLY = '--input-only' in sys.argv
 SKIPPED = 8  # FrameInfoFlags::SkippedFrame
 

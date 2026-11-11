@@ -153,8 +153,8 @@ fun LivePlayerRoute(
             onTogglePlay = { presenter.onEvent(PlayerEvent.TogglePause) },
             pinned = qualities != null,
             video = { videoModifier -> NativeVideoSurface(player, videoModifier) },
+            stageStatus = { StageStatus(status = status, hasPicture = snapshot.hasPicture, onRetry = { player.load(state.login) }) },
             stageOverlay = { chrome ->
-                StageStatus(status = status, hasPicture = snapshot.hasPicture, onRetry = { player.load(state.login) })
                 // Chat laid over the video (landscape only): the viewer's background opacity behind the lines.
                 if (overlayChatVisible(state.chatMode, chrome.landscape, signedIn, inPip)) {
                     // While the control layer is up its bottom bar owns the lower edge: the chat panel sits above it.
@@ -179,15 +179,21 @@ fun LivePlayerRoute(
                 )
             },
             center = {
-                CenterPlayButton(playing = snapshot.playWhenReady, buffering = snapshot.buffering || status is NativeStatus.Resolving, onClick = {
-                    presenter.onEvent(PlayerEvent.TogglePause)
-                })
+                // When the stream cannot play, the retry button sits in the middle of the picture: nothing may cover it.
+                if (!failed) {
+                    CenterPlayButton(playing = snapshot.playWhenReady, buffering = snapshot.buffering || status is NativeStatus.Resolving, onClick = {
+                        presenter.onEvent(PlayerEvent.TogglePause)
+                    })
+                }
             },
             bottom = { chrome ->
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    LiveBadge()
-                    Spacer(Modifier.width(BADGE_GAP))
-                    current?.let { ViewersBadge(it.viewers) }
+                    // A stream that cannot play is not shown as live.
+                    if (!failed) {
+                        LiveBadge()
+                        Spacer(Modifier.width(BADGE_GAP))
+                        current?.let { ViewersBadge(it.viewers) }
+                    }
                     Box(Modifier.weight(1f))
                     ControlButton(
                         if (state.muted) PhoneIcons.VolumeOff else PhoneIcons.VolumeUp,
@@ -281,7 +287,11 @@ private fun androidx.compose.foundation.layout.BoxScope.StageStatus(status: Nati
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                 )
-                androidx.compose.material3.OutlinedButton(onClick = onRetry) { Text(stringResource(R.string.state_retry)) }
+                androidx.compose.material3.OutlinedButton(
+                    onClick = onRetry,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = RETRY_BORDER_ALPHA)),
+                ) { Text(stringResource(R.string.state_retry)) }
             }
         }
 
@@ -336,6 +346,7 @@ private fun NoticeBanner(notice: ChannelNotice?) {
 private val SIDE_PANEL = 320.dp
 private val CONTROLS_BAR = 56.dp
 private val BADGE_GAP = 8.dp
+private const val RETRY_BORDER_ALPHA = 0.7f
 private const val OVERLAY_WIDTH = 0.45f
 private const val OVERLAY_HEIGHT = 0.6f
 private const val UPTIME_TICK_MS = 30_000L

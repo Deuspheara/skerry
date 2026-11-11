@@ -9,7 +9,8 @@ import java.io.File
 /**
  * Debug builds can run on deterministic demo data (screenshots, UI tests) without a Twitch account:
  * `adb shell run-as com.twitchplayer.phone touch files/demo` then restart the app. Add `files/demo-offline` (every request fails) or
- * `files/demo-empty` (nothing followed or live) to see those states ([offlineModule], [emptyModule]).
+ * `files/demo-empty` (nothing followed or live) or `files/demo-stream-offline` (the player cannot play) to see those states
+ * ([offlineModule], [emptyModule], [streamOfflineModule]).
  */
 object DebugModules {
     fun registerImageComponents(builder: coil3.ComponentRegistry.Builder) {
@@ -23,6 +24,7 @@ object DebugModules {
             !flag("demo") -> emptyList()
             flag("demo-offline") -> listOf(demoModule, offlineModule)
             flag("demo-empty") -> listOf(demoModule, emptyModule)
+            flag("demo-stream-offline") -> listOf(demoModule, streamOfflineModule)
             else -> listOf(demoModule)
         }
     }

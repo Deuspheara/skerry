@@ -60,6 +60,8 @@ fun PlayerScaffold(
     /** Keeps the control layer up (a sheet is open, a seek is in progress, the viewer is deciding something). */
     pinned: Boolean = false,
     stageOverlay: @Composable BoxScope.(PlayerChrome) -> Unit = {},
+    /** Drawn above the control layer, undimmed and clickable: a failure message with its retry. */
+    stageStatus: @Composable BoxScope.() -> Unit = {},
     topActions: @Composable RowScope.(PlayerChrome) -> Unit = {},
     center: @Composable (PlayerChrome) -> Unit = {},
     bottom: @Composable ColumnScope.(PlayerChrome) -> Unit = {},
@@ -100,7 +102,9 @@ fun PlayerScaffold(
         onDispose { listener.disable() }
     }
     DisposableEffect(Unit) {
+        host.setVideoSystemBars(true)
         onDispose {
+            host.setVideoSystemBars(false)
             policy.reset()
             host.lockOrientation(OrientationLock.None)
             host.setImmersive(false)
@@ -150,6 +154,7 @@ fun PlayerScaffold(
                     center = { center(chrome) },
                     bottom = { bottom(chrome) },
                 )
+                stageStatus()
             }
         }
     }

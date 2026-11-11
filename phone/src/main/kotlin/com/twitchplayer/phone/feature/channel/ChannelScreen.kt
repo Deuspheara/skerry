@@ -120,24 +120,27 @@ fun ChannelRoute(
             )
         },
     ) { padding ->
-        LoadHost(
-            state.details,
-            onRetry = { viewModel.presenter.onEvent(ChannelEvent.Retry) },
-            onSignIn = onSignIn,
-            modifier = Modifier.padding(padding),
-            skeleton = { ChannelSkeleton() },
-        ) { details ->
-            RefreshBox(onRefresh = { viewModel.presenter.onEvent(ChannelEvent.Retry) }) {
-                ChannelContent(
-                    details = details,
-                    replays = allReplays(details, state.tail),
-                    hasMore = hasMoreReplays(details, state.tail),
-                    loadingMore = state.tail.loading,
-                    progress = state.progress,
-                    onLoadMore = { viewModel.presenter.onEvent(ChannelEvent.LoadMoreReplays(details.channel.id, details.replaysCursor)) },
-                    onPlay = onPlay,
-                    onChannel = onChannel,
-                )
+        // On wide windows the page is a centred column, not a stretched list with a void beside it.
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            LoadHost(
+                state.details,
+                onRetry = { viewModel.presenter.onEvent(ChannelEvent.Retry) },
+                onSignIn = onSignIn,
+                modifier = Modifier.padding(padding).widthIn(max = CHANNEL_MAX_WIDTH),
+                skeleton = { ChannelSkeleton() },
+            ) { details ->
+                RefreshBox(onRefresh = { viewModel.presenter.onEvent(ChannelEvent.Retry) }) {
+                    ChannelContent(
+                        details = details,
+                        replays = allReplays(details, state.tail),
+                        hasMore = hasMoreReplays(details, state.tail),
+                        loadingMore = state.tail.loading,
+                        progress = state.progress,
+                        onLoadMore = { viewModel.presenter.onEvent(ChannelEvent.LoadMoreReplays(details.channel.id, details.replaysCursor)) },
+                        onPlay = onPlay,
+                        onChannel = onChannel,
+                    )
+                }
             }
         }
     }
@@ -184,7 +187,7 @@ private fun ChannelContent(
         details.stream?.let { stream ->
             item(key = "live") {
                 // A hero card the width of a tablet would dominate the page: it stops growing at a comfortable size.
-                Column(Modifier.widthIn(max = HERO_MAX_WIDTH), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     StreamCard(stream, onClick = { onPlay(PlaybackTarget.Live(stream.login)) }, showChannel = false)
                     liveForLabel(stream.startedAtMs, now)?.let { uptime ->
                         Text(stringResource(R.string.phone_live_for, uptime), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -378,10 +381,11 @@ private fun ChannelSkeleton() {
 private data class Paging(val canLoadMore: Boolean, val loaded: Int)
 
 private const val PREFETCH_ITEMS = 3
-private val HERO_MAX_WIDTH = 560.dp
 private val FOLLOW_ICON = 18.dp
 private val CLIP_CARD_WIDTH = 220.dp
 private val REPLAY_THUMBNAIL_WIDTH = 150.dp
 private val SIMILAR_WIDTH = 80.dp
 private val SIMILAR_AVATAR = 56.dp
 private val SKELETON_NAME_WIDTH = 160.dp
+
+private val CHANNEL_MAX_WIDTH = 640.dp

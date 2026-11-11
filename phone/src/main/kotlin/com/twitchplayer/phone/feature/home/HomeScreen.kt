@@ -75,6 +75,7 @@ fun HomeRoute(
             Column {
                 TopAppBar(
                     title = { Text(stringResource(R.string.app_name)) },
+                    expandedHeight = TOP_BAR_HEIGHT,
                     scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, scrolledContainerColor = MaterialTheme.colorScheme.background),
                 )
@@ -199,3 +200,6 @@ private val CATEGORY_CARD_WIDTH = 120.dp
 
 /** Dividers start under the text, past the avatar. */
 internal val CHANNEL_DIVIDER_INSET = 72.dp
+
+/** A little shorter than the Material default (64 dp): the title and the tabs under it read as one header. */
+private val TOP_BAR_HEIGHT = 52.dp

@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -28,6 +31,9 @@ import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SessionState
 import com.twitchplayer.tv.core.network.auth.DeviceCodeResponse
 import com.twitchplayer.tv.demo.demoModule
+import com.twitchplayer.tv.feature.player.data.stream.ChannelOfflineException
+import com.twitchplayer.tv.feature.player.data.stream.ResolvedStream
+import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -53,6 +59,20 @@ class PhonePlayerUiTest {
     private fun string(id: Int) = context.getString(id)
 
     /** Starts signed in (so the demo home lists streams) and lets the test sign the viewer out while the player is open. */
+    private class OfflineResolver : TwitchPlaybackResolver {
+        override suspend fun resolve(channel: String): ResolvedStream = throw ChannelOfflineException(channel)
+    }
+
+    /** Every request fails like a dead network, and counts how many times the page asked. */
+    private class DownResolver : TwitchPlaybackResolver {
+        @Volatile var calls = 0
+
+        override suspend fun resolve(channel: String): ResolvedStream {
+            calls++
+            throw java.io.IOException("no network")
+        }
+    }
+
     private class SwitchableSession : SessionRepository {
         override val state = MutableStateFlow<SessionState>(SessionState.SignedIn(Account("1", "camille")))
         override fun current(): String? = null
@@ -201,6 +221,40 @@ class PhonePlayerUiTest {
             rule.onAllNodes(hasText("2×") and androidx.compose.ui.test.isSelectable()).fetchSemanticsNodes().isNotEmpty() ||
                 rule.onAllNodes(hasText("2×")).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test fun anOfflineChannelSaysSoAndOffersRetry() {
+        launch(module { single<TwitchPlaybackResolver> { OfflineResolver() } })
+        waitForDescription("Lunaria")
+        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        waitForText(string(R.string.watch))
+        rule.onNodeWithText(string(R.string.watch)).performClick()
+
+        waitForText(string(R.string.phone_channel_offline))
+        rule.onNodeWithText(string(R.string.state_retry)).assertIsDisplayed()
+        saveScreenshot("player-offline")
+    }
+
+    @Test fun aFailedResolveOffersRetryAndRetryAsksAgain() {
+        val resolver = DownResolver()
+        launch(module { single<TwitchPlaybackResolver> { resolver } })
+        waitForDescription("Lunaria")
+        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        waitForText(string(R.string.watch))
+        rule.onNodeWithText(string(R.string.watch)).performClick()
+
+        waitForText(string(R.string.state_error))
+        val before = resolver.calls
+        rule.onNodeWithText(string(R.string.state_retry)).performClick()
+        rule.waitUntil(WAIT_MS) { resolver.calls > before }
+        saveScreenshot("player-error")
+    }
+
+    /** Saves the screen under the app's external files folder, so a person can look at it (`adb pull`). */
+    private fun saveScreenshot(name: String) {
+        val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
+        val dir = context.getExternalFilesDir(null) ?: return
+        java.io.File(dir, "$name.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     private companion object {

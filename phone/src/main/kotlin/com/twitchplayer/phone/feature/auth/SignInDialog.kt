@@ -109,7 +109,9 @@ fun SignInDialog(code: DeviceCodeResponse, onCancel: () -> Unit, clock: ElapsedC
                     Spacer(Modifier.size(COPY_SLOT))
                     Text(
                         text = code.userCode,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
+                        // The code is the point of this dialog: full-contrast text, not the dimmer body colour.
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = CODE_LETTER_SPACING,

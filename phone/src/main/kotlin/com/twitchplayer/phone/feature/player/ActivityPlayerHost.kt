@@ -134,6 +134,20 @@ class ActivityPlayerHost(private val activity: ComponentActivity) : PlayerHost {
         }
     }
 
+    private var previousLightStatusBars: Boolean? = null
+
+    override fun setVideoSystemBars(enabled: Boolean) {
+        val window = activity.window
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        if (enabled) {
+            if (previousLightStatusBars == null) previousLightStatusBars = controller.isAppearanceLightStatusBars
+            controller.isAppearanceLightStatusBars = false
+        } else {
+            previousLightStatusBars?.let { controller.isAppearanceLightStatusBars = it }
+            previousLightStatusBars = null
+        }
+    }
+
     override fun setImmersive(enabled: Boolean) {
         val window = activity.window
         val controller = WindowCompat.getInsetsController(window, window.decorView)

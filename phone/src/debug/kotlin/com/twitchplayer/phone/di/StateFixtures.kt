@@ -8,6 +8,9 @@ import com.twitchplayer.tv.core.data.model.SearchResults
 import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.platform.SnapshotStorage
+import com.twitchplayer.tv.feature.player.data.stream.ChannelOfflineException
+import com.twitchplayer.tv.feature.player.data.stream.ResolvedStream
+import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
 import org.koin.dsl.module
 import java.io.IOException
 
@@ -60,4 +63,13 @@ val emptyModule = module {
     single<TwitchRepository> { EmptyRepository() }
     single<SnapshotStorage> { noSnapshots }
     single { SnapshotCache(noSnapshots) }
+}
+
+/** The channels are listed as usual but no stream can be played: the player's offline page (`files/demo-stream-offline`). */
+val streamOfflineModule = module {
+    single<TwitchPlaybackResolver> {
+        object : TwitchPlaybackResolver {
+            override suspend fun resolve(channel: String): ResolvedStream = throw ChannelOfflineException(channel)
+        }
+    }
 }

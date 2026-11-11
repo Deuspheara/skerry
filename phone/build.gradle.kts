@@ -38,6 +38,13 @@ android {
       isDebuggable = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
+    // Release-like (same R8 rules, not debuggable) but debug-signed and always on the demo data: what the phone's startup and frame
+    // numbers are measured on (docs/phone-log.md). Never shipped.
+    create("benchmark") {
+      initWith(getByName("release"))
+      signingConfig = signingConfigs.getByName("debug")
+      matchingFallbacks += listOf("release")
+    }
   }
   buildFeatures {
     compose = true
@@ -72,6 +79,7 @@ dependencies {
   implementation(project(":platform-android"))
   // Fictional demo data (no network, no account): debug only, never release.
   debugImplementation(project(":demo-android"))
+  "benchmarkImplementation"(project(":demo-android"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)

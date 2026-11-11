@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,7 +63,9 @@ fun PhoneChatLine(line: ChatLine, style: PhoneChatStyle, animated: () -> Int, ov
     val density = LocalDensity.current
     val secondary = if (overVideo) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
     val bitsColor = MaterialTheme.colorScheme.primary
-    val built = remember(line, style, density, secondary, bitsColor) {
+    // Over the picture the panel is dark, whatever the theme; on the page the surface follows the theme.
+    val surface = if (overVideo) Color.Black else MaterialTheme.colorScheme.background
+    val built = remember(line, style, density, secondary, bitsColor, surface) {
         fun px(dp: Float) = (dp * density.density).roundToInt().coerceAtLeast(1)
         val inline = HashMap<String, InlineTextContent>()
         var animatedIndex = 0
@@ -91,7 +94,7 @@ fun PhoneChatLine(line: ChatLine, style: PhoneChatStyle, animated: () -> Int, ov
                 withStyle(SpanStyle(color = secondary, fontStyle = FontStyle.Italic)) { append(sentence) }
                 return@buildAnnotatedString
             }
-            withStyle(SpanStyle(color = Color(line.color), fontWeight = FontWeight.SemiBold)) { append(line.nick) }
+            withStyle(SpanStyle(color = readableOn(surface, Color(line.color)), fontWeight = FontWeight.SemiBold)) { append(line.nick) }
             append(": ")
             if (line.bits > 0) withStyle(SpanStyle(color = bitsColor, fontWeight = FontWeight.Bold)) { append("◆${line.bits} ") }
             line.pieces.forEachIndexed { index, piece ->
@@ -131,7 +134,13 @@ fun PhoneChatLine(line: ChatLine, style: PhoneChatStyle, animated: () -> Int, ov
         ChatLineKind.Highlight -> rule.copy(alpha = HIGHLIGHT_ALPHA)
         else -> null
     }
-    val base = TextStyle(fontSize = style.textSp.sp, lineHeight = style.lineHeightSp.sp, color = if (overVideo) Color.White else MaterialTheme.colorScheme.onSurface)
+    // Each message takes its own direction from its text: an English or French line stays left-to-right inside an Arabic layout.
+    val base = TextStyle(
+        fontSize = style.textSp.sp,
+        lineHeight = style.lineHeightSp.sp,
+        color = if (overVideo) Color.White else MaterialTheme.colorScheme.onSurface,
+        textDirection = TextDirection.Content,
+    )
     Text(
         text = built.first,
         inlineContent = built.second,

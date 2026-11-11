@@ -129,7 +129,9 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 )
             }
-            if (state.query.isBlank() && state.recents.isEmpty()) {
+            // The hint is for an empty screen: with trending channels listed under the field it only repeats what the field says.
+            val trendsShown = (state.results as? ResultsUi.Trends)?.channels?.isNotEmpty() == true
+            if (state.query.isBlank() && state.recents.isEmpty() && !trendsShown) {
                 item(key = "hint") {
                     Text(
                         stringResource(R.string.phone_search_hint),
@@ -178,7 +180,7 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                         }
                     }
                     if (results.channels.isNotEmpty()) {
-                        item(key = "trends-header") { SectionHeader(stringResource(R.string.sec_trends), Modifier.padding(horizontal = 16.dp)) }
+                        item(key = "trends-header") { SectionHeader(stringResource(R.string.sec_trends), Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) }
                         items(results.channels, key = { "trend-${it.id}" }) { channel ->
                             ChannelRow(channel, onClick = { onChannel(channel.login) })
                         }

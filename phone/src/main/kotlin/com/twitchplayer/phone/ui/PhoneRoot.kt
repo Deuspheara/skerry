@@ -24,6 +24,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -144,7 +148,7 @@ private fun PhoneScaffold(
                     selected = tab == navigator.selected,
                     onClick = { navigator.selectTab(tab) },
                     icon = { Icon(tab.icon(), contentDescription = null) },
-                    label = { Text(stringResource(tab.label())) },
+                    label = { NavLabel(stringResource(tab.label())) },
                     // In a rail the first item sat right under the status bar, above the page title: it starts level with the title.
                     modifier = if (index == 0 && navigator.showsNavigation && adaptive != NavigationSuiteType.NavigationBar) {
                         Modifier.padding(top = RAIL_TOP_GAP)
@@ -228,3 +232,17 @@ private fun PhoneTab.label(): Int = when (this) {
 }
 
 private val RAIL_TOP_GAP = 16.dp
+
+/**
+ * A bar label: one line, and its text scale is capped so "Settings" still fits a quarter of the width at the largest system font size
+ * (the page content keeps the full scale; Material's own guidance allows capping the navigation labels).
+ */
+@Composable
+private fun NavLabel(text: String) {
+    val density = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = minOf(density.fontScale, NAV_LABEL_MAX_FONT_SCALE))) {
+        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+private const val NAV_LABEL_MAX_FONT_SCALE = 1.3f

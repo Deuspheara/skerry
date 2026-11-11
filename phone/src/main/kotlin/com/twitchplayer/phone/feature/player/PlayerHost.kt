@@ -32,6 +32,12 @@ interface PlayerHost {
 
     fun lockOrientation(lock: OrientationLock)
 
+    /**
+     * The status bar sits over the black picture area while a player page is open: its icons are drawn light there whatever the theme
+     * (dark icons on black disappear). `false` restores what the theme chose.
+     */
+    fun setVideoSystemBars(enabled: Boolean)
+
     /** Hides the system bars (swipe from an edge brings them back for a moment) and lets the picture use the display cutout. */
     fun setImmersive(enabled: Boolean)
 }
@@ -44,6 +50,7 @@ object NoPlayerHost : PlayerHost {
     override fun clearPictureInPicture() = Unit
     override fun enterPictureInPicture() = Unit
     override fun lockOrientation(lock: OrientationLock) = Unit
+    override fun setVideoSystemBars(enabled: Boolean) = Unit
     override fun setImmersive(enabled: Boolean) = Unit
 }
 
