@@ -19,6 +19,13 @@ extensions.configure<KotlinMultiplatformExtension> {
     compileSdk = 37
     minSdk = 24
     withHostTest { }
+    // Rules needed by this module's code travel with it (never as broad -keep rules in the app).
+    if (file("consumer-rules.pro").exists()) {
+      optimization {
+        consumerKeepRules.publish = true
+        consumerKeepRules.file("consumer-rules.pro")
+      }
+    }
   }
   compilerOptions {
     allWarningsAsErrors.set(true)
