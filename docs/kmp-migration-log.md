@@ -72,3 +72,64 @@ Verification (release R8 build, commit state of this step) against `docs/perf-ba
 - `./gradlew check` green (192 unit tests, 0 failures, `jvmTest` + `testAndroidHostTest` + app); `:app:analyzeReleaseR8Config` runs;
   `:app:bundleRelease` succeeds; Lint: no new issues (17 errors + 2 hints baselined, the `NewApi` in `PlaybackStats` is untouched).
 - Not verified: runtime behaviour on a device/emulator (no connected tests, no TV); Macrobenchmark; R8 analyzer scores.
+
+## Step 1c: fixes from the independent review of step 1
+
+1. **SnapshotCache dispatcher.** `read`, `write` and `clear` run entirely in `withContext(Dispatchers.IO)` again (JSON
+   encode/decode, `runCatching` and the storage calls); the platform implementation keeps only file I/O.
+2. **Catalog.** Removed `kotlinxDatetime`, `atomicfu`, `kotlinx-datetime` and `ktor-client-cio` (unused until the commit
+   that needs them). `koin-test` was added because the Koin graph tests use it.
+3. **`sarifReport` removal is deliberate.** AGP 9.5 deprecates `lint { sarifReport = true }` ("Lint reports are now always
+   generated"). Verified by deleting `app/build/reports/lint-results-*.sarif` and re-running `:app:lintDebug`:
+   `app/build/reports/lint-results-debug.sarif` is produced (valid SARIF 2.1.0), which is the path the CI workflow uploads.
+   CI also now runs the shared module's checks (`detektMainJvm`, `detektMainAndroid`, `detektTestJvm`, `verifyCommonMain`),
+   its tests (`jvmTest`, `testAndroidHostTest`) and uploads its detekt SARIF.
+4. **`parseTwitchTime` strictness.** Preserved: only the exact `yyyy-MM-dd'T'HH:mm:ss'Z'` shape is parsed (regex first,
+   then `kotlin.time.Instant.parse`); offsets, fractions, spaces, lower case and date-only inputs return 0, as before.
+   The one difference: shape-valid but calendar-invalid values (month 13, Feb 30) were rolled over by the lenient
+   `SimpleDateFormat`; they now return 0. Helix never sends them. Pinned by `FormattersTest.onlyTheExactHelixShapeIsAccepted`.
+5. **Tests added.**
+   - Shared (`commonTest`): `TtlCacheTest` (TTL boundary, force, invalidate, concurrent callers share one load, driven by
+     `TestTimeSource`), `SessionRepositoryTest` (no tokens, valid tokens, refresh then validate, failed refresh clears
+     everything and notifies, sign-out, scopes; Ktor `MockEngine`), `TwitchRepositoryAvatarTest` (avatars requested once,
+     only unknown ids later), `SnapshotCacheTest`, `StorageNamesTest` (literals deliberately duplicated), `SharedCoreModuleTest`
+     (whole shared graph resolved against exactly the platform bindings listed in its KDoc).
+   - Shared (`jvmTest`): `SettingsRepositoryTest` (low-end defaults through `SettingsDefaults`, engine default through
+     `AppConfig`, unknown stored enum values fall back), `VodProgressStoreTest` (on-disk fixture `vod_<id>` =
+     `pos:dur:ts`, and the saved format).
+   - App: `AndroidSnapshotStorageTest` (temp dir; constructor now takes a `File`), `AppKoinGraphTest` (Koin `verify` of
+     `sharedCoreModule` + `coreModule` + `viewModelModule`) and `DemoKoinGraphTest` (adds `demoModule`; lives in
+     `src/testDebug` because the demo sources only exist for debug-like variants). Mutation check: removing the
+     `SnapshotStorage` binding makes `AppKoinGraphTest` fail with "Missing definition ... SnapshotStorage".
+   - Persisted names are constants in `StorageNames` (`settings`, `vod_progress`, `twitch_secure_tokens`, `snapshots`,
+     `vod_`) used by the code; the test pins the literals.
+   - Not testable without instrumentation: `AndroidKeystoreTokenStore` (Android Keystore).
+   - `verify` could not be satisfied for `EmoteRepository(providers: List)` through `extraTypes` (Koin 4.2.2 quirk); it is
+     declared with `injectedParameters(definition<EmoteRepository>(List::class))` instead.
+6. **Stability.** `config/compose/stability.conf` is commented (what is covered and why; `SessionState` and `TwitchTokens`
+   deliberately absent: no composable takes them, confirmed by the report). Compose report regenerated at HEAD
+   (`-PcomposeReports`, debug): **5 unstable parameters, the same set as before the migration** (`Context`,
+   `WebViewVideoPlayer?`, `RailEdgeGuard?`, `StreamPreview`, `Any?`), **130 restartable skippable composables**.
+7. **API surface.** `shared/core` keeps `api` only for types in public signatures (coroutines, serialization, Koin,
+   Ktor client core, DataStore); content negotiation and the Ktor JSON serializer are `implementation`; collections-immutable
+   and websockets are dropped until shared code uses them (the app declares its own). `AppConfig` now holds only
+   `clientId` and `defaultPlayerEngine`: the player host/parent and the native-player flag are read only by the Android UI
+   from `BuildConfig`. The platform bindings `sharedCoreModule` requires are listed in its KDoc and checked by
+   `SharedCoreModuleTest`.
+   Also found and fixed: the schedule filter still defaulted to `System.currentTimeMillis()` in `commonMain` (it only
+   compiled because both targets are JVM). `verifyCommonMain` (in the `kmp-library` convention, part of `check`) now fails
+   on `java.*` / `javax.*` / `android.*` imports, `System.currentTimeMillis|nanoTime`, `String.format` and
+   `SimpleDateFormat` in `commonMain`; verified by planting a violation.
+8. **detekt baselines.** Confirmed empirically (baseline hidden, task then fails; with it, passes): `detekt-baseline.xml`
+   is used by `detekt`, `-mainJvm` by `detektMainJvm`, `-mainAndroid` by `detektMainAndroid`. `detekt-baseline-testJvm.xml`
+   was unused after test code was excluded from `MagicNumber` and `InjectDispatcher` and is deleted;
+   `detektHostTestAndroid` never needed one. Every remaining entry was compared with the app baselines from before the
+   move: all exist there except `InjectDispatcher:SharedCoreModule.kt:Default`, the `CoroutineScope(... Dispatchers.Default)`
+   moved verbatim out of `AppModule` (whose entry was baselined). A false positive that my new constructor parameter
+   triggered (`UnusedPrivateProperty`) was removed by restructuring `DataStoreSettingsRepository`, not baselined. Known
+   limit: detekt's type resolution does not see kotlinx.serialization's generated `serializer()` (9 compiler messages in
+   `SnapshotCache`, same as before the move); rules needing those types are less accurate there.
+
+Verification: `./gradlew check --rerun-tasks` at the final tree: BUILD SUCCESSFUL; shared `jvmTest` 38 tests, shared
+Android host tests 28, app debug unit tests 167, 0 failures, 0 skipped; Lint: no new issues (17 errors + 2 hints
+baselined). The baseline profile was not regenerated (planned for the end of Phase 1).
