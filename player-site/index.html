@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="dark">
+  <title>Zavori Player</title>
+  <style>
+    :root {
+      /* 1u = 1px on a 1920x1080 viewport; scales down on smaller ones, never below the 12px type floor. */
+      --u: min(0.0926vh, 0.0521vw);
+      --t28: max(12px, calc(28 * var(--u)));
+      --t30: max(12px, calc(30 * var(--u)));
+      --t32: max(12px, calc(32 * var(--u)));
+      --t36: max(12px, calc(36 * var(--u)));
+      --t40: max(12px, calc(40 * var(--u)));
+      --t52: max(12px, calc(52 * var(--u)));
+      --body: #0e0e10;
+      --track: #5a5a66;
+      --line: #2a2a31;
+      --text: #efeff1;
+      --muted: #adadb8;
+      --purple: #9146ff;
+      --danger: #ff8280;
+      --fade: 300ms;
+    }
+    [hidden] { display: none !important; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #000; overflow: hidden; }
+    body {
+      position: relative; color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+
+    /* Video area: iframe fills it. Matches the screen colour during the handoff fade, pure black once live. */
+    #player { position: absolute; inset: 0; width: 100%; height: 100%; background: var(--body); z-index: 1; }
+    body.live #player { background: #000; }
+    #player iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+    /* Full-screen layers; 5vh / 5vw is the TV safe area. */
+    .screen {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+      box-sizing: border-box; padding: 5vh 5vw;
+      background: var(--body); opacity: 1;
+      transition: opacity var(--fade) ease-out;
+      animation: enter 200ms ease-out;
+    }
+    .screen.done { opacity: 0; pointer-events: none; }
+    .hint {
+      align-self: stretch; margin: 0; padding-top: calc(24 * var(--u));
+      border-top: calc(2 * var(--u)) solid var(--line);
+      font-size: var(--t30); line-height: 1.5; text-align: center; color: var(--muted);
+    }
+    .hint b { font-weight: 600; color: var(--text); }
+    @keyframes enter { from { opacity: 0; } }
+    @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(334%); } }
+    @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+    /* 1. Loading shell: the visible group is centred; slow copy and hint are out of flow. */
+    #shell { justify-content: center; pointer-events: none; }
+    #shell .hint { position: absolute; left: 5vw; right: 5vw; bottom: 5vh; }
+    .connect { position: relative; display: flex; flex-direction: column; align-items: center; width: min(calc(640 * var(--u)), 100%); }
+    .mark { display: block; width: calc(120 * var(--u)); height: calc(120 * var(--u)); color: var(--purple); }
+    .connect p { margin: calc(40 * var(--u)) 0 0; font-size: var(--t40); line-height: 1.2; font-weight: 600; text-align: center; color: var(--muted); text-wrap: balance; overflow-wrap: anywhere; }
+    .connect p b { font-weight: 600; color: var(--text); }
+    .track { position: relative; overflow: hidden; width: 100%; height: calc(12 * var(--u)); margin-top: calc(40 * var(--u)); background: var(--track); border-radius: calc(12 * var(--u)); }
+    .track i { position: absolute; top: 0; bottom: 0; left: 0; width: 30%; background: var(--purple); border-radius: calc(12 * var(--u)); animation: sweep 1.6s ease-in-out infinite; }
+    .connect .slow {
+      position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      width: max-content; max-width: 90vw; margin: calc(32 * var(--u)) 0 0;
+      font-size: var(--t30); line-height: 1.5; font-weight: 400;
+    }
+    .slow, .late { opacity: 0; transition: opacity var(--fade) ease-out; }
+    .late.faint { opacity: 0.7; }
+    .slow.on, .late.on { opacity: 1; }
+
+    /* 2 + 3. Error screens share one family; the stack is centred between top edge and footer. */
+    .msg { width: min(calc(1200 * var(--u)), 100%); margin-block: auto; padding-bottom: 8vh; text-align: center; }
+    .brand { display: flex; align-items: center; justify-content: center; gap: calc(16 * var(--u)); margin-bottom: calc(40 * var(--u)); font-size: var(--t30); line-height: 1.2; font-weight: 600; color: var(--muted); }
+    .brand svg { display: block; width: calc(40 * var(--u)); height: calc(40 * var(--u)); color: var(--purple); }
+    .icon { display: block; width: calc(112 * var(--u)); height: calc(112 * var(--u)); margin: 0 auto calc(40 * var(--u)); color: var(--danger); }
+    .msg h1 { margin: 0 0 calc(24 * var(--u)); font-size: var(--t52); line-height: 1.2; font-weight: 600; color: var(--text); text-wrap: balance; }
+    .msg p { margin: 0 auto; max-width: min(calc(960 * var(--u)), 100%); font-size: var(--t32); line-height: 1.5; color: var(--muted); text-wrap: balance; }
+    .msg .cause { font-size: var(--t30); }
+    .msg .action { margin-top: calc(16 * var(--u)); color: var(--text); }
+    .msg .status {
+      width: min(calc(900 * var(--u)), 100%); margin: calc(40 * var(--u)) auto 0;
+      font-size: var(--t36); line-height: 1.3; font-weight: 600; color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .drain { position: relative; overflow: hidden; width: min(calc(640 * var(--u)), 100%); height: calc(10 * var(--u)); margin: calc(24 * var(--u)) auto 0; background: var(--track); border-radius: calc(10 * var(--u)); }
+    .drain i { display: block; width: 100%; height: 100%; background: var(--purple); border-radius: calc(10 * var(--u)); transform-origin: left center; transition: transform 250ms linear; }
+    .drain i.busy { width: 30%; transition: none; animation: sweep 1.6s ease-in-out infinite; }
+    /* Reserved slots: toggling visibility never shifts the icon, title or status. */
+    .msg .failed, .msg .tip { visibility: hidden; margin-top: calc(24 * var(--u)); }
+    .msg .failed.on, .msg .tip.on { visibility: visible; }
+    .msg .failed { font-size: var(--t28); font-weight: 600; color: var(--danger); font-variant-numeric: tabular-nums; }
+    .msg .tip { font-size: var(--t30); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .screen { animation: none; transition: none; }
+      .slow, .late { transition: none; }
+      .track i, .drain i.busy { animation: breathe 2.4s ease-in-out infinite; }
+      .drain i { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="glyph" viewBox="0 0 24 24"><path fill="currentColor" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></symbol>
+  </svg>
+
+  <div id="player"></div>
+
+  <!-- 1. Loading shell (announcements go through #phase only) -->
+  <div id="shell" class="screen" aria-live="off" aria-busy="true">
+    <div class="connect">
+      <svg class="mark" aria-hidden="true" focusable="false"><use href="#glyph"/></svg>
+      <p><span id="pre">Connecting to </span><b id="chan"></b><span aria-hidden="true">…</span></p>
+      <div class="track" aria-hidden="true"><i></i></div>
+      <p id="slow" class="slow" aria-hidden="true">Check your network connection.</p>
+    </div>
+    <p id="shellHint" class="hint late" aria-hidden="true">Press <b>Back</b> to return</p>
+  </div>
+
+  <!-- 2. Invalid link -->
+  <div id="invalid" class="screen" role="alert" hidden>
+    <div class="msg">
+      <div class="brand"><svg aria-hidden="true" focusable="false"><use href="#glyph"/></svg><span>Zavori Player</span></div>
+      <svg class="icon" viewBox="0 0 112 112" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="56" cy="56" r="45"/>
+        <path d="M56 32v32"/>
+        <path d="M56 80v.5"/>
+      </svg>
+      <h1>This link can’t be opened</h1>
+      <p id="cause" class="cause"></p>
+      <p id="action" class="action"></p>
+    </div>
+    <p class="hint">Press <b>Back</b> to return</p>
+  </div>
+
+  <!-- 3. Player unavailable (phase changes are announced via #phase only) -->
+  <div id="unavailable" class="screen" hidden>
+    <div class="msg">
+      <div class="brand"><svg aria-hidden="true" focusable="false"><use href="#glyph"/></svg><span>Zavori Player</span></div>
+      <svg class="icon" viewBox="0 0 112 112" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M12 44a62 62 0 0 1 88 0"/>
+        <path d="M27 60a40 40 0 0 1 58 0"/>
+        <path d="M42 76a19 19 0 0 1 28 0"/>
+        <path d="M56 92v.5"/>
+        <path d="M18 18l76 76"/>
+      </svg>
+      <h1 id="title">Can’t reach Twitch</h1>
+      <p id="why">Check your internet connection. We’ll keep trying.</p>
+      <p id="status" class="status" aria-hidden="true"></p>
+      <div class="drain" aria-hidden="true"><i id="drain"></i></div>
+      <p id="failed" class="failed" aria-hidden="true"></p>
+      <p id="tip" class="tip">Still offline? Check your router or DNS.</p>
+    </div>
+    <p class="hint">Press <b>Back</b> to return</p>
+  </div>
+  <p id="phase" class="sr-only" role="status" aria-live="polite"></p>
+
+  <script>
+    (() => {
+      const EMBED_SRC = 'https://player.twitch.tv/js/embed/v1.js';
+      const DELAYS = [5, 10, 20, 30];
+      const READY_EVENTS = ['READY', 'PLAYING', 'ONLINE', 'OFFLINE', 'PLAYBACK_BLOCKED'];
+      const $ = (id) => document.getElementById(id);
+      const screens = { shell: $('shell'), invalid: $('invalid'), unavailable: $('unavailable') };
+
+      const params = new URLSearchParams(location.search);
+      const channel = params.get('channel') || '';
+      const parent = params.get('parent') || '';
+      const autoplay = params.get('autoplay') === '1';
+      const validChannel = /^[A-Za-z0-9_]{1,25}$/.test(channel);
+      const validHost = /^[A-Za-z0-9.-]+$/.test(parent);   // safe characters; equality below does the real check
+
+      let player = null;
+      let ready = false;
+      let pendingPlay = false, pendingPause = false, pendingMute = false;   // app commands issued before ready
+      const QUALITY_KEY = 'tp.quality';
+      let wantedQuality = null;   // the viewer's choice; kept across streams and launches so 1080p stays 1080p
+      try { wantedQuality = localStorage.getItem(QUALITY_KEY); } catch (e) {}
+      let gen = 0;               // invalidates callbacks from superseded player attempts
+      let faintTimer = 0, slowTimer = 0, deadTimer = 0, hideTimer = 0, hideFallback = 0;
+      let tried = 0, tick = 0, busy = false, slowReady = false;
+
+      const announce = (text) => { $('phase').textContent = text; };
+      const times = (n) => n + (n === 1 ? ' time' : ' times');
+
+      // Commands from the Android app (evaluateJavascript). No bridge object is exposed to the page.
+      window.tp = {
+        play: () => { try { if (player && ready) player.play(); else { pendingPlay = true; pendingPause = false; } } catch (e) {} },
+        pause: () => { try { if (player && ready) player.pause(); else { pendingPause = true; pendingPlay = false; } } catch (e) {} },
+        toggleMute: () => { try { if (player && ready) player.setMuted(!player.getMuted()); else pendingMute = !pendingMute; } catch (e) {} },
+        // Quality menu. Returns JSON text (evaluateJavascript hands back the value, never a live object) or null before the
+        // stream is playing. "id" is the value Twitch's setQuality() takes: the quality "group" ("chunked" = source, "auto").
+        getQualities: () => {
+          try {
+            if (!player || !ready) return null;
+            const list = (player.getQualities() || []).map((q) => ({ id: q.group || q.name, name: q.name || q.group }))
+              .filter((q) => q.id);
+            if (!list.length) return null;
+            return JSON.stringify({ qualities: list, selected: player.getQuality() || null });
+          } catch (e) { return null; }
+        },
+        setQuality: (id) => {
+          try {
+            if (typeof id !== 'string' || !/^[A-Za-z0-9_.-]{1,40}$/.test(id)) return;
+            wantedQuality = id;
+            try { localStorage.setItem(QUALITY_KEY, id); } catch (e) {}
+            if (player && ready) player.setQuality(id);
+          } catch (e) {}
+        },
+      };
+
+      function show(name) {
+        [faintTimer, slowTimer, hideTimer, hideFallback].forEach(clearTimeout);
+        Object.keys(screens).forEach((k) => {
+          screens[k].hidden = k !== name;
+          screens[k].classList.remove('done');
+        });
+        if (name !== 'shell') return;
+        screens.shell.setAttribute('aria-busy', 'true');
+        $('pre').textContent = 'Connecting to ';
+        $('slow').classList.remove('on');
+        $('shellHint').classList.remove('faint', 'on');
+        announce('Connecting to ' + channel);
+        faintTimer = setTimeout(() => $('shellHint').classList.add('faint'), 4000);
+        slowTimer = setTimeout(() => {
+          $('pre').textContent = 'Still connecting to ';
+          $('slow').classList.add('on');
+          $('shellHint').classList.add('on');
+          announce('Still connecting. Check your network connection.');
+        }, 8000);
+      }
+
+      // 2. Invalid link: the Twitch script is never requested on this path.
+      if (!validChannel || !validHost || parent !== location.hostname) {
+        $('player').remove();
+        const badChannel = !validChannel;
+        $('cause').textContent = badChannel
+          ? 'The channel name is missing or invalid.'
+          : 'This page was opened from the wrong address.';
+        $('action').textContent = badChannel
+          ? 'Go back and pick a channel.'
+          : 'Go back and open the channel again.';
+        show('invalid');
+        return;
+      }
+      $('chan').textContent = channel;
+      show('shell');
+
+      const playerAvailable = () => !!(window.Twitch && Twitch.Player);
+
+      function finishHide(el) {
+        if (el.classList.contains('done')) return;
+        el.classList.add('done');
+        hideTimer = setTimeout(() => { el.hidden = true; document.body.classList.add('live'); }, 350);
+      }
+
+      // Fade whichever overlay is up once the iframe has painted; the timeout guarantees removal.
+      function hideOverlay(mine) {
+        const el = Object.values(screens).find((s) => !s.hidden);
+        if (!el) return;
+        screens.shell.setAttribute('aria-busy', 'false');
+        requestAnimationFrame(() => requestAnimationFrame(() => { if (mine === gen) finishHide(el); }));
+        hideFallback = setTimeout(() => { if (mine === gen) finishHide(el); }, 1200);
+      }
+
+      // Qualities only exist once the stream is playing, so retry briefly after the embed signals life.
+      function applyQuality(mine, attempt = 0) {
+        if (!wantedQuality || mine !== gen) return;
+        try {
+          const known = (player.getQualities() || []).some((q) => (q.group || q.name) === wantedQuality);
+          if (known) { player.setQuality(wantedQuality); return; }
+        } catch (e) {}
+        if (attempt < 20) setTimeout(() => applyQuality(mine, attempt + 1), 1000);
+      }
+
+      function startPlayer() {
+        gen += 1;
+        const mine = gen;
+        ready = false;
+        slowReady = false;
+        clearTimeout(deadTimer);
+        $('player').replaceChildren();
+        player = new Twitch.Player('player', { channel, parent: [parent], autoplay, muted: false, width: '100%', height: '100%' });
+        // Any of these means the embed is alive; the handler is idempotent.
+        const onAlive = () => {
+          if (mine !== gen || ready) return;
+          clearTimeout(deadTimer);
+          clearInterval(tick);
+          [faintTimer, slowTimer].forEach(clearTimeout);
+          ready = true;
+          busy = false;
+          tried = 0;
+          announce('Connected');
+          hideOverlay(mine);
+          const frame = document.querySelector('#player iframe');
+          if (frame) frame.focus();   // D-pad OK reaches Twitch's own controls
+          try {
+            if (pendingPause) { pendingPause = false; player.pause(); }
+            if (pendingMute) { pendingMute = false; player.setMuted(!player.getMuted()); }
+            if (pendingPlay) { pendingPlay = false; player.play(); }
+          } catch (e) {}
+          applyQuality(mine);
+        };
+        READY_EVENTS.forEach((name) => { if (Twitch.Player[name]) player.addEventListener(Twitch.Player[name], onAlive); });
+        // Script loaded but nothing signalled life: Twitch is slow rather than blocked.
+        deadTimer = setTimeout(() => { if (mine === gen) { slowReady = true; failed(); } }, 30000);
+      }
+
+      // 3. Player unavailable: retry forever with backoff, and immediately when the network returns.
+      function failed() {
+        const slow = slowReady;
+        slowReady = false;
+        gen += 1;
+        ready = false;
+        clearTimeout(deadTimer);
+        player = null;
+        $('player').replaceChildren();
+        busy = false;
+        tried += 1;
+        show('unavailable');
+        $('title').textContent = slow ? 'Twitch is slow to respond' : 'Can’t reach Twitch';
+        $('why').textContent = slow
+          ? 'The player didn’t start in time. We’ll keep trying.'
+          : 'Check your internet connection. We’ll keep trying.';
+        scheduleRetry();
+      }
+
+      function scheduleRetry() {
+        clearInterval(tick);
+        const secs = DELAYS[Math.min(tried - 1, DELAYS.length - 1)];
+        const status = $('status');
+        const bar = $('drain');
+        $('failed').textContent = 'Failed ' + times(tried);
+        $('failed').classList.toggle('on', tried >= 2);
+        $('tip').classList.toggle('on', tried >= 3);
+        bar.classList.remove('busy');
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(1)';
+        void bar.offsetWidth;
+        bar.style.transition = '';
+        // One deadline drives both the countdown text and the bar.
+        const end = Date.now() + secs * 1000;
+        let shown = -1;
+        const render = () => {
+          const ms = end - Date.now();
+          if (ms <= 0) { clearInterval(tick); retryNow(); return; }
+          const left = Math.ceil(ms / 1000);
+          if (left !== shown) {
+            shown = left;
+            status.textContent = 'Retrying in ' + left + (left === 1 ? ' second' : ' seconds');
+          }
+          bar.style.transform = 'scaleX(' + (ms / (secs * 1000)) + ')';
+        };
+        render();
+        announce('Failed ' + times(tried) + '. ' + $('title').textContent + '. Retrying in ' + secs + ' seconds.' +
+          (tried === 3 ? ' Still offline? Check your router or DNS.' : ''));
+        tick = setInterval(render, 250);
+      }
+
+      // The unavailable screen stays up (with an indeterminate sweep and elapsed time) until the player starts.
+      function retryNow() {
+        if (busy) return;
+        busy = true;
+        clearInterval(tick);
+        const bar = $('drain');
+        const t0 = Date.now();
+        const update = () => {
+          const s = Math.floor((Date.now() - t0) / 1000);
+          $('status').textContent = 'Trying again…' + (s > 0 ? ' ' + s + ' s' : '');
+        };
+        bar.style.transform = '';
+        bar.classList.add('busy');
+        update();
+        tick = setInterval(update, 1000);
+        announce('Trying again. Failed ' + times(tried) + ' so far.');
+        if (playerAvailable()) {
+          try { startPlayer(); } catch (e) { failed(); }   // the script is already loaded
+        } else {
+          loadScript();
+        }
+      }
+
+      function loadScript() {
+        const old = $('twitch-embed');
+        if (old) old.remove();
+        const s = document.createElement('script');
+        s.id = 'twitch-embed';
+        s.src = EMBED_SRC;
+        let settled = false;
+        let guard = 0;
+        const settle = () => { settled = true; clearTimeout(guard); s.onload = s.onerror = null; };
+        // A hung request must still fall back to the error screen.
+        guard = setTimeout(() => {
+          if (settled) return;
+          settle();
+          s.remove();
+          failed();
+        }, 15000);
+        s.onload = () => {
+          if (settled) return;
+          settle();
+          if (!playerAvailable()) { failed(); return; }
+          try { startPlayer(); } catch (e) { failed(); }
+        };
+        s.onerror = () => {
+          if (settled) return;
+          settle();
+          failed();
+        };
+        document.head.appendChild(s);
+      }
+
+      window.addEventListener('online', () => {
+        if (!screens.unavailable.hidden) retryNow();
+      });
+
+      // Initial load: the shell is already visible while the embed script loads.
+      busy = true;
+      loadScript();
+    })();
+  </script>
+</body>
+</html>

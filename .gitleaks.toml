@@ -1,0 +1,11 @@
+title = "twitchplayer gitleaks config"
+
+[extend]
+useDefault = true
+
+# The Twitch Client ID identifies the public OAuth app (Device Code Grant, no client secret).
+# It is public by design and ships in every APK, so it is not a secret.
+[[allowlists]]
+description = "Public Twitch Client ID"
+paths = ['''^gradle\.properties$''']
+regexes = ['''twitchClientId=[a-z0-9]{30}''']

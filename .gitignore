@@ -1,0 +1,72 @@
+# Gradle / Kotlin
+.gradle/
+.kotlin/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# Local config and secrets
+local.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.mobileprovision
+.env
+.env.*
+!local.properties.example
+secrets.properties
+keystore.properties
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+*.log
+captures/
+.externalNativeBuild/
+.cxx/
+output.json
+
+# IntelliJ / Android Studio (share only code style)
+.idea/*
+!.idea/codeStyles/
+!.idea/fileTemplates/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Xcode / Apple (Phase 2+)
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+Pods/
+.build/
+*.xcframework
+
+# Kotlin/Native, wasm, node
+node_modules/
+kotlin-js-store/
+.konan/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / agent tool state (machine-specific absolute paths)
+.vscode/
+.codex/
+.cursor/
+.gemini/
+.claude/*
+!.claude/settings.json
+
+# Benchmark scratch output
+benchmark-results/
+perfetto-traces/

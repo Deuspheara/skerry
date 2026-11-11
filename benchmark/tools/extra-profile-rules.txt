@@ -1,0 +1,18 @@
+# Hand-written Baseline Profile rules merged by generate-profiles.sh. The recorded journeys run on demo data, so the
+# code that only exists against the real service is never executed by them: the Twitch stream resolver (GQL token,
+# usher, master playlist parsing, quality policy) and the native player's non-demo paths.
+Lcom/twitchplayer/tv/feature/player/data/stream/**;
+HSPLcom/twitchplayer/tv/feature/player/data/stream/**->**(**)**
+Lcom/twitchplayer/tv/feature/player/playback/**;
+HSPLcom/twitchplayer/tv/feature/player/playback/**->**(**)**
+# New in the viewer-experience pass (overlays, composer, clips, EventSub extras, live watcher): demo journeys do not reach all of it.
+Lcom/twitchplayer/tv/feature/player/ui/PlayerOverlays**;
+HSPLcom/twitchplayer/tv/feature/player/ui/PlayerOverlays**->**(**)**
+Lcom/twitchplayer/tv/feature/player/ui/ChatComposeDialog**;
+HSPLcom/twitchplayer/tv/feature/player/ui/ChatComposeDialog**->**(**)**
+Lcom/twitchplayer/tv/feature/clip/**;
+HSPLcom/twitchplayer/tv/feature/clip/**->**(**)**
+Lcom/twitchplayer/tv/feature/player/data/chat/**;
+HSPLcom/twitchplayer/tv/feature/player/data/chat/**->**(**)**
+Lcom/twitchplayer/tv/core/data/repository/LiveWatcher**;
+HSPLcom/twitchplayer/tv/core/data/repository/LiveWatcher**->**(**)**

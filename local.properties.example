@@ -1,0 +1,8 @@
+# Copy to local.properties (git-ignored) and adjust. Never commit the real file.
+sdk.dir=/Users/<you>/Library/Android/sdk
+
+# Release signing (optional, local release builds only). CI injects these from GitHub Actions secrets.
+# signing.storeFile=/absolute/path/to/release.jks
+# signing.storePassword=
+# signing.keyAlias=
+# signing.keyPassword=
