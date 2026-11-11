@@ -100,7 +100,7 @@ their own baselines for their own lint runs.
 is the next step: a tap on Watch, a replay or a clip goes through `PlayerLauncher` (`navigation/PhoneKeys.kt`), which today answers with a
 short message ("The player is coming in the next update"). That stub is the only unfinished integration point.
 
-Screenshots (Pixel 8 emulator, Android 36, demo data): [docs/screenshots/phone/](screenshots/phone/).
+Screenshots (Pixel 8 emulator, Android 36, demo data and debug fixtures): [docs/screenshots/phone/](screenshots/phone/), retaken after the review follow-up.
 
 ### What it is
 
@@ -113,7 +113,7 @@ Screenshots (Pixel 8 emulator, Android 36, demo data): [docs/screenshots/phone/]
 | Search | text field that owns what is typed and only pushes changes to the presenter (a lagging presenter state can never overwrite typing), recents, trending, channel and category results, voice with the runtime microphone permission and a denied message |
 | Channel | header, live card + Watch, schedule, clips row, paged replays with resume bars, similar channels; pagination is a `snapshotFlow` over the list state |
 | Settings | account (sign in, sign-out confirmation), theme, in-app language (`AppLocales`, all 36), animations, the TV's chat options, playback stats, follow raids, about and open-source licences. Not offered on the phone: the player-engine switch (native only) and the preferred quality (chosen in the player) |
-| Sign-in | device-code dialog: open `twitch.tv/activate` (the URL Twitch returns already carries the code), a large code read letter by letter by TalkBack, a copy button, a countdown from the grant's own `expires_in`; the outcome (done, cancelled, failed) is told from the session afterwards (`signInOutcome`, 5 tests) because the presenter clears the code in every case |
+| Sign-in | device-code dialog: open `twitch.tv/activate` (the URL Twitch returns already carries the code), a large code read letter by letter by TalkBack, a copy button, a countdown from the grant's own `expires_in`; the outcome (success or failure) comes from the sign-in presenter itself (`SignInUiState.result`, see the review follow-up below) |
 | Accessibility | one described target per card (`cd_stream` from the TV strings), headings, 48 dp targets (M3 defaults), selectable rows, text scaling checked at 1.8x, reduced motion = the Animations switch or the system animator scale (skeletons stop pulsing, transitions snap) |
 | Large screens | `GridCells.Adaptive`: one stream column on a phone, two at 600 dp, three at 1000 dp; two title lines are reserved only when there are several columns so a row's cards stay level |
 
@@ -176,3 +176,54 @@ completed), keyboard search, font scale 1.8, a 600 dp and a 1000 dp window, rota
 - Sign-in completion: only the start of the grant (the code, the countdown, cancel) was run; no account was signed in.
 - Performance: no startup or frame benchmark exists for the phone.
 - CI has not run on GitHub (no remote).
+
+
+## Review follow-up (step B, after the independent review: 7.5/10)
+
+### Robustness
+
+| # | Finding | Cause and fix |
+|---|---|---|
+| 1 | "For you" showed a "Following" section header | Not wrong data: the section is the live channels the viewer follows (`HomeContent.following`), but it reused the TV string "Following", the name of the other sub-tab. It now says "Live from your follows" (`phone_home_live_following`, English and French); a UI test asserts the word appears once (the tab) on that screen |
+| 2 | The sign-in outcome was lost on rotation and relied on a 600 ms guess | The outcome now lives in the shared `AuthPresenter`: `SignInUiState.result` (`Success` or `Failed`), set when `session.signIn` returns (true / false) or throws (a failure, not a crash), kept until the UI sends `AuthEvent.ResultShown`, cleared when a new sign-in starts; a cancel is not a result. The activity-scoped holder keeps it across a rotation, `PhoneRoot` shows the message and acknowledges it afterwards (at least once, never lost). `SESSION_SETTLE_MS` and `signInOutcome()` are gone. 6 presenter tests on both targets; a UI test completes a sign-in with a failure, rotates the activity while the message is up and sees it again |
+| 3 | The countdown drifted when the app was backgrounded | `SignInCountdown` is a deadline on an injectable `ElapsedClock` (`SystemClock.elapsedRealtime`: counts sleep, ignores date changes), read on every tick (500 ms) instead of decremented; the deadline is `rememberSaveable` per device code, so a rotation does not restart it. 7 tests with a fake clock (rounding at the last second, a 25-minute pause, expiry, rebuild after recreation) |
+| 4 | The verification URL was opened unchecked | `isTwitchUrl`: https only, host `twitch.tv` or a subdomain, no credentials, default port. Look-alikes (`twitch.tv.example.com`, `evil-twitch.tv`, `user@host`), `javascript:`, `intent:`, `http:` are refused (5 tests). A refused or unopenable URL shows an inline message in the dialog (a Snackbar would sit behind the dialog's window) telling the viewer to go to twitch.tv/activate and type the code |
+| 5 | Bare clickables under 48 dp | `Modifier.clickableItem` is now `minimumInteractiveComponentSize().clickable(role = Button)` and every row uses it (similar channels, settings rows, channel rows, stream rows); switch and radio rows use `minimumInteractiveComponentSize` too. A UI test asserts the *touch* bounds (a 40 dp button has a 48 dp target) of a settings row, a switch row and the follow button |
+| 6 | Magic `SNACKBAR_ABOVE_BAR = 88.dp`, Settings content under the bar | The snackbar host is inside the scaffold's content area and padded by `WindowInsets.safeDrawing` (bottom): above the bar, beside the rail, above the keyboard and the gesture bar, at any text size. Looked at on a tab page with the bar (the failed sign-in message) and on detail pages. The Settings list has bottom content padding; scrolled to its end the last row ("Open-source licenses") is fully visible above the bar (`14-settings-end-dark.png`) |
+| 7 | `LocalReducedMotion` in `PhoneTheme.kt` | In `ui/theme/ReducedMotion.kt` next to `systemAnimationsOff`; the detekt allowlist keeps naming it |
+
+### Visual
+
+- **Medium width**: the rail's first item is level with the page title (a 16 dp top gap on the first item, rail layouts only), in dark and light. The channel's hero card stops growing at 560 dp.
+- **Density**: on a phone a stream is a compact row (168 dp 16:9 thumbnail beside the title): 5 to 6 streams fit where 2 did. From 600 dp wide it is a vertical card with two title lines reserved so a row's cards stay level. `StreamLayout` is read once per screen. Skeletons follow the layout. No card container any more: text sits on the page surface, so nothing looks pasted under a dark thumbnail in the light theme. Replays and clips follow.
+- **Sign-in dialog**: the code is centred between two 48 dp slots (empty / copy button); copy swaps the icon for a check, says "Code copied" (live region) and gives haptic feedback. *Not changed*: the space under "Expires in" is the dialog's own 24 dp before its button row; moving Cancel into the content only left an empty button row below it (tried, looked at, reverted).
+- **Channel**: the follow state is a button, tonal with a check when following, outlined "Follow" when not, with state semantics ("Following" / "Not following") and a click label. Twitch's API no longer lets a third-party app follow or unfollow, so it opens the channel on twitch.tv (the trailing arrow says so); it cannot be a toggle that toggles. The live card no longer repeats the avatar and channel name of the header.
+- **Category**: "Language: All languages | English" (two choices in a selectable group that wraps with large text; at 1.8x the second chip used to be squeezed into a narrow column, found by looking, fixed with `FlowRow`); the heart has a tooltip, a content description and a state description.
+- **Search**: dividers under the rows (inset on both sides), a hint line, the supporting text is one tone (on-surface-variant, AA in both themes) with a red dot for live instead of a second accent colour. The empty area under four trending channels is left: there is no further data to show.
+- **Settings**: labelled groups on rounded surfaces: Account, Appearance (theme, animations), Language (the row says the current language), Chat, Playback, About.
+- **Error and empty states** are seen with debug-only fixtures (`files/demo-offline`, `files/demo-empty`, `phone/src/debug/.../StateFixtures.kt`; the cache is replaced too, because a `SnapshotCache` singleton keeps the storage it was built with and showed a cached Home instead of the error). The empty "For you" tab now explains itself.
+
+Looked at (all in `docs/screenshots/phone/`): dark and light on every screen, medium width (600 dp) dark and light, error, empty, 1.8x text, Arabic (RTL), the sign-in dialog with a real code, the copy confirmation, the failure message above the bar.
+
+### Tests
+
+| Layer | Count |
+|---|---|
+| Phone unit tests (JVM) | **49**, 0 failures: countdown 7, URL 5, microphone flow 6, language choice 5, language label 2, channel helpers 5, navigator 8, theme 4, string parity 4, Koin graph 3 |
+| `AuthPresenterTest` (shared, jvm and Android host) | 11 each (6 new) |
+| Phone UI tests on the Pixel 8 emulator | **17 of 17**, run twice in a row (6 before): the earlier six, the Home header, density (4+ rows composed), rotation keeps the back stack, the language list (scrolled to French and Japanese), 48 dp targets, offline retry, empty states, the sign-in dialog (code, copy confirmation, cancel), a successful sign-in, a failed one and its message after a rotation |
+
+Test harness note: unloading a Koin module that *overrides* a production definition removes that definition for good (the first run of the offline test crashed the next test: "no definition for SnapshotCache"). Each UI test now loads the production modules first and its overrides after.
+
+### Final numbers (after the follow-up)
+
+| Check | Result |
+|---|---|
+| `./gradlew check --rerun-tasks` (fresh daemon) | green; **595 test executions, 0 failures** (phone 49, presenters 268 across jvm and Android host, core 68, chat 82, stream 64, player-api 14, platform-android 15, app 24, build-logic 11); lint and detekt on `:phone` with no baseline |
+| Compose compiler report (`:phone`) | **45 composables, 45 skippable, 0 unstable parameters** |
+| Release APK / AAB | **2,547,611 B / 5,931,734 B** (was 2,500,311 / 5,870,013 before the follow-up: +1.9 %, the new screens' code and strings); `classes.dex` 3,852,672 B; 0 demo or fixture classes in the mapping, no `demo_stream`, 0 `-keep` rules in our rule files, 36 language folders generated |
+| Phone UI tests on the emulator | 17 of 17, twice in a row |
+
+### Unchanged, still unverified
+
+The real phone (not connected; an early build installed and never launched), TalkBack output (semantics checked, not the screen reader), reduced motion seen running, a completed sign-in with an account, phone performance (no baseline profile or benchmark), CI on GitHub.
