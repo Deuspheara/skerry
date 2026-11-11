@@ -18,7 +18,33 @@ ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV
 ./gradlew :app:analyzeReleaseR8Config           # R8 Configuration Analyzer report (app/build/reports/r8/)
 ```
 
-Modules: `app` (Android TV UI) and `benchmark`, on top of the Kotlin Multiplatform modules `shared/core`, `shared/stream`, `shared/chat`, `shared/player-api`, `shared/presenters` and `shared/testing` (see [architecture](docs/ARCHITECTURE.md)).
+## Modules
+
+| Module | What it is |
+|---|---|
+| `app` | Android TV UI (Jetpack Compose), Media3 and WebView players, Android implementations of the platform interfaces, Koin wiring, demo data |
+| `shared/core` | Kotlin Multiplatform: models, Twitch API and auth, repositories, settings, platform interfaces |
+| `shared/stream` | stream, VOD and clip resolvers (GQL token, usher, master playlist) |
+| `shared/chat` | EventSub chat client, emote providers, chat assets |
+| `shared/player-api` | `VideoPlayer` interface and playback models |
+| `shared/presenters` | one presenter per screen: `StateFlow<UiState>` plus `onEvent(...)` |
+| `shared/testing` | fakes shared by the tests |
+| `benchmark` | Macrobenchmark and Baseline Profile generation |
+
+Dependency direction: `app` -> `presenters` -> `chat`, `stream`, `player-api` -> `core`. Shared code has no Android or
+`java.*` APIs (`./gradlew verifyCommonMain` enforces it). See [architecture](docs/ARCHITECTURE.md), the
+[presenter pattern](docs/PRESENTERS.md), the [migration log](docs/kmp-migration-log.md), the
+[performance baseline](docs/perf-baseline.md) and its [post-migration numbers](docs/perf-after-phase1.md), and the
+[localization plan](docs/LOCALIZATION_PLAN.md).
+
+### Tests
+
+```sh
+./gradlew :shared:presenters:jvmTest             # presenter tests on the JVM (fast, no Android needed)
+./gradlew :shared:presenters:testAndroidHostTest # the same tests against the Android target
+./gradlew allTests                               # every shared module, jvm + Android host
+./gradlew :app:testDebugUnitTest                 # app-side tests (holder ViewModels, Koin graph, Android implementations)
+```
 
 Connected Gradle tasks install on every adb device: set `ANDROID_SERIAL` so they never replace the release build on a TV.
 

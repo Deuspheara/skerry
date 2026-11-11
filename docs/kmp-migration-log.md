@@ -422,3 +422,75 @@ known one (`chatOptionsOpenFromSettings...`) passed again. No new failure. `Chat
 **Not verified:** the real TV; the R8 analyzer scores (the HTML renders them with JavaScript); chat Overlay mode, the VOD and the clip
 screens through the UI (see above); a long session; the Baseline / Startup Profiles are still the pre-migration ones (the old
 `*ViewModel` constructors and `VoiceRecognizer` are stale in them) and are regenerated at the end of Phase 1.
+
+## Final step: review nits, profiles, performance, wrap-up (2026-11-11)
+
+**Review nits (4b review, 8.5/10).**
+- `docs/ARCHITECTURE.md` claimed a Koin test per module resolves every platform binding. The bindings are *declared* in
+  `core.platform` but *consumed* by different modules (`Logger` by stream and chat, `DeviceProfile` and `VoiceInput` by
+  presenters), and `NumberFormatter` is consumed by no shared Koin graph (the UI hands it to the VOD helpers). A resolution
+  test in `shared/core` would have tested nothing, so the doc was corrected instead (column "Consumed by"); `NumberFormatter`
+  is covered by the app's `ProductionGraphResolutionTest`.
+- `config/compose/stability.conf` header now names the real five unstable parameters and the command that regenerates them.
+- `ignoreSimpleWhenEntries: true` was removed from `config/detekt/detekt.yml` (it was repo-wide for one `when`). Without it
+  exactly two findings return (`ChatFeed.run`, `PlayerPresenter.onEvent`), now baselined in the presenters baselines
+  (3 files, 2 entries each): narrower than the repo-wide switch.
+- `ClockTextZonesTest` pins `clockText` around DST transitions (Paris, Los Angeles), half- and quarter-hour zones (Kolkata,
+  Kathmandu, Chatham, Lord Howe) and UTC, with expected values computed independently (Python `zoneinfo`); a JVM parity test
+  compares against the old `Calendar` code for 8 zones at every 2025-2027 transition plus random instants.
+
+**Profiles.** `benchmark/tools/generate-profiles.sh` regenerated both profiles: baseline 28,888 -> 31,619 rules, startup
+19,429 -> 23,289. The generator collects the whole app process and applies no package filter, so shared-module classes (same
+packages, same APK) are covered; the hand-written wildcard rules for code the demo cannot reach are package-based and still
+match. 98.8 % of the startup-profile classes that survive R8 are in `classes.dex` (2,406 of 2,435).
+
+**Performance** (details and tables in [perf-after-phase1.md](perf-after-phase1.md)). APK +1.24 %, dex +1.55 %, analyzer
+scores +0.1 / 0 / +0.1, no `-keep` rules, 130 skippable composables and the same five unstable parameters. Same-session A/B
+against the pre-migration code: cold start with profile **-14 % first frame, -11 % full display** (3 runs each); frame timing
+no shift beyond the run-to-run noise (p50 within -9 % / +8 %). One of two full-suite runs read 365 ms median full display
+against the 340 ms policy line (outlier, slow session: the old code is above 340 ms in 2 of 3 runs of the same session).
+The real TV was not re-measured.
+
+**Verification.** `./gradlew check --rerun-tasks`: 521 test executions, 0 failures, 0 skipped (core 39 jvm + 29 Android host,
+stream 40 + 24, chat 41 + 41, player-api 7 + 7, presenters 130 + 126, app 37). Release APK and AAB build; `baseline.prof`
+(15,164 B) and `baseline.profm` (898 B) are packaged in both. Known flake: in a long-lived Gradle daemon, `check
+--rerun-tasks` can fail every detekt task with `Could not initialize class com.intellij.ide.plugins.PluginEnabler` (a sticky
+class-initialisation failure after the first detekt failure); `./gradlew --stop` and a rerun passes. CI always starts fresh
+daemons.
+
+### Phase 1 summary
+
+**What moved.** Six shared KMP modules (`com.android.kotlin.multiplatform.library` + `jvm()`), all packages unchanged, so the
+profiles, R8 and imports stayed valid:
+
+| Module | Contents |
+|---|---|
+| `shared/core` | models, Ktor client factory and API/DTOs, device-code auth, `TokenStore` interface, repositories, settings, snapshot cache, VOD progress, platform interfaces (`WallClock`, `Logger`, `SnapshotStorage`, `SettingsDefaults`, `AppConfig`, `DeviceProfile`, `NumberFormatter`), `sharedCoreModule()` |
+| `shared/stream` | GQL playback, VOD and clip resolvers, master playlist parser, retry (`formUrlEncode` is byte-identical to `URLEncoder`, tested against the JDK) |
+| `shared/chat` | EventSub chat client (session loop behind an injectable transport, 13 virtual-time tests), emote providers and repository, chat assets |
+| `shared/player-api` | `VideoPlayer`, playback and quality models, `PlaybackStats` on `kotlin.time.Instant` (fixed the API-26 `NewApi` bug) |
+| `shared/presenters` | nine presenters (`state` + `onEvent`), `Loader`, `ChatFeed`, `ChatLine`, VOD helpers, `ChannelKeyBus`, `timeOfDay` expect/actual |
+| `shared/testing` | fakes shared by the tests |
+
+Android-only code stays in `app` (Compose TV UI, Media3 and WebView players, Keystore, speech, holder ViewModels, demo data);
+the platform bindings are listed in `docs/ARCHITECTURE.md`.
+
+**Decisions.** Package names unchanged; `@Immutable` replaced by `config/compose/stability.conf`; presenters are plain classes
+with an injected scope and thin Android holder ViewModels; `verifyCommonMain` makes the "no JVM API in `commonMain`" rule a
+build failure; kotlinx-datetime rejected (+74 KB, +1.24 % APK for a five-character clock string); `formUrlEncode` instead of
+Ktor's encoder (different treatment of `~` and `*`); `AppConfig` reduced to what shared code reads.
+
+**Independent review scores** (fresh reviewers, strict scale, 9 = mergeable with trivial nits): step 1 7.5 -> 8 after fixes,
+steps 2-3 8.5, step 4a 8, step 4b 8.5. The final step is scored in the hand-over message.
+
+**Known gaps and follow-ups.**
+- Real-device validation is pending: the TV re-measurement (`benchmark/tools/install-release.sh`, first frame and Home content
+  against `docs/PERFORMANCE.md`) and a manual pass on the TV; everything here ran on the emulator and in unit tests.
+- Detekt baseline burn-down: the shared modules carry moved legacy findings in per-task baselines
+  (`shared/*/detekt-baseline*.xml`), and the app keeps its own; none was added for new code.
+- `EventSubChatClient` has no keepalive timeout in the original and none was invented; the session tests document the
+  existing behaviour.
+- Two instrumented UI tests fail on the emulator on the pre-migration code as well (`searchOpensOnTheVoiceKey`,
+  `backClosesTheZapperBeforeLeavingThePlayer`); no new failure.
+- The localization is plan-only: [LOCALIZATION_PLAN.md](LOCALIZATION_PLAN.md).
+- An old `stash@{0}` ("WIP on (no branch): 0a64965") from an earlier step is still in the repository, untouched.
