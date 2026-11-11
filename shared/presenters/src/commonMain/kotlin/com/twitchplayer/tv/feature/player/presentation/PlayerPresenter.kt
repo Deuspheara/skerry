@@ -136,6 +136,7 @@ class PlayerPresenter(
             PlayerEvent.ToggleFullscreen -> toggleFullscreen()
             PlayerEvent.EnsureChatVisible -> ensureChatVisible()
             PlayerEvent.CycleChat -> cycleChat()
+            is PlayerEvent.SetChatMode -> showChat(event.mode)
             is PlayerEvent.UpdateChatSettings -> updateChatSettings(event.transform)
             PlayerEvent.OpenChatSettings -> openChatSettings()
             PlayerEvent.CloseChatSettings -> closeChatSettings()

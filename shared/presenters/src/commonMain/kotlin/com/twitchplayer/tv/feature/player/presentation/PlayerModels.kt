@@ -35,6 +35,9 @@ sealed interface PlayerEvent {
     /** Writing a message shows the chat first. */
     data object EnsureChatVisible : PlayerEvent
     data object CycleChat : PlayerEvent
+
+    /** Shows chat in exactly [mode] for this session (the phone picks hidden / side panel / overlay directly; same rules as the chat button). */
+    data class SetChatMode(val mode: ChatMode) : PlayerEvent
     data class UpdateChatSettings(val transform: (ChatSettings) -> ChatSettings) : PlayerEvent
     data object OpenChatSettings : PlayerEvent
     data object CloseChatSettings : PlayerEvent

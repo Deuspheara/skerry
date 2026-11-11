@@ -169,6 +169,19 @@ class PlayerPresenterTest {
         assertEquals(ChatMode.Compact, saved.settings.value.chatMode, "the chat button is for this viewing session only")
     }
 
+    @Test fun setChatModeShowsExactlyThatModeForThisSessionOnly() = runTest(dispatcher) {
+        val saved = FakeSettings(AppSettings(chatMode = ChatMode.Compact))
+        val vm = vm(chat = ChatMode.Compact, settingsOverride = saved)
+        runCurrent()
+        vm.onEvent(PlayerEvent.SetChatMode(ChatMode.Overlay))
+        runCurrent()
+        assertEquals(ChatMode.Overlay, vm.state.value.chatMode)
+        vm.onEvent(PlayerEvent.SetChatMode(ChatMode.Hidden))
+        runCurrent()
+        assertEquals(ChatMode.Hidden, vm.state.value.chatMode)
+        assertEquals(ChatMode.Compact, saved.settings.value.chatMode, "like the chat button, it never changes the saved default")
+    }
+
     @Test fun fullscreenSuppressesChatWithoutLosingTheChoice() = runTest(dispatcher) {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()
