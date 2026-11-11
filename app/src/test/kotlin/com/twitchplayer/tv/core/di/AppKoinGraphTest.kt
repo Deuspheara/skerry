@@ -36,11 +36,11 @@ internal fun koinVerifyInjections(): List<ParameterTypeInjection> = injectedPara
 
 /**
  * Every constructor dependency of every definition must be declared by some module of the production graph
- * (`sharedCoreModule` + `sharedStreamModule` + `sharedChatModule` + the Android `coreModule` + the view models); a missing platform binding fails here, not at launch.
+ * (`sharedCoreModule` + `sharedStreamModule` + `sharedChatModule` + `sharedPresentersModule` + the Android `coreModule` + the view models); a missing platform binding fails here, not at launch.
  */
 @OptIn(KoinExperimentalAPI::class)
 class AppKoinGraphTest {
     @Test fun productionGraphDeclaresEveryDependency() {
-        module { includes(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), coreModule, viewModelModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
+        module { includes(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), sharedPresentersModule(), coreModule, viewModelModule) }.verify(koinVerifyExtraTypes, koinVerifyInjections())
     }
 }

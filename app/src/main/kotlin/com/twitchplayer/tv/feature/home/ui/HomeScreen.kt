@@ -35,6 +35,7 @@ import com.twitchplayer.tv.core.ui.LoadGate
 import com.twitchplayer.tv.core.ui.rememberAnchoredSpec
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import com.twitchplayer.tv.feature.home.presentation.HomeContent
+import com.twitchplayer.tv.feature.home.presentation.HomeEvent
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -44,11 +45,12 @@ fun HomeRoute(
     onCategory: (Category) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
-    val load by viewModel.state.collectAsState()
+    val presenter = viewModel.presenter
+    val load by presenter.state.collectAsState()
     // "Fully drawn" for startup metrics (logcat, Macrobenchmark's timeToFullDisplay): the first real Home state is shown.
     ReportDrawnWhen { load !is Load.Loading }
     Box(Modifier.fillMaxSize()) {
-        LoadGate(load, onRetry = viewModel::retry, skeleton = { SkeletonHome() }) { content ->
+        LoadGate(load, onRetry = { presenter.onEvent(HomeEvent.Retry) }, skeleton = { SkeletonHome() }) { content ->
             HomeScreen(content, onWatch, onCategory)
         }
         TopBar(Modifier.align(Alignment.TopStart))

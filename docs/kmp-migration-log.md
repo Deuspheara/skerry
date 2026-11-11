@@ -266,3 +266,45 @@ Verification (tree at the step-3 commit):
 - Follow-up recorded: **detekt baseline burn-down.** `shared/{core,stream,chat}/detekt-baseline*.xml` and `app/detekt-baseline*.xml`
   hold only moved/legacy findings (MagicNumber, complexity, generic exception handling). They should shrink over time: when a
   file is touched for a feature, fix its baselined findings in the same PR; never add entries.
+
+## Step 4a, parts 1-2: `:shared:player-api`, `:shared:testing`, `:shared:presenters`
+
+`:shared:player-api` (dependencies: coroutines, serialization-json; it does not need `:shared:core`, so it does not depend on it):
+`VideoPlayer`, `VideoQuality(ies)`, `PlaybackStats`, `AdBreak`, `HlsAds`. `HlsAds` now parses `START-DATE` with `kotlin.time.Instant`
+instead of `java.time.Instant` (API 26 vs minSdk 24): the `NewApi` Lint finding is gone from `app/lint-baseline.xml` (20 -> 18 issues,
+none `NewApi`). For the shapes Twitch sends (with or without fractional seconds) the result is identical; the new parser also reads an
+explicit UTC offset (`+01:00`), which the old one did too on API 26+. Tests moved to `commonTest` (`kotlin.test`) and a test pins the
+accepted shapes.
+
+`:shared:testing`: the fakes (`FakeRepository`, `FakeSession`, `FakeSettings`, `stream()`, `category()`), moved from
+`app/src/test/.../testing/Fakes.kt`; `commonMain` of a KMP library so shared and app tests can both depend on it. Two detekt findings
+in the moved file were fixed (a named constant, a `val`).
+
+`:shared:presenters` (depends on `:shared:core` and collections-immutable; it will depend on `:shared:stream`, `:shared:chat` and
+`:shared:player-api` when the player presenter moves in step 4b, not before): `Load`/`Loader`/`FlowBatch`, and 8 presenters replacing the
+ViewModels (Auth, Home, Browse, Category, Channel, Follows, Search, Settings) following `docs/PRESENTERS.md`.
+Seams: `DeviceProfile` (core.platform; Android: `Locale.getDefault().toLanguageTag()`; replaces `java.util.Locale` in the category
+screen: `twitchLanguage(languageTag)` has the same mappings, tested for `fr-FR`, `nb-NO`, `zh-HK`, `zh-Hant-HK`, `fil`, legacy `in`/`iw`),
+`VoiceInput` (replaces the Android `VoiceRecognizer` interface; `PlatformVoiceRecognizer` implements it). `SnapshotCache` got an
+optional `io: CoroutineDispatcher = Dispatchers.IO` (same default, makes the stale-while-revalidate flow testable). Home, Follows,
+Category and Channel presenters got the optional `loadDispatcher` Browse already had.
+
+Behaviour notes (intentional, documented):
+- Category and Channel expose one combined state instead of several flows (`CategoryScreenState(load, language, languageOnly)`,
+  `ChannelUiState(details, tail, progress)`); the channel's `progress` source keeps its `WhileSubscribed(5 s)` lifetime. The channel
+  screen's focus memory (`lastClip`, `lastReplay`) stays in the Android holder.
+- `SettingsUiState.playerEngine` starts on the build default, passed in from `AppConfig` (it was `PlayerEngine.buildDefault()`).
+- UI call sites changed from `viewModel.fn()` to `presenter.onEvent(...)`; visuals and behaviour are unchanged.
+- The app's baseline profile still names the old `*ViewModel` constructors and `VoiceRecognizer`: it is regenerated at the end of
+  Phase 1 (planned).
+
+Tests: 39 new/moved presenter tests (Home incl. snapshot flow, Follows, Browse, Category, Channel, Search, Settings, Auth, Load/Loader,
+FlowBatch, `SharedPresentersModuleTest`). The app's `AppKoinGraphTest` / `DemoKoinGraphTest` include `sharedPresentersModule()`.
+
+Compose stability: moving the state classes out of the app made `HomeContent`, `FollowsContent`, `BrowseUiState`, `CategoryUiState`,
+`SearchUiState`, `SettingsUiState` unstable in the first report (6 new unstable parameters); they are now listed in
+`config/compose/stability.conf`, and the report is back to the same 5 unstable parameters (`context`, `preview`, `edgeGuard`,
+`controller`, `token`) and 130 skippable composables.
+
+detekt: `shared/presenters/detekt-baseline*.xml` hold only the 9 legacy entries that moved with `Load.kt`, `SearchPresenter`,
+`ChannelPresenter` (same rule IDs as in the pre-move app baselines); the app baselines only shrank (removed 10 / 13 / 2 / 13, added 0).

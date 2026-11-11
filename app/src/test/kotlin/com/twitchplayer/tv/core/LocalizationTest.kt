@@ -17,9 +17,12 @@ class LocalizationTest {
     }
 
     @Test fun twitchLanguageCodes() {
-        assertEquals("fr", twitchLanguage(Locale.FRANCE))
-        assertEquals("no", twitchLanguage(Locale.forLanguageTag("nb-NO")))
-        assertEquals("zh-hk", twitchLanguage(Locale.forLanguageTag("zh-HK")))
-        assertEquals("tl", twitchLanguage(Locale.forLanguageTag("fil")))
+        // The Android DeviceProfile hands presenters Locale.toLanguageTag(): same codes as before the tag-based API.
+        assertEquals("fr", twitchLanguage(Locale.FRANCE.toLanguageTag()))
+        assertEquals("no", twitchLanguage(Locale.forLanguageTag("nb-NO").toLanguageTag()))
+        assertEquals("zh-hk", twitchLanguage(Locale.forLanguageTag("zh-HK").toLanguageTag()))
+        assertEquals("tl", twitchLanguage(Locale.forLanguageTag("fil").toLanguageTag()))
+        assertEquals("id", twitchLanguage(Locale("in", "ID").toLanguageTag()))
+        assertEquals("he", twitchLanguage(Locale("iw", "IL").toLanguageTag()))
     }
 }

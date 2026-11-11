@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>SwallowedException:ChannelPresenter.kt:ChannelPresenter$e: Exception</ID>
+    <ID>SwallowedException:Load.kt:Loader$e: Exception</ID>
+    <ID>SwallowedException:SearchPresenter.kt:SearchPresenter$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ChannelPresenter.kt:ChannelPresenter$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:Load.kt:Loader$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SearchPresenter.kt:SearchPresenter$e: Exception</ID>
+    <ID>UnusedPrivateProperty:Load.kt:Loader$private val block: suspend () -&gt; T</ID>
+    <ID>UnusedPrivateProperty:Load.kt:Loader$private val cache: LoadCache&lt;T&gt;? = null</ID>
+    <ID>UnusedPrivateProperty:SearchPresenter.kt:SearchPresenter$private val repository: TwitchRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

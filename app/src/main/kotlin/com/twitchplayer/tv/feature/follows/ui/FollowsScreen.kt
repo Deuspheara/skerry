@@ -52,6 +52,7 @@ import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import com.twitchplayer.tv.core.ui.sharedArt
 import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.follows.presentation.FollowsContent
+import com.twitchplayer.tv.feature.follows.presentation.FollowsEvent
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.compose.foundation.lazy.items as lazyItems
@@ -62,9 +63,10 @@ fun FollowsRoute(
     onChannel: (ChannelRef) -> Unit,
     viewModel: FollowsViewModel = koinViewModel(),
 ) {
-    val load by viewModel.state.collectAsState()
+    val presenter = viewModel.presenter
+    val load by presenter.state.collectAsState()
     Box(Modifier.fillMaxSize()) {
-        LoadGate(load, onRetry = viewModel::retry, skeleton = { SkeletonGrid(4, category = false, showHeader = true) }) { content -> FollowsScreen(content, onWatch, onChannel) }
+        LoadGate(load, onRetry = { presenter.onEvent(FollowsEvent.Retry) }, skeleton = { SkeletonGrid(4, category = false, showHeader = true) }) { content -> FollowsScreen(content, onWatch, onChannel) }
         TopBar(Modifier.align(Alignment.TopStart))
     }
 }

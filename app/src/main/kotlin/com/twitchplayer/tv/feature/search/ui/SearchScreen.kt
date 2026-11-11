@@ -60,6 +60,7 @@ import com.twitchplayer.tv.core.ui.FocusMemory
 import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import com.twitchplayer.tv.feature.search.presentation.ResultsUi
+import com.twitchplayer.tv.feature.search.presentation.SearchEvent
 import com.twitchplayer.tv.feature.search.presentation.SearchUiState
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
 import com.twitchplayer.tv.feature.search.presentation.VoiceState
@@ -71,34 +72,35 @@ fun SearchRoute(
     onCategory: (Category) -> Unit,
     viewModel: SearchViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val presenter = viewModel.presenter
+    val state by presenter.state.collectAsState()
     val context = LocalContext.current
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) viewModel.startVoice()
+        if (granted) presenter.onEvent(SearchEvent.StartVoice)
     }
     SearchScreen(
         state = state,
-        onKey = viewModel::append,
-        onSpace = viewModel::space,
-        onDelete = viewModel::delete,
-        onClear = viewModel::clear,
+        onKey = { presenter.onEvent(SearchEvent.Append(it)) },
+        onSpace = { presenter.onEvent(SearchEvent.Space) },
+        onDelete = { presenter.onEvent(SearchEvent.Delete) },
+        onClear = { presenter.onEvent(SearchEvent.Clear) },
         onVoice = {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                viewModel.startVoice()
+                presenter.onEvent(SearchEvent.StartVoice)
             } else {
                 permission.launch(Manifest.permission.RECORD_AUDIO)
             }
         },
-        onRecent = viewModel::setQuery,
+        onRecent = { presenter.onEvent(SearchEvent.SetQuery(it)) },
         onChannel = {
-            viewModel.commitQuery()
+            presenter.onEvent(SearchEvent.CommitQuery)
             onChannel(it)
         },
         onCategory = {
-            viewModel.commitQuery()
+            presenter.onEvent(SearchEvent.CommitQuery)
             onCategory(it)
         },
-        onCancelVoice = viewModel::cancelVoice,
+        onCancelVoice = { presenter.onEvent(SearchEvent.CancelVoice) },
     )
 }
 

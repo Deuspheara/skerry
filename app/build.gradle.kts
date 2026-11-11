@@ -94,6 +94,7 @@ dependencies {
   implementation(project(":shared:stream"))
   implementation(project(":shared:chat"))
   implementation(project(":shared:player-api"))
+  implementation(project(":shared:presenters"))
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.profileinstaller)
@@ -132,6 +133,7 @@ dependencies {
   implementation(libs.androidx.media3.ui)
 
   testImplementation(libs.junit)
+  testImplementation(project(":shared:testing"))
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.ktor.client.mock)
   testImplementation(libs.koin.test)

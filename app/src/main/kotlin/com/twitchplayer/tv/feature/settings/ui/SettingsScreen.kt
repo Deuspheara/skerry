@@ -61,22 +61,24 @@ import com.twitchplayer.tv.core.ui.TvFocusable
 import com.twitchplayer.tv.core.ui.focusFill
 import com.twitchplayer.tv.core.ui.staggerIn
 import com.twitchplayer.tv.feature.player.ui.ChatSettingsPanel
+import com.twitchplayer.tv.feature.settings.presentation.SettingsEvent
 import com.twitchplayer.tv.feature.settings.presentation.SettingsUiState
 import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingsRoute(viewModel: SettingsViewModel = koinViewModel()) {
-    val state by viewModel.state.collectAsState()
+    val presenter = viewModel.presenter
+    val state by presenter.state.collectAsState()
     val actions = LocalAppActions.current
     SettingsScreen(
         state = state,
-        onChatMode = viewModel::setChatMode,
-        onChatOptions = viewModel::updateChat,
-        onAnimations = viewModel::toggleAnimations,
-        onPlayerEngine = viewModel::togglePlayerEngine,
-        onStats = viewModel::toggleStats,
-        onFollowRaids = viewModel::toggleFollowRaids,
+        onChatMode = { presenter.onEvent(SettingsEvent.SetChatMode(it)) },
+        onChatOptions = { presenter.onEvent(SettingsEvent.UpdateChat(it)) },
+        onAnimations = { presenter.onEvent(SettingsEvent.ToggleAnimations) },
+        onPlayerEngine = { presenter.onEvent(SettingsEvent.TogglePlayerEngine) },
+        onStats = { presenter.onEvent(SettingsEvent.ToggleStats) },
+        onFollowRaids = { presenter.onEvent(SettingsEvent.ToggleFollowRaids) },
         onSignIn = actions::signIn,
         onSignOut = actions::signOut,
         onQuit = actions::requestQuit,
@@ -112,8 +114,9 @@ private fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(Modifier.padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Avatar(state.account ?: "?", null, size = 60.dp)
-                if (state.account != null) Text(state.account, style = TvType.ProfileName, color = TvColors.Text, maxLines = 1)
+                val account = state.account
+                Avatar(account ?: "?", null, size = 60.dp)
+                if (account != null) Text(account, style = TvType.ProfileName, color = TvColors.Text, maxLines = 1)
             }
             Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -175,8 +178,9 @@ private fun SettingsScreen(
         }
         TopBar(Modifier.align(Alignment.TopStart))
     }
-    if (confirmSignOut && state.account != null) {
-        SignOutDialog(state.account, onCancel = { confirmSignOut = false }, onSignOut = {
+    val signedInAs = state.account
+    if (confirmSignOut && signedInAs != null) {
+        SignOutDialog(signedInAs, onCancel = { confirmSignOut = false }, onSignOut = {
             confirmSignOut = false
             onSignOut()
         })

@@ -11,6 +11,7 @@ import com.twitchplayer.tv.core.data.repository.AndroidSnapshotStorage
 import com.twitchplayer.tv.core.network.auth.AndroidKeystoreTokenStore
 import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.platform.AppConfig
+import com.twitchplayer.tv.core.platform.DeviceProfile
 import com.twitchplayer.tv.core.platform.Logger
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.core.platform.SnapshotStorage
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit
 /** Android bindings. The platform-independent ones are in `sharedCoreModule()`. */
 val coreModule = module {
     // Platform pieces the shared module needs (see sharedCoreModule()).
+    single<DeviceProfile> { AndroidDeviceProfile() }
     single { AppConfig(clientId = BuildConfig.TWITCH_CLIENT_ID, defaultPlayerEngine = PlayerEngine.buildDefault()) }
     single<HttpClientEngineFactory<*>> { OkHttp }
     // Warn level survives R8's stripping of Log.v/d/i (see proguard-rules.pro).

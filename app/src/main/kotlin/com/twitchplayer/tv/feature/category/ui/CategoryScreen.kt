@@ -48,6 +48,7 @@ import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import com.twitchplayer.tv.core.ui.sharedArt
 import com.twitchplayer.tv.core.ui.staggerIn
+import com.twitchplayer.tv.feature.category.presentation.CategoryEvent
 import com.twitchplayer.tv.feature.category.presentation.CategoryUiState
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -62,21 +63,22 @@ fun CategoryRoute(
     onWatch: (LiveStream) -> Unit,
     viewModel: CategoryViewModel = koinViewModel(key = categoryId) { parametersOf(categoryId) },
 ) {
-    val load by viewModel.state.collectAsState()
-    val (language, languageOnly) = viewModel.language.collectAsState().value
-    val languageFilter = LanguageFilter(language, languageOnly, viewModel::toggleLanguage)
+    val presenter = viewModel.presenter
+    val state by presenter.state.collectAsState()
+    val load = state.load
+    val languageFilter = LanguageFilter(state.language, state.languageOnly) { presenter.onEvent(CategoryEvent.ToggleLanguage) }
     Box(Modifier.fillMaxSize()) {
         // The header stays visible in every state so Back (focus fallback) always exists.
         LoadGate(
             load,
-            onRetry = viewModel::retry,
+            onRetry = { presenter.onEvent(CategoryEvent.Retry) },
             modifier = Modifier.padding(top = HEADER_HEIGHT),
             skeleton = { SkeletonGrid(4, category = false, top = 0.dp) },
         ) { ui ->
-            CategoryContent("cat:$categoryId", name, artUrl, ui, languageFilter, viewModel::toggleFavorite, onBack, onWatch)
+            CategoryContent("cat:$categoryId", name, artUrl, ui, languageFilter, { presenter.onEvent(CategoryEvent.ToggleFavorite) }, onBack, onWatch)
         }
         if (load !is com.twitchplayer.tv.core.presentation.Load.Ready) {
-            CategoryHeader("cat:$categoryId", name, artUrl, favorite = false, languageFilter, onBack = onBack, onToggleFavorite = viewModel::toggleFavorite, modifier = Modifier.align(Alignment.TopStart))
+            CategoryHeader("cat:$categoryId", name, artUrl, favorite = false, languageFilter, onBack = onBack, onToggleFavorite = { presenter.onEvent(CategoryEvent.ToggleFavorite) }, modifier = Modifier.align(Alignment.TopStart))
         }
     }
 }

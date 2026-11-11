@@ -2,6 +2,7 @@ package com.twitchplayer.tv.core.data.repository
 
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.platform.WallClock
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
@@ -16,11 +17,12 @@ import kotlinx.serialization.json.Json
 class SnapshotCache(
     private val storage: SnapshotStorage,
     private val clock: WallClock = WallClock.System,
+    private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    // Encoding, decoding and the storage calls all run on the IO dispatcher, never on the caller's (often the main) one.
-    suspend fun <T> read(name: String, userId: String, serializer: KSerializer<T>, maxAgeMs: Long = DAY_MS): T? = withContext(Dispatchers.IO) {
+    // Encoding, decoding and the storage calls all run on [io] (the IO dispatcher), never on the caller's (often the main) one.
+    suspend fun <T> read(name: String, userId: String, serializer: KSerializer<T>, maxAgeMs: Long = DAY_MS): T? = withContext(io) {
         runCatching {
             val text = storage.read(name) ?: return@runCatching null
             val entry = json.decodeFromString(Entry.serializer(serializer), text)
@@ -29,7 +31,7 @@ class SnapshotCache(
     }
 
     suspend fun <T> write(name: String, userId: String, serializer: KSerializer<T>, data: T) {
-        withContext(Dispatchers.IO) {
+        withContext(io) {
             runCatching {
                 storage.write(name, json.encodeToString(Entry.serializer(serializer), Entry(userId, clock.nowMillis(), data)))
             }
@@ -38,7 +40,7 @@ class SnapshotCache(
 
     /** Drops every snapshot (sign-out). */
     suspend fun clear() {
-        withContext(Dispatchers.IO) { runCatching { storage.clear() } }
+        withContext(io) { runCatching { storage.clear() } }
     }
 
     @Serializable

@@ -67,6 +67,7 @@ import com.twitchplayer.tv.core.ui.formatViewers
 import com.twitchplayer.tv.core.ui.rememberRowSpec
 import com.twitchplayer.tv.core.ui.sharedArt
 import com.twitchplayer.tv.core.ui.staggerIn
+import com.twitchplayer.tv.feature.channel.presentation.ChannelEvent
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
 import com.twitchplayer.tv.feature.vod.data.VodProgress
 import org.koin.compose.viewmodel.koinViewModel
@@ -82,10 +83,12 @@ fun ChannelRoute(
     onReplay: (Replay) -> Unit,
     viewModel: ChannelViewModel = koinViewModel(key = login) { parametersOf(login) },
 ) {
-    val load by viewModel.state.collectAsState()
-    val tail by viewModel.tail.collectAsState()
-    val progress by viewModel.progress.collectAsState()
-    LoadGate(load, onRetry = viewModel::retry, skeleton = { SkeletonChannel() }) { details ->
+    val presenter = viewModel.presenter
+    val state by presenter.state.collectAsState()
+    val load = state.details
+    val tail = state.tail
+    val progress = state.progress
+    LoadGate(load, onRetry = { presenter.onEvent(ChannelEvent.Retry) }, skeleton = { SkeletonChannel() }) { details ->
         ChannelScreen(
             details, onBack, onWatch, onChannel,
             onClip = {
@@ -100,7 +103,7 @@ fun ChannelRoute(
                 onReplay(it)
             },
             restoreReplay = viewModel.lastReplay,
-            loadMoreReplays = { viewModel.loadMoreReplays(details.channel.id, details.replaysCursor) },
+            loadMoreReplays = { presenter.onEvent(ChannelEvent.LoadMoreReplays(details.channel.id, details.replaysCursor)) },
         )
     }
 }

@@ -42,6 +42,7 @@ import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.ui.AppActions
 import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.core.ui.LocalAppActions
+import com.twitchplayer.tv.feature.auth.presentation.AuthEvent
 import com.twitchplayer.tv.feature.browse.ui.BrowseRoute
 import com.twitchplayer.tv.feature.category.ui.CategoryRoute
 import com.twitchplayer.tv.feature.channel.ui.ChannelRoute
@@ -85,13 +86,14 @@ fun TwitchTvApp(
     val navigator = remember(backStack) { AppNavigator(backStack) }
     val toast = remember { ToastState() }
     var showQuit by remember { mutableStateOf(false) }
-    val signIn by authViewModel.state.collectAsState()
+    val auth = authViewModel.presenter
+    val signIn by auth.state.collectAsState()
     val motion = LocalMotion.current
 
-    val actions = remember(authViewModel) {
+    val actions = remember(auth) {
         object : AppActions {
-            override fun signIn() = authViewModel.signIn()
-            override fun signOut() = authViewModel.signOut()
+            override fun signIn() = auth.onEvent(AuthEvent.SignIn)
+            override fun signOut() = auth.onEvent(AuthEvent.SignOut)
             override fun requestQuit() {
                 showQuit = true
             }
@@ -254,7 +256,7 @@ fun TwitchTvApp(
                 onExpand = { navigator.push(PlayerKey(player.state.value.login)) },
             )
             TvToastHost(toast)
-            signIn.code?.let { SignInDialog(it, onCancel = authViewModel::cancel) }
+            signIn.code?.let { SignInDialog(it, onCancel = { auth.onEvent(AuthEvent.Cancel) }) }
             if (showQuit) QuitDialog(onStay = { showQuit = false }, onQuit = onQuit)
         }
     }

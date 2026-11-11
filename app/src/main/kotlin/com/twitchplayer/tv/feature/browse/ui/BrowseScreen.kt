@@ -41,6 +41,7 @@ import com.twitchplayer.tv.core.ui.jumpOnKey
 import com.twitchplayer.tv.core.ui.redirectFocusOnExit
 import com.twitchplayer.tv.core.ui.rememberFocusMemory
 import com.twitchplayer.tv.core.ui.staggerIn
+import com.twitchplayer.tv.feature.browse.presentation.BrowseEvent
 import com.twitchplayer.tv.feature.browse.presentation.BrowseFilter
 import com.twitchplayer.tv.feature.browse.presentation.BrowseSort
 import com.twitchplayer.tv.feature.browse.presentation.BrowseUiState
@@ -49,10 +50,11 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun BrowseRoute(onCategory: (Category) -> Unit, viewModel: BrowseViewModel = koinViewModel()) {
-    val load by viewModel.state.collectAsState()
+    val presenter = viewModel.presenter
+    val load by presenter.state.collectAsState()
     Box(Modifier.fillMaxSize()) {
-        LoadGate(load, onRetry = viewModel::retry, skeleton = { SkeletonGrid(7, category = true, chips = true) }) { ui ->
-            BrowseScreen(ui, viewModel::selectFilter, viewModel::toggleSort, onCategory)
+        LoadGate(load, onRetry = { presenter.onEvent(BrowseEvent.Retry) }, skeleton = { SkeletonGrid(7, category = true, chips = true) }) { ui ->
+            BrowseScreen(ui, { presenter.onEvent(BrowseEvent.SelectFilter(it)) }, { presenter.onEvent(BrowseEvent.ToggleSort) }, onCategory)
         }
         TopBar(Modifier.align(Alignment.TopStart))
     }

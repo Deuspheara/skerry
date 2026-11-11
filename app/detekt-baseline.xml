@@ -2,7 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ComplexCondition:PlaybackStats.kt:HlsAds$playheadMs &gt;= start &amp;&amp; remaining &gt; 0 &amp;&amp; (best == null || remaining &gt; best.remainingMs)</ID>
     <ID>ComplexCondition:PlayerScreen.kt:event.type != KeyEventType.KeyDown || dockOpen || interactive || focusInChat</ID>
     <ID>ComposableParamOrder:PlayerControlBar.kt:@Composable fun PlayerControlBar</ID>
     <ID>CompositionLocalAllowlist:AppActions.kt:val LocalAppActions = staticCompositionLocalOf&lt;AppActions&gt; { object : AppActions { override fun signIn() = Unit override fun signOut() = Unit override fun requestQuit() = Unit } }</ID>
@@ -18,7 +17,6 @@
     <ID>CyclomaticComplexMethod:DemoChat.kt:DemoChat$private fun message: ChatMessage</ID>
     <ID>CyclomaticComplexMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
     <ID>CyclomaticComplexMethod:Keyboard.kt:internal fun keyboardRows: List&lt;List&lt;String&gt;&gt;</ID>
-    <ID>CyclomaticComplexMethod:PlaybackStats.kt:HlsAds$fun current: AdBreak?</ID>
     <ID>ExplicitItLambdaMultipleParameters:BrowseScreen.kt:{ _, it -&gt; it.id }</ID>
     <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.channelId }</ID>
     <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.id }</ID>
@@ -31,7 +29,6 @@
     <ID>LambdaParameterInRestartableEffect:VodScreen.kt:onFailed: (VodError, Long) -&gt; Unit</ID>
     <ID>LongMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
     <ID>LongMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
-    <ID>LoopWithTooManyJumpStatements:PlaybackStats.kt:HlsAds$for</ID>
     <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$128</ID>
     <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$3</ID>
     <ID>MagicNumber:AppKeys.kt:3</ID>
@@ -56,7 +53,6 @@
     <ID>MagicNumber:ChatLine.kt:6</ID>
     <ID>MagicNumber:ChatLine.kt:8</ID>
     <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
-    <ID>MagicNumber:PlaybackStats.kt:HlsAds$3</ID>
     <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
@@ -101,16 +97,10 @@
     <ID>ParameterNaming:PlayerScreen.kt:onInfoFocused: (Boolean) -&gt; Unit</ID>
     <ID>ParameterNaming:VodScreen.kt:onFailed: (VodError, Long) -&gt; Unit</ID>
     <ID>StateParam:ChatLineView.kt:animated: State&lt;Int&gt;</ID>
-    <ID>SwallowedException:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
     <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
-    <ID>SwallowedException:Load.kt:Loader$e: Exception</ID>
-    <ID>SwallowedException:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
     <ID>ThrowsCount:DemoModule.kt:DemoVods$override suspend fun resolve: ResolvedVod</ID>
-    <ID>TooGenericExceptionCaught:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
-    <ID>TooGenericExceptionCaught:Load.kt:Loader$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>

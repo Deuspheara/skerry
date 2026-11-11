@@ -39,7 +39,7 @@ import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
-import com.twitchplayer.tv.feature.search.data.VoiceRecognizer
+import com.twitchplayer.tv.feature.search.presentation.VoiceInput
 import com.twitchplayer.tv.feature.search.ui.Keyboard
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -53,7 +53,7 @@ internal const val MAX_CHAT_LENGTH = 500
  */
 @Composable
 fun ChatComposeDialog(onSend: (String) -> Unit, onDismiss: () -> Unit) {
-    val voice = koinInject<VoiceRecognizer>()
+    val voice = koinInject<VoiceInput>()
     val scope = rememberCoroutineScope()
     var text by remember { mutableStateOf("") }
     var listening by remember { mutableStateOf(false) }

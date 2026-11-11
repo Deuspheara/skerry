@@ -34,7 +34,7 @@ import com.twitchplayer.tv.feature.player.data.stream.VodAccessException
 import com.twitchplayer.tv.feature.player.data.stream.VodFailure
 import com.twitchplayer.tv.feature.player.data.stream.VodResolver
 import com.twitchplayer.tv.feature.player.ui.embed.PlayerConfigProvider
-import com.twitchplayer.tv.feature.search.data.VoiceRecognizer
+import com.twitchplayer.tv.feature.search.presentation.VoiceInput
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -107,7 +107,7 @@ private class DemoRepository(private val context: Context) : TwitchRepository {
     }
 }
 
-private class DemoVoice : VoiceRecognizer {
+private class DemoVoice : VoiceInput {
     private var n = 0
     override fun isAvailable() = true
     override suspend fun listen(): String? {
@@ -170,7 +170,7 @@ val demoModule = module {
     single<VodResolver> { DemoVods(androidContext(), GqlVodResolver(get(), get())) }
     single<ChatSource> { DemoChat(androidContext()) }
     single<ChatAssetsSource> { DemoChatAssets }
-    factory<VoiceRecognizer> { DemoVoice() }
+    factory<VoiceInput> { DemoVoice() }
     single<TwitchPlaybackResolver> { DemoResolver(androidContext()) }
     single { PlayerConfigProvider(null) }
 }
