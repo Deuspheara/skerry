@@ -11,13 +11,10 @@
     <ID>CompositionLocalAllowlist:TvDialog.kt:/** Read inside a [TvDialog]'s content: wrap actions that end the dialog (`close(onCancel)`). Outside a dialog it runs at once. */ val LocalDialogClose = staticCompositionLocalOf { DialogClose { it() } }</ID>
     <ID>CompositionLocalAllowlist:TvMotion.kt:val LocalMotion = staticCompositionLocalOf { TvMotion(enabled = true) }</ID>
     <ID>CompositionLocalAllowlist:TvToast.kt:val LocalToast = staticCompositionLocalOf { ToastState() }</ID>
-    <ID>CyclomaticComplexMethod:ChatFeed.kt:ChatFeed$suspend fun run</ID>
-    <ID>CyclomaticComplexMethod:ChatLine.kt:internal fun parsePieces: List&lt;ChatPiece&gt;</ID>
     <ID>CyclomaticComplexMethod:DemoArt.kt:DemoArtFetcher$private fun draw</ID>
     <ID>CyclomaticComplexMethod:DemoChat.kt:DemoChat$private fun message: ChatMessage</ID>
     <ID>CyclomaticComplexMethod:DemoEmotes.kt:DemoEmoteArt$fun draw: Bitmap</ID>
     <ID>CyclomaticComplexMethod:Keyboard.kt:internal fun keyboardRows: List&lt;List&lt;String&gt;&gt;</ID>
-    <ID>DoubleMutabilityForCollection:ChatFeed.kt:ChatFeed$var known: HashSet&lt;String&gt;? = null</ID>
     <ID>ExplicitItLambdaMultipleParameters:BrowseScreen.kt:{ _, it -&gt; it.id }</ID>
     <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.channelId }</ID>
     <ID>ExplicitItLambdaMultipleParameters:CardRows.kt:{ _, it -&gt; it.id }</ID>
@@ -25,8 +22,6 @@
     <ID>ExplicitItLambdaMultipleParameters:ChannelZapper.kt:{ _, it -&gt; it.channelId }</ID>
     <ID>ExplicitItLambdaMultipleParameters:FollowsScreen.kt:{ _, it -&gt; it.channelId }</ID>
     <ID>ImplicitDefaultLocale:ChannelScreen.kt:"%d:%02d".format(clip.durationSeconds / 60, clip.durationSeconds % 60)</ID>
-    <ID>ImplicitDefaultLocale:ChatLine.kt:TWITCH_EMOTE_CDN.format(emote.id, "animated")</ID>
-    <ID>ImplicitDefaultLocale:ChatLine.kt:TWITCH_EMOTE_CDN.format(emote.id, "static")</ID>
     <ID>ImplicitDefaultLocale:ClipScreen.kt:"%d:%02d".format(total / 60, total % 60)</ID>
     <ID>ImplicitDefaultLocale:TwitchTvApp.kt:String.format(nowLive, stream.name)</ID>
     <ID>InjectDispatcher:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$IO</ID>
@@ -53,25 +48,6 @@
     <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$3</ID>
     <ID>MagicNumber:AppKeys.kt:3</ID>
     <ID>MagicNumber:AppKeys.kt:4</ID>
-    <ID>MagicNumber:ChatLine.kt:0.03928</ID>
-    <ID>MagicNumber:ChatLine.kt:0.05</ID>
-    <ID>MagicNumber:ChatLine.kt:0.055</ID>
-    <ID>MagicNumber:ChatLine.kt:0.0722</ID>
-    <ID>MagicNumber:ChatLine.kt:0.2126</ID>
-    <ID>MagicNumber:ChatLine.kt:0.7152</ID>
-    <ID>MagicNumber:ChatLine.kt:0xFF000000L</ID>
-    <ID>MagicNumber:ChatLine.kt:1.055</ID>
-    <ID>MagicNumber:ChatLine.kt:10</ID>
-    <ID>MagicNumber:ChatLine.kt:100</ID>
-    <ID>MagicNumber:ChatLine.kt:12</ID>
-    <ID>MagicNumber:ChatLine.kt:12.92</ID>
-    <ID>MagicNumber:ChatLine.kt:15</ID>
-    <ID>MagicNumber:ChatLine.kt:16</ID>
-    <ID>MagicNumber:ChatLine.kt:2.4</ID>
-    <ID>MagicNumber:ChatLine.kt:255</ID>
-    <ID>MagicNumber:ChatLine.kt:4.5</ID>
-    <ID>MagicNumber:ChatLine.kt:6</ID>
-    <ID>MagicNumber:ChatLine.kt:8</ID>
     <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
     <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
@@ -135,7 +111,6 @@
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>
-    <ID>TooManyFunctions:PlayerViewModel.kt:PlayerViewModel : ViewModel</ID>
     <ID>UnnecessaryLaunchedEffect:PlayerScreen.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:TwitchTvApp.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:VodScreen.kt:LaunchedEffect</ID>
@@ -148,9 +123,8 @@
     <ID>VarsWithoutStateBacking:ChatLineView.kt:var seen = 0</ID>
     <ID>VarsWithoutStateBacking:ChatSettingsPanel.kt:var first = true</ID>
     <ID>VarsWithoutStateBacking:SettingsScreen.kt:var firstRow = true</ID>
-    <ID>ViewModelForwarding:PlayerScreen.kt:ChatLayer(state, chatMode, screenHeight, barAlpha, chatDim, overlayChatAlpha, viewModel, chat)</ID>
-    <ID>ViewModelForwarding:PlayerScreen.kt:FullScreenLayers( state = state, chatMode = chatMode, videoWidth = videoWidth, screenHeight = screenHeight, barAlpha = { barAlpha.value }, chatDim = { chatDim.value }, overlayChatAlpha = { overlayChatAlpha.value }, sheet = sheet, controlsEnabled = controlsEnabled, focus = focus, infoFocus = infoFocus, onFocused = { lastControl = it }, onInfoFocused = { infoFocused = it }, onBack = onBack, onOpenChannel = { onOpenChannel(state.login) }, viewModel = viewModel, onPauseLong = { if (config != null &amp;&amp; !useNative) { interactive = true player.setInteractive(true) } }, onQuality = { player.loadQualities { result -&gt; if (result.options.isEmpty()) toast.show(unavailable) else qualities = result } }, onWrite = { viewModel.ensureChatVisible() composing = true }, chat = ChatLayerSpec( lines = viewModel.chat, style = chatStyle, settings = chatSettings, columnWidth = columnWidth, motion = chatMotion, headerFocus = chatHeaderFocus, panelFocus = chatFocus, optionsFocus = chatOptionsFocus, onLeave = ::restoreControl, onFocusInside = { focusInChat = it }, warm = lastControl == PlayerControl.Chat &amp;&amp; state.controlsVisible, ready = { expand.value &gt; 0.95f }, ), )</ID>
-    <ID>ViewModelForwarding:PlayerScreen.kt:PlayerHostContent(viewModel, fullScreen, dockItems, onDockSelect, onBack, onOpenChannel, onExpand, config)</ID>
-    <ID>ViewModelForwarding:TwitchTvApp.kt:PlayerHost( viewModel = player, fullScreen = playerFullScreen, dockItems = railItems, onDockSelect = { navigator.openTopLevel(TopLevelKeys[it]) }, onBack = leavePlayer, onOpenChannel = { navigator.push(ChannelKey(it)) }, onExpand = { navigator.push(PlayerKey(player.state.value.login)) }, )</ID>
+    <ID>ViewModelForwarding:PlayerScreen.kt:ChatLayer(state, chatMode, screenHeight, barAlpha, chatDim, overlayChatAlpha, presenter, chat)</ID>
+    <ID>ViewModelForwarding:PlayerScreen.kt:FullScreenLayers( state = state, chatMode = chatMode, videoWidth = videoWidth, screenHeight = screenHeight, barAlpha = { barAlpha.value }, chatDim = { chatDim.value }, overlayChatAlpha = { overlayChatAlpha.value }, sheet = sheet, controlsEnabled = controlsEnabled, focus = focus, infoFocus = infoFocus, onFocused = { lastControl = it }, onInfoFocused = { infoFocused = it }, onBack = onBack, onOpenChannel = { onOpenChannel(state.login) }, presenter = presenter, onPauseLong = { if (config != null &amp;&amp; !useNative) { interactive = true player.setInteractive(true) } }, onQuality = { player.loadQualities { result -&gt; if (result.options.isEmpty()) toast.show(unavailable) else qualities = result } }, onWrite = { presenter.onEvent(PlayerEvent.EnsureChatVisible) composing = true }, chat = ChatLayerSpec( lines = presenter.chat, style = chatStyle, settings = chatSettings, columnWidth = columnWidth, motion = chatMotion, headerFocus = chatHeaderFocus, panelFocus = chatFocus, optionsFocus = chatOptionsFocus, onLeave = ::restoreControl, onFocusInside = { focusInChat = it }, warm = lastControl == PlayerControl.Chat &amp;&amp; state.controlsVisible, ready = { expand.value &gt; 0.95f }, ), )</ID>
+    <ID>ViewModelForwarding:PlayerScreen.kt:PlayerHostContent(presenter, fullScreen, dockItems, onDockSelect, onBack, onOpenChannel, onExpand, config)</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -49,6 +49,7 @@ import com.twitchplayer.tv.feature.channel.ui.ChannelRoute
 import com.twitchplayer.tv.feature.clip.ui.ClipRoute
 import com.twitchplayer.tv.feature.follows.ui.FollowsRoute
 import com.twitchplayer.tv.feature.home.ui.HomeRoute
+import com.twitchplayer.tv.feature.player.presentation.PlayerEvent
 import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import com.twitchplayer.tv.feature.player.ui.PlayerHost
 import com.twitchplayer.tv.feature.search.ui.SearchRoute
@@ -106,14 +107,14 @@ fun TwitchTvApp(
         ?: if (top is ChannelKey) backStack.dropLast(1).asReversed().firstNotNullOfOrNull(::railIndexOf) ?: 0 else null
     val playerFullScreen = top is PlayerKey
     val edgeGuard = remember { RailEdgeGuard() }
-    val playerState = player.state.collectAsState()
+    val playerState = player.presenter.state.collectAsState()
     val miniActive by remember { derivedStateOf { playerState.value.active && !playerFullScreen } }
     val hasPlayerScreen = backStack.any { it is PlayerKey }
-    LaunchedEffect(top) { if (top is PlayerKey) player.attach(top.login) }
-    LaunchedEffect(hasPlayerScreen) { if (!hasPlayerScreen) player.detach() }
+    LaunchedEffect(top) { if (top is PlayerKey) player.presenter.onEvent(PlayerEvent.Attach(top.login)) }
+    LaunchedEffect(hasPlayerScreen) { if (!hasPlayerScreen) player.presenter.onEvent(PlayerEvent.Detach) }
     // Leaving the player screen with Back ends the session; going to another screen via the dock keeps it as a mini player.
     val leavePlayer = {
-        player.close()
+        player.presenter.onEvent(PlayerEvent.Close)
         navigator.pop()
     }
     // Overlay Back is handled by each overlay's own window; this only runs on a bare top-level screen.
@@ -134,7 +135,7 @@ fun TwitchTvApp(
     LaunchedEffect(liveWatcher, lifecycle) {
         lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
             liveWatcher.wentLive().collect { stream ->
-                val watching = player.state.value.takeIf { it.active }?.login
+                val watching = player.presenter.state.value.takeIf { it.active }?.login
                 if (!stream.login.equals(watching, ignoreCase = true)) toast.show(String.format(nowLive, stream.name))
             }
         }
@@ -176,7 +177,7 @@ fun TwitchTvApp(
                             if (it < TopLevelKeys.size) {
                                 navigator.openTopLevel(TopLevelKeys[it])
                             } else {
-                                navigator.push(PlayerKey(player.state.value.login))
+                                navigator.push(PlayerKey(player.presenter.state.value.login))
                             }
                         },
                     )
@@ -226,11 +227,11 @@ fun TwitchTvApp(
                                         onChannel = { navigator.push(ChannelKey(it)) },
                                         // One video at a time: the live session (and its chat) ends when a clip starts.
                                         onClip = { clip ->
-                                            player.close()
+                                            player.presenter.onEvent(PlayerEvent.Close)
                                             navigator.push(ClipKey(clip.slug, clip.title))
                                         },
                                         onReplay = { replay ->
-                                            player.close()
+                                            player.presenter.onEvent(PlayerEvent.Close)
                                             navigator.push(VodKey(replay.id, replay.title, replay.durationSeconds))
                                         },
                                     )
@@ -247,13 +248,13 @@ fun TwitchTvApp(
                 }
             }
             PlayerHost(
-                viewModel = player,
+                presenter = player.presenter,
                 fullScreen = playerFullScreen,
                 dockItems = railItems,
                 onDockSelect = { navigator.openTopLevel(TopLevelKeys[it]) },
                 onBack = leavePlayer,
                 onOpenChannel = { navigator.push(ChannelKey(it)) },
-                onExpand = { navigator.push(PlayerKey(player.state.value.login)) },
+                onExpand = { navigator.push(PlayerKey(player.presenter.state.value.login)) },
             )
             TvToastHost(toast)
             signIn.code?.let { SignInDialog(it, onCancel = { auth.onEvent(AuthEvent.Cancel) }) }

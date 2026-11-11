@@ -1,7 +1,7 @@
 package com.twitchplayer.tv.feature.player.presentation
 
-import androidx.compose.runtime.Immutable
 import com.twitchplayer.tv.core.data.model.ChatMode
+import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
 import kotlinx.collections.immutable.ImmutableList
@@ -14,6 +14,45 @@ sealed interface PlayerCommand {
     data object ToggleMute : PlayerCommand
 }
 
+/** Everything the viewer or the player screen can do (see [PlayerPresenter.onEvent]). */
+sealed interface PlayerEvent {
+    /** The player screen is on top for [login] (new session, resume from the mini player, or replace). */
+    data class Attach(val login: String) : PlayerEvent
+
+    /** No player screen is left in the back stack. */
+    data object Detach : PlayerEvent
+    data class SetMinimized(val minimized: Boolean) : PlayerEvent
+
+    /** Ends the session: the embed is released and chat disconnects. */
+    data object Close : PlayerEvent
+
+    /** Any key: show the bar and restart the hide timer. */
+    data object Wake : PlayerEvent
+    data object TogglePause : PlayerEvent
+    data object ToggleMute : PlayerEvent
+    data object ToggleFullscreen : PlayerEvent
+
+    /** Writing a message shows the chat first. */
+    data object EnsureChatVisible : PlayerEvent
+    data object CycleChat : PlayerEvent
+    data class UpdateChatSettings(val transform: (ChatSettings) -> ChatSettings) : PlayerEvent
+    data object OpenChatSettings : PlayerEvent
+    data object CloseChatSettings : PlayerEvent
+    data object OpenZapper : PlayerEvent
+    data object CloseZapper : PlayerEvent
+
+    /** Back to the video alone: suggestions and the bottom overlay both close. */
+    data object HideOverlay : PlayerEvent
+    data object Previous : PlayerEvent
+    data object Next : PlayerEvent
+    data class Zap(val stream: LiveStream) : PlayerEvent
+    data class SendChat(val text: String) : PlayerEvent
+
+    /** An ad break is on screen (a notice's visible time only counts once it is over). */
+    data class SetAdActive(val active: Boolean) : PlayerEvent
+    data class SetPreferredQuality(val id: String) : PlayerEvent
+}
+
 /** What a row under the player shows: followed live channels, the current stream's category, or recommendations. */
 sealed interface ZapRowKind {
     data object Following : ZapRowKind
@@ -21,10 +60,8 @@ sealed interface ZapRowKind {
     data object ForYou : ZapRowKind
 }
 
-@Immutable
 data class ZapRow(val kind: ZapRowKind, val streams: ImmutableList<LiveStream>)
 
-@Immutable
 data class PlayerUiState(
     val current: LiveStream? = null,
     val login: String = "",
@@ -62,4 +99,4 @@ data class PlayerUiState(
 }
 
 /** Wrap-around index for CH+/CH-; an unknown current channel (-1) starts from the first/last entry. */
-internal fun cycleIndex(index: Int, delta: Int, size: Int): Int = if (index < 0) (if (delta > 0) 0 else size - 1) else Math.floorMod(index + delta, size)
+internal fun cycleIndex(index: Int, delta: Int, size: Int): Int = if (index < 0) (if (delta > 0) 0 else size - 1) else (index + delta).mod(size)

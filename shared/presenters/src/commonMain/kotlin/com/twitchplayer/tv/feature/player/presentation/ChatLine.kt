@@ -1,24 +1,25 @@
 package com.twitchplayer.tv.feature.player.presentation
 
-import androidx.compose.runtime.Immutable
 import com.twitchplayer.tv.feature.player.data.ChatAssets
 import com.twitchplayer.tv.feature.player.data.chat.ChatEmote
 import com.twitchplayer.tv.feature.player.data.chat.ChatEvent
 import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
-import java.util.Calendar
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.math.pow
+import kotlin.time.Instant
 
 /** A piece of a message, in reading order. Everything the renderer needs is here: it knows nothing of providers or transport. */
-@Immutable
 sealed interface ChatPiece {
-    @Immutable data class Text(val text: String) : ChatPiece
+    data class Text(val text: String) : ChatPiece
 
     /** Mentions and cheermotes: plain words with emphasis. */
-    @Immutable data class Strong(val text: String) : ChatPiece
+    data class Strong(val text: String) : ChatPiece
 
     /** One emote slot. Zero-width emotes that follow it are extra [layers], drawn on top of the first. */
-    @Immutable data class Emote(val layers: List<com.twitchplayer.tv.feature.player.data.emotes.Emote>) : ChatPiece {
+    data class Emote(val layers: List<com.twitchplayer.tv.feature.player.data.emotes.Emote>) : ChatPiece {
         val name: String get() = layers.first().name
     }
 }
@@ -26,7 +27,6 @@ sealed interface ChatPiece {
 enum class ChatLineKind { Normal, Highlight, Mention, System }
 
 /** A chat event resolved against the channel's assets, ready to draw. Immutable, so a list of them is cheap to diff. */
-@Immutable
 data class ChatLine(
     val id: String,
     val kind: ChatLineKind,
@@ -42,7 +42,10 @@ data class ChatLine(
     val login: String = "",
 )
 
-private const val TWITCH_EMOTE_CDN = "https://static-cdn.jtvnw.net/emoticons/v2/%s/%s/dark/2.0"
+private const val TWITCH_EMOTE_CDN = "https://static-cdn.jtvnw.net/emoticons/v2/"
+
+/** The emote image of [id] in [format] ("static" / "animated"); the CDN path is `<id>/<format>/dark/2.0`. */
+private fun twitchEmoteUrl(id: String, format: String) = "$TWITCH_EMOTE_CDN$id/$format/dark/2.0"
 
 internal fun ChatEvent.toLine(assets: ChatAssets, selfLogin: String?, nowMs: Long): ChatLine = when (this) {
     is ChatEvent.Message -> message.toLine(assets, selfLogin, nowMs)
@@ -130,8 +133,8 @@ internal fun parsePieces(fragments: List<ChatFragment>, thirdParty: Map<String, 
 
 private fun twitchEmote(name: String, emote: ChatEmote) = Emote(
     name = name,
-    url = TWITCH_EMOTE_CDN.format(emote.id, "static"),
-    animatedUrl = if ("animated" in emote.format) TWITCH_EMOTE_CDN.format(emote.id, "animated") else null,
+    url = twitchEmoteUrl(emote.id, "static"),
+    animatedUrl = if ("animated" in emote.format) twitchEmoteUrl(emote.id, "animated") else null,
     aspect = 1f,
 )
 
@@ -154,7 +157,7 @@ internal fun contrastRatio(a: Long, b: Long): Double {
 private fun luminance(argb: Long): Double {
     fun channel(shift: Int): Double {
         val c = ((argb shr shift) and 0xFF) / 255.0
-        return if (c <= 0.03928) c / 12.92 else Math.pow((c + 0.055) / 1.055, 2.4)
+        return if (c <= 0.03928) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
     }
     return 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0)
 }
@@ -178,11 +181,10 @@ private val DEFAULT_NICK_COLORS = longArrayOf(
 )
 
 /** Twitch gives users without a chosen colour a stable one; we do the same so a quiet chatter keeps their hue. */
-internal fun defaultNickColor(login: String): Long = readableColor(DEFAULT_NICK_COLORS[Math.floorMod(login.lowercase().hashCode(), DEFAULT_NICK_COLORS.size)])
+internal fun defaultNickColor(login: String): Long = readableColor(DEFAULT_NICK_COLORS[login.lowercase().hashCode().mod(DEFAULT_NICK_COLORS.size)])
 
-internal fun clockText(millis: Long): String {
-    val c = Calendar.getInstance().apply { timeInMillis = millis }
-    val h = c.get(Calendar.HOUR_OF_DAY)
-    val m = c.get(Calendar.MINUTE)
-    return "${if (h < 10) "0" else ""}$h:${if (m < 10) "0" else ""}$m"
+/** "HH:mm" of [millis] in [zone] (the device's time zone by default), as the line's arrival time. */
+internal fun clockText(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val time = Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone)
+    return "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
 }

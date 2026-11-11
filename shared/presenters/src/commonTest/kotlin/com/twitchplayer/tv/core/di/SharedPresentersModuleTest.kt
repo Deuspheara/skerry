@@ -8,12 +8,17 @@ import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.platform.AppConfig
 import com.twitchplayer.tv.core.platform.DeviceProfile
 import com.twitchplayer.tv.core.platform.SnapshotStorage
+import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
 import com.twitchplayer.tv.feature.home.presentation.HomePresenter
+import com.twitchplayer.tv.feature.player.data.ChatAssets
+import com.twitchplayer.tv.feature.player.data.ChatAssetsSource
+import com.twitchplayer.tv.feature.player.data.ChatSource
+import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
 import com.twitchplayer.tv.feature.search.presentation.SearchPresenter
 import com.twitchplayer.tv.feature.search.presentation.VoiceInput
 import com.twitchplayer.tv.feature.settings.presentation.SettingsPresenter
@@ -26,6 +31,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.parameter.parametersOf
@@ -33,6 +40,7 @@ import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 /**
  * What `sharedCoreModule()` provides (here: fakes of the repositories it binds) plus the two platform bindings listed
@@ -64,6 +72,9 @@ private val fakePlatform = module {
             override val languageTag = "fr-FR"
         }
     }
+    // From sharedChatModule(): the player presenter reads chat through these two.
+    single<ChatSource> { ChatSource { _, _ -> emptyFlow() } }
+    single<ChatAssetsSource> { ChatAssetsSource { flowOf(ChatAssets.Empty) } }
     single<VoiceInput> {
         object : VoiceInput {
             override fun isAvailable() = false
@@ -85,6 +96,7 @@ class SharedPresentersModuleTest {
             koin.get<ChannelPresenter> { parametersOf("camille", scope) }
             koin.get<SearchPresenter> { parametersOf(scope) }
             koin.get<SettingsPresenter> { parametersOf(scope) }
+            koin.get<PlayerPresenter> { parametersOf("camille", scope) }
         } finally {
             scope.cancel()
             stopKoin()
@@ -122,6 +134,28 @@ class SharedPresentersModuleTest {
             assertEquals("fr", koin.get<CategoryPresenter> { parametersOf("cat", scope) }.state.value.language)
         } finally {
             scope.cancel()
+            stopKoin()
+        }
+    }
+
+    @Test fun thePlayerPresenterStartsForTheLoginGiven() {
+        val koin = startKoin { modules(sharedPresentersModule(), fakePlatform) }.koin
+        val scope = CoroutineScope(Job())
+        try {
+            val player = koin.get<PlayerPresenter> { parametersOf("camille", scope) }
+            assertEquals("camille", player.state.value.login)
+            assertEquals("", koin.get<PlayerPresenter> { parametersOf("", scope) }.state.value.login)
+        } finally {
+            scope.cancel()
+            stopKoin()
+        }
+    }
+
+    @Test fun theChannelKeyBusIsOneInstanceForTheActivityAndThePlayer() {
+        val koin = startKoin { modules(sharedPresentersModule(), fakePlatform) }.koin
+        try {
+            assertSame(koin.get<ChannelKeyBus>(), koin.get<ChannelKeyBus>())
+        } finally {
             stopKoin()
         }
     }

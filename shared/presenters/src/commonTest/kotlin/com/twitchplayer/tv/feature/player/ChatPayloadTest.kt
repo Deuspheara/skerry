@@ -8,9 +8,9 @@ import com.twitchplayer.tv.feature.player.presentation.ChatPiece
 import com.twitchplayer.tv.feature.player.presentation.toLine
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** The transport DTOs against the shape of Twitch's documented `channel.chat.message` / `channel.chat.notification` events (nulls included). */
 class ChatPayloadTest {

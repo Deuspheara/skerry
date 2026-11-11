@@ -12,6 +12,7 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import com.twitchplayer.tv.feature.player.presentation.ChatLineKind
 import com.twitchplayer.tv.feature.player.presentation.ChatPiece
+import com.twitchplayer.tv.feature.player.presentation.clockText
 import com.twitchplayer.tv.feature.player.presentation.contrastRatio
 import com.twitchplayer.tv.feature.player.presentation.cycleIndex
 import com.twitchplayer.tv.feature.player.presentation.defaultNickColor
@@ -19,10 +20,11 @@ import com.twitchplayer.tv.feature.player.presentation.parseColor
 import com.twitchplayer.tv.feature.player.presentation.parsePieces
 import com.twitchplayer.tv.feature.player.presentation.readableColor
 import com.twitchplayer.tv.feature.player.presentation.toLine
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlinx.datetime.TimeZone
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ChatLineTest {
     private fun e(name: String, animated: Boolean = false, zeroWidth: Boolean = false) = Emote(name, "https://x/$name", if (animated) "https://x/$name.anim" else null, zeroWidth)
@@ -50,7 +52,7 @@ class ChatLineTest {
         assertEquals("https://static-cdn.jtvnw.net/emoticons/v2/25/static/dark/2.0", kappa.url)
         assertEquals(null, kappa.animatedUrl)
         val moving = (line.pieces[3] as ChatPiece.Emote).layers.single()
-        assertEquals("a Twitch emote only animates when the message says it has the animated format", "https://static-cdn.jtvnw.net/emoticons/v2/77/animated/dark/2.0", moving.animatedUrl)
+        assertEquals("https://static-cdn.jtvnw.net/emoticons/v2/77/animated/dark/2.0", moving.animatedUrl, "a Twitch emote only animates when the message says it has the animated format")
     }
 
     @Test fun thirdPartyEmotesAreMatchedAsWholeWordsKeepingTheSpaces() {
@@ -67,7 +69,7 @@ class ChatLineTest {
 
     @Test fun twitchEmotesAreNeverRelookedUpButTheirNameIsKept() {
         val pieces = parsePieces(listOf(ChatFragment("emote", "PogU", ChatEmote("1"))), assets.emotes)
-        assertTrue("the fragment's own Twitch emote wins over a third-party word of the same name", (pieces.single() as ChatPiece.Emote).layers.single().url.startsWith("https://static-cdn"))
+        assertTrue((pieces.single() as ChatPiece.Emote).layers.single().url.startsWith("https://static-cdn"), "the fragment's own Twitch emote wins over a third-party word of the same name")
     }
 
     @Test fun zeroWidthEmoteStacksOnThePreviousEmote() {
@@ -82,7 +84,7 @@ class ChatLineTest {
     @Test fun zeroWidthEmoteWithoutAnEmoteBeforeItIsAnOrdinaryEmote() {
         val first = parsePieces(listOf(text("Rain PogU")), assets.emotes)
         assertEquals(listOf("Rain", "PogU"), first.filterIsInstance<ChatPiece.Emote>().map { it.name })
-        assertEquals("not merged into the one after it", 1, first.filterIsInstance<ChatPiece.Emote>().first().layers.size)
+        assertEquals(1, first.filterIsInstance<ChatPiece.Emote>().first().layers.size, "not merged into the one after it")
         val afterText = parsePieces(listOf(text("hello Rain")), assets.emotes)
         assertEquals(1, (afterText.last() as ChatPiece.Emote).layers.size)
     }
@@ -101,8 +103,8 @@ class ChatLineTest {
         val mention = message(ChatFragment("mention", "@Camille", mention = ChatMention("camille")), text(" salut"), login = "other").toLine(assets, "Camille", 0)
         assertEquals(ChatLineKind.Mention, mention.kind)
         assertEquals(ChatPiece.Strong("@Camille"), mention.pieces.first())
-        assertEquals("typed @ without a fragment counts too", ChatLineKind.Mention, message(text("yo @camille!"), login = "other").toLine(assets, "Camille", 0).kind)
-        assertEquals("your own message never highlights you", ChatLineKind.Normal, message(text("@camille"), login = "camille").toLine(assets, "camille", 0).kind)
+        assertEquals(ChatLineKind.Mention, message(text("yo @camille!"), login = "other").toLine(assets, "Camille", 0).kind, "typed @ without a fragment counts too")
+        assertEquals(ChatLineKind.Normal, message(text("@camille"), login = "camille").toLine(assets, "camille", 0).kind, "your own message never highlights you")
         assertEquals(ChatLineKind.Highlight, message(text("big"), type = "channel_points_highlighted").toLine(assets, "x", 0).kind)
         assertEquals(100, message(text("cheer100"), cheer = 100).toLine(assets, "x", 0).bits)
         assertEquals(ChatPiece.Strong("Cheer100"), parsePieces(listOf(ChatFragment("cheermote", "Cheer100")), assets.emotes).single())
@@ -141,5 +143,19 @@ class ChatLineTest {
         assertEquals(2, cycleIndex(0, -1, 3))
         assertEquals(0, cycleIndex(-1, 1, 3))
         assertEquals(2, cycleIndex(-1, -1, 3))
+    }
+
+    @Test fun theArrivalTimeIsHoursAndMinutesInTheGivenZoneAlwaysTwoDigits() {
+        assertEquals("00:00", clockText(0, TimeZone.UTC))
+        assertEquals("22:13", clockText(1_700_000_000_000, TimeZone.UTC)) // 2023-11-14T22:13:20Z
+        assertEquals("03:43", clockText(1_700_000_000_000, TimeZone.of("Asia/Kolkata"))) // +05:30, next day
+        assertEquals("14:13", clockText(1_700_000_000_000, TimeZone.of("America/Los_Angeles"))) // -08:00
+        assertEquals("09:05", clockText(1_699_952_700_000, TimeZone.UTC)) // single-digit hour and minute are padded
+    }
+
+    @Test fun linesCarryTheArrivalTimeOfTheirBatch() {
+        val line = message(text("x")).toLine(assets, null, 1_700_000_000_000)
+        assertEquals(clockText(1_700_000_000_000), line.time)
+        assertEquals(5, line.time.length)
     }
 }

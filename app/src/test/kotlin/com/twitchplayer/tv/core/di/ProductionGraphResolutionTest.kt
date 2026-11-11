@@ -15,6 +15,7 @@ import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
+import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
 import com.twitchplayer.tv.feature.search.presentation.VoiceInput
 import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
@@ -104,5 +105,7 @@ class ProductionGraphResolutionTest {
         assertNotNull(koin.get<SettingsViewModel>().presenter)
         assertNotNull(koin.get<CategoryViewModel> { parametersOf("509658") }.presenter)
         assertNotNull(koin.get<ChannelViewModel> { parametersOf("camille") }.presenter)
+        assertNotNull(koin.get<PlayerViewModel> { parametersOf("") }.presenter)
+        assertNotNull(koin.get<PlayerViewModel> { parametersOf("camille") }.presenter)
     }
 }

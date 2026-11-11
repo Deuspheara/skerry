@@ -21,9 +21,9 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatFeedTest {
@@ -44,10 +44,10 @@ class ChatFeedTest {
         runCurrent()
         repeat(120) { events.emit(message("m$it")) }
         runCurrent()
-        assertEquals("nothing before the window ends", listOf(0), updates)
+        assertEquals(listOf(0), updates, "nothing before the window ends")
         advanceTimeBy(251)
         runCurrent()
-        assertEquals("one update for the whole burst, bounded to the newest 50", listOf(0, 50), updates)
+        assertEquals(listOf(0, 50), updates, "one update for the whole burst, bounded to the newest 50")
         assertEquals("m119", feed.lines.value.last().id)
         assertEquals("m70", feed.lines.value.first().id)
     }
@@ -97,7 +97,7 @@ class ChatFeedTest {
         events.emit(message("a"))
         advanceTimeBy(300)
         runCurrent()
-        assertEquals("chat started once the wait was over, without assets", listOf("a"), feed.lines.value.map { it.id })
+        assertEquals(listOf("a"), feed.lines.value.map { it.id }, "chat started once the wait was over, without assets")
     }
 
     @Test fun clearEmptiesTheBuffer() = runTest {

@@ -1,9 +1,12 @@
 package com.twitchplayer.tv.feature.player
 
-import androidx.lifecycle.viewModelScope
 import com.twitchplayer.tv.core.data.model.AppSettings
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatTextSize
+import com.twitchplayer.tv.core.data.model.PlayerEngine
+import com.twitchplayer.tv.core.data.repository.SendResult
+import com.twitchplayer.tv.core.data.repository.SettingsRepository
+import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.player.data.ChatAssets
 import com.twitchplayer.tv.feature.player.data.ChatAssetsSource
@@ -13,7 +16,9 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent
 import com.twitchplayer.tv.feature.player.presentation.PlayerCommand
-import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
+import com.twitchplayer.tv.feature.player.presentation.PlayerEvent
+import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
+import com.twitchplayer.tv.feature.player.presentation.PlayerTuning
 import com.twitchplayer.tv.feature.player.presentation.ZapRowKind
 import com.twitchplayer.tv.testing.FakeRepository
 import com.twitchplayer.tv.testing.FakeSession
@@ -22,9 +27,12 @@ import com.twitchplayer.tv.testing.stream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -35,36 +43,33 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class PlayerViewModelTest {
+class PlayerPresenterTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val repo = FakeRepository(live = listOf(stream("a"), stream("b"), stream("c")))
     private val chatFlow = MutableSharedFlow<ChatEvent>(extraBufferCapacity = 256)
     private val keys = ChannelKeyBus()
 
-    @Before fun setUp() = Dispatchers.setMain(dispatcher)
+    @BeforeTest fun setUp() = Dispatchers.setMain(dispatcher)
 
-    @After fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun message(id: String) = ChatEvent.Message(ChatMessage(id, "b", "u", "nick", "nick", ChatMessageContent("hi $id", listOf(ChatFragment("text", "hi $id")))))
 
-    private fun TestScope.vm(login: String = "b", chat: ChatMode = ChatMode.Hidden, settingsOverride: FakeSettings? = null): PlayerViewModel = PlayerViewModel(
-        login, repo, FakeSession(), settingsOverride ?: FakeSettings(AppSettings(chatMode = chat)),
+    private fun TestScope.vm(login: String = "b", chat: ChatMode = ChatMode.Hidden, settingsOverride: FakeSettings? = null, repository: TwitchRepository = repo): PlayerPresenter = PlayerPresenter(
+        login, repository, FakeSession(), settingsOverride ?: FakeSettings(AppSettings(chatMode = chat)),
         chatAssets = ChatAssetsSource { flowOf(ChatAssets.Empty) },
         chatSource = ChatSource { _, _ -> chatFlow as Flow<ChatEvent> },
-        channelKeys = keys, idleMs = 4_000, chatBatchMs = 250, chatMapper = dispatcher,
-    ).also { vm ->
-        vm.state.onEach { }.launchIn(backgroundScope)
-        // The chat batcher ticks forever: stop the VM's scope when the test body ends, or runTest never finishes.
-        backgroundScope.coroutineContext[Job]!!.invokeOnCompletion { vm.viewModelScope.cancel() }
-    }
+        channelKeys = keys, scope = backgroundScope, defaultEngine = PlayerEngine.Native,
+        tuning = PlayerTuning(idleMs = 4_000, chatBatchMs = 250, chatMapper = dispatcher),
+    ).also { vm -> vm.state.onEach { }.launchIn(backgroundScope) }
 
     @Test fun controlsHideAfterFourSecondsAndAnyKeyWakesThem() = runTest(dispatcher) {
         val vm = vm()
@@ -75,7 +80,7 @@ class PlayerViewModelTest {
         advanceTimeBy(2)
         runCurrent()
         assertFalse(vm.state.value.controlsVisible)
-        vm.wake()
+        vm.onEvent(PlayerEvent.Wake)
         assertTrue(vm.state.value.controlsVisible)
         advanceTimeBy(4_001)
         runCurrent()
@@ -84,16 +89,16 @@ class PlayerViewModelTest {
 
     @Test fun zapperKeepsControlsVisibleAndBackClosesItFirst() = runTest(dispatcher) {
         val vm = vm()
-        vm.openZapper()
+        vm.onEvent(PlayerEvent.OpenZapper)
         advanceTimeBy(10_000)
         runCurrent()
         assertTrue(vm.state.value.zapperOpen)
         assertTrue(vm.state.value.controlsVisible)
         assertTrue(vm.handleBack())
         assertFalse(vm.state.value.zapperOpen)
-        assertTrue("then the bottom overlay", vm.handleBack())
+        assertTrue(vm.handleBack(), "then the bottom overlay")
         assertFalse(vm.state.value.controlsVisible)
-        assertFalse("nothing left to close: the screen is left", vm.handleBack())
+        assertFalse(vm.handleBack(), "nothing left to close: the screen is left")
     }
 
     @Test fun openingTheRowsLoadsTheCategoryAndRecommendationsWithoutThePlayingChannel() = runTest(dispatcher) {
@@ -101,7 +106,7 @@ class PlayerViewModelTest {
         val vm = vm(login = "b")
         runCurrent()
         assertEquals(listOf(ZapRowKind.Following), vm.state.value.zapRows.map { it.kind })
-        vm.openZapper()
+        vm.onEvent(PlayerEvent.OpenZapper)
         runCurrent()
         val rows = vm.state.value.zapRows
         assertEquals(listOf(ZapRowKind.Following, ZapRowKind.Category("chess"), ZapRowKind.ForYou), rows.map { it.kind })
@@ -113,11 +118,11 @@ class PlayerViewModelTest {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()
         assertEquals(ChatMode.Compact, vm.state.value.chatMode)
-        assertTrue("the bottom overlay goes first", vm.handleBack())
+        assertTrue(vm.handleBack(), "the bottom overlay goes first")
         assertFalse(vm.state.value.controlsVisible)
         assertTrue(vm.handleBack())
         assertEquals(ChatMode.Hidden, vm.state.value.chatMode)
-        assertFalse("closing chat does not bring the overlay back", vm.state.value.controlsVisible)
+        assertFalse(vm.state.value.controlsVisible, "closing chat does not bring the overlay back")
         assertFalse(vm.handleBack())
     }
 
@@ -125,7 +130,7 @@ class PlayerViewModelTest {
         val vm = vm(chat = ChatMode.Hidden)
         runCurrent()
         val seen = (1..3).map {
-            vm.cycleChat()
+            vm.onEvent(PlayerEvent.CycleChat)
             vm.state.value.chatMode
         }
         assertEquals(listOf(ChatMode.Compact, ChatMode.Overlay, ChatMode.Hidden), seen)
@@ -134,11 +139,11 @@ class PlayerViewModelTest {
     @Test fun backClosesChatOptionsBeforeTheChatItself() = runTest(dispatcher) {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()
-        vm.openChatSettings()
+        vm.onEvent(PlayerEvent.OpenChatSettings)
         assertTrue(vm.state.value.chatSettingsOpen)
         assertTrue(vm.handleBack())
         assertFalse(vm.state.value.chatSettingsOpen)
-        assertEquals("chat stays", ChatMode.Compact, vm.state.value.chatMode)
+        assertEquals(ChatMode.Compact, vm.state.value.chatMode, "chat stays")
         assertTrue(vm.handleBack())
         assertFalse(vm.state.value.controlsVisible)
         assertTrue(vm.handleBack())
@@ -148,9 +153,9 @@ class PlayerViewModelTest {
     @Test fun chatOptionsCannotOpenWhileChatIsHiddenAndUpdatesAreSaved() = runTest(dispatcher) {
         val vm = vm(chat = ChatMode.Hidden)
         runCurrent()
-        vm.openChatSettings()
+        vm.onEvent(PlayerEvent.OpenChatSettings)
         assertFalse(vm.state.value.chatSettingsOpen)
-        vm.updateChatSettings { it.copy(textSize = ChatTextSize.Large) }
+        vm.onEvent(PlayerEvent.UpdateChatSettings { it.copy(textSize = ChatTextSize.Large) })
         runCurrent()
         assertEquals(ChatTextSize.Large, vm.chatSettings.value.textSize)
     }
@@ -159,18 +164,18 @@ class PlayerViewModelTest {
         val saved = FakeSettings(AppSettings(chatMode = ChatMode.Compact))
         val vm = vm(chat = ChatMode.Compact, settingsOverride = saved)
         runCurrent()
-        vm.cycleChat()
+        vm.onEvent(PlayerEvent.CycleChat)
         runCurrent()
-        assertEquals("the chat button is for this viewing session only", ChatMode.Compact, saved.settings.value.chatMode)
+        assertEquals(ChatMode.Compact, saved.settings.value.chatMode, "the chat button is for this viewing session only")
     }
 
     @Test fun fullscreenSuppressesChatWithoutLosingTheChoice() = runTest(dispatcher) {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()
-        vm.toggleFullscreen()
+        vm.onEvent(PlayerEvent.ToggleFullscreen)
         assertEquals(ChatMode.Hidden, vm.state.value.effectiveChat)
         assertEquals(ChatMode.Compact, vm.state.value.chatMode)
-        vm.toggleFullscreen()
+        vm.onEvent(PlayerEvent.ToggleFullscreen)
         assertEquals(ChatMode.Compact, vm.state.value.effectiveChat)
     }
 
@@ -179,11 +184,11 @@ class PlayerViewModelTest {
         runCurrent()
         assertFalse(vm.state.value.canPrevious)
         assertTrue(vm.state.value.canNext)
-        vm.previous()
+        vm.onEvent(PlayerEvent.Previous)
         assertEquals("a", vm.state.value.login)
-        vm.next()
-        vm.next()
-        vm.next()
+        vm.onEvent(PlayerEvent.Next)
+        vm.onEvent(PlayerEvent.Next)
+        vm.onEvent(PlayerEvent.Next)
         assertEquals("c", vm.state.value.login)
         assertFalse(vm.state.value.canNext)
     }
@@ -203,9 +208,9 @@ class PlayerViewModelTest {
         val vm = vm()
         val commands = mutableListOf<PlayerCommand>()
         vm.commands.onEach { commands += it }.launchIn(backgroundScope)
-        vm.togglePause()
-        vm.togglePause()
-        vm.toggleMute()
+        vm.onEvent(PlayerEvent.TogglePause)
+        vm.onEvent(PlayerEvent.TogglePause)
+        vm.onEvent(PlayerEvent.ToggleMute)
         assertEquals(listOf(PlayerCommand.Pause, PlayerCommand.Play, PlayerCommand.ToggleMute), commands)
         assertTrue(vm.state.value.muted)
         assertFalse(vm.state.value.paused)
@@ -218,10 +223,10 @@ class PlayerViewModelTest {
         runCurrent()
         repeat(250) { chatFlow.emit(message("m$it")) }
         runCurrent()
-        assertEquals("nothing is published before the batch window ends", 0, vm.chat.value.size)
+        assertEquals(0, vm.chat.value.size, "nothing is published before the batch window ends")
         advanceTimeBy(251)
         runCurrent()
-        assertEquals("bounded to the 200 newest lines", 200, vm.chat.value.size)
+        assertEquals(200, vm.chat.value.size, "bounded to the 200 newest lines")
         assertEquals("m249", vm.chat.value.last().id)
     }
 
@@ -232,15 +237,15 @@ class PlayerViewModelTest {
         advanceTimeBy(251)
         runCurrent()
         assertEquals(3, vm.chat.value.size)
-        vm.cycleChat()
-        vm.cycleChat() // Compact -> Overlay -> Hidden
+        vm.onEvent(PlayerEvent.CycleChat)
+        vm.onEvent(PlayerEvent.CycleChat) // Compact -> Overlay -> Hidden
         assertEquals(ChatMode.Hidden, vm.state.value.effectiveChat)
-        assertEquals("hiding chat keeps the buffer", 3, vm.chat.value.size)
+        assertEquals(3, vm.chat.value.size, "hiding chat keeps the buffer")
         chatFlow.emit(message("m3"))
         advanceTimeBy(251)
         runCurrent()
-        assertEquals("still connected while hidden: reopening is instant and current", "m3", vm.chat.value.last().id)
-        vm.cycleChat()
+        assertEquals("m3", vm.chat.value.last().id, "still connected while hidden: reopening is instant and current")
+        vm.onEvent(PlayerEvent.CycleChat)
         assertEquals(4, vm.chat.value.size)
     }
 
@@ -248,7 +253,7 @@ class PlayerViewModelTest {
         val vm = vm(chat = ChatMode.Hidden)
         runCurrent()
         assertEquals(0, chatFlow.subscriptionCount.value)
-        vm.cycleChat()
+        vm.onEvent(PlayerEvent.CycleChat)
         runCurrent()
         assertEquals(1, chatFlow.subscriptionCount.value)
     }
@@ -260,18 +265,18 @@ class PlayerViewModelTest {
         advanceTimeBy(251)
         runCurrent()
         assertEquals(1, vm.chat.value.size)
-        vm.next()
+        vm.onEvent(PlayerEvent.Next)
         runCurrent()
         assertEquals(0, vm.chat.value.size)
     }
 
     @Test fun upOnTheTopLayerClosesEverything() = runTest(dispatcher) {
         val vm = vm()
-        vm.openZapper()
-        vm.hideOverlay()
+        vm.onEvent(PlayerEvent.OpenZapper)
+        vm.onEvent(PlayerEvent.HideOverlay)
         assertFalse(vm.state.value.zapperOpen)
         assertFalse(vm.state.value.controlsVisible)
-        vm.wake()
+        vm.onEvent(PlayerEvent.Wake)
         assertTrue(vm.state.value.controlsVisible)
     }
 
@@ -279,11 +284,11 @@ class PlayerViewModelTest {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()
         assertEquals(ChatMode.Compact, vm.state.value.effectiveChat)
-        vm.setMinimized(true)
+        vm.onEvent(PlayerEvent.SetMinimized(true))
         assertTrue(vm.state.value.active)
-        assertEquals("the chat choice is kept, only its drawing is suppressed", ChatMode.Compact, vm.state.value.chatMode)
+        assertEquals(ChatMode.Compact, vm.state.value.chatMode, "the chat choice is kept, only its drawing is suppressed")
         assertEquals(ChatMode.Hidden, vm.state.value.effectiveChat)
-        vm.setMinimized(false)
+        vm.onEvent(PlayerEvent.SetMinimized(false))
         assertEquals(ChatMode.Compact, vm.state.value.effectiveChat)
     }
 
@@ -291,15 +296,15 @@ class PlayerViewModelTest {
         val vm = vm(chat = ChatMode.Overlay)
         runCurrent()
         assertEquals(ChatMode.Overlay, vm.state.value.effectiveChat)
-        vm.hideOverlay()
-        assertTrue("Back hides the overlay chat before leaving", vm.handleBack())
+        vm.onEvent(PlayerEvent.HideOverlay)
+        assertTrue(vm.handleBack(), "Back hides the overlay chat before leaving")
         assertEquals(ChatMode.Hidden, vm.state.value.chatMode)
     }
 
     @Test fun closeEndsTheSessionAndKeepsTheChatChoice() = runTest(dispatcher) {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()
-        vm.close()
+        vm.onEvent(PlayerEvent.Close)
         assertFalse(vm.state.value.active)
         assertEquals("", vm.state.value.login)
         assertEquals(ChatMode.Compact, vm.state.value.chatMode)
@@ -309,7 +314,7 @@ class PlayerViewModelTest {
         val vm = vm(login = "")
         runCurrent()
         assertFalse(vm.state.value.active)
-        vm.attach("b")
+        vm.onEvent(PlayerEvent.Attach("b"))
         assertTrue(vm.state.value.active)
         assertEquals("b", vm.state.value.login)
         assertFalse(vm.state.value.minimized)
@@ -317,38 +322,38 @@ class PlayerViewModelTest {
 
     @Test fun returningFromTheMiniPlayerResumesTheSameChannel() = runTest(dispatcher) {
         val vm = vm(login = "")
-        vm.attach("a")
-        vm.zap(stream("c"))
-        vm.detach() // dock: the player screen left the back stack
-        vm.setMinimized(true)
-        vm.attach("c") // expanded from the mini player: same channel, no restart
+        vm.onEvent(PlayerEvent.Attach("a"))
+        vm.onEvent(PlayerEvent.Zap(stream("c")))
+        vm.onEvent(PlayerEvent.Detach) // dock: the player screen left the back stack
+        vm.onEvent(PlayerEvent.SetMinimized(true))
+        vm.onEvent(PlayerEvent.Attach("c")) // expanded from the mini player: same channel, no restart
         assertEquals("c", vm.state.value.login)
         assertFalse(vm.state.value.minimized)
     }
 
     @Test fun watchingAnotherChannelFromElsewhereReplacesTheMiniPlayer() = runTest(dispatcher) {
         val vm = vm(login = "")
-        vm.attach("a")
-        vm.zap(stream("c"))
-        vm.detach()
-        vm.setMinimized(true)
-        vm.attach("a") // the viewer picked "a" while "c" was in the corner
+        vm.onEvent(PlayerEvent.Attach("a"))
+        vm.onEvent(PlayerEvent.Zap(stream("c")))
+        vm.onEvent(PlayerEvent.Detach)
+        vm.onEvent(PlayerEvent.SetMinimized(true))
+        vm.onEvent(PlayerEvent.Attach("a")) // the viewer picked "a" while "c" was in the corner
         assertEquals("a", vm.state.value.login)
     }
 
     @Test fun zappingInsideThePlayerSurvivesAChannelPageDetour() = runTest(dispatcher) {
         val vm = vm(login = "")
-        vm.attach("a")
-        vm.zap(stream("c"))
-        vm.setMinimized(true) // channel page pushed over the player screen (still in the back stack)
-        vm.attach("a") // popping back: the screen is keyed "a" but the viewer zapped to "c"
+        vm.onEvent(PlayerEvent.Attach("a"))
+        vm.onEvent(PlayerEvent.Zap(stream("c")))
+        vm.onEvent(PlayerEvent.SetMinimized(true)) // channel page pushed over the player screen (still in the back stack)
+        vm.onEvent(PlayerEvent.Attach("a")) // popping back: the screen is keyed "a" but the viewer zapped to "c"
         assertEquals("c", vm.state.value.login)
     }
 
     @Test fun channelKeysAreIgnoredWhileMinimized() = runTest(dispatcher) {
         val vm = vm(login = "a")
         runCurrent()
-        vm.setMinimized(true)
+        vm.onEvent(PlayerEvent.SetMinimized(true))
         keys.emit(1)
         runCurrent()
         assertEquals("a", vm.state.value.login)
@@ -363,16 +368,16 @@ class PlayerViewModelTest {
         advanceTimeBy(300)
         runCurrent()
         assertTrue(vm.state.value.notice is com.twitchplayer.tv.feature.player.data.chat.ChannelNotice.Updated)
-        assertEquals("the header follows the channel's new title", "New title", vm.state.value.current?.title)
+        assertEquals("New title", vm.state.value.current?.title, "the header follows the channel's new title")
         // An ad break owns the corner: the notice's visible time does not run meanwhile.
-        vm.setAdActive(true)
+        vm.onEvent(PlayerEvent.SetAdActive(true))
         advanceTimeBy(30_000)
         runCurrent()
-        assertTrue("still waiting for the ad to end", vm.state.value.notice != null)
-        vm.setAdActive(false)
+        assertTrue(vm.state.value.notice != null, "still waiting for the ad to end")
+        vm.onEvent(PlayerEvent.SetAdActive(false))
         advanceTimeBy(11_000)
         runCurrent()
-        assertTrue("11 of its 12 s", vm.state.value.notice != null)
+        assertTrue(vm.state.value.notice != null, "11 of its 12 s")
         advanceTimeBy(1_500)
         runCurrent()
         assertEquals(null, vm.state.value.notice)
@@ -402,10 +407,90 @@ class PlayerViewModelTest {
         advanceTimeBy(300)
         runCurrent()
         assertEquals(true, (on.state.value.notice as com.twitchplayer.tv.feature.player.data.chat.ChannelNotice.Raid).following)
-        assertEquals("not before the banner was readable", "b", on.state.value.login)
+        assertEquals("b", on.state.value.login, "not before the banner was readable")
         advanceTimeBy(6_100)
         runCurrent()
         assertEquals("c", on.state.value.login)
-        assertEquals("a zap clears the old channel's notice", null, on.state.value.notice)
+        assertEquals(null, on.state.value.notice, "a zap clears the old channel's notice")
+    }
+
+    @Test fun sendChatPostsTheTrimmedTextToTheCurrentChannelAndReportsTheOutcome() = runTest(dispatcher) {
+        val posted = mutableListOf<Pair<String, String>>()
+        val repository = object : TwitchRepository by repo {
+            override suspend fun sendChat(channelId: String, text: String): SendResult {
+                posted += channelId to text
+                return SendResult.Dropped("slow mode")
+            }
+        }
+        val vm = vm(repository = repository)
+        val outcomes = mutableListOf<SendResult>()
+        vm.sent.onEach { outcomes += it }.launchIn(backgroundScope)
+
+        vm.onEvent(PlayerEvent.SendChat("  hello  "))
+        vm.onEvent(PlayerEvent.SendChat("   "))
+
+        assertEquals(listOf("b" to "hello"), posted, "blank messages are never sent")
+        assertEquals(listOf<SendResult>(SendResult.Dropped("slow mode")), outcomes)
+    }
+
+    @Test fun sendChatDoesNothingWithoutACurrentChannel() = runTest(dispatcher) {
+        val posted = mutableListOf<String>()
+        val repository = object : TwitchRepository by repo {
+            override suspend fun liveStream(login: String) = null
+            override suspend fun sendChat(channelId: String, text: String): SendResult {
+                posted += text
+                return SendResult.Sent
+            }
+        }
+        val vm = vm(login = "", repository = repository)
+        vm.onEvent(PlayerEvent.SendChat("hi"))
+        assertTrue(posted.isEmpty())
+    }
+
+    @Test fun writingShowsTheChatFirstButOnlyWhenItIsHidden() = runTest(dispatcher) {
+        val hidden = vm(chat = ChatMode.Hidden)
+        hidden.onEvent(PlayerEvent.EnsureChatVisible)
+        assertEquals(ChatMode.Compact, hidden.state.value.chatMode)
+
+        val overlay = vm(chat = ChatMode.Overlay)
+        overlay.onEvent(PlayerEvent.EnsureChatVisible)
+        assertEquals(ChatMode.Overlay, overlay.state.value.chatMode, "a visible chat keeps its mode")
+    }
+
+    @Test fun chatOptionsAndTheZapperOpenAndCloseOnTheirEvents() = runTest(dispatcher) {
+        val vm = vm(chat = ChatMode.Compact)
+        vm.onEvent(PlayerEvent.OpenChatSettings)
+        assertTrue(vm.state.value.chatSettingsOpen)
+        vm.onEvent(PlayerEvent.CloseChatSettings)
+        assertFalse(vm.state.value.chatSettingsOpen)
+
+        vm.onEvent(PlayerEvent.OpenZapper)
+        assertTrue(vm.state.value.zapperOpen)
+        vm.onEvent(PlayerEvent.CloseZapper)
+        assertFalse(vm.state.value.zapperOpen)
+        assertTrue(vm.state.value.controlsVisible, "closing the rows brings the control bar back (and restarts its timer)")
+    }
+
+    @Test fun thePickedQualityIsSavedAndComesBackAsThePreferredOne() = runTest(dispatcher) {
+        val settings = FakeSettings()
+        val vm = vm(settingsOverride = settings)
+        assertEquals(null, vm.preferredQuality.value)
+        vm.onEvent(PlayerEvent.SetPreferredQuality("720p60"))
+        assertEquals("720p60", settings.settings.value.preferredQuality)
+        assertEquals("720p60", vm.preferredQuality.first { it != null })
+    }
+
+    @Test fun theEngineStartsOnTheBuildDefaultUntilTheSavedSettingIsRead() = runTest(dispatcher) {
+        val never = object : SettingsRepository by FakeSettings() {
+            override val settings: Flow<AppSettings> = flow { awaitCancellation() }
+        }
+        val presenter = PlayerPresenter(
+            "b", repo, FakeSession(), never, ChatAssetsSource { flowOf(ChatAssets.Empty) }, ChatSource { _, _ -> chatFlow as Flow<ChatEvent> },
+            keys, backgroundScope, PlayerEngine.WebView, PlayerTuning(chatMapper = dispatcher),
+        )
+        assertEquals(PlayerEngine.WebView, presenter.playerEngine.value)
+
+        val saved = vm(settingsOverride = FakeSettings(AppSettings(playerEngine = PlayerEngine.Native)))
+        assertEquals(PlayerEngine.Native, saved.playerEngine.value, "the saved choice replaces the default at once")
     }
 }

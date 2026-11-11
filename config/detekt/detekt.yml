@@ -32,6 +32,7 @@ complexity:
     ignoreAnnotatedParameter: ['Composable']
   CyclomaticComplexMethod:
     ignoreAnnotated: ['Composable']
+    ignoreSimpleWhenEntries: true # an event dispatcher (`when` of one-line branches) is one decision, not one per event
   TooManyFunctions:
     ignoreAnnotatedFunctions: ['Composable']
     allowedFunctionsPerFile: 20

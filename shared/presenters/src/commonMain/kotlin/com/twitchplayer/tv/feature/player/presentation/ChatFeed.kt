@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.feature.player.presentation
 
+import com.twitchplayer.tv.core.platform.WallClock
 import com.twitchplayer.tv.core.presentation.batch
 import com.twitchplayer.tv.feature.player.data.ChatAssets
 import com.twitchplayer.tv.feature.player.data.ChatAssetsSource
@@ -23,7 +24,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * The chat buffer of the channel being watched, kept apart from the player state: events come in from the
@@ -36,7 +36,7 @@ class ChatFeed(
     private val batchMs: Long = 250,
     private val maxLines: Int = MAX_LINES,
     private val mapper: CoroutineDispatcher = Dispatchers.Default,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val clock: () -> Long = WallClock.System::nowMillis,
 ) {
     private val mutableLines = MutableStateFlow<ImmutableList<ChatLine>>(persistentListOf())
     val lines: StateFlow<ImmutableList<ChatLine>> = mutableLines.asStateFlow()
@@ -62,11 +62,12 @@ class ChatFeed(
 
     /** Streams until cancelled. Asset changes (late providers, live emote edits) apply to the messages that follow. */
     suspend fun run(channelId: String, userId: String, selfLogin: String?) = coroutineScope {
-        val current = AtomicReference(ChatAssets.Empty)
+        // Written by the assets collector, read on the mapper dispatcher: a StateFlow gives the cross-thread visibility.
+        val current = MutableStateFlow(ChatAssets.Empty)
         val firstAssets = CompletableDeferred<Unit>()
         launch {
             assets.assets(channelId).collect {
-                current.set(it)
+                current.value = it
                 firstAssets.complete(Unit)
             }
         }
@@ -76,7 +77,7 @@ class ChatFeed(
             val now = clock()
             // Lines are resolved off the main thread; the other events keep their place between them.
             val steps = withContext(mapper) {
-                val a = current.get()
+                val a = current.value
                 batch.map { event -> if (event is ChatEvent.Message || event is ChatEvent.Notice) event.toLine(a, selfLogin, now) else event }
             }
             var list = mutableLines.value

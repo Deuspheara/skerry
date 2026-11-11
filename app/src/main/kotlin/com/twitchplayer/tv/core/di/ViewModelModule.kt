@@ -1,7 +1,6 @@
 package com.twitchplayer.tv.core.di
 
 import com.twitchplayer.tv.app.AuthViewModel
-import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowseViewModel
@@ -13,7 +12,7 @@ import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomePresenter
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
-import com.twitchplayer.tv.feature.player.data.ChatSource
+import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
 import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import com.twitchplayer.tv.feature.search.data.PlatformVoiceRecognizer
 import com.twitchplayer.tv.feature.search.presentation.SearchPresenter
@@ -27,7 +26,6 @@ import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    single { ChannelKeyBus() }
     factory<VoiceInput> { PlatformVoiceRecognizer(androidContext()) }
 
     // The presenters live in :shared:presenters (sharedPresentersModule); these holders give them a ViewModel scope.
@@ -45,5 +43,8 @@ val viewModelModule = module {
         val login = params.get<String>()
         ChannelViewModel { scope -> get<ChannelPresenter> { parametersOf(login, scope) } }
     }
-    viewModel { params -> PlayerViewModel(params.get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { params ->
+        val login = params.get<String>()
+        PlayerViewModel { scope -> get<PlayerPresenter> { parametersOf(login, scope) } }
+    }
 }

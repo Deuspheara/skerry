@@ -2,6 +2,7 @@ package com.twitchplayer.tv.core.di
 
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import com.twitchplayer.tv.core.data.model.PlayerEngine
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchPlayerConfig
 import org.junit.Test
@@ -17,6 +18,7 @@ import kotlin.coroutines.CoroutineContext
 internal val koinVerifyExtraTypes = listOf(
     Context::class,
     TwitchPlayerConfig::class, // built inline (and nullable) in coreModule
+    PlayerEngine::class, // PlayerPresenter / SettingsPresenter get AppConfig.defaultPlayerEngine passed explicitly
     String::class,
     Long::class,
     Int::class,

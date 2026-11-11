@@ -113,8 +113,9 @@ import com.twitchplayer.tv.feature.player.playback.VideoQualities
 import com.twitchplayer.tv.feature.player.playback.rememberNativeVideoPlayer
 import com.twitchplayer.tv.feature.player.presentation.ChatLine
 import com.twitchplayer.tv.feature.player.presentation.PlayerCommand
+import com.twitchplayer.tv.feature.player.presentation.PlayerEvent
+import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
 import com.twitchplayer.tv.feature.player.presentation.PlayerUiState
-import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import com.twitchplayer.tv.feature.player.ui.embed.PlayerConfigProvider
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchEmbedPlayer
 import com.twitchplayer.tv.feature.player.ui.embed.TwitchPlayerConfig
@@ -134,7 +135,7 @@ import kotlin.math.roundToInt
  */
 @Composable
 fun PlayerHost(
-    viewModel: PlayerViewModel,
+    presenter: PlayerPresenter,
     fullScreen: Boolean,
     dockItems: List<NavRailItem>,
     onDockSelect: (Int) -> Unit,
@@ -143,14 +144,14 @@ fun PlayerHost(
     onExpand: () -> Unit,
     config: TwitchPlayerConfig? = koinInject<PlayerConfigProvider>().config,
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = presenter.state.collectAsState()
     val active by remember { derivedStateOf { state.value.active } }
-    if (active) PlayerHostContent(viewModel, fullScreen, dockItems, onDockSelect, onBack, onOpenChannel, onExpand, config)
+    if (active) PlayerHostContent(presenter, fullScreen, dockItems, onDockSelect, onBack, onOpenChannel, onExpand, config)
 }
 
 @Composable
 private fun PlayerHostContent(
-    viewModel: PlayerViewModel,
+    presenter: PlayerPresenter,
     fullScreen: Boolean,
     dockItems: List<NavRailItem>,
     onDockSelect: (Int) -> Unit,
@@ -162,17 +163,17 @@ private fun PlayerHostContent(
     // A session exists (full screen or docked picture): the TV must not fall asleep under a playing stream.
     com.twitchplayer.tv.core.ui.KeepScreenOn()
     // Chat messages are collected by the chat panel only (and only while it shows): a new batch never recomposes this.
-    val state by viewModel.state.collectAsState()
-    val chatSettings by viewModel.chatSettings.collectAsState()
+    val state by presenter.state.collectAsState()
+    val chatSettings by presenter.chatSettings.collectAsState()
     val chatStyle = remember(chatSettings) { chatSettings.toStyle() }
     val webPlayer = remember { WebViewVideoPlayer() }
     // Two players behind one VideoPlayer. The native one (Media3) is used when the setting and the build allow it, and
     // gives a channel to the WebView player for good (until another channel is picked) when it cannot resolve or play it.
-    val engine by viewModel.playerEngine.collectAsState()
-    val preferredQuality by viewModel.preferredQuality.collectAsState()
+    val engine by presenter.playerEngine.collectAsState()
+    val preferredQuality by presenter.preferredQuality.collectAsState()
     val currentPreferred by rememberUpdatedState(preferredQuality)
     val nativePlayer = if (BuildConfig.NATIVE_PLAYER_ENABLED && engine == PlayerEngine.Native) {
-        rememberNativeVideoPlayer(koinInject<TwitchPlaybackResolver>(), { currentPreferred }, viewModel::setPreferredQuality)
+        rememberNativeVideoPlayer(koinInject<TwitchPlaybackResolver>(), { currentPreferred }, { presenter.onEvent(PlayerEvent.SetPreferredQuality(it)) })
     } else {
         null
     }
@@ -192,15 +193,15 @@ private fun PlayerHostContent(
     }
     val toast = LocalToast.current
     val unavailable = stringResource(R.string.player_quality_unavailable)
-    val showStats by viewModel.showStats.collectAsState()
+    val showStats by presenter.showStats.collectAsState()
     LaunchedEffect(player, showStats) { player.setStatsEnabled(showStats) }
-    LaunchedEffect(player) { player.adBreak.map { it != null }.distinctUntilChanged().collect { viewModel.setAdActive(it) } }
+    LaunchedEffect(player) { player.adBreak.map { it != null }.distinctUntilChanged().collect { presenter.onEvent(PlayerEvent.SetAdActive(it)) } }
     var composing by remember { mutableStateOf(false) }
     val needsSignIn = stringResource(R.string.chat_needs_signin)
     val sendFailed = stringResource(R.string.chat_send_failed)
     val dropped = stringResource(R.string.chat_dropped)
-    LaunchedEffect(viewModel) {
-        viewModel.sent.collect { result ->
+    LaunchedEffect(presenter) {
+        presenter.sent.collect { result ->
             when (result) {
                 SendResult.Sent -> Unit
                 is SendResult.Dropped -> toast.show(result.reason.ifBlank { dropped })
@@ -214,8 +215,8 @@ private fun PlayerHostContent(
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(viewModel, player) {
-        viewModel.commands.collect { command ->
+    LaunchedEffect(presenter, player) {
+        presenter.commands.collect { command ->
             when (command) {
                 PlayerCommand.Play -> player.play()
                 PlayerCommand.Pause -> player.pause()
@@ -224,7 +225,7 @@ private fun PlayerHostContent(
         }
     }
     LaunchedEffect(fullScreen) {
-        viewModel.setMinimized(!fullScreen)
+        presenter.onEvent(PlayerEvent.SetMinimized(!fullScreen))
         if (!fullScreen) {
             dockOpen = false
             interactive = false
@@ -241,7 +242,7 @@ private fun PlayerHostContent(
 
             dockOpen -> dockOpen = false
 
-            viewModel.handleBack() -> Unit
+            presenter.handleBack() -> Unit
 
             else -> onBack()
         }
@@ -273,21 +274,21 @@ private fun PlayerHostContent(
     fun goUp() {
         when {
             // The first row closes the rows (focus search would otherwise land on the controls above it).
-            state.zapperOpen -> if (sheet.focusedRow == 0 || !focusManager.moveFocus(FocusDirection.Up)) viewModel.closeZapper()
+            state.zapperOpen -> if (sheet.focusedRow == 0 || !focusManager.moveFocus(FocusDirection.Up)) presenter.onEvent(PlayerEvent.CloseZapper)
 
-            !state.controlsVisible -> viewModel.wake()
+            !state.controlsVisible -> presenter.onEvent(PlayerEvent.Wake)
 
             !infoFocused -> runCatching { infoFocus.requestFocus() }
 
-            else -> viewModel.hideOverlay()
+            else -> presenter.onEvent(PlayerEvent.HideOverlay)
         }
     }
     fun goDown() {
         when {
             state.zapperOpen -> focusManager.moveFocus(FocusDirection.Down)
-            !state.controlsVisible -> viewModel.wake()
+            !state.controlsVisible -> presenter.onEvent(PlayerEvent.Wake)
             infoFocused -> restoreControl()
-            else -> viewModel.openZapper()
+            else -> presenter.onEvent(PlayerEvent.OpenZapper)
         }
     }
 
@@ -377,10 +378,10 @@ private fun PlayerHostContent(
                             // Chat keeps its keys: scrolling the history never needs a wake-up press.
                             val hidden = !state.controlsVisible && !state.zapperOpen && !dockOpen
                             if (hidden && !focusInChat) {
-                                viewModel.wake()
+                                presenter.onEvent(PlayerEvent.Wake)
                                 return@onPreviewKeyEvent true
                             }
-                            viewModel.wake()
+                            presenter.onEvent(PlayerEvent.Wake)
                             false
                         }
                         .onKeyEvent { event ->
@@ -423,7 +424,7 @@ private fun PlayerHostContent(
                                             }
                                         }
 
-                                        PointerEventType.Move, PointerEventType.Press -> if (!state.zapperOpen) viewModel.wake()
+                                        PointerEventType.Move, PointerEventType.Press -> if (!state.zapperOpen) presenter.onEvent(PlayerEvent.Wake)
 
                                         else -> Unit
                                     }
@@ -496,7 +497,7 @@ private fun PlayerHostContent(
                 onInfoFocused = { infoFocused = it },
                 onBack = onBack,
                 onOpenChannel = { onOpenChannel(state.login) },
-                viewModel = viewModel,
+                presenter = presenter,
                 onPauseLong = {
                     if (config != null && !useNative) {
                         interactive = true
@@ -509,11 +510,11 @@ private fun PlayerHostContent(
                     }
                 },
                 onWrite = {
-                    viewModel.ensureChatVisible()
+                    presenter.onEvent(PlayerEvent.EnsureChatVisible)
                     composing = true
                 },
                 chat = ChatLayerSpec(
-                    lines = viewModel.chat,
+                    lines = presenter.chat,
                     style = chatStyle,
                     settings = chatSettings,
                     columnWidth = columnWidth,
@@ -560,7 +561,7 @@ private fun PlayerHostContent(
 
     if (composing) {
         ChatComposeDialog(onSend = {
-            viewModel.sendChat(it)
+            presenter.onEvent(PlayerEvent.SendChat(it))
             composing = false
         }, onDismiss = { composing = false })
     }
@@ -663,7 +664,7 @@ private fun BoxScope.FullScreenLayers(
     onInfoFocused: (Boolean) -> Unit,
     onBack: () -> Unit,
     onOpenChannel: () -> Unit,
-    viewModel: PlayerViewModel,
+    presenter: PlayerPresenter,
     onPauseLong: () -> Unit,
     onQuality: () -> Unit,
     onWrite: () -> Unit,
@@ -711,7 +712,7 @@ private fun BoxScope.FullScreenLayers(
         )
     }
 
-    ChatLayer(state, chatMode, screenHeight, barAlpha, chatDim, overlayChatAlpha, viewModel, chat)
+    ChatLayer(state, chatMode, screenHeight, barAlpha, chatDim, overlayChatAlpha, presenter, chat)
 
     // Layer 1: stream info above the control row, bottom-left, rising slightly as it fades in.
     val infoEnd = if (chatMode == ChatMode.Overlay) TvDimens.ChatOverlay else TvDimens.SafeHorizontal
@@ -740,13 +741,13 @@ private fun BoxScope.FullScreenLayers(
             focus = focus,
             onFocused = onFocused,
             onBack = onBack,
-            onPause = viewModel::togglePause,
+            onPause = { presenter.onEvent(PlayerEvent.TogglePause) },
             onPauseLong = onPauseLong,
-            onMute = viewModel::toggleMute,
-            onFullscreen = viewModel::toggleFullscreen,
-            onPrevious = viewModel::previous,
-            onNext = viewModel::next,
-            onChat = viewModel::cycleChat,
+            onMute = { presenter.onEvent(PlayerEvent.ToggleMute) },
+            onFullscreen = { presenter.onEvent(PlayerEvent.ToggleFullscreen) },
+            onPrevious = { presenter.onEvent(PlayerEvent.Previous) },
+            onNext = { presenter.onEvent(PlayerEvent.Next) },
+            onChat = { presenter.onEvent(PlayerEvent.CycleChat) },
             onQuality = onQuality,
             onWrite = onWrite,
             chatTarget = if (state.chatVisible) chat.headerFocus else null,
@@ -761,7 +762,7 @@ private fun BoxScope.FullScreenLayers(
         ZapRows(
             rows = state.zapRows,
             playingLogin = state.login,
-            onZap = viewModel::zap,
+            onZap = { presenter.onEvent(PlayerEvent.Zap(it)) },
             onRowFocused = { sheet.focusedRow = it },
             onRowHeight = { sheet.rowHeightPx = it.toFloat() },
             modifier = Modifier
@@ -834,7 +835,7 @@ private fun BoxScope.ChatLayer(
     barAlpha: () -> Float,
     chatDim: () -> Float,
     overlayChatAlpha: () -> Float,
-    viewModel: PlayerViewModel,
+    presenter: PlayerPresenter,
     chat: ChatLayerSpec,
 ) {
     val motion = LocalMotion.current
@@ -915,12 +916,12 @@ private fun BoxScope.ChatLayer(
                 top = if (overlay) 0.dp else TvDimens.SafeTop,
             ),
         ) {
-            val room by viewModel.room.collectAsState()
+            val room by presenter.room.collectAsState()
             ChatHeader(
                 showTitle = !overlay,
                 room = room,
                 settingsOpen = state.chatSettingsOpen,
-                onOptions = { if (state.chatSettingsOpen) viewModel.closeChatSettings() else viewModel.openChatSettings() },
+                onOptions = { if (state.chatSettingsOpen) presenter.onEvent(PlayerEvent.CloseChatSettings) else presenter.onEvent(PlayerEvent.OpenChatSettings) },
                 focusRequester = chat.headerFocus,
                 onLeave = chat.onLeave,
                 // Over the video the header is chrome: it shows with the bottom overlay.
@@ -942,7 +943,7 @@ private fun BoxScope.ChatLayer(
                 if (state.chatSettingsOpen) {
                     ChatSettingsPanel(
                         settings = chat.settings,
-                        onChange = viewModel::updateChatSettings,
+                        onChange = { presenter.onEvent(PlayerEvent.UpdateChatSettings(it)) },
                         modifier = Modifier.fillMaxSize().background(TvColors.Base).padding(bottom = TvDimens.SafeBottom),
                         firstFocus = chat.optionsFocus,
                     )
