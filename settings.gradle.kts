@@ -35,6 +35,7 @@ rootProject.name = "TwitchPlayer"
 
 include(":app")
 include(":benchmark")
+include(":platform-android")
 include(":shared:core")
 include(":shared:stream")
 include(":shared:chat")
