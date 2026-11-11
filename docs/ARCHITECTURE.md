@@ -31,21 +31,23 @@ Profile still matches class names.
 ### Plugging in a new platform (Apple, desktop, web)
 
 A new UI target implements the platform bindings, starts Koin with the shared modules and renders presenter state.
-Bindings the platform must provide (each is listed in the KDoc of the module that needs it, and a Koin test per module
-resolves the graph against exactly that list):
+Bindings the platform must provide. Each shared module lists the ones its own module needs in its Koin module's KDoc,
+and that module's `Shared*ModuleTest` resolves the whole graph against a fake of exactly that list. "Consumed by" is the
+module whose bindings use the interface (the interfaces themselves are declared in `core.platform`):
 
-| Binding | Module | What it is |
+| Binding | Consumed by | What it is |
 |---|---|---|
 | `HttpClientEngineFactory<*>` | core | Ktor engine (Android: OkHttp; Darwin, Java/CIO, Js elsewhere) |
-| `EventStreamClientFactory` | chat | HTTP client for the 7TV event stream (no read timeout) |
-| `Logger` | core | warn-level logging |
 | `TokenStore` | core | encrypted storage of the OAuth tokens (Android Keystore; Keychain, DPAPI/libsecret later) |
 | `SnapshotStorage` | core | last good screen data on disk (cache directory) |
 | `DataStore<Preferences>` x2 | core | named `settings` and `vod_progress` (see `StorageNames`) |
-| `AppConfig` | core | public Twitch client id, the engine a fresh install starts with |
-| `DeviceProfile` | core | interface language tag (empty for the root locale) |
-| `NumberFormatter` | core | locale decimal text, used by the UI (VOD speed label) |
+| `AppConfig` | core, presenters | public Twitch client id, the engine a fresh install starts with |
+| `SettingsDefaults` | core | per-device starting settings (e.g. fewer animated emotes on low-memory devices) |
+| `Logger` | stream, chat | warn-level logging |
+| `EventStreamClientFactory` | chat | HTTP client for the 7TV event stream (no read timeout) |
+| `DeviceProfile` | presenters | interface language tag (empty for the root locale) |
 | `VoiceInput` | presenters | speech recognition for search |
+| `NumberFormatter` | UI only | locale decimal text; no shared Koin module resolves it, the UI hands it to the VOD helpers. Covered by the app's `ProductionGraphResolutionTest`, not by a shared test |
 
 Then: `startKoin { modules(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), sharedPresentersModule(), <platform module>) }`
 and create each screen's presenter with `get<XPresenter> { parametersOf(..., scope) }`, passing the `CoroutineScope` the UI
