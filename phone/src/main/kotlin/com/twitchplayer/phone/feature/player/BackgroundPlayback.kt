@@ -12,18 +12,20 @@ import androidx.media3.common.Player
 import kotlinx.coroutines.delay
 
 /**
- * What a replay or a clip does when the app leaves the screen (home, another app, the screen locking): it pauses, unless the picture
- * lives on in a Picture-in-Picture window, and it picks up again on return only if it was playing when the app left (a viewer who
- * paused on purpose finds it paused). Same rules as the live player's `onForeground` and the TV replay screen.
+ * What a replay or a clip does when the app leaves the screen: it pauses, and it picks up again on return only if it was playing when
+ * the app left (a viewer who paused on purpose finds it paused). Same rules as the live player's `onForeground` and the TV replay screen.
+ *
+ * Picture-in-Picture needs no exception: entering the window only pauses the activity (`onPause`, the picture keeps playing), it never
+ * stops it. The activity is stopped when the window is dismissed with its X, when the screen locks and when another app takes over, and
+ * in the first case `isInPictureInPictureMode` is still true while `onStop` runs (seen on an API 36 emulator: a replay kept playing
+ * after the X when `onStop` trusted it). So any stop pauses.
  */
 class BackgroundResume {
     private var resumeOnStart = false
 
-    /** The activity stopped. Returns true when playback must pause now; remembers whether to resume later. */
-    fun onStop(playing: Boolean, inPictureInPicture: Boolean): Boolean {
-        if (inPictureInPicture) return false
+    /** The activity stopped: playback must pause now; remembers whether to resume later. */
+    fun onStop(playing: Boolean) {
         resumeOnStart = playing
-        return true
     }
 
     /** The activity started again. Returns true when playback should resume (it was playing when the app left). */
@@ -34,14 +36,14 @@ class BackgroundResume {
  * Binds [BackgroundResume] to a lifecycle and a Media3 player. A finished clip (end of stream) counts as not playing: coming back never
  * restarts it.
  */
-class PauseInBackground(private val player: Player, private val inPictureInPicture: () -> Boolean) : LifecycleEventObserver {
+class PauseInBackground(private val player: Player) : LifecycleEventObserver {
     private val policy = BackgroundResume()
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
             Lifecycle.Event.ON_STOP -> {
-                val playing = player.playWhenReady && player.playbackState != Player.STATE_ENDED
-                if (policy.onStop(playing, inPictureInPicture())) player.pause()
+                policy.onStop(playing = player.playWhenReady && player.playbackState != Player.STATE_ENDED)
+                player.pause()
             }
 
             Lifecycle.Event.ON_START -> if (policy.onStart()) player.play()
@@ -51,14 +53,12 @@ class PauseInBackground(private val player: Player, private val inPictureInPictu
     }
 }
 
-/** Pauses [player] while the app is in the background (see [BackgroundResume]); outside Picture-in-Picture only. */
+/** Pauses [player] while the app is stopped (see [BackgroundResume]). */
 @Composable
 fun PauseWhenInBackground(player: Player) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val host = LocalPlayerHost.current
-    // Asked of the activity at the moment of stopping: the flow behind `inPictureInPicture` is stale when the window was dismissed.
-    DisposableEffect(player, lifecycle, host) {
-        val observer = PauseInBackground(player) { host.isInPictureInPictureNow() }
+    DisposableEffect(player, lifecycle) {
+        val observer = PauseInBackground(player)
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }

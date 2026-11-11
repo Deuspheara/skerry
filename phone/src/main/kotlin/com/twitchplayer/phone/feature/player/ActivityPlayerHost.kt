@@ -35,11 +35,6 @@ class ActivityPlayerHost(private val activity: ComponentActivity) : PlayerHost {
     override val canPictureInPicture: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
 
-    override fun isInPictureInPictureNow(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureModeApi26()
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun isInPictureInPictureModeApi26(): Boolean = activity.isInPictureInPictureMode
-
     private var eligible = false
     private var playing = false
     private var width = 0

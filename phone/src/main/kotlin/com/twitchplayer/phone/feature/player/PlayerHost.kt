@@ -13,13 +13,6 @@ interface PlayerHost {
     /** True while the activity is shown in the Picture-in-Picture window: the screen draws the picture alone. */
     val inPictureInPicture: StateFlow<Boolean>
 
-    /**
-     * Asks the activity right now whether its window is the Picture-in-Picture window. Unlike [inPictureInPicture] (set from a
-     * callback that Android may deliver after `onStop`, or not at all when the window is dismissed), this is the truth at the moment
-     * of the call; decisions taken while stopping must use it.
-     */
-    fun isInPictureInPictureNow(): Boolean
-
     /** The device and system allow Picture-in-Picture (Android 8+ and the feature flag). */
     val canPictureInPicture: Boolean
 
@@ -53,7 +46,6 @@ interface PlayerHost {
 object NoPlayerHost : PlayerHost {
     override val inPictureInPicture: StateFlow<Boolean> = MutableStateFlow(false)
     override val canPictureInPicture: Boolean = false
-    override fun isInPictureInPictureNow(): Boolean = false
     override fun updatePictureInPicture(eligible: Boolean, playing: Boolean, videoWidth: Int, videoHeight: Int, sourceBounds: Rect?, onTogglePlay: () -> Unit) = Unit
     override fun clearPictureInPicture() = Unit
     override fun enterPictureInPicture() = Unit

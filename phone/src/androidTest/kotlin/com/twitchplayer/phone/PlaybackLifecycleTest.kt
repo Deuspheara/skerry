@@ -30,7 +30,6 @@ class PlaybackLifecycleTest {
 
     // A LifecycleRegistry keeps its owner only weakly: the test holds it for as long as it runs.
     private lateinit var owner: LifecycleOwner
-    private var inPictureInPicture = false
 
     private fun onMain(block: () -> Unit) = instrumentation.runOnMainSync(block)
 
@@ -48,7 +47,7 @@ class PlaybackLifecycleTest {
                 override val lifecycle: Lifecycle get() = registry
             }
             registry = LifecycleRegistry.createUnsafe(owner)
-            registry.addObserver(PauseInBackground(playback.exo) { inPictureInPicture })
+            registry.addObserver(PauseInBackground(playback.exo))
             registry.currentState = Lifecycle.State.RESUMED
             // The bundled demo clip: a short looping test pattern.
             playback.setSource("asset:///demo_stream.mp4", 0L, recording = false, playWhenReady = true)
@@ -92,12 +91,18 @@ class PlaybackLifecycleTest {
         assertFalse(readOnMain { playback.exo.playWhenReady })
     }
 
-    @Test fun theVideoKeepsPlayingWhileTheAppIsInThePictureInPictureWindow() {
-        inPictureInPicture = true
-
-        stopTheApp()
+    @Test fun thePictureInPictureWindowOnlyPausesTheActivityAndThePictureKeepsPlaying() {
+        // Entering the window takes the activity from RESUMED to STARTED (onPause), it never stops it.
+        onMain { registry.currentState = Lifecycle.State.STARTED }
 
         assertTrue(readOnMain { playback.exo.playWhenReady })
+    }
+
+    @Test fun dismissingThePictureInPictureWindowStopsTheActivityAndPausesTheReplay() {
+        onMain { registry.currentState = Lifecycle.State.STARTED }
+        stopTheApp()
+
+        assertFalse(readOnMain { playback.exo.playWhenReady })
     }
 
     @Test fun aPlayerNobodyReferencesAnymoreIsReleasedWhenComposeForgetsIt() {
