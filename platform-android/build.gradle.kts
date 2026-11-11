@@ -54,4 +54,7 @@ dependencies {
   testFixturesImplementation(libs.androidx.lifecycle.viewmodel.savedstate)
   testFixturesImplementation(project(":shared:core"))
   testFixturesImplementation(project(":shared:chat"))
+  testFixturesImplementation(project(":shared:presenters"))
+  testFixturesImplementation(libs.kotlinx.coroutines.core)
+  testFixturesImplementation(libs.androidx.datastore.preferences.core)
 }
