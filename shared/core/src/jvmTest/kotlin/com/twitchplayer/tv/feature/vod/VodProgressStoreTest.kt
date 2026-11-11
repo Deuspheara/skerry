@@ -1,6 +1,10 @@
 package com.twitchplayer.tv.feature.vod
 
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.twitchplayer.tv.core.platform.WallClock
 import com.twitchplayer.tv.feature.vod.data.DataStoreVodProgressStore
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +30,29 @@ class VodProgressStoreTest {
         folder.deleteRecursively()
     }
 
-    private fun store(max: Int = 150): DataStoreVodProgressStore {
+    private fun dataStore(): DataStore<Preferences> {
         val file = File(folder, "vod_${now++}.preferences_pb")
-        return DataStoreVodProgressStore(PreferenceDataStoreFactory.create(scope = scope) { file }, max, WallClock { now++ })
+        return PreferenceDataStoreFactory.create(scope = scope) { file }
+    }
+
+    private fun store(max: Int = 150): DataStoreVodProgressStore = DataStoreVodProgressStore(dataStore(), max, WallClock { now++ })
+
+    @Test fun anExistingInstallsPreferencesFileStillReads() = runBlocking {
+        // On-disk format written by every released build: key "vod_<id>" = "position:duration:savedAtMillis".
+        val raw = dataStore()
+        raw.edit { it[stringPreferencesKey("vod_123")] = "83000:3600000:1700000000000" }
+        raw.edit { it[stringPreferencesKey("unrelated")] = "x" }
+        val progress = DataStoreVodProgressStore(raw).progress.first()
+        assertEquals(setOf("123"), progress.keys)
+        assertEquals(83_000L, progress["123"]?.positionMs)
+        assertEquals(3_600_000L, progress["123"]?.durationMs)
+    }
+
+    @Test fun savingWritesTheSameFormat() = runBlocking {
+        val raw = dataStore()
+        DataStoreVodProgressStore(raw, clock = WallClock { 1_700_000_000_000L }).save("9", 40_000, 600_000)
+        val stored = raw.data.first()[stringPreferencesKey("vod_9")]
+        assertEquals("40000:600000:1700000000000", stored)
     }
 
     @Test fun savedPositionsComeBackPerReplay() = runBlocking {
