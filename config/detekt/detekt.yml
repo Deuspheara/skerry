@@ -41,3 +41,10 @@ coroutines:
   InjectDispatcher:
     # Tests run on real dispatchers on purpose (DataStore scopes, Ktor mock engines); production code injects its own.
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**']
+
+Compose:
+  CompositionLocalAllowlist:
+    active: true
+    # The phone's reduced-motion switch (the viewer's Animations setting or the system animator scale) is read by skeletons and
+    # transitions at any depth: a parameter on every composable in between would be worse than one documented local.
+    allowedCompositionLocals: LocalReducedMotion

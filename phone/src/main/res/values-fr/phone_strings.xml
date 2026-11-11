@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_nav_settings">Réglages</string>
+
+    <string name="phone_signin_body">Connectez-vous avec Twitch pour voir les chaînes que vous suivez.</string>
+    <string name="phone_error_body">Vérifiez votre connexion et réessayez.</string>
+    <string name="phone_following_empty">Les chaînes que vous suivez apparaîtront ici.</string>
+    <string name="phone_channel_live_viewers">En direct · %1$s spectateurs</string>
+    <string name="phone_channel_offline">Hors ligne</string>
+    <string name="phone_live_for">En direct depuis %1$s</string>
+    <string name="phone_player_soon">Le lecteur arrive dans la prochaine mise à jour.</string>
+
+    <string name="phone_search_recent">Recherches récentes</string>
+    <string name="phone_search_mic_denied">Autorisez le micro pour rechercher à la voix.</string>
+
+    <string name="phone_signin_step_open">1. Ouvrez la page d\'activation Twitch et connectez-vous.</string>
+    <string name="phone_signin_open">Ouvrir twitch.tv/activate</string>
+    <string name="phone_signin_step_code">2. Saisissez ce code s\'il n\'est pas déjà rempli.</string>
+    <string name="phone_signin_copy">Copier le code</string>
+    <string name="phone_signin_expires">Expire dans %1$s</string>
+    <string name="phone_signin_expired">Ce code a expiré.</string>
+    <string name="phone_signin_failed">La connexion n\'a pas abouti. Réessayez.</string>
+    <string name="phone_signin_done">Connecté en tant que %1$s</string>
+
+    <string name="phone_settings_signed_in">Connecté</string>
+    <string name="phone_settings_appearance">Apparence</string>
+    <string name="phone_settings_theme">Thème</string>
+    <string name="phone_theme_dark">Sombre</string>
+    <string name="phone_theme_light">Clair</string>
+    <string name="phone_theme_system">Suivre le système</string>
+    <string name="phone_settings_chat_mode">Affichage du chat</string>
+    <string name="phone_settings_playback">Lecture</string>
+    <string name="phone_settings_about">À propos</string>
+    <string name="phone_about_version">Version %1$s</string>
+    <string name="phone_about_disclaimer">Un client indépendant et non officiel. Il n\'est pas approuvé par Twitch.</string>
+    <string name="phone_licenses">Licences open source</string>
+</resources>
