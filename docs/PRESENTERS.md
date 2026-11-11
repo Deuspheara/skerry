@@ -27,6 +27,16 @@ sealed interface HomeEvent { data object Retry : HomeEvent }
   never `Locale`, `Context` or `java.*`.
 - Focus memory, scroll position and other pure UI state stay in the UI layer (e.g. `ChannelViewModel.lastClip`).
 
+## The player presenter (the one exception)
+
+`PlayerPresenter` has `state` and `onEvent(PlayerEvent)` like the others, plus streams the player screen consumes separately: `chat`
+(the lines), `room`, the settings projections (`chatSettings`, `playerEngine`, `preferredQuality`, `showStats`), and the one-shot
+flows `sent` (outcome of a message) and `commands` (play / pause / mute for the player). `handleBack(): Boolean` stays a function:
+the activity needs to know at once whether a layer was closed. Timings and the chat-mapping dispatcher are grouped in
+`PlayerTuning` (defaults in production, shortened in tests); the session lives in the activity-scoped holder (`koinViewModel(key = "player")`)
+so the mini player survives navigation. It is also the one presenter a composable takes as a parameter, so it is listed in
+`config/compose/stability.conf` (with `ChannelKeyBus`): both only have `val` public properties and never change identity.
+
 ## Android wiring
 
 `sharedPresentersModule()` registers one Koin `factory` per presenter, taking the scope as a parameter. The app's holders are

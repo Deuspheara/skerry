@@ -29,7 +29,8 @@ Native Twitch client. Android TV app today; being split into a Kotlin Multiplatf
 
 ## Architecture rules
 
-- No Android (or any `java.*`) imports in `commonMain`.
+- No Android (or any `java.*`, `System.currentTimeMillis`, `String.format`, `Math.`) in `commonMain`: the `verifyCommonMain` task
+  (part of `check` in every `shared/*` module) fails the build. Shared code lives in `shared/{core,stream,chat,player-api,presenters,testing}`.
 - Presenters expose `StateFlow<UiState>` plus `onEvent(...)`. UIs only render state and send events.
 - Platform code goes behind an interface (injected through Koin) or `expect/actual`.
 - Shared KMP modules use `com.android.kotlin.multiplatform.library`; never combine `org.jetbrains.kotlin.multiplatform`

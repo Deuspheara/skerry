@@ -6,6 +6,9 @@ Native Android TV client built with Kotlin and Jetpack Compose. Browsing, channe
 
 ```sh
 ./gradlew :app:assembleDebug
+./gradlew check                                  # spotless (ktlint), detekt, Android Lint, verifyCommonMain, all unit tests (shared + app)
+./gradlew spotlessApply                          # fix formatting
+./gradlew verifyCommonMain                       # no Android / java.* APIs in any shared commonMain
 ./gradlew :app:testDebugUnitTest
 ./gradlew :app:connectedDebugAndroidTest        # D-pad / focus / Back UI tests (emulator or TV)
 ./gradlew :app:assembleBenchmark                # release-like build (R8) on demo data, used by :benchmark
@@ -14,6 +17,8 @@ benchmark/tools/generate-profiles.sh            # regenerate the Baseline + star
 ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV, AOT-compiled at install with its profile
 ./gradlew :app:analyzeReleaseR8Config           # R8 Configuration Analyzer report (app/build/reports/r8/)
 ```
+
+Modules: `app` (Android TV UI) and `benchmark`, on top of the Kotlin Multiplatform modules `shared/core`, `shared/stream`, `shared/chat`, `shared/player-api`, `shared/presenters` and `shared/testing` (see [architecture](docs/ARCHITECTURE.md)).
 
 Connected Gradle tasks install on every adb device: set `ANDROID_SERIAL` so they never replace the release build on a TV.
 

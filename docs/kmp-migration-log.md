@@ -349,3 +349,76 @@ under `--rerun-tasks` is fixed: the Spotless Kotlin and Gradle-script targets no
 Not verified: the real TV; the R8 analyzer scores (HTML renders them with JS); a long session on the emulator (only a short navigation
 tour); the baseline/startup profiles still name the old `*ViewModel` constructors and `VoiceRecognizer`, so they are stale for those
 classes until they are regenerated at the end of Phase 1 (planned; sizes already show the profile applies: 14,272 B).
+
+## Step 4b: the player presenter, chat feed and chat lines (2026-11-11)
+
+**Review fixes from step 4a (all committed first):**
+- `ChannelPresenter.state` was a `combine(...)` under `WhileSubscribed(5 s)`; the original exposed `details` as `Loader.state`
+  (itself `Lazily`, never stopping). It is `Lazily` now (loading begins at the first collector, never stops, no stale first frame).
+  Tests: progress merge; "returning after more than the old stop timeout shows fresh state with no collector" (fails with
+  `WhileSubscribed`, checked); "not loaded before the first collector".
+- `PresenterLifetimeTest`: cancelling the scope given to a presenter stops Home's load, Search's debounce and voice job, Auth's sign-in
+  job and Channel's loads / replay paging; nothing is emitted afterwards and events sent to a dead presenter are no-ops.
+- `AndroidDeviceProfile`: `Locale.toLanguageTag()` gives "und" for the root locale where the old code read `locale.language` (empty).
+  It returns "" now; the locale is injectable; tests include the root locale and `twitchLanguage("")`.
+- `SharedChatModule` lambda (4a): `get<EventStreamClientFactory>()::create` became `val streamClients = get<...>(); { streamClients.create() }`.
+  Behaviour-neutral: the factory is still resolved once, when the `EmoteRepository` singleton is built, and `create()` is called on
+  each use either way; the explicit form just does not hide the resolution in a bound reference.
+- `verifyCommonMain` is registered by the `twitchplayer.kmp-library` convention in **every** shared module (core, stream, chat,
+  player-api, presenters, testing: confirmed with `./gradlew check --dry-run` on each) and is part of `check`. Run it alone with
+  `./gradlew verifyCommonMain`. It now also rejects `java.lang.Math`.
+
+**Moved to `:shared:presenters`:** `PlayerViewModel` -> `PlayerPresenter` (`state`, `chat`, `room`, settings projections, `sent`, `commands`,
+`onEvent(PlayerEvent)`, `handleBack()`), `ChatFeed`, `ChatLine`, `PlayerModels`, `ChannelKeyBus` (a singleton of `sharedPresentersModule()`),
+and the VOD seek / speed helpers (`feature.vod.ui`, now public). The app keeps a thin `PlayerViewModel` holder (activity-scoped, key
+"player"); `PlayerScreen` / `TwitchTvApp` send `PlayerEvent`s. New seams: `NumberFormatter` (core.platform; the Android implementation is the
+old `DecimalFormat("0.##")`, tested equal to the inline call for four locales) and `timeOfDay` (`expect/actual`, Calendar on JVM and Android).
+`PlayerPresenter`'s constructor takes `defaultEngine` (from `AppConfig`) and a `PlayerTuning` (idle time, chat batch interval, mapping dispatcher).
+
+Replacements, with the reason each is behaviour-identical: `Calendar` clock -> `timeOfDay` (same Calendar call; JVM parity test over 300 random
+instants); `Math.floorMod` -> `Int.mod` (parity tests for the cycle index and the nick-colour index over random logins, negative hash codes
+included); `Math.pow` -> `kotlin.math.pow`; `String.format` on the emote CDN template -> a string template (existing URL assertions
+unchanged); `AtomicReference` in `ChatFeed.run` -> `MutableStateFlow`; `System.currentTimeMillis` default clock -> `WallClock`.
+**`kotlinx-datetime` was tried and dropped:** it kept 171 classes in the release dex (+74 KB, APK +1.24 %) for a 5-character clock string.
+
+**Compose stability:** the first report after the move showed `PlayerUiState` (3 composables), `ZapRow`, `ChatLine`, `ImmutableList<ChatLine>`,
+`PlayerPresenter` (4) and `ChannelKeyBus` unstable. The player state classes were added to `config/compose/stability.conf` one by one;
+`PlayerPresenter` and `ChannelKeyBus` too, documented as the two reference types composables take as parameters (only `val` public
+properties, never change identity, as the ViewModel / bus they replace). Report after: 5 unstable parameters (`context`, `controller`,
+`edgeGuard`, `preview`, `token`), 130 skippable composables, identical to the report generated at the pre-4b commit in a scratch worktree.
+
+**detekt:** the app baselines shrank (moved findings left; three `ViewModelForwarding` ids follow the parameter rename); the presenters
+baselines gained only the moved legacy findings (ChatLine magic numbers / complexity, ChatFeed, `TooManyFunctions` of the player class). Two
+findings caused by the new code were fixed, not baselined: the 12-parameter constructor (test-only knobs grouped into `PlayerTuning`) and
+`NestedBlockDepth` in a new test. `CyclomaticComplexMethod` now has `ignoreSimpleWhenEntries: true` (a `when` of one-line branches such as
+the 22-event dispatcher counts as one decision; applies repo-wide, only ever reduces findings).
+
+**Tests:** moved to shared (kotlin.test, run on JVM and Android host): `PlayerPresenterTest` (28 + 6 new for `SendChat`, `EnsureChatVisible`,
+`CloseChatSettings` / `CloseZapper`, `SetPreferredQuality` and the engine default), `ChatFeedTest`, `ChatLineTest` (+ clock and zone tests),
+`ChatPayloadTest`, `VodPlaybackTest`, `VodProgressTest` (core), `ChannelKeyBusTest`, `ChatLineJvmParityTest`. The Koin tests cover the player
+presenter (`SharedPresentersModuleTest`) and the activity-scoped holder plus `NumberFormatter` / `ChannelKeyBus` resolution
+(`ProductionGraphResolutionTest`).
+
+**Numbers on the final tree** (`./gradlew check --rerun-tasks --continue`, 2 min 12 s, 0 failures, 0 skipped): app 37; core 39 jvm / 29 host;
+stream 40 / 24; chat 41 / 41; player-api 7 / 7; presenters 124 jvm / 121 host; total 510 test executions (407 at the end of 4a).
+Release: APK 3,968,914 B (+0.41 % vs 3,952,530), dex 1,809,856 + 3,281,400 = 5,091,256 B (+0.52 % vs 5,064,824), `baseline.prof` 14,159 B /
+`baseline.profm` 1,003 B packaged in the APK and the AAB, one `-keepattributes` line and no `-keep` rule in `app/proguard-rules.pro`, shared
+consumer rules merged into R8's `configuration.txt`, Lint: no new issue and the baseline file is unchanged since 4a (the "listed in the baseline but not found" note
+printed by `bundleRelease` comes from `lintVitalRelease` reading a baseline recorded on another variant). Mapping: no `kotlinx.datetime` class; 68 classes in `feature.player.presentation`.
+
+**Emulator** (TwitchTV_API33, demo data, debug build, `ANDROID_SERIAL=emulator-5554`, the TV untouched), screenshots reviewed by eye:
+Home; a Category (Valmoor: header, language chip, favourite, cards); the player on the native demo clip with the compact chat column (badges,
+emotes, subscriber notice, mention highlights) and with the control bar (back, pause, mute, full screen, channel -/+, chat, write, quality);
+channel zapping (`Next` / `Previous` events: MaîtreKoi, then back); pause / play toggle; the chat list focus ring; full-screen video with no
+overlay and no chat (Back peels the layers: bar, chat, then leaves); the zapper (Following and category rows, current channel marked, bar lifted);
+the Quit dialog at the root. **Not driven through the UI:** chat mode Overlay (key navigation to the chat-mode button was unreliable; covered by
+the presenter tests), the VOD and clip screens (their only change is `speedLabel(speed, formatter)`; the `NumberFormatter` binding is covered
+by `ProductionGraphResolutionTest`).
+
+**Instrumented tests** (`./gradlew :app:connectedDebugAndroidTest`, emulator only): 14 run, 12 pass, 2 fail, both on the known
+pre-existing list (`TvFocusFlowTest.searchOpensOnTheVoiceKey`, `TvFocusFlowTest.backClosesTheZapperBeforeLeavingThePlayer`); the third
+known one (`chatOptionsOpenFromSettings...`) passed again. No new failure. `ChatPanelTest` (6) passes. The emulator was shut down at the end.
+
+**Not verified:** the real TV; the R8 analyzer scores (the HTML renders them with JavaScript); chat Overlay mode, the VOD and the clip
+screens through the UI (see above); a long session; the Baseline / Startup Profiles are still the pre-migration ones (the old
+`*ViewModel` constructors and `VoiceRecognizer` are stale in them) and are regenerated at the end of Phase 1.

@@ -1,25 +1,74 @@
 # Architecture proposal
 
-Status: implemented (single module `:app` + `:benchmark`). The sections below keep the original rationale; "Code layout" is the current shape.
+Status: implemented. Platform-independent logic lives in the Kotlin Multiplatform modules under `shared/`; `:app` is the Android TV UI on top of them. The sections below keep the original rationale; "Modules" and "Code layout" are the current shape.
 
-## Code layout
+## Modules
+
+```
+shared/core        models, Twitch API + DTOs, auth (device code, TokenStore interface), repositories, settings, snapshot cache,
+                   VOD progress, platform interfaces (WallClock, Logger, SnapshotStorage, DeviceProfile, NumberFormatter, AppConfig)
+shared/stream      GQL playback / VOD / clip resolvers, master playlist parser, retry
+shared/chat        EventSub chat client, chat models, emote providers (7TV, BTTV, FFZ), emote repository, chat assets
+shared/player-api  VideoPlayer interface, playback stats / quality models, HLS ad parsing
+shared/presenters  one presenter per screen (state + onEvent), Loader / Load, ChatFeed, ChatLine, player state, VOD helpers
+shared/testing     fakes for the repositories and session (test fixtures, not shipped)
+app                Compose TV UI, Media3 + WebView players, Android implementations of the platform interfaces, Koin wiring, demo data
+benchmark          Macrobenchmark + Baseline Profile generation
+```
+
+Dependency direction (no cycles, nothing depends on `app`):
+
+```
+presenters -> chat -> core          stream -> core          player-api (standalone)
+app -> presenters, chat, stream, player-api, core
+```
+
+Rules (AGENTS.md): no Android or `java.*` in `commonMain` (enforced by the `verifyCommonMain` task, part of `check` in every
+shared module: `./gradlew verifyCommonMain`), platform code behind an interface or `expect/actual`, presenters expose
+`StateFlow<UiState>` plus `onEvent(...)` (docs/PRESENTERS.md). Package names did not change when code moved, so the Baseline
+Profile still matches class names.
+
+### Plugging in a new platform (Apple, desktop, web)
+
+A new UI target implements the platform bindings, starts Koin with the shared modules and renders presenter state.
+Bindings the platform must provide (each is listed in the KDoc of the module that needs it, and a Koin test per module
+resolves the graph against exactly that list):
+
+| Binding | Module | What it is |
+|---|---|---|
+| `HttpClientEngineFactory<*>` | core | Ktor engine (Android: OkHttp; Darwin, Java/CIO, Js elsewhere) |
+| `EventStreamClientFactory` | chat | HTTP client for the 7TV event stream (no read timeout) |
+| `Logger` | core | warn-level logging |
+| `TokenStore` | core | encrypted storage of the OAuth tokens (Android Keystore; Keychain, DPAPI/libsecret later) |
+| `SnapshotStorage` | core | last good screen data on disk (cache directory) |
+| `DataStore<Preferences>` x2 | core | named `settings` and `vod_progress` (see `StorageNames`) |
+| `AppConfig` | core | public Twitch client id, the engine a fresh install starts with |
+| `DeviceProfile` | core | interface language tag (empty for the root locale) |
+| `NumberFormatter` | core | locale decimal text, used by the UI (VOD speed label) |
+| `VoiceInput` | presenters | speech recognition for search |
+
+Then: `startKoin { modules(sharedCoreModule(), sharedStreamModule(), sharedChatModule(), sharedPresentersModule(), <platform module>) }`
+and create each screen's presenter with `get<XPresenter> { parametersOf(..., scope) }`, passing the `CoroutineScope` the UI
+cancels. The Android app keeps its list in `productionModules()` and tests it (`ProductionGraphResolutionTest`).
+
+## Code layout (`app`)
 
 ```
 com.twitchplayer.tv
-  app/            TwitchTvApp (rail + Navigation 3 host), dialogs, AuthViewModel
+  app/            TwitchTvApp (rail + Navigation 3 host), dialogs, AuthViewModel (holder)
   navigation/     typed NavKeys, AppNavigator (back-stack rules, unit tested)
   core/
     designsystem/ theme (colors, dimens, type, motion), icon (one 24 dp family), component (cards, chips, buttons, rail, dialog, toast)
     ui/           TvFocusable + focus ring, FocusMemory (restoration), BringIntoView specs, LoadGate, image + formatting helpers
-    presentation/ Load / Loader (screen state), FlowBatch
-    network/      Helix client + DTOs, OAuth device flow, token store
-    data/         models, repositories (Twitch, Session, Settings/DataStore), TTL cache
-    di/           Koin modules
-  feature/<home|follows|browse|category|search|settings|channel|player>/ {ui, presentation, data}
-    player/data/chat    EventSub transport (ChatEvent) | player/data/emotes  provider abstraction + 7TV, BTTV, FFZ
-    player/presentation ChatFeed (batching, bounded buffer), ChatLine (the renderer's only input)
-    player/ui           ChatPanel (list, focus, live pill), ChatLineView (one Text per message), ChatEmotes, ChatSettingsPanel
+    data/         Android storage implementations (snapshot files), Keystore token store
+    di/           Koin modules: Android bindings, ViewModel holders, productionModules()
+  feature/<home|follows|browse|category|search|settings|channel|player|vod|clip>/ {ui, presentation (thin holder ViewModels), data (Android only)}
+    player/playback     Media3 and WebView players behind VideoPlayer, StreamPreview
+    player/ui           PlayerScreen, ChatPanel (list, focus, live pill), ChatLineView (one Text per message), ChatEmotes, ChatSettingsPanel
 ```
+
+The presenters, repositories and chat pipeline described in the sections below now live in `shared/*` under the same package names
+(for example `feature/player/data/chat` is in `shared/chat`).
 
 DI is Koin (no annotation processing, no KSP on AGP 9). Screens are `XRoute` (ViewModel + state collection) over a stateless `XScreen`. Debug and benchmark builds can run on fictional demo data (`app/src/demo`).
 

@@ -1,5 +1,26 @@
 # KMP extraction audit (Phase 1, read-only)
 
+## Status (end of Phase 1)
+
+Done as planned: `shared/core`, `shared/stream`, `shared/chat`, `shared/player-api`, `shared/presenters` and `shared/testing`
+exist; every file marked **C** or **I** below has moved (about 48 files at the audit, more as seams were split); the Android UI,
+design system, navigation, Media3 / WebView players and `VoiceRecognizer` stayed (**A**). Package names did not change.
+`docs/kmp-migration-log.md` has the per-step verification (tests, sizes, stability report, screenshots).
+
+Deviations from the plan above:
+- `player-api` does not depend on `core`; `presenters` depends on `core` and `chat` only (`stream` is used by the app's VOD error
+  mapping, which stayed UI-side; the player layer needed nothing from it).
+- Presenters expose extra streams besides `state` where a screen consumes one-shot or per-concern flows (`PlayerPresenter`: chat
+  lines, room modes, settings projections, `sent`, `commands`); `handleBack()` stays a function because the UI needs its result at once.
+- `NumberFormatter`, `SettingsDefaults`, `SnapshotStorage`, `AppConfig` (two fields) and `EventStreamClientFactory` are the final
+  platform seams (the plan named `FileStore`, `Clock`, `DeviceProfile`); no new library was needed (chat line time uses an `expect/actual` `timeOfDay`; `kotlinx-datetime` was tried and dropped: it kept 171 classes in the release dex).
+- `verifyCommonMain` (a `check` task in every shared module) was added to keep `commonMain` honest while only JVM targets exist.
+- Compose stability needed a configuration file for the shared state classes (as predicted), plus two reference types that
+  composables take as parameters (`PlayerPresenter`, `ChannelKeyBus`).
+- The Baseline and Startup Profiles are **not** regenerated yet; that is the last item before merging to `main`.
+
+---
+
 Scope: `app/src/main` (128 files, ~14.6k lines), `app/src/test` (33 files, ~2.7k lines, JUnit4), `app/src/demo`, `benchmark`.
 Method: import and API scan of every file, then a manual read of every data, network, presentation and DI file.
 
@@ -152,4 +173,4 @@ Status counts (approximate): about 48 files / 4.5k lines move, about 80 files / 
 - **R8 / consumer rules**: the AGP KMP library plugin must publish consumer keep rules for kotlinx.serialization and Ktor; the app currently relies on library-shipped rules only. Verified by the R8 analyzer and by diffing the generated `configuration.txt` before and after step 1.
 - **Baseline profile coverage**: unchanged class names keep it valid, but moved code ships in a library: verify with `unzip -l` plus `baseline.prof` rule counts that `com/twitchplayer` entries survive.
 - **Koin**: `koin-androidx-compose` stays in the app; shared uses `koin-core`.
-- **kotlinx-datetime / atomicfu** are the only new dependencies (both pinned in the catalog).
+- No new library was added in the end: neither kotlinx-datetime nor atomicfu was needed (see Status).
