@@ -40,7 +40,6 @@ import com.twitchplayer.tv.core.ui.formatUptime
 import com.twitchplayer.tv.feature.player.data.stream.ClipResolver
 import com.twitchplayer.tv.feature.vod.ui.seekTarget
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 private sealed interface ClipLoad {
@@ -125,12 +124,7 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
         onDispose { exo.removeListener(listener) }
     }
     // Where the clip is, kept for a page brought back after the process was killed.
-    LaunchedEffect(exo) {
-        while (true) {
-            delay(POSITION_SAVE_MS)
-            if (exo.isPlaying) restoration.positionMs = exo.currentPosition
-        }
-    }
+    SavePlaybackPosition(exo, POSITION_SAVE_MS, enabled = true) { restoration.positionMs = it }
     val togglePlay = { exo.playWhenReady = !exo.playWhenReady }
     val shareText = clipShareText(title, slug)
     val shareLabel = stringResource(R.string.phone_player_share)

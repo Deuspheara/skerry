@@ -44,4 +44,28 @@ class BackgroundResumeTest {
         policy.onStop(playing = false, inPictureInPicture = false)
         assertFalse(policy.onStart())
     }
+
+    // The decision uses what the activity says at the moment of stopping, never a remembered flag. The cases below are the four ways
+    // the app stops after a replay played in the Picture-in-Picture window.
+    @Test fun dismissingThePictureInPictureWindowWithTheClosePausesAPlayingReplay() {
+        val policy = BackgroundResume()
+        // The window is gone when `onStop` runs, whatever an earlier "entered PiP" flag still says.
+        assertTrue(policy.onStop(playing = true, inPictureInPicture = false))
+        assertTrue("and coming back resumes it", policy.onStart())
+    }
+
+    @Test fun expandingThePictureInPictureWindowBackToTheAppPausesNothing() {
+        val policy = BackgroundResume()
+        assertFalse(policy.onStop(playing = true, inPictureInPicture = true))
+    }
+
+    @Test fun aNormalHomePressWithoutAnyWindowPausesAPlayingReplay() {
+        assertTrue(BackgroundResume().onStop(playing = true, inPictureInPicture = false))
+    }
+
+    @Test fun lockingTheScreenPausesAPlayingReplayAndResumesItOnUnlock() {
+        val policy = BackgroundResume()
+        assertTrue(policy.onStop(playing = true, inPictureInPicture = false))
+        assertTrue(policy.onStart())
+    }
 }

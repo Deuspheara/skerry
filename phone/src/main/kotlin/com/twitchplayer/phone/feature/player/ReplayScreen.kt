@@ -56,7 +56,6 @@ import com.twitchplayer.tv.feature.vod.ui.seekTarget
 import com.twitchplayer.tv.feature.vod.ui.speedLabel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -199,17 +198,12 @@ private fun ReplayPlayer(
         }
         onDispose { }
     }
-    // Save where the viewer is every few seconds while playing, so a crash or a power-off loses little.
-    LaunchedEffect(exo, started) {
-        while (started) {
-            delay(SAVE_EVERY_MS)
-            if (exo.isPlaying && !dragging) {
-                val at = exo.currentPosition
-                val total = if (exo.duration > 0 && !vod.recording) exo.duration else duration
-                appScope.launch { store.save(vod.vodId, at, total) }
-                restoration.positionMs = at
-            }
-        }
+    // Save where the viewer is every few seconds while playing, on pause and when the app stops, so a crash, a power-off or the
+    // process being killed in the background loses little.
+    SavePlaybackPosition(exo, SAVE_EVERY_MS, enabled = started && !dragging) { at ->
+        val total = if (exo.duration > 0 && !vod.recording) exo.duration else duration
+        appScope.launch { store.save(vod.vodId, at, total) }
+        restoration.positionMs = at
     }
     DisposableEffect(snapshot.ended) {
         if (snapshot.ended && started) appScope.launch { store.clear(vod.vodId) }

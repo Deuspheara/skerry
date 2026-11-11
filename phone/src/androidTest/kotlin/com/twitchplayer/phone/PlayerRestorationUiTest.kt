@@ -5,7 +5,10 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.twitchplayer.phone.feature.player.OrientationLock
 import com.twitchplayer.phone.feature.player.PlayerRestoration
+import com.twitchplayer.phone.feature.player.choose
 import com.twitchplayer.phone.feature.player.rememberPlayerRestoration
+import com.twitchplayer.phone.feature.player.toRestore
+import com.twitchplayer.tv.core.data.model.ChatMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -50,6 +53,22 @@ class PlayerRestorationUiTest {
             assertNull(restoration.chatMode)
             assertEquals(OrientationLock.None, restoration.lock)
             assertNull(restoration.positionMs)
+        }
+    }
+
+    @Test fun aChatModeChosenByTheViewerIsHandedToTheNewPresenterOnceAfterTheProcessWasKilled() {
+        val tester = StateRestorationTester(rule)
+        lateinit var restoration: PlayerRestoration
+        tester.setContent { restoration = rememberPlayerRestoration("live-camille") }
+        rule.runOnIdle { restoration.choose(ChatMode.Overlay) { } }
+
+        tester.emulateSavedInstanceStateRestore()
+
+        rule.runOnIdle {
+            // A new presenter starts on the default mode; the saved choice is what it is given, and reading it changes nothing.
+            assertEquals(ChatMode.Overlay, restoration.toRestore(current = ChatMode.Compact))
+            assertEquals(ChatMode.Overlay, restoration.toRestore(current = ChatMode.Compact))
+            assertEquals("Overlay", restoration.chatMode)
         }
     }
 }

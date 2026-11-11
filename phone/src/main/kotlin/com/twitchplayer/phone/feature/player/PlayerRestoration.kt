@@ -42,3 +42,17 @@ fun rememberPlayerRestoration(key: Any?): PlayerRestoration = rememberSaveable(k
 
 /** The saved [ChatMode] name as a mode, or null when nothing was saved or the name is not one we know (an older build's value). */
 fun restoredChatMode(name: String?): ChatMode? = ChatMode.entries.firstOrNull { it.name == name }
+
+/**
+ * The chat mode has one writer on each side of the saved state: the viewer's choices go through [choose] (saved state first, then the
+ * presenter), and the saved mode reaches the presenter once, when the page comes back ([toRestore]); from then on the presenter's
+ * state is what the screen renders. Nothing copies the presenter's state back into the saved state, so a default that is still
+ * loading can never overwrite what the viewer chose.
+ */
+fun PlayerRestoration.choose(mode: ChatMode, send: (ChatMode) -> Unit) {
+    chatMode = mode.name
+    send(mode)
+}
+
+/** The mode to hand to the presenter when the page comes back, or null when there is none or the presenter already has it. */
+fun PlayerRestoration.toRestore(current: ChatMode): ChatMode? = restoredChatMode(chatMode)?.takeIf { it != current }

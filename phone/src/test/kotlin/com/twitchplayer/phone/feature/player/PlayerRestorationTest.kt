@@ -51,4 +51,40 @@ class PlayerRestorationTest {
         assertEquals(true, policy.onSensor(90))
         assertEquals(OrientationLock.None, policy.lock)
     }
+
+    @Test fun aChoiceIsSavedAndSentToThePresenterOnce() {
+        val restoration = PlayerRestoration()
+        val sent = mutableListOf<ChatMode>()
+
+        restoration.choose(ChatMode.Hidden, sent::add)
+
+        assertEquals("Hidden", restoration.chatMode)
+        assertEquals(listOf(ChatMode.Hidden), sent)
+    }
+
+    @Test fun theSavedModeIsHandedBackWhenThePresenterStartedOnAnotherOne() {
+        val restoration = PlayerRestoration(chatMode = "Overlay")
+
+        assertEquals(ChatMode.Overlay, restoration.toRestore(current = ChatMode.Compact))
+    }
+
+    @Test fun nothingIsHandedBackWhenThePresenterAlreadyHasTheSavedMode() {
+        assertNull(PlayerRestoration(chatMode = "Overlay").toRestore(current = ChatMode.Overlay))
+    }
+
+    @Test fun nothingIsHandedBackForAPageTheViewerNeverTouched() {
+        assertNull(PlayerRestoration().toRestore(current = ChatMode.Compact))
+    }
+
+    @Test fun anUnknownSavedModeIsIgnored() {
+        assertNull(PlayerRestoration(chatMode = "FromAnOlderBuild").toRestore(current = ChatMode.Compact))
+    }
+
+    @Test fun readingTheSavedModeNeverChangesIt() {
+        val restoration = PlayerRestoration(chatMode = "Overlay")
+
+        restoration.toRestore(current = ChatMode.Compact)
+
+        assertEquals("Overlay", restoration.chatMode)
+    }
 }

@@ -123,12 +123,9 @@ fun LivePlayerRoute(
     val snackbar = remember { SnackbarHostState() }
     // What survives the process being killed in the background: the chat mode chosen for this session and the fullscreen lock.
     val restoration = rememberPlayerRestoration(login)
+    val setChatMode: (ChatMode) -> Unit = { mode -> restoration.choose(mode) { presenter.onEvent(PlayerEvent.SetChatMode(it)) } }
     DisposableEffect(Unit) {
-        restoredChatMode(restoration.chatMode)?.takeIf { it != state.chatMode }?.let { presenter.onEvent(PlayerEvent.SetChatMode(it)) }
-        onDispose { }
-    }
-    DisposableEffect(state.chatMode) {
-        restoration.chatMode = state.chatMode.name
+        restoration.toRestore(state.chatMode)?.let { presenter.onEvent(PlayerEvent.SetChatMode(it)) }
         onDispose { }
     }
     val needsSignIn = stringResource(R.string.chat_needs_signin)
@@ -185,7 +182,7 @@ fun LivePlayerRoute(
                     stringResource(R.string.phone_player_chat_toggle),
                     {
                         chrome.controls.touch()
-                        presenter.onEvent(PlayerEvent.SetChatMode(nextChatMode(state.chatMode, chrome.landscape)))
+                        setChatMode(nextChatMode(state.chatMode, chrome.landscape))
                     },
                 )
             },
@@ -245,7 +242,7 @@ fun LivePlayerRoute(
                             title = stringResource(R.string.chat_hidden),
                             modifier = Modifier.weight(1f),
                             actionLabel = stringResource(R.string.phone_player_show_chat),
-                            onAction = { presenter.onEvent(PlayerEvent.SetChatMode(ChatMode.Compact)) },
+                            onAction = { setChatMode(ChatMode.Compact) },
                         )
                     } else {
                         ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f))

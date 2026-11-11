@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.twitchplayer.phone.feature.player.PauseInBackground
+import com.twitchplayer.phone.feature.player.PositionSaver
 import com.twitchplayer.phone.feature.player.RecordedPlayback
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -125,5 +126,40 @@ class PlaybackLifecycleTest {
         }
 
         assertTrue(readOnMain { twice.isReleased })
+    }
+
+    @Test fun aPauseSavesWhereTheReplayWas() {
+        val saved = mutableListOf<Long>()
+        onMain {
+            playback.exo.addListener(PositionSaver(playback.exo) { saved += it })
+            playback.exo.seekTo(2_000L)
+            playback.exo.pause()
+        }
+        awaitUntil { saved.isNotEmpty() }
+
+        assertTrue("saved a position near the seek: $saved", saved.last() >= 1_500L)
+    }
+
+    @Test fun stoppingTheAppSavesWhereTheReplayWas() {
+        val saved = mutableListOf<Long>()
+        onMain {
+            registry.addObserver(PositionSaver(playback.exo) { saved += it })
+            playback.exo.seekTo(2_000L)
+        }
+        awaitUntil { readOnMain { playback.exo.currentPosition >= 2_000L } }
+
+        stopTheApp()
+
+        assertTrue("saved when the app stopped: $saved", saved.isNotEmpty() && saved.last() >= 2_000L)
+    }
+
+    @Test fun nothingIsSavedBeforeAPlayerHasASource() {
+        val saved = mutableListOf<Long>()
+        val idle = readOnMain { RecordedPlayback(context, handleAudioFocus = false) }
+
+        onMain { PositionSaver(idle.exo) { saved += it }.saveNow() }
+
+        assertTrue(saved.isEmpty())
+        onMain { idle.release() }
     }
 }
