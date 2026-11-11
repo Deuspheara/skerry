@@ -52,7 +52,9 @@ class ChannelPresenter(
 
     val state: StateFlow<ChannelUiState> = combine(loader.state, tail, progressStore.progress) { details, tail, progress ->
         ChannelUiState(details, tail, progress)
-    }.stateIn(scope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ChannelUiState())
+        // Lazily, like `Loader.state` it wraps: the channel is loaded when the screen first collects and the state is never
+        // stale when it collects again (a stop timeout would show the previous value for a frame before refreshing).
+    }.stateIn(scope, SharingStarted.Lazily, ChannelUiState())
 
     fun onEvent(event: ChannelEvent) {
         when (event) {
@@ -81,9 +83,5 @@ class ChannelPresenter(
                 tail.update { it.copy(loading = false) }
             }
         }
-    }
-
-    private companion object {
-        const val STOP_TIMEOUT_MS = 5_000L
     }
 }

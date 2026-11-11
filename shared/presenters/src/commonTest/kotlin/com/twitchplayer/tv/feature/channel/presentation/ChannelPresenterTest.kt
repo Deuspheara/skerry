@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -104,5 +106,59 @@ class ChannelPresenterTest {
         vm.onEvent(ChannelEvent.LoadMoreReplays("1", "p2"))
         vm.onEvent(ChannelEvent.LoadMoreReplays("1", "p2"))
         assertEquals(listOf("r3"), vm.state.value.tail.replays.map { it.id })
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ChannelPresenterStateTest {
+    private val dispatcher = UnconfinedTestDispatcher()
+
+    private class Progress : VodProgressStore {
+        override val progress = MutableStateFlow(emptyMap<String, VodProgress>())
+        override suspend fun save(vodId: String, positionMs: Long, durationMs: Long) = Unit
+        override suspend fun clear(vodId: String) = Unit
+    }
+
+    /** The channel's display name changes on every load, so a refresh is visible in the state. */
+    private class Versioned : TwitchRepository by FakeRepository() {
+        var loads = 0
+        override suspend fun channel(login: String) = ChannelDetails(ChannelRef("1", login, "v${++loads}", null, false, 0), null, false, emptyList(), similar = emptyList())
+    }
+
+    private fun ChannelUiState.name() = (details as com.twitchplayer.tv.core.presentation.Load.Ready<ChannelDetails>).data.channel.name
+
+    @Test fun watchProgressIsMergedIntoTheState() = runTest(dispatcher) {
+        val progress = Progress()
+        val presenter = ChannelPresenter("camille", Versioned(), FakeSession(), progress, backgroundScope, dispatcher)
+        presenter.state.onEach { }.launchIn(backgroundScope)
+        assertTrue(presenter.state.value.progress.isEmpty())
+
+        progress.progress.value = mapOf("r1" to VodProgress(60_000, 600_000))
+        assertEquals(mapOf("r1" to VodProgress(60_000, 600_000)), presenter.state.value.progress)
+    }
+
+    @Test fun returningAfterMoreThanTheOldStopTimeoutShowsFreshStateWithoutANewCollector() = runTest(dispatcher) {
+        val repo = Versioned()
+        val presenter = ChannelPresenter("camille", repo, FakeSession(), Progress(), backgroundScope, dispatcher)
+        val collector = presenter.state.onEach { }.launchIn(backgroundScope)
+        assertEquals("v1", presenter.state.value.name())
+
+        collector.cancel() // the screen left composition (the player opened)
+        advanceTimeBy(6_000) // longer than the 5 s a WhileSubscribed policy would have waited
+        presenter.onEvent(ChannelEvent.Retry)
+        advanceUntilIdle()
+
+        // No collector at all: a stopped upstream would still show "v1" here.
+        assertEquals("v2", presenter.state.value.name())
+        assertEquals(2, repo.loads)
+    }
+
+    @Test fun theChannelIsNotLoadedBeforeTheFirstCollector() = runTest(dispatcher) {
+        val repo = Versioned()
+        val presenter = ChannelPresenter("camille", repo, FakeSession(), Progress(), backgroundScope, dispatcher)
+        advanceUntilIdle()
+        assertEquals(0, repo.loads, "same start as the old ViewModel: loading begins when the screen first collects")
+        presenter.state.onEach { }.launchIn(backgroundScope)
+        assertEquals(1, repo.loads)
     }
 }
