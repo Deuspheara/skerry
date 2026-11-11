@@ -8,5 +8,6 @@
     <ID>MatchingDeclarationName:AppModule.kt:PlatformConfig</ID>
     <ID>ParameterNaming:NativeVideoSurface.kt:onQualityPicked: (String) -&gt; Unit</ID>
     <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
   </CurrentIssues>
 </SmellBaseline>

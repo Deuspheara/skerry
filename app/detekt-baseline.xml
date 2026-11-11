@@ -69,7 +69,6 @@
     <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>
     <ID>UnusedParameter:Avatar.kt:border: androidx.compose.ui.graphics.Color? = null</ID>
     <ID>UnusedParameter:DebugModules.kt:DebugModules$context: Context</ID>

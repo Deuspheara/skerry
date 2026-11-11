@@ -21,7 +21,6 @@
     <ID>ImplicitDefaultLocale:ChannelScreen.kt:"%d:%02d".format(clip.durationSeconds / 60, clip.durationSeconds % 60)</ID>
     <ID>ImplicitDefaultLocale:ClipScreen.kt:"%d:%02d".format(total / 60, total % 60)</ID>
     <ID>ImplicitDefaultLocale:TwitchTvApp.kt:String.format(nowLive, stream.name)</ID>
-    <ID>InstanceOfCheckForException:ViewerFormatters.kt:e is VirtualMachineError</ID>
     <ID>LambdaParameterEventTrailing:LoadGate.kt:onAction: () -&gt; Unit</ID>
     <ID>LambdaParameterEventTrailing:VodScreen.kt:onBack: () -&gt; Unit</ID>
     <ID>LambdaParameterInRestartableEffect:ClipScreen.kt:onFailed: () -&gt; Unit</ID>
@@ -94,7 +93,6 @@
     <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>
     <ID>UnnecessaryLaunchedEffect:PlayerScreen.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:TwitchTvApp.kt:LaunchedEffect</ID>
