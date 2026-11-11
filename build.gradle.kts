@@ -32,3 +32,8 @@ spotless {
     ktlint(libs.versions.ktlint.get())
   }
 }
+
+// The build-logic included build has its own unit tests (shared-strings copy rule and plugin): run them with `check`.
+tasks.named("check") {
+  dependsOn(gradle.includedBuild("build-logic").task(":convention:test"))
+}
