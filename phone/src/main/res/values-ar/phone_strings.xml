@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_nav_settings">الإعدادات</string>
+    <string name="phone_signin_body">سجّل الدخول عبر Twitch لعرض القنوات التي تتابعها.</string>
+    <string name="phone_error_body">تحقق من اتصالك ثم حاول مرة أخرى.</string>
+    <string name="phone_home_empty">ستظهر هنا البثوث من القنوات التي تتابعها والتوصيات عندما تكون مباشرة.</string>
+    <string name="phone_following_empty">ستظهر هنا القنوات التي تتابعها.</string>
+    <string name="phone_channel_live_viewers">مباشر · %1$s مشاهد</string>
+    <string name="phone_channel_offline">غير متصلة</string>
+    <string name="phone_live_for">مباشر منذ %1$s</string>
+    <string name="phone_home_live_following">مباشر من القنوات التي تتابعها</string>
+    <string name="phone_follow">متابعة</string>
+    <string name="phone_follow_state_on">تتابع القناة</string>
+    <string name="phone_follow_state_off">لا تتابع القناة</string>
+    <string name="phone_follow_opens_twitch">يفتح القناة على Twitch حيث يمكنك تغيير ذلك</string>
+    <string name="phone_language_filter">اللغة</string>
+    <string name="phone_favorite_on">في المفضلة</string>
+    <string name="phone_favorite_off">ليست في المفضلة</string>
+    <string name="phone_search_hint">ابحث عن قناة أو فئة</string>
+    <string name="phone_settings_language">اللغة</string>
+    <string name="phone_search_recent">عمليات البحث الأخيرة</string>
+    <string name="phone_search_mic_denied">اسمح باستخدام الميكروفون للبحث الصوتي.</string>
+    <string name="phone_signin_step_open">1. افتح صفحة تفعيل Twitch وسجّل الدخول.</string>
+    <string name="phone_signin_open">افتح twitch.tv/activate</string>
+    <string name="phone_signin_step_code">2. أدخل هذا الرمز إن لم يُدخَل تلقائيًا.</string>
+    <string name="phone_signin_copy">نسخ الرمز</string>
+    <string name="phone_signin_expires">ينتهي خلال %1$s</string>
+    <string name="phone_signin_copied">تم نسخ الرمز</string>
+    <string name="phone_signin_open_failed">تعذّر فتح هذه الصفحة. انتقل إلى twitch.tv/activate في المتصفح وأدخل الرمز أدناه.</string>
+    <string name="phone_signin_expired">انتهت صلاحية هذا الرمز.</string>
+    <string name="phone_signin_failed">لم يكتمل تسجيل الدخول. حاول مرة أخرى.</string>
+    <string name="phone_signin_done">تم تسجيل دخولك.</string>
+    <string name="phone_settings_signed_in">تم تسجيل الدخول</string>
+    <string name="phone_settings_appearance">المظهر</string>
+    <string name="phone_settings_theme">السمة</string>
+    <string name="phone_theme_dark">داكن</string>
+    <string name="phone_theme_light">فاتح</string>
+    <string name="phone_theme_system">اتباع النظام</string>
+    <string name="phone_settings_chat_mode">عرض الدردشة</string>
+    <string name="phone_settings_playback">التشغيل</string>
+    <string name="phone_settings_about">حول</string>
+    <string name="phone_about_version">الإصدار %1$s</string>
+    <string name="phone_about_disclaimer">تطبيق مستقل غير رسمي. لا تدعمه Twitch.</string>
+    <string name="phone_licenses">تراخيص المصدر المفتوح</string>
+
+    <!-- Player -->
+    <string name="phone_player_toggle_controls">إظهار عناصر التحكم أو إخفاؤها</string>
+    <string name="phone_player_pip">صورة داخل صورة</string>
+    <string name="phone_player_chat_toggle">الدردشة</string>
+    <string name="phone_player_show_chat">إظهار الدردشة</string>
+    <string name="phone_player_chat_signin">سجّل الدخول لقراءة الدردشة والكتابة فيها</string>
+    <string name="phone_player_chat_hint">أرسل رسالة</string>
+    <string name="phone_player_open_twitch">فتح على Twitch</string>
+    <string name="phone_player_forward">تقديم 10 ثوانٍ</string>
+    <string name="phone_player_back10">رجوع 10 ثوانٍ</string>
+    <string name="phone_player_share">مشاركة</string>
+    <string name="phone_player_speed">سرعة التشغيل</string>
+</resources>

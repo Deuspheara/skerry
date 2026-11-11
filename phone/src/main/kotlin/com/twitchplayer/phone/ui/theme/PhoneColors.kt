@@ -10,4 +10,11 @@ object PhoneColors {
     val OnLive = Color.White
     val Scrim = Color.Black.copy(alpha = 0.72f)
     val OnScrim = Color.White
+
+    /** The control layer over the picture: strong at the top and bottom bars (white text on any frame stays above 4.5:1), light in between. */
+    val ControlsEdge = Color.Black.copy(alpha = 0.8f)
+    val ControlsDim = Color.Black.copy(alpha = 0.3f)
+
+    /** Shadow under chat text drawn straight over the video. */
+    val Shadow = Color.Black
 }

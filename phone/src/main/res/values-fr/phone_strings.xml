@@ -9,7 +9,6 @@
     <string name="phone_channel_live_viewers">En direct · %1$s spectateurs</string>
     <string name="phone_channel_offline">Hors ligne</string>
     <string name="phone_live_for">En direct depuis %1$s</string>
-    <string name="phone_player_soon">Le lecteur arrive dans la prochaine mise à jour.</string>
 
     <string name="phone_home_live_following">En direct parmi vos suivis</string>
     <string name="phone_follow">Suivre</string>
@@ -48,4 +47,17 @@
     <string name="phone_about_version">Version %1$s</string>
     <string name="phone_about_disclaimer">Un client indépendant et non officiel. Il n\'est pas approuvé par Twitch.</string>
     <string name="phone_licenses">Licences open source</string>
+
+    <!-- Player -->
+    <string name="phone_player_toggle_controls">Afficher ou masquer les commandes</string>
+    <string name="phone_player_pip">Image dans l’image</string>
+    <string name="phone_player_chat_toggle">Chat</string>
+    <string name="phone_player_show_chat">Afficher le chat</string>
+    <string name="phone_player_chat_signin">Connectez-vous pour lire le chat et y écrire</string>
+    <string name="phone_player_chat_hint">Envoyer un message</string>
+    <string name="phone_player_open_twitch">Ouvrir sur Twitch</string>
+    <string name="phone_player_forward">Avancer de 10 secondes</string>
+    <string name="phone_player_back10">Reculer de 10 secondes</string>
+    <string name="phone_player_share">Partager</string>
+    <string name="phone_player_speed">Vitesse de lecture</string>
 </resources>

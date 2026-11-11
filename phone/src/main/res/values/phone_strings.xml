@@ -14,7 +14,6 @@
     <string name="phone_channel_live_viewers">Live · %1$s viewers</string>
     <string name="phone_channel_offline">Offline</string>
     <string name="phone_live_for">Live for %1$s</string>
-    <string name="phone_player_soon">The player is coming in the next update.</string>
 
     <string name="phone_home_live_following">Live from your follows</string>
     <string name="phone_follow">Follow</string>
@@ -55,4 +54,17 @@
     <string name="phone_licenses">Open-source licenses</string>
     <string name="phone_licenses_body" translatable="false">Built with Kotlin, Jetpack Compose, AndroidX Media3, Ktor, OkHttp, Coil, Koin and kotlinx libraries, all released under the Apache License 2.0.</string>
     <string name="phone_percent" translatable="false">%1$d %%</string>
+
+    <!-- Player -->
+    <string name="phone_player_toggle_controls">Show or hide the controls</string>
+    <string name="phone_player_pip">Picture in picture</string>
+    <string name="phone_player_chat_toggle">Chat</string>
+    <string name="phone_player_show_chat">Show chat</string>
+    <string name="phone_player_chat_signin">Sign in to read and write in chat</string>
+    <string name="phone_player_chat_hint">Send a message</string>
+    <string name="phone_player_open_twitch">Open on Twitch</string>
+    <string name="phone_player_forward">Forward 10 seconds</string>
+    <string name="phone_player_back10">Back 10 seconds</string>
+    <string name="phone_player_share">Share</string>
+    <string name="phone_player_speed">Playback speed</string>
 </resources>

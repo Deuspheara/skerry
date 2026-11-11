@@ -50,18 +50,23 @@ import com.twitchplayer.phone.feature.browse.BrowseRoute
 import com.twitchplayer.phone.feature.browse.CategoryRoute
 import com.twitchplayer.phone.feature.channel.ChannelRoute
 import com.twitchplayer.phone.feature.home.HomeRoute
+import com.twitchplayer.phone.feature.player.ClipRoute
+import com.twitchplayer.phone.feature.player.LivePlayerRoute
+import com.twitchplayer.phone.feature.player.ReplayRoute
 import com.twitchplayer.phone.feature.search.SearchRoute
 import com.twitchplayer.phone.feature.settings.SettingsRoute
 import com.twitchplayer.phone.navigation.BrowseKey
 import com.twitchplayer.phone.navigation.CategoryKey
 import com.twitchplayer.phone.navigation.ChannelKey
+import com.twitchplayer.phone.navigation.ClipKey
 import com.twitchplayer.phone.navigation.HomeKey
 import com.twitchplayer.phone.navigation.KIND_TAB
+import com.twitchplayer.phone.navigation.LiveKey
 import com.twitchplayer.phone.navigation.NAV_KIND
 import com.twitchplayer.phone.navigation.PhoneNavigator
 import com.twitchplayer.phone.navigation.PhoneTab
-import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.navigation.PlayerLauncher
+import com.twitchplayer.phone.navigation.ReplayKey
 import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
 import com.twitchplayer.phone.navigation.phoneTransition
@@ -106,23 +111,9 @@ fun PhoneRoot(
             snackbar.showSnackbar(message)
             authViewModel.presenter.onEvent(AuthEvent.ResultShown)
         }
-        var pendingMessage by remember { mutableStateOf<String?>(null) }
-        val soon = stringResource(R.string.phone_player_soon)
-        val player = remember(soon) {
-            // Integration point of the player step: until the player screen exists a tap says so.
-            PlayerLauncher { _: PlaybackTarget -> pendingMessage = soon }
-        }
-        LaunchedEffect(pendingMessage) {
-            pendingMessage?.let {
-                snackbar.showSnackbar(it)
-                pendingMessage = null
-            }
-        }
-
         Box(modifier.fillMaxSize()) {
             PhoneScaffold(
                 reducedMotion = reducedMotion,
-                player = player,
                 snackbar = snackbar,
                 onSignIn = { authViewModel.presenter.onEvent(AuthEvent.SignIn) },
                 onSignOut = { authViewModel.presenter.onEvent(AuthEvent.SignOut) },
@@ -135,7 +126,6 @@ fun PhoneRoot(
 @Composable
 private fun PhoneScaffold(
     reducedMotion: Boolean,
-    player: PlayerLauncher,
     snackbar: SnackbarHostState,
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
@@ -145,6 +135,7 @@ private fun PhoneScaffold(
     val navigator = remember(stacks) {
         PhoneNavigator(stacks, PhoneTab.valueOf(selectedName)) { selectedName = it.name }
     }
+    val player = remember(navigator) { PlayerLauncher { target -> navigator.push(target.toKey()) } }
     val adaptive = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfoV2())
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -202,6 +193,9 @@ private fun PhoneScaffold(
                     entry<CategoryKey> { key ->
                         CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
                     }
+                    entry<LiveKey> { key -> LivePlayerRoute(key.login, onBack = navigator::pop, onSignIn = onSignIn) }
+                    entry<ReplayKey> { key -> ReplayRoute(key.id, key.title, key.durationSeconds, onBack = navigator::pop) }
+                    entry<ClipKey> { key -> ClipRoute(key.slug, key.title, onBack = navigator::pop) }
                     entry<ChannelKey> { key ->
                         ChannelRoute(
                             login = key.login,

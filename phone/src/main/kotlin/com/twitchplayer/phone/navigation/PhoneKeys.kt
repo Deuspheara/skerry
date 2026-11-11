@@ -30,14 +30,25 @@ enum class PhoneTab(val root: NavKey) {
     }
 }
 
-/**
- * Integration point for the player step: what a tap on a stream, replay or clip should play. Until the player screen exists the
- * root answers with a short "coming soon" message (see [PlayerLauncher]).
- */
+/** The player pages: a live channel, a replay (VOD) or a clip. They open over the tab that launched them, without the tab bar. */
+@Serializable data class LiveKey(val login: String) : NavKey
+
+@Serializable data class ReplayKey(val id: String, val title: String, val durationSeconds: Int) : NavKey
+
+@Serializable data class ClipKey(val slug: String, val title: String) : NavKey
+
+/** What a tap on a stream, replay or clip should play. */
 sealed interface PlaybackTarget {
     data class Live(val login: String) : PlaybackTarget
     data class Replay(val id: String, val title: String, val durationSeconds: Int) : PlaybackTarget
     data class Clip(val slug: String, val title: String) : PlaybackTarget
+
+    /** The destination that plays this target. */
+    fun toKey(): NavKey = when (this) {
+        is Live -> LiveKey(login)
+        is Replay -> ReplayKey(id, title, durationSeconds)
+        is Clip -> ClipKey(slug, title)
+    }
 }
 
 fun interface PlayerLauncher {
