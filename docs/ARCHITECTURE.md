@@ -1,6 +1,6 @@
 # Architecture proposal
 
-Status: implemented. Platform-independent logic lives in the Kotlin Multiplatform modules under `shared/`; Android glue that is not UI lives in `:platform-android`; `:app` is the Android TV UI on top of them (the phone app arrives as a second app on the same two layers). The sections below keep the original rationale; "Modules" and "Code layout" are the current shape.
+Status: implemented. Platform-independent logic lives in the Kotlin Multiplatform modules under `shared/`; Android glue that is not UI lives in `:platform-android`; `:app` is the Android TV UI and `:phone` the Android phone UI, two apps on the same two layers. The sections below keep the original rationale; "Modules" and "Code layout" are the current shape.
 
 ## Modules
 
@@ -17,6 +17,8 @@ platform-android   Android library, no UI of its own: Android implementations of
                    holder ViewModels, speech recognizer, AppLocales, KeepScreenOn, the Media3 player + surface, embed player config
 demo-android       fictional demo data (no network, no account) + its video asset; debug, benchmark and nonMinified variants only
 app                Compose TV UI, WebView + clip/VOD players, StreamPreview, design system, `BuildConfig` -> `PlatformConfig`
+phone              Compose Material 3 phone UI (Home, Browse, Category, Search, Channel, Settings, sign-in); `PhoneRoot` wires theme,
+                   sign-in and an adaptive tab scaffold; its Koin graph is `phoneModules()` = `productionModules(...)` + `phoneModule`
 benchmark          Macrobenchmark + Baseline Profile generation
 build-logic        convention plugins (kmp-library, android-library, android-application, detekt, spotless, compose, shared-strings)
 ```
@@ -27,6 +29,7 @@ Dependency direction (no cycles, nothing depends on `app`):
 presenters -> chat -> core          stream -> core          player-api (standalone)
 platform-android -> presenters, chat, stream, player-api, core
 demo-android -> platform-android (+ shared)      app -> platform-android, shared/*, and demo-android (debug/benchmark/nonMinified only)
+phone -> platform-android, and demo-android (debug only); reads the TV app's strings through the shared-strings plugin, never its code
 ```
 
 What each app supplies: its `PlatformConfig` (Twitch client id, default player engine, hosted embed page host/parent: a library has

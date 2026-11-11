@@ -23,6 +23,7 @@ ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV
 | Module | What it is |
 |---|---|
 | `app` | Android TV UI (Jetpack Compose), Media3 and WebView players, Android implementations of the platform interfaces, Koin wiring, demo data |
+| `phone` | Android phone UI (Jetpack Compose, Material 3): Home, Browse, Category, Search, Channel, Settings, sign-in. Playback comes in the next step |
 | `shared/core` | Kotlin Multiplatform: models, Twitch API and auth, repositories, settings, platform interfaces |
 | `shared/stream` | stream, VOD and clip resolvers (GQL token, usher, master playlist) |
 | `shared/chat` | EventSub chat client, emote providers, chat assets |
@@ -31,11 +32,22 @@ ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV
 | `shared/testing` | fakes shared by the tests |
 | `benchmark` | Macrobenchmark and Baseline Profile generation |
 
-Dependency direction: `app` -> `presenters` -> `chat`, `stream`, `player-api` -> `core`. Shared code has no Android or
+Dependency direction: `app` and `phone` -> `platform-android` -> `presenters` -> `chat`, `stream`, `player-api` -> `core`. Shared code has no Android or
 `java.*` APIs (`./gradlew verifyCommonMain` enforces it). See [architecture](docs/ARCHITECTURE.md), the
 [presenter pattern](docs/PRESENTERS.md), the [migration log](docs/kmp-migration-log.md), the
 [performance baseline](docs/perf-baseline.md) and its [post-migration numbers](docs/perf-after-phase1.md), and the
 [localization plan](docs/LOCALIZATION_PLAN.md).
+
+### Phone app
+
+```sh
+./gradlew :phone:assembleDebug
+./gradlew :phone:testDebugUnitTest                  # navigator, sign-in, channel helpers, strings parity, Koin graph
+ANDROID_SERIAL=emulator-5554 ./gradlew :phone:connectedDebugAndroidTest   # Compose UI tests on the demo data (emulator or phone)
+adb -s <serial> shell run-as com.twitchplayer.phone touch files/demo      # demo data in a debug build (restart the app)
+```
+
+The phone app reuses the TV app's 36 translations (generated at build time, nothing copied) and adds English and French for its own strings; see [the phone log](docs/phone-log.md).
 
 ### Tests
 

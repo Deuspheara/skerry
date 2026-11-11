@@ -93,3 +93,86 @@ After the move the emulator run failed to compile `app/src/androidTest` (`TvFocu
 intentional: the app runs lint with `checkDependencies = true`, so the app's lint run analyses the library sources and
 applies the app's baseline to them. Removing those entries makes `:app:lintDebug` fail (verified). The libraries carry
 their own baselines for their own lint runs.
+
+## Step B: the phone app (2026-11-11)
+
+`:phone` (`com.twitchplayer.phone`, minSdk 24 like everything else, targetSdk 37) on `:platform-android` and the shared modules. Playback
+is the next step: a tap on Watch, a replay or a clip goes through `PlayerLauncher` (`navigation/PhoneKeys.kt`), which today answers with a
+short message ("The player is coming in the next update"). That stub is the only unfinished integration point.
+
+Screenshots (Pixel 8 emulator, Android 36, demo data): [docs/screenshots/phone/](screenshots/phone/).
+
+### What it is
+
+| Area | Decision |
+|---|---|
+| Navigation | four tabs (Home, Browse, Search, Settings), each with its own back stack (`PhoneNavigator`, no Compose in its rules, 8 unit tests); Material 3 adaptive suite: bottom bar on compact, rail from medium width, no bar on a short landscape window or on detail pages; Back pops, then returns to Home, then leaves; Navigation 3 with saved state and ViewModel scoping per entry, state survives rotation (looked at) |
+| Theme | Twitch purple, dark by default, Light and "follow the system" in Settings (a phone-only `ThemePreference`, SharedPreferences so the first frame is right); no dynamic colour, to keep the brand; edge-to-edge with bar icons that follow the chosen scheme |
+| Home | "For you" (followed live channels, recommendations, top categories) and "Following" (live + offline) as two sub-tabs; pull to refresh (a short acknowledgement: the presenters expose no "refreshing" flag); skeletons, error with retry, signed-out prompt; the presenter's snapshot-first loading is unchanged |
+| Browse / Category | poster grid with the TV's group filter and sort; category page with the viewer's-language filter chip (check mark when on) and the favourite toggle |
+| Search | text field that owns what is typed and only pushes changes to the presenter (a lagging presenter state can never overwrite typing), recents, trending, channel and category results, voice with the runtime microphone permission and a denied message |
+| Channel | header, live card + Watch, schedule, clips row, paged replays with resume bars, similar channels; pagination is a `snapshotFlow` over the list state |
+| Settings | account (sign in, sign-out confirmation), theme, in-app language (`AppLocales`, all 36), animations, the TV's chat options, playback stats, follow raids, about and open-source licences. Not offered on the phone: the player-engine switch (native only) and the preferred quality (chosen in the player) |
+| Sign-in | device-code dialog: open `twitch.tv/activate` (the URL Twitch returns already carries the code), a large code read letter by letter by TalkBack, a copy button, a countdown from the grant's own `expires_in`; the outcome (done, cancelled, failed) is told from the session afterwards (`signInOutcome`, 5 tests) because the presenter clears the code in every case |
+| Accessibility | one described target per card (`cd_stream` from the TV strings), headings, 48 dp targets (M3 defaults), selectable rows, text scaling checked at 1.8x, reduced motion = the Animations switch or the system animator scale (skeletons stop pulsing, transitions snap) |
+| Large screens | `GridCells.Adaptive`: one stream column on a phone, two at 600 dp, three at 1000 dp; two title lines are reserved only when there are several columns so a row's cards stay level |
+
+### Build and tooling decisions
+
+1. **`twitchplayer.shared-strings`** (review finding from step A): now copies every XML file of a `values*` folder whose top-level entries are
+   all text (`string`, `plurals`, `string-array`): colours, themes and other kinds stay with the TV app, a file that *mixes* text and
+   other kinds fails the build with its path instead of being silently dropped, and DOCTYPEs are refused. 9 + 2 unit tests. End to end in the
+   phone build: 36 `values*` folders generated, the plural and the 5 `translatable="false"` entries present, the locale config generated
+   (`resources.properties` + `generateLocaleConfig`), `bundle.language.enableSplit = false` so the in-app switch works.
+2. **`formatViewers` moved to `:platform-android`** (it only needed `android.icu`): the TV imports are unchanged (same package).
+3. **OkHttp `-dontwarn` rules are now `platform-android/consumer-rules.pro`**: both apps bind OkHttp through that module. TV release APK
+   byte-identical before and after (4,001,682 B); the rules are in R8's merged configuration. The phone's own file has no `-keep` rule either.
+4. **`androidPlatformFakes()`** (platform-android test fixtures): the Context-bound Koin bindings replaced by fakes, one definition for the
+   TV and the phone graph tests.
+5. **`lint { checkDependencies = false; baseline = null }`** in `phone/build.gradle.kts`: the libraries run their own lint with their own
+   baselines (the root `check` runs every module), and the phone has none. `baseline = null` matters: AGP lint *creates* a baseline file the
+   first time it fails when none exists, which silently hid four findings (one of them mine) during development. Fixed instead of baselined:
+   target API, back-callback attribute, data extraction and backup rules (nothing is backed up: the token payload is bound to this device's
+   Keystore), the screen-width read.
+6. **detekt**: no phone baseline; the Compose rules' composition-local allowlist names exactly one local, `LocalReducedMotion`
+   (`config/detekt/detekt.yml`), because skeletons and transitions at any depth read it.
+7. **Catalog**: `material3`, `material3-adaptive-navigation-suite`, `material-icons-core` (BOM-managed; the extended icon set is megabytes, the four
+   other icons are drawn from path data in `PhoneIcons`). All used.
+8. **No baseline profile for the phone yet**: the one packaged is the libraries' own (9.9 KB). A phone profile and its Macrobenchmark are
+   follow-ups; the TV profiles and numbers are untouched.
+
+### Strings
+
+Phone-only text is `phone_*` in `phone_strings.xml` (English) and `values-fr/` (French). The other 34 languages show English for those 30
+keys until translated; `MissingTranslation` is ignored for that file only, and `PhoneStringsTest` fails if French drifts from English (keys or
+placeholders). Everything else (labels, errors, chat options, `cd_*` descriptions) is the TV's translated text.
+
+### Verification (final tree)
+
+| Check | Result |
+|---|---|
+| `./gradlew check` (whole repo, with the phone) | green |
+| Phone unit tests | **29**, 0 failures: `ThemeModeTest` 4, `PhoneNavigatorTest` 8, `SignInOutcomeTest` 5, `ChannelLogicTest` 5, `PhoneStringsTest` 4, `PhoneGraphTest` 3 (`verify` of `phoneModules()`, the list is production + phone module, and every screen ViewModel resolves from it) |
+| Phone UI tests on the Pixel 8 emulator (`connectedDebugAndroidTest`) | **6 of 6** (home lists followed streams, the four tabs, a category and Back, channel + Watch stub message, search as you type, theme dialog) |
+| Lint / detekt on `:phone` | no baseline, no findings (debug and release; detekt plain, debug, release) |
+| Compose compiler report | **41 composables, 41 skippable, 0 unstable parameters** |
+| Release APK / AAB | **2,500,311 B / 5,870,013 B** (R8 full mode, shrink resources, unsigned); `classes.dex` 3,814,516 B; 0 demo classes in the mapping, no `demo_stream`; `-keep` rules in our files: 0 |
+| TV app | `check` green, release APK unchanged at 4,001,682 B |
+
+Looked at on the emulator (screenshots in `docs/screenshots/phone/`), and what changed after looking: Browse chips had too much air under the
+title (padding removed); the category header showed a stray poster next to a cryptic "EN" chip (poster and the then-dead `artUrl` field removed,
+check mark added); the channel page repeated the name in the bar and the header, showed LIVE twice and a disabled-looking "Following" chip
+(bar title emptied, LIVE kept on the card, a plain check + label); cards of one row had different heights when a title wrapped (two reserved
+lines on multi-column layouts only). Also looked at: light theme, the signed-out state, the real device-code dialog (a real Twitch call, not
+completed), keyboard search, font scale 1.8, a 600 dp and a 1000 dp window, rotation with the back stack kept.
+
+### Not verified
+
+- **The real phone** (Samsung SM-S721B, Android 16): an early debug build of the phone app was installed on it at the start of this step and never
+  launched (the screen was off and locked, so it was not woken or driven); it is not connected any more, so it still has that early build.
+  Everything above ran on the Pixel 8 / Android 36 emulator.
+- TalkBack output and the 48 dp targets were checked from the semantics, not with TalkBack or the Accessibility Test Framework.
+- Reduced motion was not seen (the system animator scale cannot be set from a test); the code path is `systemAnimationsOff` + the Animations switch.
+- Sign-in completion: only the start of the grant (the code, the countdown, cancel) was run; no account was signed in.
+- Performance: no startup or frame benchmark exists for the phone.
+- CI has not run on GitHub (no remote).

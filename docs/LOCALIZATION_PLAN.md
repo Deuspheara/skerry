@@ -105,3 +105,13 @@ phase), so there is only one place to edit.
 
 Not decided: whether to adopt a translation-management service, and whether the web target (if it is Compose for Web)
 uses the Compose resources directly (likely yes, then no JSON output is needed).
+
+
+## Addendum: the phone app (Phase 3, step B)
+
+The Android phone app already reuses this inventory without moving it: the `twitchplayer.shared-strings` build plugin generates the TV
+app's text resources (`strings.xml`, plurals, arrays: every `values*` file whose top-level entries are all text) into the phone app, so
+the 36 languages, plurals and `translatable="false"` entries stay in one place. The phone adds its own `phone_*` keys in
+`phone/src/main/res/values/phone_strings.xml` (English) and `values-fr/` (French): 34 other languages fall back to English for those
+keys until they are translated (`MissingTranslation` is ignored for that one file, and a unit test keeps English and French in step, with
+the same placeholders). When the strings move to Compose Multiplatform resources (this plan), the plugin goes away.
