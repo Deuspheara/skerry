@@ -182,7 +182,7 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
         },
         portraitContent = {
             Column(Modifier.weight(1f).fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(title, style = MaterialTheme.typography.headlineSmall)
+                Text(title, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
                 if (snapshot.durationMs > 0) {
                     Text(formatUptime(snapshot.durationMs), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

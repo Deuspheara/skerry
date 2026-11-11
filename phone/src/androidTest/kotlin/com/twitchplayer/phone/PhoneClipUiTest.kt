@@ -51,6 +51,7 @@ class PhoneClipUiTest {
 
         waitForText(string(R.string.vod_failed_net_line))
         rule.onNodeWithText(string(R.string.state_retry)).assertIsDisplayed()
+        rule.saveScreenshot("clip-error-network")
     }
 
     @Test fun aClipThatIsGoneSaysItIsUnavailableAndStillOffersRetry() {
@@ -58,6 +59,7 @@ class PhoneClipUiTest {
 
         waitForText(string(R.string.clip_unavailable_line))
         rule.onNodeWithText(string(R.string.state_retry)).assertIsDisplayed()
+        rule.saveScreenshot("clip-error-unavailable")
     }
 
     @Test fun retryResolvesTheClipAgainAndThePlayerAppearsOnceItAnswers() {
@@ -69,6 +71,8 @@ class PhoneClipUiTest {
 
         rule.waitUntil(WAIT_MS) { rule.onAllNodesWithText(string(R.string.state_retry)).fetchSemanticsNodes().isEmpty() }
         rule.onNodeWithTag(STAGE_TAG).assertIsDisplayed()
+        rule.waitForIdle()
+        rule.saveScreenshot("clip-playing")
         assertEquals(2, resolver.calls)
     }
 

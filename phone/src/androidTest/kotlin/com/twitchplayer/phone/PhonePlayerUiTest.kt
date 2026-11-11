@@ -4,9 +4,7 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -16,7 +14,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -232,7 +229,7 @@ class PhonePlayerUiTest {
 
         waitForText(string(R.string.phone_channel_offline))
         rule.onNodeWithText(string(R.string.state_retry)).assertIsDisplayed()
-        saveScreenshot("player-offline")
+        rule.saveScreenshot("player-offline")
     }
 
     @Test fun aFailedResolveOffersRetryAndRetryAsksAgain() {
@@ -247,14 +244,7 @@ class PhonePlayerUiTest {
         val before = resolver.calls
         rule.onNodeWithText(string(R.string.state_retry)).performClick()
         rule.waitUntil(WAIT_MS) { resolver.calls > before }
-        saveScreenshot("player-error")
-    }
-
-    /** Saves the screen under the app's external files folder, so a person can look at it (`adb pull`). */
-    private fun saveScreenshot(name: String) {
-        val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
-        val dir = context.getExternalFilesDir(null) ?: return
-        java.io.File(dir, "$name.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        rule.saveScreenshot("player-error")
     }
 
     /** The area that answers a touch (a 24 dp glyph sits in a 48 dp button), not the visible bounds. */

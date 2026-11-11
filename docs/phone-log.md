@@ -312,3 +312,15 @@ Tools: `PKG=com.twitchplayer.phone ANDROID_SERIAL=emulator-5554 benchmark/tools/
 ## Unverified
 
 The real phone (screen locked, not used); TalkBack output (semantics checked, not the screen reader); reduced motion seen running; a completed sign-in and real chat sending with a Twitch account (chat and sending run on demo data); Picture-in-Picture before Android 12 and on devices without the feature (code path guarded and reviewed, not run); real streams (the demo clip is a 12-second looping test pattern: live-edge behaviour, ad breaks and quality switching on real HLS are the TV player's, reused, not re-measured on the phone); phone performance on hardware (emulator numbers only); no phone baseline profile yet (step D); CI on GitHub (no remote).
+
+## Step C review follow-up
+
+- Replays and clips now pause when the app goes to the background (PiP and screen lock included). A video the user paused is not resumed on return.
+- Players are released through `RememberObserver`. Clip errors separate network failures from unavailable clips, and both offer Retry.
+- The activity handles `locale|layoutDirection` itself, so switching language while playing does not restart the player on API 36. Before API 13 it uses an explicit `recreate()`.
+- Position, fullscreen lock and chat mode survive process death (`PlayerRestoration`).
+- Message-state and clip titles used the default content colour, which is black on the dark background. They now use `onBackground`. Found by looking at the screenshots.
+- `ignoreDefaultParameters` is scoped to `:phone` (`phone/detekt.yml`). `gradle/gradle-daemon-jvm.properties` was removed (added by accident).
+- The grey rectangle in the demo player is the demo video art, not a layout fault.
+- Test counts, `check --rerun-tasks` (JVM, debug variants): phone 115, shared/presenters 144 jvm + 140 android-host, shared/core 39 + 29, shared/chat 41 + 41, shared/stream 40 + 24, shared/player-api 7 + 7, platform-android 15, app 23, build-logic 11. Instrumented `:phone` suite: 44, all green on an API 36 emulator.
+- All timings in this document come from an emulator and are not device numbers.
