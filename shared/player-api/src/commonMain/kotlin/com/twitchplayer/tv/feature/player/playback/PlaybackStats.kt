@@ -1,10 +1,8 @@
 package com.twitchplayer.tv.feature.player.playback
 
-import androidx.compose.runtime.Immutable
-import java.time.Instant
+import kotlin.time.Instant
 
 /** What the playback statistics overlay shows. Every field is "unknown" (null / 0) until the player has data for it. */
-@Immutable
 data class PlaybackStats(
     /** Delay behind the live edge, from the playlist's program date-time tags. */
     val latencyMs: Long? = null,
@@ -23,7 +21,6 @@ data class PlaybackStats(
 )
 
 /** An advertisement break stitched into the stream; [remainingMs] counts down to the end of the break. */
-@Immutable
 data class AdBreak(val remainingMs: Long)
 
 /**
@@ -43,7 +40,7 @@ object HlsAds {
             val a = attributes(tag.substringAfter(':'))
             val ad = a["CLASS"]?.contains("stitched-ad") == true || a["ID"]?.startsWith("stitched-ad") == true
             if (!ad) continue
-            val start = a["START-DATE"]?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: continue
+            val start = a["START-DATE"]?.let { runCatching { Instant.parse(it).toEpochMilliseconds() }.getOrNull() } ?: continue
             val duration = a["DURATION"]?.toDoubleOrNull() ?: a["PLANNED-DURATION"]?.toDoubleOrNull() ?: continue
             val remaining = start + (duration * 1000).toLong() - playheadMs
             if (playheadMs >= start && remaining > 0 && (best == null || remaining > best.remainingMs)) best = AdBreak(remaining)

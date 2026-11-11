@@ -1,12 +1,12 @@
 package com.twitchplayer.tv.feature.player.playback
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
-import java.time.Instant
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.time.Instant
 
 class HlsAdsTest {
-    private val start = Instant.parse("2026-11-07T10:00:00Z").toEpochMilli()
+    private val start = Instant.parse("2026-11-07T10:00:00Z").toEpochMilliseconds()
     private val ad = """#EXT-X-DATERANGE:ID="stitched-ad-1",CLASS="twitch-stitched-ad",START-DATE="2026-11-07T10:00:00.000Z",DURATION=30.000,X-TV-TWITCH-AD-ROLL-TYPE="PREROLL""""
 
     @Test fun insideTheBreakItCountsDown() {
@@ -29,5 +29,18 @@ class HlsAdsTest {
     @Test fun theIdAloneMarksAnAd() {
         val byId = """#EXT-X-DATERANGE:ID="stitched-ad-3",START-DATE="2026-11-07T10:00:00Z",PLANNED-DURATION=15"""
         assertEquals(AdBreak(10_000), HlsAds.current(listOf(byId), start + 5_000))
+    }
+
+    @Test fun startDatesAreParsedAsInstantsWhateverTheirShape() {
+        // The old code used java.time.Instant, which needs API 26 (minSdk is 24): kotlin.time.Instant gives the same millis for
+        // the shapes Twitch sends, with or without fractional seconds, and also reads an explicit UTC offset.
+        fun adAt(date: String) = """#EXT-X-DATERANGE:ID="stitched-ad-9",START-DATE="$date",DURATION=10"""
+        val playhead = start + 1_000
+        assertEquals(AdBreak(9_000), HlsAds.current(listOf(adAt("2026-11-07T10:00:00Z")), playhead))
+        assertEquals(AdBreak(9_000), HlsAds.current(listOf(adAt("2026-11-07T10:00:00.000Z")), playhead))
+        assertEquals(AdBreak(9_500), HlsAds.current(listOf(adAt("2026-11-07T10:00:00.500Z")), playhead))
+        assertEquals(AdBreak(9_000), HlsAds.current(listOf(adAt("2026-11-07T11:00:00+01:00")), playhead))
+        assertNull(HlsAds.current(listOf(adAt("2026-11-07")), playhead))
+        assertNull(HlsAds.current(listOf(adAt("")), playhead))
     }
 }

@@ -93,6 +93,7 @@ dependencies {
   implementation(project(":shared:core"))
   implementation(project(":shared:stream"))
   implementation(project(":shared:chat"))
+  implementation(project(":shared:player-api"))
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.profileinstaller)

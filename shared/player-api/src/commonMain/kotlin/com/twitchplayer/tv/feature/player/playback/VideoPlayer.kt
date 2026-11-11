@@ -10,8 +10,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * What the player screen asks of whatever draws the video. Two implementations: [com.twitchplayer.tv.feature.player.ui.embed.WebViewVideoPlayer]
- * (Twitch's embed in a hosted page) and [NativeVideoPlayer] (Media3 over Twitch's HLS). The screen never knows which one it drives.
+ * What the player screen asks of whatever draws the video. Two Android implementations today: `WebViewVideoPlayer` (Twitch's embed
+ * in a hosted page) and `NativeVideoPlayer` (Media3 over Twitch's HLS). The screen never knows which one it drives.
  */
 interface VideoPlayer {
     fun play()

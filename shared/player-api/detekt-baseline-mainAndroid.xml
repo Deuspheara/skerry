@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:PlaybackStats.kt:HlsAds$playheadMs &gt;= start &amp;&amp; remaining &gt; 0 &amp;&amp; (best == null || remaining &gt; best.remainingMs)</ID>
+    <ID>CyclomaticComplexMethod:PlaybackStats.kt:HlsAds$fun current: AdBreak?</ID>
+    <ID>LoopWithTooManyJumpStatements:PlaybackStats.kt:HlsAds$for</ID>
+    <ID>MagicNumber:PlaybackStats.kt:HlsAds$3</ID>
+  </CurrentIssues>
+</SmellBaseline>

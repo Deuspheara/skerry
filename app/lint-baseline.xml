@@ -13,28 +13,6 @@
     </issue>
 
     <issue
-        id="NewApi"
-        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.Instant#parse`"
-        errorLine1="            val start = a[&quot;START-DATE&quot;]?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: continue"
-        errorLine2="                                                                     ~~~~~">
-        <location
-            file="src/main/kotlin/com/twitchplayer/tv/feature/player/playback/PlaybackStats.kt"
-            line="46"
-            column="70"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.Instant#toEpochMilli`"
-        errorLine1="            val start = a[&quot;START-DATE&quot;]?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: continue"
-        errorLine2="                                                                               ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/twitchplayer/tv/feature/player/playback/PlaybackStats.kt"
-            line="46"
-            column="80"/>
-    </issue>
-
-    <issue
         id="OldTargetApi"
         message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
         errorLine1="    targetSdk = 36"
