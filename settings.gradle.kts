@@ -35,3 +35,4 @@ rootProject.name = "TwitchPlayer"
 
 include(":app")
 include(":benchmark")
+include(":shared:core")

@@ -31,7 +31,15 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
   baseline.set(layout.projectDirectory.file(baselineName(name.removePrefix("detektBaseline"))))
 }
 
-val typedTasks = setOf("detektDebug", "detektDebugUnitTest", "detektRelease", "detektMain", "detektTest")
+val typedTasks = setOf(
+  "detektDebug",
+  "detektDebugUnitTest",
+  "detektRelease", // Android app
+  "detektMainAndroid",
+  "detektHostTestAndroid",
+  "detektMainJvm",
+  "detektTestJvm", // KMP library
+)
 tasks.named("check") {
   dependsOn(tasks.withType<Detekt>().matching { it.name in typedTasks })
 }

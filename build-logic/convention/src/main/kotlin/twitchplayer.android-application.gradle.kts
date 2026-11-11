@@ -20,7 +20,6 @@ extensions.configure<ApplicationExtension> {
     abortOnError = true
     checkDependencies = true
     baseline = file("lint-baseline.xml")
-    sarifReport = true
   }
 }
 
