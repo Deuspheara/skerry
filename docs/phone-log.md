@@ -86,3 +86,10 @@ After the move the emulator run failed to compile `app/src/androidTest` (`TvFocu
 - CI has not run on GitHub (no remote); its new steps were only YAML-checked and their Gradle tasks exercised locally.
 - The two pre-existing instrumented failures were not investigated.
 - The phone app itself does not exist yet (step B): `shared-strings` is proven on a throwaway module and by unit tests, and has no committed consumer.
+
+## Review note: lint baselines after the extraction
+
+`app/lint-baseline.xml` still lists issues in files that now live in `platform-android` / `demo-android`. This is
+intentional: the app runs lint with `checkDependencies = true`, so the app's lint run analyses the library sources and
+applies the app's baseline to them. Removing those entries makes `:app:lintDebug` fail (verified). The libraries carry
+their own baselines for their own lint runs.
