@@ -13,7 +13,14 @@ spotless {
     ktlint(ktlintVersion)
   }
   kotlinGradle {
-    target("*.gradle.kts")
+    // A file tree that prunes build/ and src/ while walking: a plain "*.gradle.kts" pattern walks the whole module,
+    // build/ included, and fails with "Could not read path" when a task rewrites build/ at the same time.
+    target(
+      fileTree(projectDir) {
+        include("*.gradle.kts")
+        exclude("build/**", "src/**")
+      },
+    )
     ktlint(ktlintVersion)
   }
 }

@@ -12,8 +12,13 @@ plugins {
 // Root scripts and the build-logic sources (module sources are covered by each module's own convention).
 spotless {
   kotlinGradle {
-    target("*.gradle.kts", "build-logic/**/*.gradle.kts")
-    targetExclude("**/build/**")
+    // Pruned walk (see twitchplayer.spotless): never descend into the modules or any build/ directory.
+    target(
+      fileTree(rootDir) {
+        include("*.gradle.kts", "build-logic/**/*.gradle.kts")
+        exclude("**/build/**", "app/**", "benchmark/**", "shared/**", ".git/**", ".gradle/**", ".kotlin/**")
+      },
+    )
     ktlint(libs.versions.ktlint.get())
   }
   kotlin {
