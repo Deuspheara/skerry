@@ -4,8 +4,6 @@
   <CurrentIssues>
     <ID>DoubleMutabilityForCollection:Fakes.kt:FakeRepository$var searchCalls = mutableListOf&lt;String&gt;()</ID>
     <ID>InjectDispatcher:ChatSettingsTest.kt:ChatSettingsTest$IO</ID>
-    <ID>InjectDispatcher:VodProgressStoreTest.kt:VodProgressStoreTest$IO</ID>
-    <ID>SleepInsteadOfDelay:VodProgressStoreTest.kt:VodProgressStoreTest$sleep(5)</ID>
     <ID>UnusedPrivateFunction:ChannelViewModelTest.kt:ChannelViewModelTest$private fun replay</ID>
   </CurrentIssues>
 </SmellBaseline>

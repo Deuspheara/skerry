@@ -7,8 +7,8 @@
         errorLine1="        prefs.edit().clear().commit()"
         errorLine2="                             ~~~~~~~~">
         <location
-            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
-            line="59"
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/AndroidKeystoreTokenStore.kt"
+            line="57"
             column="30"/>
     </issue>
 
@@ -125,6 +125,39 @@
     <issue
         id="UseKtx"
         message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        check(prefs.edit().putString(&quot;payload&quot;, Base64.encodeToString(payload, Base64.NO_WRAP)).commit())"
+        errorLine2="              ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/AndroidKeystoreTokenStore.kt"
+            line="27"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        prefs.edit().putString(&quot;user_id&quot;, account.userId).putString(&quot;login&quot;, account.login).apply()"
+        errorLine2="        ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/AndroidKeystoreTokenStore.kt"
+            line="48"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        prefs.edit().clear().commit()"
+        errorLine2="        ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/AndroidKeystoreTokenStore.kt"
+            line="57"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
         errorLine1="            activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply { if (tag == null) remove(KEY) else putString(KEY, tag) }.apply()"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -153,39 +186,6 @@
             file="src/demo/kotlin/com/twitchplayer/tv/demo/DemoEmotes.kt"
             line="52"
             column="22"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        check(prefs.edit().putString(&quot;payload&quot;, Base64.encodeToString(payload, Base64.NO_WRAP)).commit())"
-        errorLine2="              ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
-            line="29"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        prefs.edit().putString(&quot;user_id&quot;, account.userId).putString(&quot;login&quot;, account.login).apply()"
-        errorLine2="        ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
-            line="50"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        prefs.edit().clear().commit()"
-        errorLine2="        ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/twitchplayer/tv/core/network/auth/TokenStore.kt"
-            line="59"
-            column="9"/>
     </issue>
 
     <issue

@@ -34,10 +34,9 @@
     <ID>ImplicitDefaultLocale:ChatLine.kt:TWITCH_EMOTE_CDN.format(emote.id, "static")</ID>
     <ID>ImplicitDefaultLocale:ClipScreen.kt:"%d:%02d".format(total / 60, total % 60)</ID>
     <ID>ImplicitDefaultLocale:TwitchTvApp.kt:String.format(nowLive, stream.name)</ID>
-    <ID>InjectDispatcher:AppModule.kt:Default</ID>
-    <ID>InjectDispatcher:SnapshotCache.kt:SnapshotCache$IO</ID>
-    <ID>InjectDispatcher:TokenStore.kt:TokenStore$IO</ID>
-    <ID>InstanceOfCheckForException:Formatters.kt:e is VirtualMachineError</ID>
+    <ID>InjectDispatcher:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$IO</ID>
+    <ID>InjectDispatcher:AndroidSnapshotStorage.kt:AndroidSnapshotStorage$IO</ID>
+    <ID>InstanceOfCheckForException:ViewerFormatters.kt:e is VirtualMachineError</ID>
     <ID>LambdaParameterEventTrailing:LoadGate.kt:onAction: () -&gt; Unit</ID>
     <ID>LambdaParameterEventTrailing:VodScreen.kt:onBack: () -&gt; Unit</ID>
     <ID>LambdaParameterInRestartableEffect:ClipScreen.kt:onFailed: () -&gt; Unit</ID>
@@ -56,6 +55,8 @@
     <ID>LongParameterList:TvIconButton.kt:@Composable fun TvIconButton</ID>
     <ID>LongParameterList:VodScreen.kt:@OptIn(UnstableApi::class) @Composable private fun VodPlayback</ID>
     <ID>LoopWithTooManyJumpStatements:PlaybackStats.kt:HlsAds$for</ID>
+    <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$128</ID>
+    <ID>MagicNumber:AndroidKeystoreTokenStore.kt:AndroidKeystoreTokenStore$3</ID>
     <ID>MagicNumber:AppKeys.kt:3</ID>
     <ID>MagicNumber:AppKeys.kt:4</ID>
     <ID>MagicNumber:ChatLine.kt:0.03928</ID>
@@ -77,9 +78,6 @@
     <ID>MagicNumber:ChatLine.kt:4.5</ID>
     <ID>MagicNumber:ChatLine.kt:6</ID>
     <ID>MagicNumber:ChatLine.kt:8</ID>
-    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000</ID>
-    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000L</ID>
-    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$5</ID>
     <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$1000L</ID>
     <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$200</ID>
     <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$299</ID>
@@ -105,46 +103,15 @@
     <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$49</ID>
     <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$50</ID>
     <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$720</ID>
-    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Few$4</ID>
-    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Many$16</ID>
-    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Some$8</ID>
-    <ID>MagicNumber:Models.kt:ChatDensity.Relaxed$6</ID>
-    <ID>MagicNumber:Models.kt:ChatDensity.Standard$3</ID>
-    <ID>MagicNumber:Models.kt:ChatTextSize.Large$17f</ID>
-    <ID>MagicNumber:Models.kt:ChatTextSize.Medium$15f</ID>
-    <ID>MagicNumber:Models.kt:ChatTextSize.Small$14f</ID>
     <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
     <ID>MagicNumber:PlaybackStats.kt:HlsAds$3</ID>
-    <ID>MagicNumber:SettingsRepository.kt:DataStoreSettingsRepository$100</ID>
     <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$2_000L</ID>
     <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$60_000L</ID>
     <ID>MagicNumber:StreamModels.kt:StreamAccessException$300</ID>
     <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
-    <ID>MagicNumber:TokenStore.kt:TokenStore$128</ID>
-    <ID>MagicNumber:TokenStore.kt:TokenStore$3</ID>
-    <ID>MagicNumber:TokenValidator.kt:TokenValidator$200</ID>
-    <ID>MagicNumber:TokenValidator.kt:TokenValidator$299</ID>
-    <ID>MagicNumber:TokenValidator.kt:TokenValidator$401</ID>
-    <ID>MagicNumber:TwitchApi.kt:TwitchApi$100</ID>
-    <ID>MagicNumber:TwitchApi.kt:TwitchApi$200</ID>
-    <ID>MagicNumber:TwitchApi.kt:TwitchApi$299</ID>
-    <ID>MagicNumber:TwitchApi.kt:TwitchApi$401</ID>
-    <ID>MagicNumber:TwitchApi.kt:TwitchApi$404</ID>
-    <ID>MagicNumber:TwitchApi.kt:TwitchApi$5</ID>
-    <ID>MagicNumber:TwitchMappers.kt:225</ID>
-    <ID>MagicNumber:TwitchMappers.kt:240</ID>
-    <ID>MagicNumber:TwitchMappers.kt:320</ID>
-    <ID>MagicNumber:TwitchMappers.kt:400</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$64L</ID>
-    <ID>MagicNumber:TwitchRepository.kt:180</ID>
-    <ID>MagicNumber:TwitchRepository.kt:3</ID>
-    <ID>MagicNumber:TwitchRepository.kt:320</ID>
-    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$180</ID>
-    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$320</ID>
-    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$401</ID>
-    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$403</ID>
     <ID>MatchingDeclarationName:DemoArt.kt:DemoArtFetcher : Fetcher</ID>
     <ID>MatchingDeclarationName:FocusRing.kt:FocusProgress</ID>
     <ID>MatchingDeclarationName:PlayerControlBar.kt:PlayerControl</ID>
@@ -202,27 +169,22 @@
     <ID>SwallowedException:GqlVodResolver.kt:GqlVodResolver$e: StreamAccessException</ID>
     <ID>SwallowedException:Load.kt:Loader$e: Exception</ID>
     <ID>SwallowedException:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
-    <ID>SwallowedException:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
     <ID>ThrowsCount:DemoModule.kt:DemoVods$override suspend fun resolve: ResolvedVod</ID>
     <ID>ThrowsCount:GqlPlaybackResolver.kt:GqlPlaybackResolver$private suspend fun accessToken: PlaybackToken</ID>
     <ID>ThrowsCount:GqlVodResolver.kt:GqlVodResolver$private suspend fun fetchMaster: Answer</ID>
     <ID>ThrowsCount:GqlVodResolver.kt:internal fun parseVodAccess: GqlVodResolver.VodAccess?</ID>
     <ID>ThrowsCount:Retry.kt:RetryPolicy$suspend fun &lt;T&gt; run: T</ID>
-    <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun post: HttpResponse</ID>
-    <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun raw: HttpResponse</ID>
     <ID>TooGenericExceptionCaught:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:EventSubChatClient.kt:EventSubChatClient$error: Throwable</ID>
-    <ID>TooGenericExceptionCaught:Formatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:Load.kt:Loader$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
     <ID>TooGenericExceptionCaught:Retry.kt:RetryPolicy$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
     <ID>TooGenericExceptionCaught:VodScreen.kt:e: Exception</ID>
     <ID>TooManyFunctions:PlayerViewModel.kt:PlayerViewModel : ViewModel</ID>
-    <ID>TooManyFunctions:TwitchApi.kt:TwitchApi</ID>
     <ID>UnnecessaryLaunchedEffect:PlayerScreen.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:TwitchTvApp.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:VodScreen.kt:LaunchedEffect</ID>
@@ -239,8 +201,6 @@
     <ID>UnusedPrivateProperty:SearchViewModel.kt:SearchViewModel$private val repository: TwitchRepository</ID>
     <ID>UnusedPrivateProperty:SettingsScreen.kt:/** Two tiles filling the width of three (with the 16 dp gap): the grid has no empty cell. */ private val WIDE_TILE_WIDTH = (TILE_WIDTH * 3 + 16.dp * 2 - 16.dp) / 2</ID>
     <ID>UnusedVariable:TvFocusable.kt:val scope = rememberCoroutineScope()</ID>
-    <ID>UseCheckOrError:TwitchRepository.kt:TwitchRepositoryImpl$throw IllegalStateException("signed out")</ID>
-    <ID>UseCheckOrError:TwitchRepository.kt:TwitchRepositoryImpl$throw IllegalStateException("unknown channel")</ID>
     <ID>UseOrEmpty:ChatAssetsRepository.kt:ChatAssetsRepository$globalBadges ?: runCatching { badgeUrls(api.globalBadges().data) }.getOrNull()?.also { globalBadges = it } ?: emptyMap()</ID>
     <ID>UseOrEmpty:FocusMemory.kt:it.lastKey ?: ""</ID>
     <ID>VarsWithoutStateBacking:ChatLineView.kt:var seen = 0</ID>

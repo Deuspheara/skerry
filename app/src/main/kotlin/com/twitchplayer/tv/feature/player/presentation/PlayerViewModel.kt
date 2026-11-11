@@ -6,6 +6,7 @@ import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.data.model.PlayerEngine
+import com.twitchplayer.tv.core.data.model.buildDefault
 import com.twitchplayer.tv.core.data.repository.SendResult
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SessionState

@@ -2,7 +2,7 @@
 # Do not add `@Suppress` for new code; fix it. Existing findings are in each module's detekt-baseline.xml.
 style:
   MagicNumber:
-    excludes: ['**/test/**', '**/androidTest/**', '**/demo/**', '**/demoAlways/**', '**/designsystem/**', '**/ui/**', '**/benchmark/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**', '**/demo/**', '**/demoAlways/**', '**/designsystem/**', '**/ui/**', '**/benchmark/**']
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     ignoreAnnotation: true

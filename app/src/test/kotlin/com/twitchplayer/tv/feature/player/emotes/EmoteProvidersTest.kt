@@ -128,6 +128,6 @@ class EmoteProvidersTest {
 
     @Test fun theSharedTwitchClientCanBeUsedAsIs() = runTest {
         // The providers reuse the app's Twitch HTTP client (same JSON settings); constructing it must stay side-effect free.
-        twitchHttpClient().close()
+        twitchHttpClient(io.ktor.client.engine.okhttp.OkHttp).close()
     }
 }

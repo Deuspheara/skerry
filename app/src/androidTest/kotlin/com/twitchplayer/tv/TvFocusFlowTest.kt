@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.repository.DataStoreSettingsRepository
+import com.twitchplayer.tv.core.di.settingsStore
 import com.twitchplayer.tv.demo.demoModule
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -34,7 +35,7 @@ class TvFocusFlowTest {
     private fun string(id: Int) = ApplicationProvider.getApplicationContext<android.content.Context>().getString(id)
 
     @Before fun launch() {
-        runBlocking { DataStoreSettingsRepository(ApplicationProvider.getApplicationContext<android.content.Context>()).setChatMode(ChatMode.Hidden) }
+        runBlocking { DataStoreSettingsRepository(ApplicationProvider.getApplicationContext<android.content.Context>().settingsStore).setChatMode(ChatMode.Hidden) }
         loadKoinModules(demoModule)
         scenario = ActivityScenario.launch(MainActivity::class.java)
     }

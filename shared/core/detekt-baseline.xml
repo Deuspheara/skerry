@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000</ID>
+    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$1000L</ID>
+    <ID>MagicNumber:DeviceCodeAuth.kt:DeviceCodeAuth$5</ID>
+    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Few$4</ID>
+    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Many$16</ID>
+    <ID>MagicNumber:Models.kt:AnimatedEmoteLimit.Some$8</ID>
+    <ID>MagicNumber:Models.kt:ChatDensity.Relaxed$6</ID>
+    <ID>MagicNumber:Models.kt:ChatDensity.Standard$3</ID>
+    <ID>MagicNumber:Models.kt:ChatTextSize.Large$17f</ID>
+    <ID>MagicNumber:Models.kt:ChatTextSize.Medium$15f</ID>
+    <ID>MagicNumber:Models.kt:ChatTextSize.Small$14f</ID>
+    <ID>MagicNumber:SettingsRepository.kt:DataStoreSettingsRepository$100</ID>
+    <ID>MagicNumber:TokenValidator.kt:TokenValidator$200</ID>
+    <ID>MagicNumber:TokenValidator.kt:TokenValidator$299</ID>
+    <ID>MagicNumber:TokenValidator.kt:TokenValidator$401</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$100</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$200</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$299</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$401</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$404</ID>
+    <ID>MagicNumber:TwitchApi.kt:TwitchApi$5</ID>
+    <ID>MagicNumber:TwitchMappers.kt:225</ID>
+    <ID>MagicNumber:TwitchMappers.kt:240</ID>
+    <ID>MagicNumber:TwitchMappers.kt:320</ID>
+    <ID>MagicNumber:TwitchMappers.kt:400</ID>
+    <ID>MagicNumber:TwitchRepository.kt:180</ID>
+    <ID>MagicNumber:TwitchRepository.kt:3</ID>
+    <ID>MagicNumber:TwitchRepository.kt:320</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$180</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$320</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$401</ID>
+    <ID>MagicNumber:TwitchRepository.kt:TwitchRepositoryImpl$403</ID>
+    <ID>SwallowedException:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
+    <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun post: HttpResponse</ID>
+    <ID>ThrowsCount:TwitchApi.kt:TwitchApi$private suspend fun raw: HttpResponse</ID>
+    <ID>TooGenericExceptionCaught:TwitchRepository.kt:TwitchRepositoryImpl$e: Exception</ID>
+    <ID>TooManyFunctions:TwitchApi.kt:TwitchApi</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -11,6 +11,7 @@ import coil3.request.allowHardware
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.di.DebugModules
 import com.twitchplayer.tv.core.di.coreModule
+import com.twitchplayer.tv.core.di.sharedCoreModule
 import com.twitchplayer.tv.core.di.viewModelModule
 import okio.Path.Companion.toOkioPath
 import org.koin.android.ext.android.get
@@ -24,7 +25,7 @@ class TwitchPlayerApp :
         super.onCreate()
         startKoin {
             androidContext(this@TwitchPlayerApp)
-            modules(listOf(coreModule, viewModelModule) + DebugModules.overrides(this@TwitchPlayerApp))
+            modules(listOf(sharedCoreModule(), coreModule, viewModelModule) + DebugModules.overrides(this@TwitchPlayerApp))
         }
         get<SessionRepository>().start()
     }
