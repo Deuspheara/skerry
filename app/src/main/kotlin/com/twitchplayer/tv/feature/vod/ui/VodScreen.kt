@@ -80,6 +80,7 @@ import com.twitchplayer.tv.core.designsystem.theme.TvColors
 import com.twitchplayer.tv.core.designsystem.theme.TvDimens
 import com.twitchplayer.tv.core.designsystem.theme.TvShapes
 import com.twitchplayer.tv.core.designsystem.theme.TvType
+import com.twitchplayer.tv.core.platform.NumberFormatter
 import com.twitchplayer.tv.core.ui.formatUptime
 import com.twitchplayer.tv.feature.clip.ui.Hint
 import com.twitchplayer.tv.feature.clip.ui.ProgressLine
@@ -497,7 +498,8 @@ private fun VodPlayback(
                 Row(Modifier.onFocusChanged { rowFocused = it.hasFocus }, horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     val qualityLabel = if (selected == QualityPolicy.AUTO) stringResource(R.string.quality_auto) else variants.firstOrNull { it.id == selected }?.name ?: selected
                     TvButton(qualityLabel, TvIcons.Quality, { showQuality = true }, Modifier.focusRequester(qualityButton))
-                    if (!vod.recording) TvButton(speedLabel(speed), null, { player.setPlaybackSpeed(nextSpeed(player.playbackParameters.speed)) })
+                    val numbers: NumberFormatter = koinInject()
+                    if (!vod.recording) TvButton(speedLabel(speed, numbers), null, { player.setPlaybackSpeed(nextSpeed(player.playbackParameters.speed)) })
                     androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                     val step = remember {
                         android.icu.text.MeasureFormat.getInstance(java.util.Locale.getDefault(), android.icu.text.MeasureFormat.FormatWidth.NARROW)

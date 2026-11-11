@@ -13,6 +13,7 @@ import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.platform.AppConfig
 import com.twitchplayer.tv.core.platform.DeviceProfile
 import com.twitchplayer.tv.core.platform.Logger
+import com.twitchplayer.tv.core.platform.NumberFormatter
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.platform.StorageNames
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit
 val coreModule = module {
     // Platform pieces the shared module needs (see sharedCoreModule()).
     single<DeviceProfile> { AndroidDeviceProfile() }
+    single<NumberFormatter> { AndroidNumberFormatter() }
     single { AppConfig(clientId = BuildConfig.TWITCH_CLIENT_ID, defaultPlayerEngine = PlayerEngine.buildDefault()) }
     single<HttpClientEngineFactory<*>> { OkHttp }
     // Warn level survives R8's stripping of Log.v/d/i (see proguard-rules.pro).
