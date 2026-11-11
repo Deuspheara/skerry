@@ -3,12 +3,7 @@
 
 # kotlinx.serialization and Ktor core -dontwarn rules live in shared/core/consumer-rules.pro (published with the module).
 
-# OkHttp engine: optional JVM-only integrations are absent on Android
--dontwarn org.conscrypt.**
--dontwarn org.bouncycastle.**
--dontwarn org.openjsse.**
--dontwarn okhttp3.internal.platform.**
--dontwarn javax.annotation.**
+# The OkHttp -dontwarn rules live in platform-android/consumer-rules.pro (published with the module).
 
 # Strip verbose logging from release builds
 -assumenosideeffects class android.util.Log {

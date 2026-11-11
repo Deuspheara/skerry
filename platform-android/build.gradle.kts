@@ -5,6 +5,10 @@ plugins {
 
 android {
   namespace = "com.twitchplayer.tv.platform"
+  defaultConfig {
+    // The OkHttp -dontwarn rules every consuming app needs (the app's own file keeps its Log stripping).
+    consumerProguardFiles("consumer-rules.pro")
+  }
   buildFeatures {
     compose = true
   }
