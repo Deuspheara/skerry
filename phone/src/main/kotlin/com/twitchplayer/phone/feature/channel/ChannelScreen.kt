@@ -1,18 +1,19 @@
 package com.twitchplayer.phone.feature.channel
 
 import android.text.format.DateUtils
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -27,10 +28,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -44,18 +47,24 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.feature.auth.channelUrl
+import com.twitchplayer.phone.feature.auth.isTwitchUrl
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.components.Avatar
 import com.twitchplayer.phone.ui.components.AvatarLarge
 import com.twitchplayer.phone.ui.components.LoadHost
+import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.phone.ui.components.RefreshBox
 import com.twitchplayer.phone.ui.components.RemoteImage
 import com.twitchplayer.phone.ui.components.SectionHeader
@@ -63,6 +72,7 @@ import com.twitchplayer.phone.ui.components.SkeletonBlock
 import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.THUMBNAIL_RATIO
 import com.twitchplayer.phone.ui.components.ThumbnailLabel
+import com.twitchplayer.phone.ui.components.clickableItem
 import com.twitchplayer.tv.core.data.model.ChannelClip
 import com.twitchplayer.tv.core.data.model.ChannelDetails
 import com.twitchplayer.tv.core.data.model.ChannelRef
@@ -156,17 +166,26 @@ private fun ChannelContent(
         }.filter { (nearEnd, canLoadMore, _) -> nearEnd && canLoadMore }.distinctUntilChanged().collect { currentLoadMore() }
     }
     val now = remember(details) { System.currentTimeMillis() }
+    val uriHandler = LocalUriHandler.current
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item(key = "header") { Header(details.channel, details.isFollowed, live = details.stream != null) }
+        item(key = "header") {
+            Header(
+                channel = details.channel,
+                followed = details.isFollowed,
+                live = details.stream != null,
+                onFollowClick = { channelUrl(details.channel.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } } },
+            )
+        }
         details.stream?.let { stream ->
             item(key = "live") {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StreamCard(stream, onClick = { onPlay(PlaybackTarget.Live(stream.login)) })
+                // A hero card the width of a tablet would dominate the page: it stops growing at a comfortable size.
+                Column(Modifier.widthIn(max = HERO_MAX_WIDTH), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    StreamCard(stream, onClick = { onPlay(PlaybackTarget.Live(stream.login)) }, showChannel = false)
                     liveForLabel(stream.startedAtMs, now)?.let { uptime ->
                         Text(stringResource(R.string.phone_live_for, uptime), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -219,10 +238,10 @@ private fun ChannelContent(
 }
 
 @Composable
-private fun Header(channel: ChannelRef, followed: Boolean, live: Boolean) {
+private fun Header(channel: ChannelRef, followed: Boolean, live: Boolean, onFollowClick: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Avatar(channel.avatarUrl, channel.name, AvatarLarge)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 channel.name,
                 style = MaterialTheme.typography.headlineSmall,
@@ -234,13 +253,33 @@ private fun Header(channel: ChannelRef, followed: Boolean, live: Boolean) {
             if (!live) {
                 Text(stringResource(R.string.phone_channel_offline), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (followed) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(FOLLOWED_ICON))
-                    Text(stringResource(R.string.followed), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                }
-            }
+            FollowButton(followed, onFollowClick)
         }
+    }
+}
+
+/**
+ * The follow state as a button: tonal and ticked when following, outlined when not. Twitch's API no longer lets a third-party app follow
+ * or unfollow, so the button opens the channel on twitch.tv (the trailing arrow says so) where the viewer changes it; the state is read
+ * from the API when the page loads.
+ */
+@Composable
+private fun FollowButton(followed: Boolean, onClick: () -> Unit) {
+    val stateText = stringResource(if (followed) R.string.phone_follow_state_on else R.string.phone_follow_state_off)
+    val hint = stringResource(R.string.phone_follow_opens_twitch)
+    val semantics = Modifier.semantics {
+        stateDescription = stateText
+        onClick(label = hint, action = null)
+    }
+    val content: @Composable RowScope.() -> Unit = {
+        if (followed) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(FOLLOW_ICON))
+        Text(stringResource(if (followed) R.string.followed else R.string.phone_follow))
+        Icon(PhoneIcons.OpenInNew, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(FOLLOW_ICON))
+    }
+    if (followed) {
+        FilledTonalButton(onClick = onClick, modifier = semantics, content = content)
+    } else {
+        OutlinedButton(onClick = onClick, modifier = semantics, content = content)
     }
 }
 
@@ -267,17 +306,15 @@ private fun ScheduleRow(segment: ScheduledStream) {
 @Composable
 private fun ClipCard(clip: ChannelClip, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val views = remember(clip.views) { formatViewers(clip.views) }
-    Card(
-        onClick = onClick,
-        modifier = modifier.semantics { contentDescription = clip.title },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp)).clickableItem(onClick).semantics(mergeDescendants = true) { contentDescription = clip.title },
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(THUMBNAIL_RATIO)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(12.dp))) {
             RemoteImage(clip.thumbnailUrl, Modifier.matchParentSize())
             ThumbnailLabel(durationLabel(clip.durationSeconds), Modifier.align(Alignment.BottomEnd).padding(6.dp))
         }
-        Column(Modifier.padding(10.dp)) {
+        Column(Modifier.padding(horizontal = 2.dp)) {
             Text(clip.title, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(stringResource(R.string.replay_views, views), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -291,28 +328,24 @@ private fun ReplayRow(replay: Replay, progress: VodProgress?, now: Long, onClick
         if (replay.publishedAtMs > 0L) DateUtils.getRelativeTimeSpanString(replay.publishedAtMs, now, DateUtils.MINUTE_IN_MILLIS).toString() else ""
     }
     val duration = replay.duration.takeIf { it.isNotBlank() } ?: durationLabel(replay.durationSeconds)
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().semantics { contentDescription = replay.title },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickableItem(onClick).semantics(mergeDescendants = true) { contentDescription = replay.title },
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.width(REPLAY_THUMBNAIL_WIDTH).aspectRatio(THUMBNAIL_RATIO)) {
-                RemoteImage(replay.thumbnailUrl, Modifier.matchParentSize())
-                ThumbnailLabel(duration, Modifier.align(Alignment.BottomEnd).padding(4.dp))
-                if (progress != null && progress.fraction > 0f) {
-                    LinearProgressIndicator(progress = { progress.fraction }, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
-                }
+        Box(Modifier.width(REPLAY_THUMBNAIL_WIDTH).aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(12.dp))) {
+            RemoteImage(replay.thumbnailUrl, Modifier.matchParentSize())
+            ThumbnailLabel(duration, Modifier.align(Alignment.BottomEnd).padding(6.dp))
+            if (progress != null && progress.fraction > 0f) {
+                LinearProgressIndicator(progress = { progress.fraction }, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
             }
-            Column(Modifier.weight(1f).padding(vertical = 8.dp).padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(replay.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(
-                    listOf(published, stringResource(R.string.replay_views, views)).filter { it.isNotBlank() }.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(replay.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOf(published, stringResource(R.string.replay_views, views)).filter { it.isNotBlank() }.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -321,7 +354,7 @@ private fun ReplayRow(replay: Replay, progress: VodProgress?, now: Long, onClick
 private fun SimilarChannel(channel: ChannelRef, onClick: () -> Unit) {
     val description = if (channel.isLive) stringResource(R.string.cd_live_channel, channel.name) else stringResource(R.string.cd_offline, channel.name)
     Column(
-        Modifier.width(SIMILAR_WIDTH).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(8.dp).semantics { contentDescription = description },
+        Modifier.width(SIMILAR_WIDTH).clip(RoundedCornerShape(12.dp)).clickableItem(onClick).padding(8.dp).semantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -345,7 +378,8 @@ private fun ChannelSkeleton() {
 private data class Paging(val canLoadMore: Boolean, val loaded: Int)
 
 private const val PREFETCH_ITEMS = 3
-private val FOLLOWED_ICON = 18.dp
+private val HERO_MAX_WIDTH = 560.dp
+private val FOLLOW_ICON = 18.dp
 private val CLIP_CARD_WIDTH = 220.dp
 private val REPLAY_THUMBNAIL_WIDTH = 150.dp
 private val SIMILAR_WIDTH = 80.dp

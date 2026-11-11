@@ -1,13 +1,15 @@
 package com.twitchplayer.phone.feature.browse
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -20,15 +22,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
@@ -42,7 +52,8 @@ import com.twitchplayer.phone.ui.components.ScreenPadding
 import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.StreamColumnMin
 import com.twitchplayer.phone.ui.components.fullSpanItem
-import com.twitchplayer.phone.ui.components.streamTitleLines
+import com.twitchplayer.phone.ui.components.streamLayout
+import com.twitchplayer.phone.ui.components.streamRowSpacing
 import com.twitchplayer.tv.core.presentation.Load
 import com.twitchplayer.tv.feature.category.presentation.CategoryEvent
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
@@ -50,7 +61,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 /** A category: its live streams, narrowed to the viewer's language on request, and the local favourite toggle. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoryRoute(
     key: CategoryKey,
@@ -63,7 +74,7 @@ fun CategoryRoute(
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val favorite = (state.load as? Load.Ready)?.data?.favorite == true
-    val titleLines = streamTitleLines()
+    val layout = streamLayout()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
@@ -75,12 +86,24 @@ fun CategoryRoute(
                 },
                 actions = {
                     if (state.load is Load.Ready) {
-                        IconToggleButton(checked = favorite, onCheckedChange = { viewModel.presenter.onEvent(CategoryEvent.ToggleFavorite) }) {
-                            Icon(
-                                if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = stringResource(R.string.favorite),
-                                tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        val label = stringResource(R.string.favorite)
+                        val stateText = stringResource(if (favorite) R.string.phone_favorite_on else R.string.phone_favorite_off)
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
+                            tooltip = { PlainTooltip { Text(label) } },
+                            state = rememberTooltipState(),
+                        ) {
+                            IconToggleButton(
+                                checked = favorite,
+                                onCheckedChange = { viewModel.presenter.onEvent(CategoryEvent.ToggleFavorite) },
+                                modifier = Modifier.semantics { stateDescription = stateText },
+                            ) {
+                                Icon(
+                                    if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = label,
+                                    tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 },
@@ -104,22 +127,27 @@ fun CategoryRoute(
                     columns = GridCells.Adaptive(StreamColumnMin),
                     contentPadding = ScreenPadding,
                     horizontalArrangement = GridSpacing,
-                    verticalArrangement = GridSpacing,
+                    verticalArrangement = streamRowSpacing(layout),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     fullSpanItem("language") {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Wraps onto a second line with large text instead of squeezing a chip into a narrow column.
+                        FlowRow(
+                            Modifier.selectableGroup(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            itemVerticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(stringResource(R.string.phone_language_filter), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            // Two clear choices, the viewer's own language and everything (a chip that is on tells nothing about what it filters).
+                            FilterChip(
+                                selected = !state.languageOnly,
+                                onClick = { if (state.languageOnly) viewModel.presenter.onEvent(CategoryEvent.ToggleLanguage) },
+                                label = { Text(stringResource(R.string.filter_all_languages)) },
+                            )
                             FilterChip(
                                 selected = state.languageOnly,
-                                onClick = { viewModel.presenter.onEvent(CategoryEvent.ToggleLanguage) },
-                                label = {
-                                    Text(if (state.languageOnly) state.language.uppercase() else stringResource(R.string.filter_all_languages))
-                                },
-                                leadingIcon = if (state.languageOnly) {
-                                    { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
-                                } else {
-                                    null
-                                },
+                                onClick = { if (!state.languageOnly) viewModel.presenter.onEvent(CategoryEvent.ToggleLanguage) },
+                                label = { Text(languageLabel(state.language)) },
                             )
                         }
                     }
@@ -127,7 +155,7 @@ fun CategoryRoute(
                         fullSpanItem("empty") { MessageState(title = stringResource(R.string.state_no_live), modifier = Modifier.padding(top = 48.dp)) }
                     }
                     items(ui.streams, key = { it.channelId }, contentType = { "stream" }) { stream ->
-                        StreamCard(stream, onClick = { onChannel(stream.login) }, minTitleLines = titleLines)
+                        StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
                     }
                 }
             }

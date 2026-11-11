@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -49,11 +51,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.feature.home.CHANNEL_DIVIDER_INSET
 import com.twitchplayer.phone.ui.components.CategoryCard
 import com.twitchplayer.phone.ui.components.ChannelListItem
 import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.phone.ui.components.SectionHeader
 import com.twitchplayer.tv.core.data.model.Category
+import com.twitchplayer.tv.core.data.model.ChannelRef
 import com.twitchplayer.tv.feature.search.presentation.ResultsUi
 import com.twitchplayer.tv.feature.search.presentation.SearchEvent
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
@@ -70,7 +74,7 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
     val text = rememberTextFieldState(state.query)
     val keyboard = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
-    var micDenied by remember { mutableStateOf(false) }
+    val mic = remember { MicPermissionFlow() }
 
     // The field owns what is typed (a lagging presenter state must never overwrite it); the presenter only gets the changes.
     LaunchedEffect(text) {
@@ -83,15 +87,14 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
         snapshotFlow { currentVoice }.filterIsInstance<VoiceState.Heard>().collect { text.setTextAndPlaceCursorAtEnd(it.text) }
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        micDenied = !granted
-        if (granted) onEvent(SearchEvent.StartVoice)
+        if (mic.onPermissionResult(granted) == MicStep.StartVoice) onEvent(SearchEvent.StartVoice)
     }
     val startVoice = {
-        micDenied = false
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            onEvent(SearchEvent.StartVoice)
-        } else {
-            micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        val held = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        when (mic.onMicTapped(held)) {
+            MicStep.StartVoice -> onEvent(SearchEvent.StartVoice)
+            MicStep.AskPermission -> micPermission.launch(Manifest.permission.RECORD_AUDIO)
+            MicStep.Nothing -> Unit
         }
     }
 
@@ -126,7 +129,17 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 )
             }
-            if (micDenied) {
+            if (state.query.isBlank() && state.recents.isEmpty()) {
+                item(key = "hint") {
+                    Text(
+                        stringResource(R.string.phone_search_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                    )
+                }
+            }
+            if (mic.denied) {
                 item(key = "mic-denied") {
                     Text(
                         stringResource(R.string.phone_search_mic_denied),
@@ -167,7 +180,7 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                     if (results.channels.isNotEmpty()) {
                         item(key = "trends-header") { SectionHeader(stringResource(R.string.sec_trends), Modifier.padding(horizontal = 16.dp)) }
                         items(results.channels, key = { "trend-${it.id}" }) { channel ->
-                            ChannelListItem(channel, onClick = { onChannel(channel.login) }, modifier = Modifier.padding(horizontal = 8.dp))
+                            ChannelRow(channel, onClick = { onChannel(channel.login) })
                         }
                     }
                 }
@@ -185,7 +198,7 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                     if (results.channels.isNotEmpty()) {
                         item(key = "channels-header") { SectionHeader(stringResource(R.string.sec_channels), Modifier.padding(horizontal = 16.dp)) }
                         items(results.channels, key = { "channel-${it.id}" }) { channel ->
-                            ChannelListItem(channel, onClick = { onChannel(channel.login) }, modifier = Modifier.padding(horizontal = 8.dp))
+                            ChannelRow(channel, onClick = { onChannel(channel.login) })
                         }
                     }
                     if (results.categories.isNotEmpty()) {
@@ -203,6 +216,15 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
         }
     }
     VoiceDialog(voice, onCancel = { onEvent(SearchEvent.CancelVoice) })
+}
+
+/** A channel row with a hairline under its text, so a long list reads as rows (and a short one does not float). */
+@Composable
+private fun ChannelRow(channel: ChannelRef, onClick: () -> Unit) {
+    Column {
+        ChannelListItem(channel, onClick = onClick, modifier = Modifier.padding(horizontal = 8.dp))
+        HorizontalDivider(Modifier.padding(start = CHANNEL_DIVIDER_INSET, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    }
 }
 
 /** Listening, what was heard, or "not recognized": one small dialog for the three voice states. */

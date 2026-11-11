@@ -4,11 +4,23 @@
 
     <string name="phone_signin_body">Connectez-vous avec Twitch pour voir les chaînes que vous suivez.</string>
     <string name="phone_error_body">Vérifiez votre connexion et réessayez.</string>
+    <string name="phone_home_empty">Les streams des chaînes que vous suivez et les recommandations apparaîtront ici quand ils seront en direct.</string>
     <string name="phone_following_empty">Les chaînes que vous suivez apparaîtront ici.</string>
     <string name="phone_channel_live_viewers">En direct · %1$s spectateurs</string>
     <string name="phone_channel_offline">Hors ligne</string>
     <string name="phone_live_for">En direct depuis %1$s</string>
     <string name="phone_player_soon">Le lecteur arrive dans la prochaine mise à jour.</string>
+
+    <string name="phone_home_live_following">En direct parmi vos suivis</string>
+    <string name="phone_follow">Suivre</string>
+    <string name="phone_follow_state_on">Suivi</string>
+    <string name="phone_follow_state_off">Non suivi</string>
+    <string name="phone_follow_opens_twitch">Ouvre la chaîne sur Twitch, où vous pouvez le modifier</string>
+    <string name="phone_language_filter">Langue</string>
+    <string name="phone_favorite_on">Dans vos favoris</string>
+    <string name="phone_favorite_off">Pas dans vos favoris</string>
+    <string name="phone_search_hint">Trouvez une chaîne ou une catégorie</string>
+    <string name="phone_settings_language">Langue</string>
 
     <string name="phone_search_recent">Recherches récentes</string>
     <string name="phone_search_mic_denied">Autorisez le micro pour rechercher à la voix.</string>
@@ -18,9 +30,11 @@
     <string name="phone_signin_step_code">2. Saisissez ce code s\'il n\'est pas déjà rempli.</string>
     <string name="phone_signin_copy">Copier le code</string>
     <string name="phone_signin_expires">Expire dans %1$s</string>
+    <string name="phone_signin_copied">Code copié</string>
+    <string name="phone_signin_open_failed">Impossible d\'ouvrir cette page. Allez sur twitch.tv/activate dans un navigateur et saisissez le code ci-dessous.</string>
     <string name="phone_signin_expired">Ce code a expiré.</string>
     <string name="phone_signin_failed">La connexion n\'a pas abouti. Réessayez.</string>
-    <string name="phone_signin_done">Connecté en tant que %1$s</string>
+    <string name="phone_signin_done">Vous êtes connecté.</string>
 
     <string name="phone_settings_signed_in">Connecté</string>
     <string name="phone_settings_appearance">Apparence</string>

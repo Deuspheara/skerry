@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -134,16 +135,26 @@ fun SkeletonBlock(modifier: Modifier = Modifier, shape: androidx.compose.ui.grap
     Box(modifier.clip(shape).background(MaterialTheme.colorScheme.surfaceContainerHigh).alpha(alpha))
 }
 
-/** The geometry of a [StreamCard] in skeleton tones. Hidden from accessibility: the screen announces loading itself. */
+/** The geometry of a [StreamCard] in skeleton tones, for the same [layout]. Hidden from accessibility: the screen announces loading itself. */
 @Composable
-fun StreamCardSkeleton(modifier: Modifier = Modifier) {
-    Column(modifier) {
-        SkeletonBlock(Modifier.fillMaxWidth().aspectRatio(THUMBNAIL_RATIO))
-        Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SkeletonBlock(Modifier.size(AvatarSmall), CircleShape)
+fun StreamCardSkeleton(layout: StreamLayout, modifier: Modifier = Modifier) {
+    if (layout.compact) {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SkeletonBlock(Modifier.width(SKELETON_THUMBNAIL_WIDTH).aspectRatio(THUMBNAIL_RATIO))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SkeletonBlock(Modifier.fillMaxWidth(SKELETON_TITLE_WIDTH).height(14.dp))
                 SkeletonBlock(Modifier.fillMaxWidth(SKELETON_META_WIDTH).height(12.dp))
+            }
+        }
+    } else {
+        Column(modifier) {
+            SkeletonBlock(Modifier.fillMaxWidth().aspectRatio(THUMBNAIL_RATIO))
+            Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SkeletonBlock(Modifier.size(AvatarSmall), CircleShape)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SkeletonBlock(Modifier.fillMaxWidth(SKELETON_TITLE_WIDTH).height(14.dp))
+                    SkeletonBlock(Modifier.fillMaxWidth(SKELETON_META_WIDTH).height(12.dp))
+                }
             }
         }
     }
@@ -173,6 +184,7 @@ fun RefreshBox(onRefresh: () -> Unit, modifier: Modifier = Modifier, content: @C
     ) { content() }
 }
 
+private val SKELETON_THUMBNAIL_WIDTH = 168.dp
 private const val SKELETON_STILL_ALPHA = 0.7f
 private const val SKELETON_LOW_ALPHA = 0.45f
 private const val SKELETON_PULSE_MS = 900

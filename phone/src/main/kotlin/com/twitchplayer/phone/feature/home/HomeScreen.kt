@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
@@ -41,7 +43,8 @@ import com.twitchplayer.phone.ui.components.StreamCardSkeleton
 import com.twitchplayer.phone.ui.components.StreamColumnMin
 import com.twitchplayer.phone.ui.components.fullSpanItem
 import com.twitchplayer.phone.ui.components.sectionHeader
-import com.twitchplayer.phone.ui.components.streamTitleLines
+import com.twitchplayer.phone.ui.components.streamLayout
+import com.twitchplayer.phone.ui.components.streamRowSpacing
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.feature.follows.presentation.FollowsEvent
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
@@ -101,30 +104,30 @@ fun HomeRoute(
 @Composable
 private fun ForYou(content: HomeContent, onChannel: (String) -> Unit, onCategory: (Category) -> Unit) {
     if (content.following.isEmpty() && content.forYou.isEmpty() && content.categories.isEmpty()) {
-        MessageState(title = stringResource(R.string.state_no_live), modifier = Modifier.fillMaxSize())
+        MessageState(title = stringResource(R.string.state_no_live), body = stringResource(R.string.phone_home_empty), modifier = Modifier.fillMaxSize())
         return
     }
-    val titleLines = streamTitleLines()
-    val followingTitle = stringResource(R.string.sec_following)
+    val layout = streamLayout()
+    val followingTitle = stringResource(R.string.phone_home_live_following)
     val forYouTitle = stringResource(R.string.sec_for_you)
     val categoriesTitle = stringResource(R.string.sec_categories)
     LazyVerticalGrid(
         columns = GridCells.Adaptive(StreamColumnMin),
         contentPadding = ScreenPadding,
         horizontalArrangement = GridSpacing,
-        verticalArrangement = GridSpacing,
+        verticalArrangement = streamRowSpacing(layout),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (content.following.isNotEmpty()) {
             sectionHeader("following-header", followingTitle)
             items(content.following, key = { "following-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onChannel(stream.login) }, minTitleLines = titleLines)
+                StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
             }
         }
         if (content.forYou.isNotEmpty()) {
             sectionHeader("for-you-header", forYouTitle)
             items(content.forYou, key = { "for-you-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onChannel(stream.login) }, minTitleLines = titleLines)
+                StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
             }
         }
         if (content.categories.isNotEmpty()) {
@@ -146,27 +149,30 @@ private fun Following(live: List<com.twitchplayer.tv.core.data.model.LiveStream>
         MessageState(title = stringResource(R.string.state_no_live), body = stringResource(R.string.phone_following_empty), modifier = Modifier.fillMaxSize())
         return
     }
-    val titleLines = streamTitleLines()
+    val layout = streamLayout()
     val nothingLive = stringResource(R.string.state_no_live)
     val offlineTitle = stringResource(R.string.sec_offline)
     LazyVerticalGrid(
         columns = GridCells.Adaptive(StreamColumnMin),
         contentPadding = ScreenPadding,
         horizontalArrangement = GridSpacing,
-        verticalArrangement = GridSpacing,
+        verticalArrangement = streamRowSpacing(layout),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (live.isNotEmpty()) {
             items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onChannel(stream.login) }, minTitleLines = titleLines)
+                StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
             }
         } else {
             fullSpanItem("nothing-live") { Text(nothingLive, style = MaterialTheme.typography.bodyLarge) }
         }
         if (offline.isNotEmpty()) {
             sectionHeader("offline-header", offlineTitle)
-            items(offline, key = { "offline-${it.id}" }, span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }, contentType = { "channel" }) { channel ->
-                ChannelListItem(channel, onClick = { onChannel(channel.login) })
+            items(offline, key = { "offline-${it.id}" }, span = { GridItemSpan(maxLineSpan) }, contentType = { "channel" }) { channel ->
+                Column {
+                    ChannelListItem(channel, onClick = { onChannel(channel.login) })
+                    HorizontalDivider(Modifier.padding(start = CHANNEL_DIVIDER_INSET, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                }
             }
         }
     }
@@ -174,17 +180,22 @@ private fun Following(live: List<com.twitchplayer.tv.core.data.model.LiveStream>
 
 @Composable
 internal fun CardSkeletonGrid() {
+    val layout = streamLayout()
     LazyVerticalGrid(
         columns = GridCells.Adaptive(StreamColumnMin),
         contentPadding = ScreenPadding,
         horizontalArrangement = GridSpacing,
-        verticalArrangement = GridSpacing,
+        verticalArrangement = streamRowSpacing(layout),
         userScrollEnabled = false,
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(SKELETON_COUNT) { StreamCardSkeleton() }
+        items(if (layout.compact) SKELETON_ROWS else SKELETON_COUNT) { StreamCardSkeleton(layout) }
     }
 }
 
 private const val SKELETON_COUNT = 6
+private const val SKELETON_ROWS = 9
 private val CATEGORY_CARD_WIDTH = 120.dp
+
+/** Dividers start under the text, past the avatar. */
+internal val CHANNEL_DIVIDER_INSET = 72.dp

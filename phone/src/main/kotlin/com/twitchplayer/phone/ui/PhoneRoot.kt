@@ -2,9 +2,14 @@ package com.twitchplayer.phone.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -41,8 +46,6 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.auth.SignInDialog
-import com.twitchplayer.phone.feature.auth.SignInOutcome
-import com.twitchplayer.phone.feature.auth.signInOutcome
 import com.twitchplayer.phone.feature.browse.BrowseRoute
 import com.twitchplayer.phone.feature.browse.CategoryRoute
 import com.twitchplayer.phone.feature.channel.ChannelRoute
@@ -69,8 +72,8 @@ import com.twitchplayer.phone.ui.theme.ThemePreference
 import com.twitchplayer.phone.ui.theme.systemAnimationsOff
 import com.twitchplayer.tv.app.AuthViewModel
 import com.twitchplayer.tv.feature.auth.presentation.AuthEvent
+import com.twitchplayer.tv.feature.auth.presentation.SignInResult
 import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
-import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -90,25 +93,18 @@ fun PhoneRoot(
 
     PhoneTheme(themeMode, reducedMotion) {
         val snackbar = remember { SnackbarHostState() }
-        val signedIn by rememberUpdatedState(settings.account != null)
-        val account by rememberUpdatedState(settings.account)
-        var cancelledByViewer by remember { mutableStateOf(false) }
-        var hadCode by remember { mutableStateOf(false) }
-        val signedInMessage = stringResource(R.string.phone_signin_done, account.orEmpty())
+        val signedInMessage = stringResource(R.string.phone_signin_done)
         val failedMessage = stringResource(R.string.phone_signin_failed)
-        LaunchedEffect(signIn.code != null) {
-            if (signIn.code != null) {
-                hadCode = true
-                cancelledByViewer = false
-            } else if (hadCode) {
-                hadCode = false
-                delay(SESSION_SETTLE_MS) // the session state arrives just after the presenter clears the code
-                when (signInOutcome(cancelledByViewer, signedIn)) {
-                    SignInOutcome.Success -> snackbar.showSnackbar(signedInMessage)
-                    SignInOutcome.Failed -> snackbar.showSnackbar(failedMessage)
-                    SignInOutcome.Cancelled -> Unit
-                }
+        // The result lives in the presenter (the activity-scoped holder), so a rotation between the end of the sign-in and this message
+        // cannot lose it; it is acknowledged only after the message was shown.
+        LaunchedEffect(signIn.result) {
+            val message = when (signIn.result) {
+                SignInResult.Success -> signedInMessage
+                SignInResult.Failed -> failedMessage
+                null -> return@LaunchedEffect
             }
+            snackbar.showSnackbar(message)
+            authViewModel.presenter.onEvent(AuthEvent.ResultShown)
         }
         var pendingMessage by remember { mutableStateOf<String?>(null) }
         val soon = stringResource(R.string.phone_player_soon)
@@ -127,17 +123,12 @@ fun PhoneRoot(
             PhoneScaffold(
                 reducedMotion = reducedMotion,
                 player = player,
+                snackbar = snackbar,
                 onSignIn = { authViewModel.presenter.onEvent(AuthEvent.SignIn) },
                 onSignOut = { authViewModel.presenter.onEvent(AuthEvent.SignOut) },
             )
-            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = SNACKBAR_ABOVE_BAR))
         }
-        signIn.code?.let { code ->
-            SignInDialog(code, onCancel = {
-                cancelledByViewer = true
-                authViewModel.presenter.onEvent(AuthEvent.Cancel)
-            })
-        }
+        signIn.code?.let { code -> SignInDialog(code, onCancel = { authViewModel.presenter.onEvent(AuthEvent.Cancel) }) }
     }
 }
 
@@ -145,6 +136,7 @@ fun PhoneRoot(
 private fun PhoneScaffold(
     reducedMotion: Boolean,
     player: PlayerLauncher,
+    snackbar: SnackbarHostState,
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
 ) {
@@ -156,12 +148,18 @@ private fun PhoneScaffold(
     val adaptive = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfoV2())
     NavigationSuiteScaffold(
         navigationSuiteItems = {
-            PhoneTab.entries.forEach { tab ->
+            PhoneTab.entries.forEachIndexed { index, tab ->
                 item(
                     selected = tab == navigator.selected,
                     onClick = { navigator.selectTab(tab) },
                     icon = { Icon(tab.icon(), contentDescription = null) },
                     label = { Text(stringResource(tab.label())) },
+                    // In a rail the first item sat right under the status bar, above the page title: it starts level with the title.
+                    modifier = if (index == 0 && navigator.showsNavigation && adaptive != NavigationSuiteType.NavigationBar) {
+                        Modifier.padding(top = RAIL_TOP_GAP)
+                    } else {
+                        Modifier
+                    },
                 )
             }
         },
@@ -170,50 +168,54 @@ private fun PhoneScaffold(
     ) {
         BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
         val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
-        NavDisplay(
-            backStack = navigator.currentStack,
-            modifier = Modifier.fillMaxSize(),
-            onBack = { navigator.back() },
-            entryDecorators = listOf(
-                rememberScreenFill(),
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator(),
-            ),
-            transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
-            popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-            predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-            entryProvider = entryProvider<NavKey> {
-                entry<HomeKey>(metadata = tab) {
-                    HomeRoute(
-                        onChannel = { login -> navigator.push(ChannelKey(login)) },
-                        onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                        onSignIn = onSignIn,
-                    )
-                }
-                entry<BrowseKey>(metadata = tab) {
-                    BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn)
-                }
-                entry<SearchKey>(metadata = tab) {
-                    SearchRoute(
-                        onChannel = { login -> navigator.push(ChannelKey(login)) },
-                        onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                    )
-                }
-                entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
-                entry<CategoryKey> { key ->
-                    CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
-                }
-                entry<ChannelKey> { key ->
-                    ChannelRoute(
-                        login = key.login,
-                        onBack = navigator::pop,
-                        onPlay = player::open,
-                        onChannel = { login -> navigator.push(ChannelKey(login)) },
-                        onSignIn = onSignIn,
-                    )
-                }
-            },
-        )
+        Box(Modifier.fillMaxSize()) {
+            NavDisplay(
+                backStack = navigator.currentStack,
+                modifier = Modifier.fillMaxSize(),
+                onBack = { navigator.back() },
+                entryDecorators = listOf(
+                    rememberScreenFill(),
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                ),
+                transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
+                popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                entryProvider = entryProvider<NavKey> {
+                    entry<HomeKey>(metadata = tab) {
+                        HomeRoute(
+                            onChannel = { login -> navigator.push(ChannelKey(login)) },
+                            onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                            onSignIn = onSignIn,
+                        )
+                    }
+                    entry<BrowseKey>(metadata = tab) {
+                        BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn)
+                    }
+                    entry<SearchKey>(metadata = tab) {
+                        SearchRoute(
+                            onChannel = { login -> navigator.push(ChannelKey(login)) },
+                            onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                        )
+                    }
+                    entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
+                    entry<CategoryKey> { key ->
+                        CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
+                    }
+                    entry<ChannelKey> { key ->
+                        ChannelRoute(
+                            login = key.login,
+                            onBack = navigator::pop,
+                            onPlay = player::open,
+                            onChannel = { login -> navigator.push(ChannelKey(login)) },
+                            onSignIn = onSignIn,
+                        )
+                    }
+                },
+            )
+            // Inside the scaffold's content area: above the bar, beside the rail, above the keyboard and the gesture bar, whatever the text size.
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
+        }
     }
 }
 
@@ -231,5 +233,4 @@ private fun PhoneTab.label(): Int = when (this) {
     PhoneTab.Settings -> R.string.phone_nav_settings
 }
 
-private const val SESSION_SETTLE_MS = 600L
-private val SNACKBAR_ABOVE_BAR = 88.dp
+private val RAIL_TOP_GAP = 16.dp

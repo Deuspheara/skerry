@@ -12,6 +12,9 @@ import androidx.compose.ui.unit.dp
 /** Stream cards: one column on a phone, more as the window grows (a 600 dp tablet gets two, a foldable or tablet three or four). */
 val StreamColumnMin = 320.dp
 
+/** Gap between the rows of a one-column list of compact stream rows (cards in a grid use [GridSpacing]). */
+val CompactRowSpacing = 12.dp
+
 /** Category posters. */
 val PosterColumnMin = 112.dp
 
@@ -26,3 +29,6 @@ fun LazyGridScope.fullSpanItem(key: Any, contentType: Any? = null, content: @Com
 fun LazyGridScope.sectionHeader(key: Any, text: String) {
     fullSpanItem(key, contentType = "header") { SectionHeader(text) }
 }
+
+/** Vertical gap between rows: tighter between compact stream rows than between the cards of a grid. */
+fun streamRowSpacing(layout: StreamLayout) = if (layout.compact) Arrangement.spacedBy(CompactRowSpacing) else GridSpacing

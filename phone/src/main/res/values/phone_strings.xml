@@ -9,11 +9,23 @@
 
     <string name="phone_signin_body">Sign in with Twitch to see the channels you follow.</string>
     <string name="phone_error_body">Check your connection and try again.</string>
+    <string name="phone_home_empty">Streams from channels you follow and recommendations will appear here when they are live.</string>
     <string name="phone_following_empty">The channels you follow will appear here.</string>
     <string name="phone_channel_live_viewers">Live · %1$s viewers</string>
     <string name="phone_channel_offline">Offline</string>
     <string name="phone_live_for">Live for %1$s</string>
     <string name="phone_player_soon">The player is coming in the next update.</string>
+
+    <string name="phone_home_live_following">Live from your follows</string>
+    <string name="phone_follow">Follow</string>
+    <string name="phone_follow_state_on">Following</string>
+    <string name="phone_follow_state_off">Not following</string>
+    <string name="phone_follow_opens_twitch">Opens the channel on Twitch, where you can change it</string>
+    <string name="phone_language_filter">Language</string>
+    <string name="phone_favorite_on">In your favourites</string>
+    <string name="phone_favorite_off">Not in your favourites</string>
+    <string name="phone_search_hint">Find a channel or a category</string>
+    <string name="phone_settings_language">Language</string>
 
     <string name="phone_search_recent">Recent searches</string>
     <string name="phone_search_mic_denied">Allow the microphone to search by voice.</string>
@@ -23,9 +35,11 @@
     <string name="phone_signin_step_code">2. Enter this code if it is not filled in for you.</string>
     <string name="phone_signin_copy">Copy code</string>
     <string name="phone_signin_expires">Expires in %1$s</string>
+    <string name="phone_signin_copied">Code copied</string>
+    <string name="phone_signin_open_failed">This page cannot be opened. Go to twitch.tv/activate in a browser and enter the code below.</string>
     <string name="phone_signin_expired">This code has expired.</string>
     <string name="phone_signin_failed">Sign-in did not complete. Try again.</string>
-    <string name="phone_signin_done">Signed in as %1$s</string>
+    <string name="phone_signin_done">You are signed in.</string>
 
     <string name="phone_settings_signed_in">Signed in</string>
     <string name="phone_settings_appearance">Appearance</string>

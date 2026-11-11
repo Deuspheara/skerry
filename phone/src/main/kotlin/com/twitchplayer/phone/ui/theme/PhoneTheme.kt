@@ -12,7 +12,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Dark: Twitch purple lightened so text and icons reach AA on the near-black surfaces; the dark label colour on the
@@ -66,9 +65,6 @@ private val LightScheme = lightColorScheme(
     error = Color(0xFFBA1A1A),
     onError = Color.White,
 )
-
-/** True when motion must be skipped: the viewer turned animations off in the app, or the system animator scale is 0. */
-val LocalReducedMotion = staticCompositionLocalOf { false }
 
 @Composable
 fun PhoneTheme(mode: ThemeMode, reducedMotion: Boolean, content: @Composable () -> Unit) {

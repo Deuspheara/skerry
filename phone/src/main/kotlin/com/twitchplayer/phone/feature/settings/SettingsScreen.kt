@@ -1,15 +1,19 @@
 package com.twitchplayer.phone.feature.settings
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,11 +24,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -44,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.BuildConfig
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.ui.components.clickableItem
 import com.twitchplayer.phone.ui.theme.ThemeMode
 import com.twitchplayer.phone.ui.theme.ThemePreference
 import com.twitchplayer.tv.core.data.model.AnimatedEmoteLimit
@@ -57,7 +64,7 @@ import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Settings: account, appearance (theme, language, animations), chat, playback and about. */
+/** Settings, in labelled groups: account, appearance, language, chat, playback and about. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsRoute(
@@ -73,7 +80,7 @@ fun SettingsRoute(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var dialog by rememberSaveable { mutableStateOf<SettingsDialog?>(null) }
     val activity = LocalActivity.current
-    val context = LocalContext.current
+    val switcher = remember(activity) { activity?.let(::AppLocalesSwitcher) }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -89,68 +96,90 @@ fun SettingsRoute(
             )
         },
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            item { Header(R.string.tile_account) }
-            item {
-                val account = state.account
-                ListItem(
-                    headlineContent = { Text(if (account != null) account else stringResource(R.string.state_signin_title)) },
-                    supportingContent = { if (account != null) Text(stringResource(R.string.phone_settings_signed_in)) },
-                    trailingContent = {
-                        if (account != null) {
-                            OutlinedButton(onClick = { dialog = SettingsDialog.SignOut }) { Text(stringResource(R.string.sign_out)) }
-                        } else {
-                            Button(onClick = onSignIn) { Text(stringResource(R.string.state_signin)) }
-                        }
-                    },
-                    colors = transparentItem(),
-                )
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            item(key = "account") {
+                Group(R.string.tile_account) {
+                    val account = state.account
+                    ListItem(
+                        headlineContent = { Text(account ?: stringResource(R.string.state_signin_title)) },
+                        supportingContent = { if (account != null) Text(stringResource(R.string.phone_settings_signed_in)) },
+                        trailingContent = {
+                            if (account != null) {
+                                OutlinedButton(onClick = { dialog = SettingsDialog.SignOut }) { Text(stringResource(R.string.sign_out)) }
+                            } else {
+                                Button(onClick = onSignIn) { Text(stringResource(R.string.state_signin)) }
+                            }
+                        },
+                        colors = transparentItem(),
+                    )
+                }
             }
-            item { Header(R.string.phone_settings_appearance) }
-            item { ValueRow(R.string.phone_settings_theme, stringResource(themeMode.label())) { dialog = SettingsDialog.Theme } }
-            item {
-                val tag = remember(state, activity) { AppLocales.current(context) }
-                ValueRow(R.string.tile_language, if (tag == null) stringResource(R.string.lang_system) else AppLocales.nativeName(tag)) { dialog = SettingsDialog.Language }
+            item(key = "appearance") {
+                Group(R.string.phone_settings_appearance) {
+                    ValueRow(R.string.phone_settings_theme, stringResource(themeMode.label())) { dialog = SettingsDialog.Theme }
+                    Rule()
+                    SwitchRow(R.string.tile_animations, state.animationsEnabled) { onEvent(SettingsEvent.ToggleAnimations) }
+                }
             }
-            item { SwitchRow(R.string.tile_animations, state.animationsEnabled) { onEvent(SettingsEvent.ToggleAnimations) } }
-
-            item { Header(R.string.tile_chat) }
-            item {
-                ValueRow(R.string.phone_settings_chat_mode, stringResource(state.chatMode.label())) { dialog = SettingsDialog.ChatMode }
+            item(key = "language") {
+                Group(R.string.phone_settings_language) {
+                    // The group is called Language: the row says which one.
+                    val tag = switcher?.current()
+                    ListItem(
+                        headlineContent = { Text(if (tag == null) stringResource(R.string.lang_system) else AppLocales.nativeName(tag)) },
+                        colors = transparentItem(),
+                        modifier = Modifier.clickableItem { dialog = SettingsDialog.Language },
+                    )
+                }
             }
-            item { ValueRow(R.string.chat_opt_text, stringResource(state.chat.textSize.label())) { dialog = SettingsDialog.ChatTextSize } }
-            item { ValueRow(R.string.chat_opt_spacing, stringResource(state.chat.density.label())) { dialog = SettingsDialog.ChatDensity } }
-            item {
-                ValueRow(R.string.chat_opt_background, stringResource(R.string.phone_percent, state.chat.backgroundOpacity)) { dialog = SettingsDialog.ChatBackground }
+            item(key = "chat") {
+                Group(R.string.tile_chat) {
+                    ValueRow(R.string.phone_settings_chat_mode, stringResource(state.chatMode.label())) { dialog = SettingsDialog.ChatMode }
+                    Rule()
+                    ValueRow(R.string.chat_opt_text, stringResource(state.chat.textSize.label())) { dialog = SettingsDialog.ChatTextSize }
+                    Rule()
+                    ValueRow(R.string.chat_opt_spacing, stringResource(state.chat.density.label())) { dialog = SettingsDialog.ChatDensity }
+                    Rule()
+                    ValueRow(R.string.chat_opt_background, stringResource(R.string.phone_percent, state.chat.backgroundOpacity)) { dialog = SettingsDialog.ChatBackground }
+                    Rule()
+                    SwitchRow(R.string.chat_opt_badges, state.chat.showBadges) { onEvent(SettingsEvent.UpdateChat { it.copy(showBadges = !it.showBadges) }) }
+                    Rule()
+                    SwitchRow(R.string.chat_opt_time, state.chat.showTimestamps) { onEvent(SettingsEvent.UpdateChat { it.copy(showTimestamps = !it.showTimestamps) }) }
+                    Rule()
+                    SwitchRow(R.string.chat_opt_animated, state.chat.animatedEmotes) { onEvent(SettingsEvent.UpdateChat { it.copy(animatedEmotes = !it.animatedEmotes) }) }
+                    if (state.chat.animatedEmotes) {
+                        Rule()
+                        ValueRow(R.string.chat_opt_limit, state.chat.animatedLimit.count.toString()) { dialog = SettingsDialog.ChatLimit }
+                    }
+                }
             }
-            item { SwitchRow(R.string.chat_opt_badges, state.chat.showBadges) { onEvent(SettingsEvent.UpdateChat { it.copy(showBadges = !it.showBadges) }) } }
-            item { SwitchRow(R.string.chat_opt_time, state.chat.showTimestamps) { onEvent(SettingsEvent.UpdateChat { it.copy(showTimestamps = !it.showTimestamps) }) } }
-            item { SwitchRow(R.string.chat_opt_animated, state.chat.animatedEmotes) { onEvent(SettingsEvent.UpdateChat { it.copy(animatedEmotes = !it.animatedEmotes) }) } }
-            if (state.chat.animatedEmotes) {
-                item { ValueRow(R.string.chat_opt_limit, state.chat.animatedLimit.count.toString()) { dialog = SettingsDialog.ChatLimit } }
+            item(key = "playback") {
+                Group(R.string.phone_settings_playback) {
+                    SwitchRow(R.string.tile_stats, state.showStats) { onEvent(SettingsEvent.ToggleStats) }
+                    Rule()
+                    SwitchRow(R.string.tile_raids, state.followRaids) { onEvent(SettingsEvent.ToggleFollowRaids) }
+                }
             }
-
-            item { Header(R.string.phone_settings_playback) }
-            item { SwitchRow(R.string.tile_stats, state.showStats) { onEvent(SettingsEvent.ToggleStats) } }
-            item { SwitchRow(R.string.tile_raids, state.followRaids) { onEvent(SettingsEvent.ToggleFollowRaids) } }
-
-            item { Header(R.string.phone_settings_about) }
-            item {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.app_name)) },
-                    supportingContent = { Text(stringResource(R.string.phone_about_version, BuildConfig.VERSION_NAME)) },
-                    colors = transparentItem(),
-                )
+            item(key = "about") {
+                Group(R.string.phone_settings_about) {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.app_name)) },
+                        supportingContent = { Text(stringResource(R.string.phone_about_version, BuildConfig.VERSION_NAME)) },
+                        colors = transparentItem(),
+                    )
+                    Rule()
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.phone_about_disclaimer), style = MaterialTheme.typography.bodyMedium) },
+                        colors = transparentItem(),
+                    )
+                    Rule()
+                    ValueRow(R.string.phone_licenses, null) { dialog = SettingsDialog.Licenses }
+                }
             }
-            item {
-                Text(
-                    stringResource(R.string.phone_about_disclaimer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-            }
-            item { ValueRow(R.string.phone_licenses, null) { dialog = SettingsDialog.Licenses } }
         }
     }
 
@@ -177,12 +206,12 @@ fun SettingsRoute(
         )
 
         SettingsDialog.Language -> {
-            val current = remember { AppLocales.current(context) }
+            val current = remember { switcher?.current() }
             ChoiceDialog(
                 title = R.string.tile_language,
-                options = listOf<Pair<String?, String>>(null to stringResource(R.string.lang_system)) + AppLocales.supported.map { it to AppLocales.nativeName(it) },
+                options = languageTags(AppLocales.supported).map { tag -> tag to if (tag == null) stringResource(R.string.lang_system) else AppLocales.nativeName(tag) },
                 selected = current,
-                onSelect = { tag -> activity?.let { AppLocales.set(it, tag) } },
+                onSelect = { tag -> switcher?.let { chooseLanguage(it, tag) } },
                 onDismiss = { dialog = null },
             )
         }
@@ -238,21 +267,30 @@ fun SettingsRoute(
     }
 }
 
+/** The list of a choice dialog, for UI tests that must scroll it. */
+const val CHOICE_LIST_TAG = "settings-choice-list"
+
 /** Which settings dialog is open (saved, so a rotation keeps it). */
 private enum class SettingsDialog { SignOut, Theme, Language, ChatMode, ChatTextSize, ChatDensity, ChatBackground, ChatLimit, Licenses }
 
+/** A labelled group: a heading above a rounded surface holding its rows. */
 @Composable
-private fun Header(title: Int) {
-    Column {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+private fun Group(title: Int, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             stringResource(title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp).semantics { heading() },
+            modifier = Modifier.padding(horizontal = 16.dp).semantics { heading() },
         )
+        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+            Column(content = content)
+        }
     }
 }
+
+@Composable
+private fun Rule() = HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
 @Composable
 private fun transparentItem() = ListItemDefaults.colors(containerColor = Color.Transparent)
@@ -263,7 +301,7 @@ private fun ValueRow(title: Int, value: String?, onClick: () -> Unit) {
         headlineContent = { Text(stringResource(title)) },
         supportingContent = value?.let { { Text(it) } },
         colors = transparentItem(),
-        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
+        modifier = Modifier.clickableItem(onClick),
     )
 }
 
@@ -273,29 +311,28 @@ private fun SwitchRow(title: Int, checked: Boolean, onToggle: () -> Unit) {
         headlineContent = { Text(stringResource(title)) },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
         colors = transparentItem(),
-        modifier = Modifier.selectable(selected = checked, role = Role.Switch, onClick = onToggle),
+        modifier = Modifier.minimumInteractiveComponentSize().selectable(selected = checked, role = Role.Switch, onClick = onToggle),
     )
 }
 
-/** A radio list in a dialog: choosing applies at once and closes the dialog. */
+/** A radio list in a dialog: choosing applies at once and closes the dialog. Every row is at least 48 dp tall. */
 @Composable
 private fun <T> ChoiceDialog(title: Int, options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(title)) },
         text = {
-            androidx.compose.foundation.lazy.LazyColumn(Modifier.selectableGroup()) {
-                items(options.size) { index ->
-                    val (value, label) = options[index]
+            LazyColumn(Modifier.selectableGroup().testTag(CHOICE_LIST_TAG)) {
+                items(options) { (value, label) ->
                     Row(
-                        Modifier.fillMaxWidth().selectable(
+                        Modifier.fillMaxWidth().minimumInteractiveComponentSize().selectable(
                             selected = value == selected,
                             role = Role.RadioButton,
                             onClick = {
                                 onSelect(value)
                                 onDismiss()
                             },
-                        ).padding(vertical = 4.dp),
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = value == selected, onClick = null)
