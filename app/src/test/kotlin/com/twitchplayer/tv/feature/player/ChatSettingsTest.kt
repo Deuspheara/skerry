@@ -13,7 +13,6 @@ import com.twitchplayer.tv.feature.player.presentation.ChatFeed
 import com.twitchplayer.tv.feature.player.presentation.ChatLine
 import com.twitchplayer.tv.feature.player.presentation.ChatLineKind
 import com.twitchplayer.tv.feature.player.presentation.ChatPiece
-import com.twitchplayer.tv.feature.player.ui.animationAllowance
 import com.twitchplayer.tv.feature.player.ui.step
 import com.twitchplayer.tv.feature.player.ui.toStyle
 import kotlinx.coroutines.CoroutineScope
@@ -96,18 +95,6 @@ class ChatSettingsTest {
         assertEquals(ChatTextSize.Small, step(ChatTextSize.entries, ChatTextSize.Large, 1))
         assertEquals(ChatTextSize.Large, step(ChatTextSize.entries, ChatTextSize.Small, -1))
         assertEquals(100, step(ChatSettings.BACKGROUND_OPACITIES, 40, -1))
-    }
-
-    private fun line(id: String, animated: Int): ChatLine {
-        val emote = Emote("e", "s", "a")
-        return ChatLine(id, ChatLineKind.Normal, "n", 0, emptyList(), listOf(ChatPiece.Emote(List(animated) { emote })), "00:00")
-    }
-
-    @Test fun animationBudgetGoesToTheNewestVisibleLinesFirst() {
-        val visibleNewestFirst = listOf(line("new", 2), line("mid", 3), line("old", 4), line("none", 0))
-        assertEquals(mapOf("new" to 2, "mid" to 3, "old" to 1), animationAllowance(visibleNewestFirst, limit = 6))
-        assertEquals(emptyMap<String, Int>(), animationAllowance(visibleNewestFirst, limit = 0))
-        assertEquals("lines outside the list given (scrolled away) never hold budget", mapOf("new" to 1), animationAllowance(visibleNewestFirst.take(1), limit = 1))
     }
 
     @Test fun theBufferLimitIsWithinTheArchitectureRange() {

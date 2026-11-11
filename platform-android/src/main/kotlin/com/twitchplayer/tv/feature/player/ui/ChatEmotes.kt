@@ -32,7 +32,7 @@ private val animatedDecoder: Decoder.Factory =
  * Width / height of emote artwork learned from the first successful load. Providers such as BTTV do not publish
  * dimensions, so the first line to show an emote may letterbox it; every later line reserves the right width.
  */
-internal object EmoteAspects {
+object EmoteAspects {
     private val learned = ConcurrentHashMap<String, Float>()
     operator fun get(url: String): Float? = learned[url]
     fun learn(url: String, width: Int, height: Int) {
@@ -47,11 +47,11 @@ internal object EmoteAspects {
  * (A dedicated render node per animated layer was tried and measured: no difference in frame time, so there is none.)
  */
 @Composable
-internal fun EmoteLayer(emote: Emote, animate: Boolean, widthPx: Int, heightPx: Int, modifier: Modifier = Modifier.fillMaxSize()) {
+fun EmoteLayer(emote: Emote, animate: Boolean, widthPx: Int, heightPx: Int, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val animating = animate && emote.animatedUrl != null
     var animatedReady by remember(emote.animatedUrl, animating) { mutableStateOf(false) }
-    Box(modifier) {
+    Box(modifier.fillMaxSize()) {
         if (!(animating && animatedReady)) {
             val still = remember(emote.url, widthPx, heightPx) {
                 ImageRequest.Builder(context).data(emote.url).size(Size(widthPx, heightPx)).build()

@@ -25,17 +25,6 @@
 
     <issue
         id="ModifierParameter"
-        message="Optional Modifier parameter should have a default value of `Modifier`"
-        errorLine1="internal fun EmoteLayer(emote: Emote, animate: Boolean, widthPx: Int, heightPx: Int, modifier: Modifier = Modifier.fillMaxSize()) {"
-        errorLine2="                                                                                     ~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/twitchplayer/tv/feature/player/ui/ChatEmotes.kt"
-            line="50"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
         message="Modifier parameter should be named modifier"
         errorLine1="    micModifier: Modifier,"
         errorLine2="    ~~~~~~~~~~~">

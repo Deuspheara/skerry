@@ -39,6 +39,9 @@ dependencies {
   implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.media3.exoplayer.hls)
   implementation(libs.androidx.media3.ui)
+  // The emote image layers (still + animated decoder) shared by the TV and phone chat renderers.
+  implementation(libs.coil.compose)
+  implementation(libs.coil.gif)
   implementation(libs.koin.android)
   implementation(libs.koin.core.viewmodel)
   implementation(libs.ktor.client.okhttp)
