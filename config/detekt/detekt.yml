@@ -29,6 +29,8 @@ complexity:
   LongParameterList:
     allowedFunctionParameters: 8
     allowedConstructorParameters: 10
+    # Slot-based composables take many optional parameters on purpose; only the required ones count.
+    ignoreDefaultParameters: true
     ignoreAnnotatedParameter: ['Composable']
   CyclomaticComplexMethod:
     ignoreAnnotated: ['Composable']
@@ -47,4 +49,6 @@ Compose:
     active: true
     # The phone's reduced-motion switch (the viewer's Animations setting or the system animator scale) is read by skeletons and
     # transitions at any depth: a parameter on every composable in between would be worse than one documented local.
-    allowedCompositionLocals: LocalReducedMotion
+    # LocalPlayerHost hands the player pages the activity's Picture-in-Picture, orientation and immersive-mode controls (an interface, a
+    # no-op default for tests and previews): the alternative is threading it through every composable of the player layout.
+    allowedCompositionLocals: LocalReducedMotion, LocalPlayerHost
