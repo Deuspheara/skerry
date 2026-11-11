@@ -1,16 +1,21 @@
 package com.twitchplayer.tv.feature.vod
 
 import com.twitchplayer.tv.core.ui.parseTwitchDurationSeconds
+import com.twitchplayer.tv.feature.player.data.stream.VodAccessException
+import com.twitchplayer.tv.feature.player.data.stream.VodFailure
 import com.twitchplayer.tv.feature.vod.data.VodProgress
 import com.twitchplayer.tv.feature.vod.ui.JUMP_MS
 import com.twitchplayer.tv.feature.vod.ui.PLAYBACK_SPEEDS
+import com.twitchplayer.tv.feature.vod.ui.VodError
 import com.twitchplayer.tv.feature.vod.ui.nextSpeed
 import com.twitchplayer.tv.feature.vod.ui.seekTarget
+import com.twitchplayer.tv.feature.vod.ui.toVodError
 import com.twitchplayer.tv.feature.vod.ui.vodSeekStep
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
 
 class VodModelTest {
     @Test fun aHeldKeySeeksFurtherAtEachStageUpToFiveMinutes() {
@@ -60,5 +65,16 @@ class VodModelTest {
         assertEquals(7_200, parseTwitchDurationSeconds("2h"))
         assertEquals(0, parseTwitchDurationSeconds(""))
         assertEquals(0, parseTwitchDurationSeconds("soon"))
+    }
+
+    @Test fun errorsMapToTheScreensMessages() {
+        assertEquals(VodError.Gone, VodAccessException(VodFailure.NOT_FOUND, "gql").toVodError())
+        assertEquals(VodError.SubscribersOnly, VodAccessException(VodFailure.SUBSCRIBER_ONLY, "usher", 403).toVodError())
+        assertEquals(VodError.Refused, VodAccessException(VodFailure.TOKEN, "gql", integrity = true).toVodError())
+        assertEquals(VodError.Refused, VodAccessException(VodFailure.UNAVAILABLE, "usher", 503).toVodError())
+        assertEquals(VodError.Network, IOException("x").toVodError())
+        assertFalse(VodError.Gone.retryable)
+        assertFalse(VodError.SubscribersOnly.retryable)
+        assertTrue(VodError.Network.retryable)
     }
 }

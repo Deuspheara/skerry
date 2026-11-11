@@ -167,7 +167,7 @@ val demoModule = module {
     single<SessionRepository> { DemoSession() }
     single<TwitchRepository> { DemoRepository(androidContext()) }
     single<ClipResolver> { DemoClips() }
-    single<VodResolver> { DemoVods(androidContext(), GqlVodResolver(get())) }
+    single<VodResolver> { DemoVods(androidContext(), GqlVodResolver(get(), get())) }
     single<ChatSource> { DemoChat(androidContext()) }
     single<ChatAssetsSource> { DemoChatAssets }
     factory<VoiceRecognizer> { DemoVoice() }

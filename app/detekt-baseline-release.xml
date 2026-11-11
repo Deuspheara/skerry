@@ -17,7 +17,6 @@
     <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient$private suspend fun handleSession</ID>
     <ID>CyclomaticComplexMethod:EventSubChatClient.kt:EventSubChatClient.Companion$internal fun decodeSignal: ChatEvent?</ID>
     <ID>CyclomaticComplexMethod:Keyboard.kt:internal fun keyboardRows: List&lt;List&lt;String&gt;&gt;</ID>
-    <ID>CyclomaticComplexMethod:MasterPlaylistParser.kt:MasterPlaylistParser$fun parse: List&lt;StreamVariant&gt;</ID>
     <ID>CyclomaticComplexMethod:PlaybackStats.kt:HlsAds$fun current: AdBreak?</ID>
     <ID>DoubleMutabilityForCollection:ChatFeed.kt:ChatFeed$var known: HashSet&lt;String&gt;? = null</ID>
     <ID>ExplicitItLambdaMultipleParameters:BrowseScreen.kt:{ _, it -&gt; it.id }</ID>
@@ -77,39 +76,16 @@
     <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$200</ID>
     <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$299</ID>
     <ID>MagicNumber:EventSubChatClient.kt:EventSubChatClient$30</ID>
-    <ID>MagicNumber:GqlClipResolver.kt:GqlClipResolver$500</ID>
-    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$200</ID>
-    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$2_000</ID>
-    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$403</ID>
-    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$404</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:1000</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:200</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$200</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$299</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$2_000</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$404</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$429</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$500</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver.Companion$403</ID>
-    <ID>MagicNumber:GqlVodResolver.kt:VodAccessException$300</ID>
-    <ID>MagicNumber:MasterPlaylistParser.kt:MasterPlaylistParser$3</ID>
-    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$1080</ID>
-    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$120</ID>
-    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$49</ID>
-    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$50</ID>
-    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$720</ID>
     <ID>MagicNumber:NativeVideoPlayer.kt:NativeVideoPlayer$1000</ID>
     <ID>MagicNumber:PlaybackStats.kt:HlsAds$3</ID>
     <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$2_000L</ID>
     <ID>MagicNumber:SevenTvProvider.kt:SevenTvProvider$60_000L</ID>
-    <ID>MagicNumber:StreamModels.kt:StreamAccessException$300</ID>
     <ID>MagicNumber:StreamPreview.kt:0.95f</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$0.20</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$1024</ID>
     <ID>MagicNumber:TwitchPlayerApp.kt:TwitchPlayerApp$64L</ID>
     <ID>MatchingDeclarationName:FocusRing.kt:FocusProgress</ID>
     <ID>MatchingDeclarationName:PlayerControlBar.kt:PlayerControl</ID>
-    <ID>MatchingDeclarationName:Retry.kt:RetryPolicy</ID>
     <ID>MatchingDeclarationName:Stagger.kt:StaggerGate</ID>
     <ID>MatchingDeclarationName:TvToast.kt:ToastState</ID>
     <ID>MatchingDeclarationName:TwitchEmbedPlayer.kt:WebViewVideoPlayer : VideoPlayer</ID>
@@ -159,19 +135,13 @@
     <ID>StateParam:ChatLineView.kt:animated: State&lt;Int&gt;</ID>
     <ID>SwallowedException:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
     <ID>SwallowedException:ClipScreen.kt:e: Exception</ID>
-    <ID>SwallowedException:GqlVodResolver.kt:GqlVodResolver$e: StreamAccessException</ID>
     <ID>SwallowedException:Load.kt:Loader$e: Exception</ID>
     <ID>SwallowedException:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
-    <ID>ThrowsCount:GqlPlaybackResolver.kt:GqlPlaybackResolver$private suspend fun accessToken: PlaybackToken</ID>
-    <ID>ThrowsCount:GqlVodResolver.kt:GqlVodResolver$private suspend fun fetchMaster: Answer</ID>
-    <ID>ThrowsCount:GqlVodResolver.kt:internal fun parseVodAccess: GqlVodResolver.VodAccess?</ID>
-    <ID>ThrowsCount:Retry.kt:RetryPolicy$suspend fun &lt;T&gt; run: T</ID>
     <ID>TooGenericExceptionCaught:ChannelViewModel.kt:ChannelViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ClipScreen.kt:e: Exception</ID>
     <ID>TooGenericExceptionCaught:EventSubChatClient.kt:EventSubChatClient$error: Throwable</ID>
     <ID>TooGenericExceptionCaught:Load.kt:Loader$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NativeVideoPlayer.kt:NativeVideoPlayer$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:Retry.kt:RetryPolicy$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SearchViewModel.kt:SearchViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StreamPreview.kt:StreamPreview$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerFormatters.kt:e: Throwable</ID>
@@ -180,12 +150,7 @@
     <ID>UnnecessaryLaunchedEffect:PlayerScreen.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:TwitchTvApp.kt:LaunchedEffect</ID>
     <ID>UnnecessaryLaunchedEffect:VodScreen.kt:LaunchedEffect</ID>
-    <ID>UnreachableCode:GqlPlaybackResolver.kt:GqlPlaybackResolver$parsed.errors?.firstOrNull()?.let { error -&gt; val integrity = error.message.contains("integrity", ignoreCase = true) throw refusal("gql", response.status.value, text, integrity = integrity) }</ID>
-    <ID>UnreachableCode:GqlPlaybackResolver.kt:GqlPlaybackResolver$return PlaybackToken(token.value, token.signature)</ID>
-    <ID>UnreachableCode:GqlPlaybackResolver.kt:GqlPlaybackResolver$val parsed = runCatching { lenient.decodeFromString(GqlResponse.serializer(), text) } .getOrElse { throw refusal("gql", response.status.value, text) }</ID>
-    <ID>UnreachableCode:GqlPlaybackResolver.kt:GqlPlaybackResolver$val token = parsed.data?.streamPlaybackAccessToken ?: throw refusal("gql", response.status.value, text)</ID>
     <ID>UnsafeCallOnNullableType:ChatLineView.kt:rule!!</ID>
-    <ID>UnsafeCallOnNullableType:Retry.kt:RetryPolicy$last!!</ID>
     <ID>UnusedParameter:Avatar.kt:border: androidx.compose.ui.graphics.Color? = null</ID>
     <ID>UnusedParameter:DebugModules.kt:DebugModules$context: Context</ID>
     <ID>UnusedPrivateProperty:Load.kt:Loader$private val block: suspend () -&gt; T</ID>

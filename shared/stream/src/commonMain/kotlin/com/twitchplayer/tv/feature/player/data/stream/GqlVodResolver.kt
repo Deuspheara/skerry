@@ -1,7 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import android.util.Log
-import androidx.compose.runtime.Immutable
+import com.twitchplayer.tv.core.platform.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -13,7 +12,6 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.util.UUID
 import kotlin.random.Random
 
 /**
@@ -21,7 +19,6 @@ import kotlin.random.Random
  * renditions best first. [durationMs] is 0 when Twitch did not say; [recording] is true while the broadcast is still being
  * recorded (the playlist then has no end tag and grows).
  */
-@Immutable
 data class ResolvedVod(
     val vodId: String,
     val masterUrl: String,
@@ -32,7 +29,7 @@ data class ResolvedVod(
 
 fun interface VodResolver {
     /**
-     * Throws [VodAccessException] when the replay is gone, restricted or Twitch refuses, and `java.io.IOException` once the
+     * Throws [VodAccessException] when the replay is gone, restricted or Twitch refuses, and `IOException` once the
      * network stayed down through all retries.
      */
     suspend fun resolve(vodId: String): ResolvedVod
@@ -65,13 +62,13 @@ class VodAccessException(
  */
 class GqlVodResolver(
     private val http: HttpClient,
+    private val logger: Logger,
     private val clientId: String = GqlPlaybackResolver.WEB_CLIENT_ID,
     private val gqlUrl: String = GqlPlaybackResolver.GQL_URL,
     private val usherUrl: String = USHER_URL,
     private val retry: RetryPolicy = RetryPolicy(),
-    private val deviceId: String = UUID.randomUUID().toString().replace("-", ""),
+    private val deviceId: String = newDeviceId(),
     private val random: Random = Random.Default,
-    private val log: (String) -> Unit = { Log.w(TAG, it) },
 ) : VodResolver {
 
     override suspend fun resolve(vodId: String): ResolvedVod {
@@ -103,7 +100,7 @@ class GqlVodResolver(
             "p" to random.nextInt(1_000_000, 10_000_000).toString(),
         )
         val base = if (v2) "$usherUrl/v2/$vodId.m3u8" else "$usherUrl/$vodId.m3u8"
-        return base + "?" + query.entries.joinToString("&") { (k, v) -> "$k=${java.net.URLEncoder.encode(v, "UTF-8")}" }
+        return base + "?" + query.entries.joinToString("&") { (k, v) -> "$k=${formUrlEncode(v)}" }
     }
 
     private suspend fun accessToken(vodId: String): VodAccess {
@@ -116,7 +113,7 @@ class GqlVodResolver(
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) {
             throw if (response.status.value >= 500 || response.status.value == 429) {
-                log("vod gql refused: HTTP ${response.status.value} ${text.take(500)}")
+                logger.warn(TAG, "vod gql refused: HTTP ${response.status.value} ${text.take(500)}")
                 StreamAccessException("gql", response.status.value, text, retryable = true)
             } else {
                 refusal(VodFailure.TOKEN, "gql", response.status.value, text)
@@ -147,7 +144,7 @@ class GqlVodResolver(
 
     private fun refusal(failure: VodFailure, stage: String, status: Int, body: String, integrity: Boolean = false): VodAccessException {
         // warn survives R8's log stripping: the exact answer is what is needed to diagnose a refusal.
-        log("vod $stage refused: $failure HTTP $status integrity=$integrity body=${body.take(2_000)}")
+        logger.warn(TAG, "vod $stage refused: $failure HTTP $status integrity=$integrity body=${body.take(2_000)}")
         return VodAccessException(failure, stage, status, body, integrity)
     }
 

@@ -1,9 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import androidx.compose.runtime.Immutable
-
 /** One rendition of a live stream, read from the master playlist. [id] is Twitch's group id ("chunked" = source, "720p60", "audio_only"). */
-@Immutable
 data class StreamVariant(
     val id: String,
     /** Twitch's own label, e.g. "1080p60 (source)". */
@@ -29,7 +26,6 @@ data class StreamVariant(
  * What the player needs to start a channel. [masterUrl] is the adaptive playlist (usher, token embedded); [variants] are
  * its renditions, best first, audio only last.
  */
-@Immutable
 data class ResolvedStream(
     val channel: String,
     val masterUrl: String,

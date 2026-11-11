@@ -1,8 +1,8 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ClipSourcesTest {
     // Shape of a real answer from gql.twitch.tv (checked 2026-11-07), shortened.
@@ -14,9 +14,9 @@ class ClipSourcesTest {
         val sources = parseClipSources(answer)
         assertEquals(listOf(1080, 480), sources.map { it.height })
         val url = sources.first().url
-        assertTrue(url, url.startsWith("https://cdn.example/1080/index.mp4?sig=abc123&token="))
+        assertTrue(url.startsWith("https://cdn.example/1080/index.mp4?sig=abc123&token="), url)
         // The token is JSON: it must be URL-encoded in the query.
-        assertTrue(url, url.endsWith("%7B%22clip_uri%22%3A%22x%22%7D"))
+        assertTrue(url.endsWith("%7B%22clip_uri%22%3A%22x%22%7D"), url)
     }
 
     @Test fun missingClipOrTokenGivesNothing() {

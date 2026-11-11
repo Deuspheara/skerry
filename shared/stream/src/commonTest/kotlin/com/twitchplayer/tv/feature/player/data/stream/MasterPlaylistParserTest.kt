@@ -1,9 +1,9 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class MasterPlaylistParserTest {
     // Shape of a real usher answer (urls shortened).

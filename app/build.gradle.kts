@@ -91,6 +91,7 @@ dependencies {
   androidTestImplementation(composeBom)
 
   implementation(project(":shared:core"))
+  implementation(project(":shared:stream"))
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.profileinstaller)

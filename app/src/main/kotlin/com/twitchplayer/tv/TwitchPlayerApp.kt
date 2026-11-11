@@ -13,6 +13,7 @@ import com.twitchplayer.tv.core.di.DebugModules
 import com.twitchplayer.tv.core.di.coreModule
 import com.twitchplayer.tv.core.di.sharedCoreModule
 import com.twitchplayer.tv.core.di.viewModelModule
+import com.twitchplayer.tv.feature.player.data.stream.sharedStreamModule
 import okio.Path.Companion.toOkioPath
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
@@ -25,7 +26,7 @@ class TwitchPlayerApp :
         super.onCreate()
         startKoin {
             androidContext(this@TwitchPlayerApp)
-            modules(listOf(sharedCoreModule(), coreModule, viewModelModule) + DebugModules.overrides(this@TwitchPlayerApp))
+            modules(listOf(sharedCoreModule(), sharedStreamModule(), coreModule, viewModelModule) + DebugModules.overrides(this@TwitchPlayerApp))
         }
         get<SessionRepository>().start()
     }

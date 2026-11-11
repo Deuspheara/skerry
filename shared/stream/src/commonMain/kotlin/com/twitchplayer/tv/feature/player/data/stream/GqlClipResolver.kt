@@ -1,6 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import android.util.Log
+import com.twitchplayer.tv.core.platform.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -28,6 +28,7 @@ fun interface ClipResolver {
  */
 class GqlClipResolver(
     private val http: HttpClient,
+    private val logger: Logger,
     private val clientId: String = GqlPlaybackResolver.WEB_CLIENT_ID,
     private val gqlUrl: String = GqlPlaybackResolver.GQL_URL,
 ) : ClipResolver {
@@ -40,11 +41,11 @@ class GqlClipResolver(
         }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) {
-            Log.w(TAG, "clip $slug refused: HTTP ${response.status.value} ${text.take(500)}")
+            logger.warn(TAG, "clip $slug refused: HTTP ${response.status.value} ${text.take(500)}")
             throw StreamAccessException("gql", response.status.value, text)
         }
         return parseClipSources(text).ifEmpty {
-            Log.w(TAG, "clip $slug: no playable file in ${text.take(500)}")
+            logger.warn(TAG, "clip $slug: no playable file in ${text.take(500)}")
             throw StreamAccessException("gql", response.status.value, text)
         }
     }
@@ -81,4 +82,4 @@ internal fun parseClipSources(json: String): List<ClipSource> {
         .sortedByDescending { it.height }
 }
 
-internal fun signedClipUrl(source: String, token: String, signature: String): String = source + (if ('?' in source) '&' else '?') + "sig=" + signature + "&token=" + java.net.URLEncoder.encode(token, "UTF-8")
+internal fun signedClipUrl(source: String, token: String, signature: String): String = source + (if ('?' in source) '&' else '?') + "sig=" + signature + "&token=" + formUrlEncode(token)

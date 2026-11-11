@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
+import com.twitchplayer.tv.core.platform.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -10,14 +11,14 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
-import org.junit.Test
-import java.io.IOException
+import kotlinx.io.IOException
 import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class GqlPlaybackResolverTest {
     private val token = """{"data":{"streamPlaybackAccessToken":{"value":"{\"channel\":\"zerator\"}","signature":"deadbeef"}}}"""
@@ -30,7 +31,7 @@ class GqlPlaybackResolverTest {
     private val json = headersOf(HttpHeaders.ContentType, "application/json")
     private val noSleep = RetryPolicy(attempts = 3, sleep = {})
 
-    private fun resolver(handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.request.HttpResponseData) = GqlPlaybackResolver(HttpClient(MockEngine { handler(it) }), retry = noSleep, deviceId = "dev", random = Random(1), log = {})
+    private fun resolver(handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.request.HttpResponseData) = GqlPlaybackResolver(HttpClient(MockEngine { handler(it) }), Logger { _, _ -> }, retry = noSleep, deviceId = "dev", random = Random(1))
 
     @Test fun resolvesTokenThenMasterPlaylistWithTheDocumentedUsherParameters() = runTest {
         val seen = mutableListOf<io.ktor.client.request.HttpRequestData>()
@@ -38,7 +39,7 @@ class GqlPlaybackResolverTest {
         val r = resolver { request ->
             seen += request
             if (request.method == HttpMethod.Post) {
-                gqlBody = String(request.body.toByteArray())
+                gqlBody = request.body.toByteArray().decodeToString()
                 respond(token, HttpStatusCode.OK, json)
             } else {
                 respond(playlist, HttpStatusCode.OK)
@@ -52,7 +53,7 @@ class GqlPlaybackResolverTest {
         assertEquals("https://gql.twitch.tv/gql", post.url.toString())
         assertEquals("kimne78kx3ncx6brgo4mv6wki5h1ko", post.headers["Client-Id"])
         assertTrue(gqlBody.contains("streamPlaybackAccessToken(channelName: \$login"))
-        assertFalse("raw query, not a persisted-query hash", gqlBody.contains("persistedQuery"))
+        assertFalse(gqlBody.contains("persistedQuery"), "raw query, not a persisted-query hash")
         assertTrue(gqlBody.contains("\"login\":\"zerator\""))
 
         val usher = seen[1].url
@@ -79,7 +80,7 @@ class GqlPlaybackResolverTest {
                 respond("""[{"error":"Not Found","status":404,"message":"The requested channel is offline"}]""", HttpStatusCode.NotFound)
             }
         }
-        assertThrows(ChannelOfflineException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("quiet") } }
+        assertFailsWith<ChannelOfflineException> { r.resolve("quiet") }
         assertEquals(1, usherCalls)
     }
 
@@ -90,12 +91,12 @@ class GqlPlaybackResolverTest {
             calls++
             respond(body, HttpStatusCode.OK, json)
         }
-        val e = assertThrows(StreamAccessException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("zerator") } }
+        val e = assertFailsWith<StreamAccessException> { r.resolve("zerator") }
         assertTrue(e.integrity)
         assertEquals(200, e.status)
         assertEquals(body, e.body)
         assertEquals("gql", e.stage)
-        assertEquals("a refusal is not retried", 1, calls)
+        assertEquals(1, calls, "a refusal is not retried")
     }
 
     @Test fun serverErrorsAreRetriedThenSucceed() = runTest {
@@ -118,7 +119,7 @@ class GqlPlaybackResolverTest {
             calls++
             throw IOException("no route")
         }
-        assertThrows(IOException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("zerator") } }
+        assertFailsWith<IOException> { r.resolve("zerator") }
         assertEquals(3, calls)
     }
 
@@ -128,7 +129,7 @@ class GqlPlaybackResolverTest {
             calls++
             respond("""{"error":"Unauthorized"}""", HttpStatusCode.Unauthorized)
         }
-        val e = assertThrows(StreamAccessException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("zerator") } }
+        val e = assertFailsWith<StreamAccessException> { r.resolve("zerator") }
         assertEquals(401, e.status)
         assertFalse(e.integrity)
         assertEquals(1, calls)
@@ -136,6 +137,6 @@ class GqlPlaybackResolverTest {
 
     @Test fun rejectsAnInvalidLogin() = runTest {
         val r = resolver { respond("", HttpStatusCode.OK) }
-        assertThrows(IllegalArgumentException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("a/b?x") } }
+        assertFailsWith<IllegalArgumentException> { r.resolve("a/b?x") }
     }
 }

@@ -2,7 +2,7 @@ package com.twitchplayer.tv.feature.player.data.stream
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import java.io.IOException
+import kotlinx.io.IOException
 
 /** Exponential backoff for transient failures only: network errors and 5xx / 429 answers. Everything else surfaces at once. */
 class RetryPolicy(

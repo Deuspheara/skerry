@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:MasterPlaylistParser.kt:MasterPlaylistParser$fun parse: List&lt;StreamVariant&gt;</ID>
+    <ID>MagicNumber:GqlClipResolver.kt:GqlClipResolver$500</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$200</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$2_000</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$403</ID>
+    <ID>MagicNumber:GqlPlaybackResolver.kt:GqlPlaybackResolver$404</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:1000</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:200</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$200</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$299</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$2_000</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$404</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$429</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver$500</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:GqlVodResolver.Companion$403</ID>
+    <ID>MagicNumber:GqlVodResolver.kt:VodAccessException$300</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:MasterPlaylistParser$3</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$1080</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$120</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$49</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$50</ID>
+    <ID>MagicNumber:MasterPlaylistParser.kt:QualityPolicy$720</ID>
+    <ID>MagicNumber:StreamModels.kt:StreamAccessException$300</ID>
+    <ID>MatchingDeclarationName:Retry.kt:RetryPolicy</ID>
+    <ID>SwallowedException:GqlVodResolver.kt:GqlVodResolver$e: StreamAccessException</ID>
+    <ID>ThrowsCount:GqlPlaybackResolver.kt:GqlPlaybackResolver$private suspend fun accessToken: PlaybackToken</ID>
+    <ID>ThrowsCount:GqlVodResolver.kt:GqlVodResolver$private suspend fun fetchMaster: Answer</ID>
+    <ID>ThrowsCount:GqlVodResolver.kt:internal fun parseVodAccess: GqlVodResolver.VodAccess?</ID>
+    <ID>ThrowsCount:Retry.kt:RetryPolicy$suspend fun &lt;T&gt; run: T</ID>
+    <ID>TooGenericExceptionCaught:Retry.kt:RetryPolicy$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

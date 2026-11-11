@@ -6,7 +6,7 @@ package com.twitchplayer.tv.feature.player.data.stream
  * behind this interface without touching the player.
  *
  * Throws [ChannelOfflineException] when the channel is not live, [StreamAccessException] when Twitch refuses, and
- * `java.io.IOException` once the network stayed down through all retries.
+ * `IOException` once the network stayed down through all retries.
  */
 interface TwitchPlaybackResolver {
     suspend fun resolve(channel: String): ResolvedStream

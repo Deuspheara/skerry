@@ -1,7 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import com.twitchplayer.tv.feature.vod.ui.VodError
-import com.twitchplayer.tv.feature.vod.ui.toVodError
+import com.twitchplayer.tv.core.platform.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -14,26 +13,26 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
-import org.junit.Test
-import java.io.IOException
+import kotlinx.io.IOException
 import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
-/** Answers recorded from gql.twitch.tv and usher.ttvnw.net on 2026-11-08 (src/test/resources/vod). */
+/** Answers recorded from gql.twitch.tv and usher.ttvnw.net on 2026-11-08 (src/jvmTest/resources/vod). JVM-only: it reads the fixtures as class-path resources. */
 class GqlVodResolverTest {
     private fun fixture(name: String) = checkNotNull(javaClass.classLoader!!.getResource("vod/$name")) { name }.readText()
 
     private val json = headersOf(HttpHeaders.ContentType, "application/json")
     private val noSleep = RetryPolicy(attempts = 3, sleep = {})
 
-    private fun resolver(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) = GqlVodResolver(HttpClient(MockEngine { handler(it) }), retry = noSleep, deviceId = "dev", random = Random(1), log = {})
+    private fun resolver(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) = GqlVodResolver(HttpClient(MockEngine { handler(it) }), Logger { _, _ -> }, retry = noSleep, deviceId = "dev", random = Random(1))
 
-    private fun failure(r: GqlVodResolver, id: String = "2922475029") = assertThrows(VodAccessException::class.java) { kotlinx.coroutines.runBlocking { r.resolve(id) } }
+    private suspend fun failure(r: GqlVodResolver, id: String = "2922475029") = assertFailsWith<VodAccessException> { r.resolve(id) }
 
     @Test fun resolvesTokenThenMasterPlaylistWithTheDocumentedUsherParameters() = runTest {
         val seen = mutableListOf<HttpRequestData>()
@@ -41,7 +40,7 @@ class GqlVodResolverTest {
         val vod = resolver { request ->
             seen += request
             if (request.method == HttpMethod.Post) {
-                gqlBody = String(request.body.toByteArray())
+                gqlBody = request.body.toByteArray().decodeToString()
                 respond(fixture("gql_access_public.json"), HttpStatusCode.OK, json)
             } else {
                 respond(fixture("usher_master_public.m3u8"), HttpStatusCode.OK)
@@ -61,7 +60,7 @@ class GqlVodResolverTest {
         assertEquals("kimne78kx3ncx6brgo4mv6wki5h1ko", post.headers["Client-Id"])
         assertTrue(gqlBody.contains("videoPlaybackAccessToken(id: \$id"))
         assertTrue(gqlBody.contains("playerBackend: \\\"mediaplayer\\\""))
-        assertFalse("raw query, not a persisted-query hash", gqlBody.contains("persistedQuery"))
+        assertFalse(gqlBody.contains("persistedQuery"), "raw query, not a persisted-query hash")
         assertTrue(gqlBody.contains("\"id\":\"2922475029\""))
 
         val usher = seen[1].url
@@ -69,7 +68,7 @@ class GqlVodResolverTest {
         assertEquals("/vod/2922475029.m3u8", usher.encodedPath)
         val p = usher.parameters
         assertTrue(p["sig"]!!.isNotEmpty())
-        assertTrue("the token is JSON: it must survive URL encoding", p["token"]!!.startsWith("{\"authorization\""))
+        assertTrue(p["token"]!!.startsWith("{\"authorization\""), "the token is JSON: it must survive URL encoding")
         assertEquals("true", p["allow_source"])
         assertEquals("mediaplayer", p["player_backend"])
         assertEquals("true", p["playlist_include_framerate"])
@@ -103,7 +102,7 @@ class GqlVodResolverTest {
             }
         }
         assertEquals(VodFailure.NOT_FOUND, failure(r, "1").failure)
-        assertEquals("no playlist is asked for once the token is missing", 0, usherCalls)
+        assertEquals(0, usherCalls, "no playlist is asked for once the token is missing")
     }
 
     @Test fun aSubscriberOnlyReplayIsReportedFromUsher403() = runTest {
@@ -119,7 +118,7 @@ class GqlVodResolverTest {
         val e = failure(r, "2922969951")
         assertEquals(VodFailure.SUBSCRIBER_ONLY, e.failure)
         assertEquals(403, e.status)
-        assertEquals("a restricted manifest is final: no v2 fallback, no retry", 1, usherCalls)
+        assertEquals(1, usherCalls, "a restricted manifest is final: no v2 fallback, no retry")
     }
 
     @Test fun aTokenThatSaysForbiddenIsSubscriberOnly() = runTest {
@@ -183,7 +182,7 @@ class GqlVodResolverTest {
             calls++
             throw IOException("offline")
         }
-        assertThrows(IOException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("2922475029") } }
+        assertFailsWith<IOException> { r.resolve("2922475029") }
         assertEquals(3, calls)
     }
 
@@ -192,19 +191,8 @@ class GqlVodResolverTest {
         assertEquals(VodFailure.UNAVAILABLE, failure(r).failure)
     }
 
-    @Test fun anInvalidIdNeverReachesTheNetwork() {
+    @Test fun anInvalidIdNeverReachesTheNetwork() = runTest {
         val r = resolver { error("no request expected") }
-        assertThrows(IllegalArgumentException::class.java) { kotlinx.coroutines.runBlocking { r.resolve("../x") } }
-    }
-
-    @Test fun errorsMapToTheScreensMessages() {
-        assertEquals(VodError.Gone, VodAccessException(VodFailure.NOT_FOUND, "gql").toVodError())
-        assertEquals(VodError.SubscribersOnly, VodAccessException(VodFailure.SUBSCRIBER_ONLY, "usher", 403).toVodError())
-        assertEquals(VodError.Refused, VodAccessException(VodFailure.TOKEN, "gql", integrity = true).toVodError())
-        assertEquals(VodError.Refused, VodAccessException(VodFailure.UNAVAILABLE, "usher", 503).toVodError())
-        assertEquals(VodError.Network, IOException("x").toVodError())
-        assertFalse(VodError.Gone.retryable)
-        assertFalse(VodError.SubscribersOnly.retryable)
-        assertTrue(VodError.Network.retryable)
+        assertFailsWith<IllegalArgumentException> { r.resolve("../x") }
     }
 }

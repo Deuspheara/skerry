@@ -1,6 +1,6 @@
 package com.twitchplayer.tv.feature.player.data.stream
 
-import android.util.Log
+import com.twitchplayer.tv.core.platform.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -13,7 +13,6 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.util.UUID
 import kotlin.random.Random
 
 /**
@@ -28,14 +27,13 @@ import kotlin.random.Random
  */
 class GqlPlaybackResolver(
     private val http: HttpClient,
+    private val logger: Logger,
     private val clientId: String = WEB_CLIENT_ID,
     private val gqlUrl: String = GQL_URL,
     private val usherUrl: String = USHER_URL,
     private val retry: RetryPolicy = RetryPolicy(),
-    private val deviceId: String = UUID.randomUUID().toString().replace("-", ""),
+    private val deviceId: String = newDeviceId(),
     private val random: Random = Random.Default,
-    /** Warnings and offline notices; Logcat by default (warn level survives R8's log stripping). */
-    private val log: (String) -> Unit = { Log.w(TAG, it) },
 ) : TwitchPlaybackResolver {
 
     override suspend fun resolve(channel: String): ResolvedStream {
@@ -60,7 +58,7 @@ class GqlPlaybackResolver(
             "supported_codecs" to "avc1",
             "p" to random.nextInt(1_000_000, 10_000_000).toString(),
         )
-        return "$usherUrl/$login.m3u8?" + query.entries.joinToString("&") { (k, v) -> "$k=${java.net.URLEncoder.encode(v, "UTF-8")}" }
+        return "$usherUrl/$login.m3u8?" + query.entries.joinToString("&") { (k, v) -> "$k=${formUrlEncode(v)}" }
     }
 
     private suspend fun accessToken(login: String): PlaybackToken {
@@ -86,7 +84,7 @@ class GqlPlaybackResolver(
         val response = http.get(url) { header("Client-Id", clientId) }
         val text = response.bodyAsText()
         if (response.status.value == 404 || (response.status.value == 403 && text.contains("transcode_does_not_exist"))) {
-            log("usher: $login offline (HTTP ${response.status.value})")
+            logger.warn(TAG, "usher: $login offline (HTTP ${response.status.value})")
             throw ChannelOfflineException(login)
         }
         if (!response.status.isSuccess()) {
@@ -96,8 +94,8 @@ class GqlPlaybackResolver(
     }
 
     private fun refusal(stage: String, status: Int, body: String, integrity: Boolean = false, retryable: Boolean = false): StreamAccessException {
-        // warn/error survive R8's log stripping: the exact answer is what is needed to diagnose a refused token.
-        log("$stage refused: HTTP $status integrity=$integrity body=${body.take(2_000)}")
+        // Warnings are logged on purpose: the exact answer is what is needed to diagnose a refused token.
+        logger.warn(TAG, "$stage refused: HTTP $status integrity=$integrity body=${body.take(2_000)}")
         return StreamAccessException(stage, status, body, integrity, retryable)
     }
 
