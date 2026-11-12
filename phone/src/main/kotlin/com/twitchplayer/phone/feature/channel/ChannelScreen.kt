@@ -36,8 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +61,7 @@ import com.twitchplayer.phone.feature.auth.isTwitchUrl
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.components.Avatar
 import com.twitchplayer.phone.ui.components.AvatarLarge
+import com.twitchplayer.phone.ui.components.DetailHeader
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.phone.ui.components.RefreshBox
@@ -101,23 +100,12 @@ fun ChannelRoute(
     viewModel: ChannelViewModel = koinViewModel(key = "channel-$login") { parametersOf(login) },
 ) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                // The header names the channel: a second copy in the bar would only repeat it.
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back)) }
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
+            // The header below names the channel: a second copy in the bar would only repeat it.
+            DetailHeader(onBack = onBack)
         },
     ) { padding ->
         // On wide windows the page is a centred column, not a stretched list with a void beside it.

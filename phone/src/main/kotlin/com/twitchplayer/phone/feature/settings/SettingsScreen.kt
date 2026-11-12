@@ -28,7 +28,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -50,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.BuildConfig
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.ui.components.TitleHeader
 import com.twitchplayer.phone.ui.components.clickableItem
 import com.twitchplayer.phone.ui.theme.ThemeMode
 import com.twitchplayer.phone.ui.theme.ThemePreference
@@ -86,14 +86,7 @@ fun SettingsRoute(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.phone_nav_settings)) },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
+            TitleHeader(stringResource(R.string.phone_nav_settings), scrollBehavior)
         },
     ) { padding ->
         LazyColumn(

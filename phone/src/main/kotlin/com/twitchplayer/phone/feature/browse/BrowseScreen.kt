@@ -17,18 +17,22 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.ui.components.CategoryCard
 import com.twitchplayer.phone.ui.components.GridSpacing
+import com.twitchplayer.phone.ui.components.HeaderActions
+import com.twitchplayer.phone.ui.components.HomeHeader
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.POSTER_RATIO
@@ -46,21 +50,20 @@ import org.koin.compose.viewmodel.koinViewModel
 /** Browse: top categories as a poster wall, with the group filter and the sort order the TV has. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrowseRoute(onCategory: (Category) -> Unit, onSignIn: () -> Unit, modifier: Modifier = Modifier, viewModel: BrowseViewModel = koinViewModel()) {
+fun BrowseRoute(
+    onCategory: (Category) -> Unit,
+    onSignIn: () -> Unit,
+    header: HeaderActions,
+    modifier: Modifier = Modifier,
+    viewModel: BrowseViewModel = koinViewModel(),
+) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.nav_browse)) },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
+            HomeHeader(header, scrollBehavior)
         },
     ) { padding ->
         LoadHost(
@@ -78,6 +81,14 @@ fun BrowseRoute(onCategory: (Category) -> Unit, onSignIn: () -> Unit, modifier: 
                     verticalArrangement = GridSpacing,
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    item(key = "title", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+                        Text(
+                            stringResource(R.string.nav_browse),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                    }
                     // The chips scroll away with the wall.
                     item(key = "filters", span = { GridItemSpan(maxLineSpan) }) {
                         FilterRow(

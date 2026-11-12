@@ -19,7 +19,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +34,8 @@ import com.twitchplayer.phone.R
 import com.twitchplayer.phone.ui.components.CategoryCard
 import com.twitchplayer.phone.ui.components.ChannelListItem
 import com.twitchplayer.phone.ui.components.GridSpacing
+import com.twitchplayer.phone.ui.components.HeaderActions
+import com.twitchplayer.phone.ui.components.HomeHeader
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.RefreshBox
@@ -62,6 +63,7 @@ fun HomeRoute(
     onChannel: (String) -> Unit,
     onCategory: (Category) -> Unit,
     onSignIn: () -> Unit,
+    header: HeaderActions,
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = koinViewModel(),
     followsViewModel: FollowsViewModel = koinViewModel(),
@@ -77,12 +79,7 @@ fun HomeRoute(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Column {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.app_name)) },
-                    expandedHeight = TOP_BAR_HEIGHT,
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, scrolledContainerColor = MaterialTheme.colorScheme.background),
-                )
+                HomeHeader(header, scrollBehavior)
                 SecondaryTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.sec_for_you)) })
                     Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.sec_following)) })
@@ -204,6 +201,3 @@ private val CATEGORY_CARD_WIDTH = 120.dp
 
 /** Dividers start under the text, past the avatar. */
 internal val CHANNEL_DIVIDER_INSET = 72.dp
-
-/** A little shorter than the Material default (64 dp): the title and the tabs under it read as one header. */
-private val TOP_BAR_HEIGHT = 52.dp

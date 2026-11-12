@@ -69,6 +69,7 @@ import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
 import com.twitchplayer.phone.navigation.phoneTransition
 import com.twitchplayer.phone.navigation.rememberScreenFill
+import com.twitchplayer.phone.ui.components.HeaderActions
 import com.twitchplayer.phone.ui.components.PhoneBottomBar
 import com.twitchplayer.phone.ui.components.PhoneRail
 import com.twitchplayer.phone.ui.components.isWideWindow
@@ -115,6 +116,7 @@ fun PhoneRoot(
             PhoneScaffold(
                 reducedMotion = reducedMotion,
                 snackbar = snackbar,
+                account = settings.account,
                 onSignIn = { authViewModel.presenter.onEvent(AuthEvent.SignIn) },
                 onSignOut = { authViewModel.presenter.onEvent(AuthEvent.SignOut) },
             )
@@ -127,6 +129,7 @@ fun PhoneRoot(
 private fun PhoneScaffold(
     reducedMotion: Boolean,
     snackbar: SnackbarHostState,
+    account: String?,
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
 ) {
@@ -136,6 +139,9 @@ private fun PhoneScaffold(
         PhoneNavigator(stacks, PhoneTab.valueOf(selectedName)) { selectedName = it.name }
     }
     val player = remember(navigator) { PlayerLauncher { target -> navigator.push(target.toKey()) } }
+    val header = remember(navigator, account) {
+        HeaderActions(account, onSearch = { navigator.selectTab(PhoneTab.Search) }, onProfile = { navigator.selectTab(PhoneTab.Settings) })
+    }
     val wide = isWideWindow()
     val chromeVisible = navigator.showsNavigation
     val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
@@ -170,10 +176,11 @@ private fun PhoneScaffold(
                                     onChannel = { login -> navigator.push(ChannelKey(login)) },
                                     onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
                                     onSignIn = onSignIn,
+                                    header = header,
                                 )
                             }
                             entry<BrowseKey>(metadata = tab) {
-                                BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn)
+                                BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = header)
                             }
                             entry<SearchKey>(metadata = tab) {
                                 SearchRoute(

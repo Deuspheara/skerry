@@ -28,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
@@ -44,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.home.CardSkeletonGrid
 import com.twitchplayer.phone.navigation.CategoryKey
+import com.twitchplayer.phone.ui.components.DetailHeader
 import com.twitchplayer.phone.ui.components.GridSpacing
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
@@ -79,11 +79,10 @@ fun CategoryRoute(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(key.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back)) }
-                },
+            DetailHeader(
+                onBack = onBack,
+                title = key.name,
+                behavior = scrollBehavior,
                 actions = {
                     if (state.load is Load.Ready) {
                         val label = stringResource(R.string.favorite)
@@ -107,11 +106,6 @@ fun CategoryRoute(
                         }
                     }
                 },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background,
-                ),
             )
         },
     ) { padding ->
