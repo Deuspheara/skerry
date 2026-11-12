@@ -41,6 +41,18 @@ class PhoneNavigator(
         if (top != key) currentStack.add(key)
     }
 
+    /**
+     * Opens a page that belongs to browsing (a channel opened from the player) on the tab the viewer is in, except Settings, which is not a
+     * place to browse from: that one goes to Home. Never stacks a page that is already on top.
+     */
+    fun pushOnContentTab(key: NavKey) {
+        if (selected == PhoneTab.Settings) {
+            selected = PhoneTab.Home
+            onSelectedChanged(PhoneTab.Home)
+        }
+        push(key)
+    }
+
     fun pop() {
         val stack = currentStack
         if (stack.size > 1) stack.removeAt(stack.lastIndex)

@@ -201,12 +201,13 @@ fun PlayerScaffold(
     val background = MaterialTheme.colorScheme.background
     val stripBackground = MaterialTheme.colorScheme.surfaceContainerHigh
     val density = LocalDensity.current
+    val stripHeight = rememberStripHeight()
     PlayerSheetLayout(
         mode = mode,
         progress = progress,
         statusBarPx = WindowInsets.statusBars.getTop(density),
-        stripHeightPx = with(density) { SheetGeometry.STRIP_HEIGHT.roundToPx() },
-        stripPictureWidthPx = with(density) { SheetGeometry.STRIP_PICTURE_WIDTH.roundToPx() },
+        stripHeightPx = with(density) { stripHeight.roundToPx() },
+        stripPictureWidthPx = with(density) { SheetGeometry.stripPictureWidth(stripHeight).roundToPx() },
         modifier = modifier.fillMaxSize().drawBehind {
             drawRect(if (mode == SheetMode.Portrait) lerp(background, stripBackground, progress()) else Color.Black)
         },

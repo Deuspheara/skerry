@@ -104,15 +104,25 @@ object BackPolicy {
 
 /** Observable holder of the session for the composition. */
 @Stable
-class PlayerSessionController(initial: PlayerSessionState = PlayerSessionState.Closed) {
+class PlayerSessionController(initial: PlayerSessionState = PlayerSessionState.Closed, restored: Boolean = false) {
     var state: PlayerSessionState by mutableStateOf(initial)
+        private set
+
+    /**
+     * Whether a replay or clip starts playing by itself. A session brought back after the process was killed comes back paused (the
+     * viewer did not just ask for it, and sound out of nowhere is a bug); the next thing the viewer opens plays as usual.
+     */
+    var autoplay: Boolean by mutableStateOf(!restored)
         private set
 
     fun dispatch(event: PlayerSessionEvent) {
         state = PlayerSessionReducer.reduce(state, event)
     }
 
-    fun open(target: PlaybackTarget) = dispatch(PlayerSessionEvent.Open(target))
+    fun open(target: PlaybackTarget) {
+        if (state.let { it !is PlayerSessionState.Open || it.target != target }) autoplay = true
+        dispatch(PlayerSessionEvent.Open(target))
+    }
 
     companion object {
         /**
@@ -128,7 +138,7 @@ class PlayerSessionController(initial: PlayerSessionState = PlayerSessionState.C
                 val list = saved as List<Any?>
                 val sheet = list.firstOrNull()?.let { name -> SheetState.entries.firstOrNull { it.name == name } }
                 val target = if (sheet == null) null else list.drop(1).toTarget()
-                PlayerSessionController(if (sheet != null && target != null) PlayerSessionState.Open(target, sheet) else PlayerSessionState.Closed)
+                PlayerSessionController(if (sheet != null && target != null) PlayerSessionState.Open(target, sheet) else PlayerSessionState.Closed, restored = true)
             },
         )
     }

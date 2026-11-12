@@ -118,4 +118,36 @@ class PlayerSessionTest {
             assertEquals(PlayerSessionState.Closed, PlayerSessionController.Saver.restore(it)!!.state)
         }
     }
+
+    @Test fun aSessionBroughtBackAfterTheProcessWasKilledDoesNotPlayByItself() {
+        val scope = SaverScope { true }
+        val saved = with(PlayerSessionController.Saver) { scope.save(PlayerSessionController(PlayerSessionState.Open(PlaybackTarget.Clip("a", "t")))) }!!
+        val restored = PlayerSessionController.Saver.restore(saved)!!
+
+        assertEquals(false, restored.autoplay)
+        assertEquals(true, PlayerSessionController().autoplay)
+    }
+
+    @Test fun whateverTheViewerOpensNextPlaysAsUsual() {
+        val scope = SaverScope { true }
+        val saved = with(PlayerSessionController.Saver) { scope.save(PlayerSessionController(PlayerSessionState.Open(PlaybackTarget.Clip("a", "t")))) }!!
+        val restored = PlayerSessionController.Saver.restore(saved)!!
+
+        restored.open(PlaybackTarget.Clip("a", "t"))
+        assertEquals("the same clip tapped again is the same page, it keeps what it was told", false, restored.autoplay)
+        restored.open(PlaybackTarget.Live("shroud"))
+        assertEquals(true, restored.autoplay)
+    }
+
+    @Test fun noBackPressEverClosesTheSession() {
+        val states = listOf(open, open.copy(fullscreen = true), open.copy(sheet = SheetState.Collapsed), open.copy(inPip = true))
+        for (state in states) {
+            val after = when (BackPolicy.action(state)) {
+                BackAction.Minimise -> PlayerSessionReducer.reduce(state, PlayerSessionEvent.Minimise)
+                BackAction.ExitFullscreen -> PlayerSessionReducer.reduce(state, PlayerSessionEvent.FullscreenChanged(false))
+                BackAction.PassThrough -> state
+            }
+            assertEquals("$state", true, after is PlayerSessionState.Open)
+        }
+    }
 }

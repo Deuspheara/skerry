@@ -61,4 +61,40 @@ class SheetGeometryTest {
         assertEquals(1_080, SheetGeometry.lerp(1_080, 300, 0f))
         assertEquals(300, SheetGeometry.lerp(1_080, 300, 1f))
     }
+
+    @Test fun theStripGrowsWithTheFontUpToAPointAndNeverShrinks() {
+        assertEquals(56f, SheetGeometry.stripHeight(0.85f).value, 0.01f)
+        assertEquals(56f, SheetGeometry.stripHeight(1f).value, 0.01f)
+        assertEquals(84f, SheetGeometry.stripHeight(1.5f).value, 0.01f)
+        assertEquals(89.6f, SheetGeometry.stripHeight(2f).value, 0.01f)
+        assertEquals(89.6f, SheetGeometry.stripHeight(3f).value, 0.01f)
+    }
+
+    @Test fun theStripPictureIsSixteenByNine() {
+        assertEquals(99.5f, SheetGeometry.stripPictureWidth(SheetGeometry.stripHeight(1f)).value, 0.1f)
+    }
+}
+
+class DismissPolicyTest {
+    private val density = 2.75f
+
+    @Test fun aSlowDownwardFlickOfTheStripIsNotAFling() {
+        listOf(100f, 800f, 1_500f, 2_000f * density - 1f).forEach { assertEquals("$it", 0f, DismissPolicy.settleVelocity(true, it, density), 0f) }
+    }
+
+    @Test fun aFastFlickOfTheStripClosesIt() {
+        val fast = 2_000f * density + 1f
+        assertEquals(fast, DismissPolicy.settleVelocity(true, fast, density), 0f)
+    }
+
+    @Test fun anUpwardFlickOfTheStripAlwaysExpandsItAndTheExpandedSheetIsNeverHeld() {
+        assertEquals(-300f, DismissPolicy.settleVelocity(true, -300f, density), 0f)
+        assertEquals(900f, DismissPolicy.settleVelocity(false, 900f, density), 0f)
+    }
+
+    @Test fun theStripHasToBeDraggedMostOfTheWayOffScreenToCloseByDistance() {
+        // 2400 px container: the strip's way to the edge is short (a 380 px stretch) and needs 65 %; the way up is long and needs 40 %.
+        assertEquals(247f, DismissPolicy.positionalThreshold(380f, 2_400f, 0.4f), 0.5f)
+        assertEquals(760f, DismissPolicy.positionalThreshold(1_900f, 2_400f, 0.4f), 0.5f)
+    }
 }

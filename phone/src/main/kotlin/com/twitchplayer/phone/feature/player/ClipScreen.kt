@@ -55,6 +55,8 @@ fun ClipRoute(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** False when the session was brought back after the process was killed: the clip opens paused. */
+    autoplay: Boolean = true,
     resolver: ClipResolver = koinInject(),
 ) {
     var load by remember(slug) { mutableStateOf<ClipLoad>(ClipLoad.Loading) }
@@ -94,6 +96,7 @@ fun ClipRoute(
                 state.url,
                 title,
                 onBack,
+                autoplay,
                 onFail = { failure -> load = ClipLoad.Failed(failure) },
             )
         }
@@ -108,13 +111,14 @@ private fun ClipBack(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> Unit, onFail: (ClipFailure) -> Unit) {
+private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> Unit, autoplay: Boolean, onFail: (ClipFailure) -> Unit) {
     val restoration = rememberPlayerRestoration(slug)
     val context = LocalContext.current
     val playback = remember(url) { RecordedPlayback(context) }
     val exo = playback.exo
     val snapshot = rememberPlayerSnapshot(exo, pollMs = POLL_MS)
     var dragging by remember { mutableStateOf(false) }
+    val startPlaying = remember(url) { autoplay }
     val currentOnFail by rememberUpdatedState(onFail)
     PauseWhenInBackground(exo)
     DisposableEffect(exo) {
@@ -124,7 +128,7 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
             }
         }
         exo.addListener(listener)
-        playback.setSource(url, resumableRestoredPosition(restoration.positionMs, restoration.durationMs) ?: 0L, recording = false, playWhenReady = true)
+        playback.setSource(url, resumableRestoredPosition(restoration.positionMs, restoration.durationMs) ?: 0L, recording = false, playWhenReady = startPlaying)
         // The player itself is released by `playback` (a RememberObserver) when this page leaves the composition.
         onDispose { exo.removeListener(listener) }
     }

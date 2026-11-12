@@ -9,6 +9,8 @@ import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -24,8 +26,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -122,20 +126,40 @@ fun PlayerOverlay(
         )
     }
 
-    // Back minimises the expanded sheet; the strip (and the window) leave Back to the navigation. Leaving fullscreen is the page's own
-    // handler (it also gives the screen its orientation back), which wins while the page is composed; before a replay or clip has loaded
-    // there is no page to ask, so Back closes.
+    // Back minimises the expanded sheet; the strip (and the window) leave Back to the navigation; it never closes the player. Leaving
+    // fullscreen is the page's own handler (it also gives the screen its orientation back), which wins while the page is composed. Before
+    // a replay or clip has loaded there is no page to ask, so the sheet turns the screen upright itself and lets go of the lock once it is.
     val back = BackPolicy.action(open)
+    var uprightRequested by remember { mutableStateOf(false) }
     BackHandler(enabled = back != BackAction.PassThrough) {
-        dispatch(if (back == BackAction.Minimise) PlayerSessionEvent.Minimise else PlayerSessionEvent.Close)
+        when (back) {
+            BackAction.Minimise -> dispatch(PlayerSessionEvent.Minimise)
+
+            BackAction.ExitFullscreen -> {
+                uprightRequested = true
+                host.lockOrientation(OrientationLock.Portrait)
+            }
+
+            BackAction.PassThrough -> Unit
+        }
+    }
+    DisposableEffect(uprightRequested, fullscreen) {
+        if (uprightRequested && !fullscreen) {
+            host.lockOrientation(OrientationLock.None)
+            uprightRequested = false
+        }
+        onDispose { }
     }
 
     val navigationBarPx = WindowInsets.navigationBars.getBottom(density)
     val bottomChromePx = with(density) { bottomChrome.roundToPx() } + navigationBarPx
     val startChromePx = with(density) { startChrome.roundToPx() }
-    val stripHeightPx = with(density) { SheetGeometry.STRIP_HEIGHT.roundToPx() }
+    val stripHeight = rememberStripHeight()
+    val stripHeightPx = with(density) { stripHeight.roundToPx() }
     val spec: AnimationSpec<Float> = if (reducedMotion) snap() else tween(SETTLE_MS)
-    val fling = AnchoredDraggableDefaults.flingBehavior(anchored, positionalThreshold = { distance -> distance * POSITIONAL_THRESHOLD }, animationSpec = spec)
+    val containerHeightPx = remember { floatArrayOf(0f) }
+    val threshold = remember { { distance: Float -> DismissPolicy.positionalThreshold(distance, containerHeightPx[0], POSITIONAL_THRESHOLD) } }
+    val fling = rememberDeliberateFling(anchored, spec, density.density, threshold)
 
     val owner = rememberTargetStoreOwner(open.target)
     CompositionLocalProvider(LocalViewModelStoreOwner provides owner, LocalPlayerSheet provides sheet) {
@@ -147,6 +171,7 @@ fun PlayerOverlay(
                         val maxHeight = constraints.maxHeight
                         val collapsed = SheetGeometry.collapsedOffset(maxHeight, bottomChromePx, stripHeightPx)
                         metrics.collapsedPx = collapsed.toFloat()
+                        containerHeightPx[0] = maxHeight.toFloat()
                         // Only the strip can be swiped away: a hard fling of the expanded sheet ends on the strip, it never closes the player.
                         val canDismiss = anchored.settledValue != Rest.Expanded
                         anchored.updateAnchors(
@@ -161,7 +186,8 @@ fun PlayerOverlay(
                         val x = (startChromePx * progress).roundToInt()
                         val height = SheetGeometry.sheetHeight(maxHeight, stripHeightPx, progress)
                         val placeable = measurable.measure(Constraints.fixed((maxWidth - x).coerceAtLeast(0), height))
-                        layout(maxWidth, maxHeight) { placeable.place(IntOffset(x, offset.roundToInt())) }
+                        // Relative: with the rail on the right (right-to-left languages) the sheet keeps to the left of it.
+                        layout(maxWidth, maxHeight) { placeable.placeRelative(IntOffset(x, offset.roundToInt())) }
                     }
                     // The sheet owns every touch inside it: nothing falls through to the page behind.
                     .pointerInput(Unit) { detectTapGestures { } }
@@ -186,12 +212,13 @@ private fun PlayerPage(target: PlaybackTarget, session: PlayerSessionController,
 
         is PlaybackTarget.Replay -> ReplayRoute(
             info = target.toInfo(),
+            autoplay = session.autoplay,
             onBack = minimise,
             onOpenChannel = onOpenChannel,
             onOpenReplay = { other -> session.open(other) },
         )
 
-        is PlaybackTarget.Clip -> ClipRoute(target.slug, target.title, onBack = minimise)
+        is PlaybackTarget.Clip -> ClipRoute(target.slug, target.title, onBack = minimise, autoplay = session.autoplay)
     }
 }
 
@@ -209,4 +236,26 @@ private fun rememberTargetStoreOwner(target: PlaybackTarget): ViewModelStoreOwne
     }
     DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
     return owner
+}
+
+/**
+ * The anchored draggable's own fling, except that a slow downward flick of the strip does not count as a fling (see [DismissPolicy]): it
+ * settles by distance instead, so only a firm swipe closes the player.
+ */
+@Composable
+private fun rememberDeliberateFling(
+    state: AnchoredDraggableState<Rest>,
+    spec: AnimationSpec<Float>,
+    density: Float,
+    positionalThreshold: (Float) -> Float,
+): TargetedFlingBehavior {
+    val delegate = AnchoredDraggableDefaults.flingBehavior(state, positionalThreshold = positionalThreshold, animationSpec = spec)
+    return remember(state, delegate, density) {
+        object : TargetedFlingBehavior {
+            override suspend fun ScrollScope.performFling(initialVelocity: Float, onRemainingDistanceUpdated: (Float) -> Unit): Float {
+                val velocity = DismissPolicy.settleVelocity(state.settledValue == Rest.Collapsed, initialVelocity, density)
+                return with(delegate) { performFling(velocity, onRemainingDistanceUpdated) }
+            }
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.twitchplayer.phone.feature.player
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -36,12 +37,20 @@ val LocalPlayerSheet = staticCompositionLocalOf<PlayerSheet?> { null }
 /** Pure arithmetic of the drag, so the numbers are testable without a device. */
 object SheetGeometry {
     val STRIP_HEIGHT = 56.dp
-    val STRIP_PICTURE_WIDTH = 100.dp
+
+    /** The strip grows with the system font (a 2-line title and subtitle must not be cut) up to this multiple of [STRIP_HEIGHT]. */
+    private const val MAX_STRIP_FONT_SCALE = 1.6f
+    private const val PICTURE_ASPECT = 16f / 9f
 
     /** The text and the picture under the stage are gone once the sheet is this far down. */
     private const val BODY_FADE_END = 0.5f
     private const val STRIP_FADE_START = 0.5f
     private const val CONTROLS_FADE_END = 0.15f
+
+    fun stripHeight(fontScale: Float): Dp = STRIP_HEIGHT * fontScale.coerceIn(1f, MAX_STRIP_FONT_SCALE)
+
+    /** The small picture of the strip is 16:9 and as tall as the strip. */
+    fun stripPictureWidth(stripHeight: Dp): Dp = stripHeight * PICTURE_ASPECT
 
     fun progress(offsetPx: Float, collapsedPx: Float): Float = if (collapsedPx <= 0f) 1f else (offsetPx / collapsedPx).coerceIn(0f, 1f)
 
@@ -59,4 +68,27 @@ object SheetGeometry {
 
     /** The sheet is [stripHeightPx] tall once collapsed, the whole [containerHeightPx] when expanded, linearly between. */
     fun sheetHeight(containerHeightPx: Int, stripHeightPx: Int, progress: Float): Int = lerp(containerHeightPx, stripHeightPx, progress)
+}
+
+/** The strip's height at the viewer's font size. */
+@androidx.compose.runtime.Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun rememberStripHeight(): Dp = SheetGeometry.stripHeight(androidx.compose.ui.platform.LocalDensity.current.fontScale)
+
+/**
+ * What a downward swipe of the strip does. Closing the player by accident (a flick while scrolling the page under it, a thumb resting
+ * on it) is worse than needing a firm gesture: a drag has to carry the strip most of the way off the screen, or the flick has to be fast.
+ */
+object DismissPolicy {
+    /** A flick at least this fast (dp per second) closes the strip whatever the distance. */
+    const val DELIBERATE_FLICK_DP_PER_SECOND = 2_000f
+
+    /** Without a fast flick the strip has to be dragged this far toward the bottom edge. */
+    const val DISMISS_DISTANCE_FRACTION = 0.65f
+
+    /** The distance threshold for travelling [totalDistance] px between two anchors, with a container [containerHeight] px tall. */
+    fun positionalThreshold(totalDistance: Float, containerHeight: Float, minimiseFraction: Float): Float = totalDistance * if (totalDistance < containerHeight / 2f) DISMISS_DISTANCE_FRACTION else minimiseFraction
+
+    /** The fling velocity (px/s, positive = down) the settle should use: a slow downward flick from the strip counts as no fling at all. */
+    fun settleVelocity(fromStrip: Boolean, velocityPxPerSecond: Float, density: Float): Float = if (fromStrip && velocityPxPerSecond > 0f && velocityPxPerSecond < DELIBERATE_FLICK_DP_PER_SECOND * density) 0f else velocityPxPerSecond
 }

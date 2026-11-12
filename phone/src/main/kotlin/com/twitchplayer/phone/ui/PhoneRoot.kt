@@ -2,6 +2,8 @@ package com.twitchplayer.phone.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,12 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.twitchplayer.phone.R
@@ -52,7 +54,8 @@ import com.twitchplayer.phone.feature.player.PlayerOverlay
 import com.twitchplayer.phone.feature.player.PlayerSessionController
 import com.twitchplayer.phone.feature.player.PlayerSessionEvent
 import com.twitchplayer.phone.feature.player.PlayerSessionState
-import com.twitchplayer.phone.feature.player.SheetGeometry
+import com.twitchplayer.phone.feature.player.SheetState
+import com.twitchplayer.phone.feature.player.rememberStripHeight
 import com.twitchplayer.phone.feature.search.SearchRoute
 import com.twitchplayer.phone.feature.settings.SettingsRoute
 import com.twitchplayer.phone.navigation.BrowseKey
@@ -67,6 +70,7 @@ import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
 import com.twitchplayer.phone.navigation.phoneTransition
+import com.twitchplayer.phone.navigation.rememberGuardedBackStack
 import com.twitchplayer.phone.navigation.rememberScreenFill
 import com.twitchplayer.phone.ui.components.HeaderActions
 import com.twitchplayer.phone.ui.components.PhoneBottomBar
@@ -133,17 +137,18 @@ private fun PhoneScaffold(
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
 ) {
-    val stacks = PhoneTab.entries.associateWith { rememberNavBackStack(it.root) }
+    // A saved stack that cannot be read (another build's pages, a damaged bundle) resets that tab to its root instead of crashing.
+    val stacks = PhoneTab.entries.associateWith { rememberGuardedBackStack(it.root) }
     var selectedName by rememberSaveable { mutableStateOf(PhoneTab.Home.name) }
     val navigator = remember(stacks) {
-        PhoneNavigator(stacks, PhoneTab.valueOf(selectedName)) { selectedName = it.name }
+        PhoneNavigator(stacks, PhoneTab.entries.firstOrNull { it.name == selectedName } ?: PhoneTab.Home) { selectedName = it.name }
     }
     // The player is a sheet above the tabs and their pages, not a page: it keeps playing while the viewer browses (see PlayerOverlay).
     val session = rememberSaveable(saver = PlayerSessionController.Saver) { PlayerSessionController() }
     val sessionOpen = session.state is PlayerSessionState.Open
     val openChannel = { login: String ->
         session.dispatch(PlayerSessionEvent.Minimise)
-        navigator.push(ChannelKey(login))
+        navigator.pushOnContentTab(ChannelKey(login))
     }
     val header = remember(navigator, account) {
         HeaderActions(account, onSearch = { navigator.selectTab(PhoneTab.Search) }, onProfile = { navigator.selectTab(PhoneTab.Settings) })
@@ -152,7 +157,12 @@ private fun PhoneScaffold(
     val chromeVisible = navigator.showsNavigation
     val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
     Box(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        // While the player is expanded it covers the page: TalkBack must not be able to reach what is behind it.
+        val coveredByPlayer = (session.state as? PlayerSessionState.Open)?.sheet == SheetState.Expanded
+        Row(
+            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                .then(if (coveredByPlayer) Modifier.clearAndSetSemantics { } else Modifier),
+        ) {
             if (chromeVisible && wide) PhoneRail(navigator.selected, selectTab)
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 // The bar's or the rail's insets are spent there: the page must not pad for them a second time.
@@ -167,7 +177,7 @@ private fun PhoneScaffold(
                 Box(
                     Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(spent)
                         .then(if (spendsNavigationBar) Modifier.navigationBarsPadding() else Modifier)
-                        .padding(bottom = if (sessionOpen) SheetGeometry.STRIP_HEIGHT else 0.dp),
+                        .padding(bottom = if (sessionOpen) rememberStripHeight() else 0.dp),
                 ) {
                     BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
                     val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
@@ -226,7 +236,11 @@ private fun PhoneScaffold(
                 if (chromeVisible && !wide) PhoneBottomBar(navigator.selected, selectTab)
             }
         }
-        val bottomChrome by animateDpAsState(if (chromeVisible && !wide) PhoneChrome.BarHeight + PhoneChrome.Hairline else 0.dp, label = "player-bottom-chrome")
+        val bottomChrome by animateDpAsState(
+            targetValue = if (chromeVisible && !wide) PhoneChrome.BarHeight + PhoneChrome.Hairline else 0.dp,
+            animationSpec = if (reducedMotion) snap() else spring(),
+            label = "player-bottom-chrome",
+        )
         PlayerOverlay(
             session = session,
             bottomChrome = bottomChrome,

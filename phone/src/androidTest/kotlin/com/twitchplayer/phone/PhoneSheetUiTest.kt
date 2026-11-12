@@ -32,6 +32,7 @@ import org.junit.runner.RunWith
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
 import org.koin.core.module.Module
+import org.koin.dsl.module
 
 /**
  * The player as a sheet above the tabs, through the real activity on the demo data: a tap on a stream plays it with its chat, the streamer
@@ -46,9 +47,9 @@ class PhoneSheetUiTest {
     private val context get() = ApplicationProvider.getApplicationContext<Context>()
     private fun string(id: Int) = context.getString(id)
 
-    private fun launch() {
+    private fun launch(vararg modules: Module) {
         context.getSharedPreferences(SharedPreferencesThemePreference.PREFS, Context.MODE_PRIVATE).edit().clear().commit()
-        loaded = listOf(demoModule)
+        loaded = listOf(demoModule) + modules
         loadKoinModules(phoneModules() + loaded)
         scenario = ActivityScenario.launch(MainActivity::class.java)
     }
@@ -141,17 +142,45 @@ class PhoneSheetUiTest {
         assertTrue(!described(string(R.string.phone_player_close)))
     }
 
-    @Test fun swipingTheStripDownClosesThePlayerButAHardFlingOfTheExpandedSheetOnlyMinimisesIt() {
+    @Test fun aHardFlingOfTheExpandedSheetOnlyMinimisesIt() {
         launch()
         rule.openFirstStreamPlayer(context)
 
         rule.onNodeWithTag(STAGE_TAG).performTouchInput { swipeDown(startY = top + 40f, endY = bottom + 1_500f, durationMillis = 120) }
         waitForStrip()
-        assertTrue("a fling of the expanded sheet never closes the player", rule.onAllNodes(androidx.compose.ui.test.hasTestTag(STAGE_TAG)).fetchSemanticsNodes().isNotEmpty())
-
-        rule.onNodeWithTag(STAGE_TAG).performTouchInput { swipeDown(startY = top + 5f, endY = top + 400f, durationMillis = 120) }
-        rule.waitUntil(WAIT_MS) { rule.onAllNodes(androidx.compose.ui.test.hasTestTag(STAGE_TAG)).fetchSemanticsNodes().isEmpty() }
+        assertTrue("a fling of the expanded sheet never closes the player", stagePresent())
     }
+
+    @Test fun aShortOrSlightSwipeOfTheStripDoesNotClosePlayer() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        pressBack()
+        waitForStrip()
+
+        // A small, quick flick (a thumb brushing it while scrolling) and a slow drag that stops short: both leave the player alone.
+        rule.onNodeWithTag(STAGE_TAG).performTouchInput { swipeDown(startY = top + 5f, endY = top + 90f, durationMillis = 150) }
+        rule.waitForIdle()
+        Thread.sleep(SETTLE_WAIT_MS)
+        rule.onNodeWithTag(STAGE_TAG).performTouchInput { swipeDown(startY = top + 5f, endY = top + 120f, durationMillis = 900) }
+        rule.waitForIdle()
+        Thread.sleep(SETTLE_WAIT_MS)
+
+        assertTrue(stagePresent())
+        waitForStrip()
+    }
+
+    @Test fun aFirmSwipeOfTheStripDownClosesThePlayer() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        pressBack()
+        waitForStrip()
+
+        rule.onNodeWithTag(STAGE_TAG).performTouchInput { swipeDown(startY = top + 5f, endY = top + 450f, durationMillis = 900) }
+
+        rule.waitUntil(WAIT_MS) { !stagePresent() }
+    }
+
+    private fun stagePresent() = rule.onAllNodes(androidx.compose.ui.test.hasTestTag(STAGE_TAG)).fetchSemanticsNodes().isNotEmpty()
 
     @Test fun backOnAPageAboveTheStripPopsThePageAndKeepsThePlayer() {
         launch()
@@ -163,6 +192,23 @@ class PhoneSheetUiTest {
         rule.waitUntil(WAIT_MS) { !present(string(R.string.watch)) }
         assertTrue("the strip is still there", described(string(R.string.phone_player_close)))
         rule.onNodeWithContentDescription(string(R.string.nav_home)).assertIsDisplayed()
+    }
+
+    @Test fun theChatBoxIsLabelledForTalkBack() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+
+        rule.onNode(androidx.compose.ui.test.hasSetTextAction() and hasContentDescription(string(R.string.phone_player_chat_hint))).assertIsDisplayed()
+    }
+
+    @Test fun theExpandedPlayerHidesThePageBehindItFromAccessibilityAndTheStripGivesItBack() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        assertTrue("TalkBack cannot reach the tabs behind the expanded player", !described(string(R.string.nav_home)))
+
+        pressBack()
+        waitForStrip()
+        waitForDescription(string(R.string.nav_home))
     }
 
     @Test fun anotherStreamReplacesThePlayingOneAndStartsExpanded() {
@@ -198,6 +244,45 @@ class PhoneSheetUiTest {
         assertSame("as the strip: still the same view", before, views().single())
     }
 
+    @Test fun backInFullscreenBeforeAReplayHasLoadedTurnsTheScreenUprightAndKeepsTheSession() {
+        launch(module { single<com.twitchplayer.tv.feature.player.data.stream.VodResolver> { com.twitchplayer.tv.feature.player.data.stream.VodResolver { kotlinx.coroutines.awaitCancellation() } } })
+        rule.openChannelPageFromPlayer(context)
+        waitForText("Session du mardi soir")
+        rule.onNodeWithText("Session du mardi soir").performClick()
+        // The replay is resolving for good: no page, no picture, only the spinner and the back arrow.
+        waitForDescription(string(R.string.player_back))
+
+        scenario!!.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE }
+        rule.waitUntil(WAIT_MS) { orientation() == Configuration.ORIENTATION_LANDSCAPE }
+        rule.waitForIdle()
+
+        pressBack()
+
+        rule.waitUntil(WAIT_MS) { orientation() == Configuration.ORIENTATION_PORTRAIT }
+        waitForDescription(string(R.string.player_back))
+        var requested = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        rule.waitUntil(WAIT_MS) {
+            scenario!!.onActivity { requested = it.requestedOrientation }
+            requested == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+        assertTrue("the session is still open", described(string(R.string.player_back)))
+    }
+
+    @Test fun aReplayComesBackPausedAfterTheActivityWasRecreatedFromSavedState() {
+        launch()
+        rule.openChannelPageFromPlayer(context)
+        waitForText("Session du mardi soir")
+        rule.onNodeWithText("Session du mardi soir").performClick()
+        waitForText(string(R.string.phone_player_speed))
+        waitForDescription(string(R.string.player_pause))
+
+        scenario!!.recreate()
+
+        waitForDescription(string(R.string.player_play))
+        Thread.sleep(SETTLE_WAIT_MS * 2)
+        assertTrue("it did not start by itself", !described(string(R.string.player_pause)))
+    }
+
     private fun orientation(): Int {
         var value = Configuration.ORIENTATION_UNDEFINED
         scenario!!.onActivity { value = it.resources.configuration.orientation }
@@ -212,5 +297,6 @@ class PhoneSheetUiTest {
 
     private companion object {
         const val WAIT_MS = 20_000L
+        const val SETTLE_WAIT_MS = 1_200L
     }
 }

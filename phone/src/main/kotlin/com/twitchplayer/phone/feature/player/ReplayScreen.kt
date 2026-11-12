@@ -78,6 +78,8 @@ fun ReplayRoute(
     onOpenChannel: (String) -> Unit,
     onOpenReplay: (PlaybackTarget.Replay) -> Unit,
     modifier: Modifier = Modifier,
+    /** False when the session was brought back after the process was killed: the replay opens paused. */
+    autoplay: Boolean = true,
     resolver: VodResolver = koinInject(),
     store: VodProgressStore = koinInject(),
     settings: SettingsRepository = koinInject(),
@@ -123,6 +125,7 @@ fun ReplayRoute(
 
             is ReplayLoad.Ready -> ReplayPlayer(
                 ready = state,
+                autoplay = autoplay,
                 info = info,
                 restoration = restoration,
                 onBack = onBack,
@@ -147,6 +150,7 @@ private fun BackOnly(onBack: () -> Unit) {
 @Composable
 private fun ReplayPlayer(
     ready: ReplayLoad.Ready,
+    autoplay: Boolean,
     info: ReplayInfo,
     restoration: PlayerRestoration,
     onBack: () -> Unit,
@@ -172,6 +176,7 @@ private fun ReplayPlayer(
     var startAt by remember(vod.vodId) { mutableStateOf((decision as? StartDecision.Start)?.atMs) }
     var selected by remember(vod.vodId) { mutableStateOf(ReplayQuality.initial(vod.variants, ready.preferredQuality)) }
     var started by remember(vod.vodId) { mutableStateOf(false) }
+    val startPlaying = remember(vod.vodId) { autoplay }
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     var dragging by remember { mutableStateOf(false) }
     val duration = if (snapshot.durationMs > 0) snapshot.durationMs else knownDurationMs
@@ -200,7 +205,7 @@ private fun ReplayPlayer(
     DisposableEffect(startAt) {
         startAt?.let { at ->
             started = true
-            playback.setSource(ReplayQuality.urlFor(vod.variants, vod.masterUrl, selected), at, vod.recording, playWhenReady = true)
+            playback.setSource(ReplayQuality.urlFor(vod.variants, vod.masterUrl, selected), at, vod.recording, playWhenReady = startPlaying)
         }
         onDispose { }
     }

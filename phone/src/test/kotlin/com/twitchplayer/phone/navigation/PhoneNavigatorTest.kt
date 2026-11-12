@@ -92,4 +92,43 @@ class PhoneNavigatorTest {
         PhoneTab.entries.forEach { assertEquals(it, PhoneTab.of(it.root)) }
         assertEquals(null, PhoneTab.of(ChannelKey("a")))
     }
+
+    @Test fun aChannelOpenedFromThePlayerStacksOnTheTabTheViewerIsIn() {
+        val nav = navigator(selected = PhoneTab.Browse)
+        nav.pushOnContentTab(ChannelKey("camille"))
+
+        assertEquals(PhoneTab.Browse, nav.selected)
+        assertEquals(ChannelKey("camille"), nav.top)
+        assertTrue(changes.isEmpty())
+    }
+
+    @Test fun aChannelOpenedFromThePlayerWhileOnSettingsOpensOnHomeInsteadOfSettings() {
+        val nav = navigator(selected = PhoneTab.Settings)
+        nav.pushOnContentTab(ChannelKey("camille"))
+
+        assertEquals(PhoneTab.Home, nav.selected)
+        assertEquals(listOf(PhoneTab.Home), changes)
+        assertEquals(ChannelKey("camille"), nav.top)
+        // Settings itself was not touched: it is still its own root when the viewer goes back to it.
+        nav.selectTab(PhoneTab.Settings)
+        assertEquals(SettingsKey, nav.top)
+    }
+
+    @Test fun openingTheChannelThatIsAlreadyOnTopDoesNotStackItAgain() {
+        val nav = navigator()
+        nav.pushOnContentTab(ChannelKey("camille"))
+        nav.pushOnContentTab(ChannelKey("camille"))
+
+        assertEquals(2, nav.currentStack.size)
+        assertTrue(nav.back())
+        assertEquals(HomeKey, nav.top)
+    }
+
+    @Test fun anotherChannelStacksOnTopOfTheFirstOne() {
+        val nav = navigator()
+        nav.pushOnContentTab(ChannelKey("camille"))
+        nav.pushOnContentTab(ChannelKey("lunaria"))
+
+        assertEquals(3, nav.currentStack.size)
+    }
 }

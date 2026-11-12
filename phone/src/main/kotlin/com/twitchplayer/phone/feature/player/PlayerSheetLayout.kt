@@ -87,11 +87,12 @@ internal fun PlayerSheetLayout(
                 val bodyPlaceable = if (bodyItem != null && bodyAlpha > 0f) bodyItem.measure(Constraints.fixed(width, (height - bodyTop).coerceAtLeast(0))) else null
                 val stripAlpha = SheetGeometry.stripAlpha(p)
                 val stripPlaceable = if (stripItem != null && stripAlpha > 0f) stripItem.measure(Constraints.fixed((width - pictureWidth).coerceAtLeast(0), stripHeightPx)) else null
+                // Relative placement: in a right-to-left language the picture sits at the right edge and the strip's text to its left.
                 layout(width, height) {
-                    background?.place(0, 0)
-                    picture?.place(0, top)
-                    bodyPlaceable?.placeWithLayer(0, bodyTop) { alpha = bodyAlpha }
-                    stripPlaceable?.placeWithLayer(pictureWidth, 0) { alpha = stripAlpha }
+                    background?.placeRelative(0, 0)
+                    picture?.placeRelative(0, top)
+                    bodyPlaceable?.placeRelativeWithLayer(0, bodyTop) { alpha = bodyAlpha }
+                    stripPlaceable?.placeRelativeWithLayer(pictureWidth, 0) { alpha = stripAlpha }
                 }
             }
         }
