@@ -44,11 +44,12 @@ class PlayerRestorationTest {
         assertNull(restoredChatMode("Fullscreen"))
     }
 
-    @Test fun aRestoredLockIsReleasedBySensorLikeAFreshOne() {
+    @Test fun aRestoredLockBehavesLikeAFreshOne() {
         val policy = FullscreenPolicy(initial = OrientationLock.Landscape)
 
         assertEquals(OrientationLock.Landscape, policy.lock)
-        assertEquals(true, policy.onSensor(90))
+        assertEquals(false, policy.onSensor(90))
+        assertEquals(true, policy.onSensor(0))
         assertEquals(OrientationLock.None, policy.lock)
     }
 
