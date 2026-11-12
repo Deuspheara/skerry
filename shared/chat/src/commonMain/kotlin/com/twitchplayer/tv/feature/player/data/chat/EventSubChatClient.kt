@@ -171,7 +171,7 @@ class EventSubChatClient internal constructor(
 
         "channel.chat.notification" -> json.decodeFromJsonElement<ChatNotification>(event).let { n ->
             val text = listOfNotNull(n.systemMessage.takeIf(String::isNotBlank), n.content?.text?.takeIf(String::isNotBlank)).joinToString(" · ")
-            if (text.isEmpty()) null else ChatEvent.Notice(metadata.messageId, text)
+            if (text.isEmpty()) null else ChatEvent.Notice(metadata.messageId, text, NoticeKind.of(n.noticeType), n.announcement?.color.orEmpty())
         }
 
         else -> decodeSignal(metadata.subscriptionType, event.jsonObject)

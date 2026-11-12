@@ -49,7 +49,9 @@ sealed interface PlayerEvent {
     data object Previous : PlayerEvent
     data object Next : PlayerEvent
     data class Zap(val stream: LiveStream) : PlayerEvent
-    data class SendChat(val text: String) : PlayerEvent
+
+    /** [replyTo] is the id of the chat message this one answers (null for a plain message). */
+    data class SendChat(val text: String, val replyTo: String? = null) : PlayerEvent
 
     /** The viewer put the emote [name] in their message (from the picker or a suggestion): it goes to the front of the recents. */
     data class PickedEmote(val name: String) : PlayerEvent

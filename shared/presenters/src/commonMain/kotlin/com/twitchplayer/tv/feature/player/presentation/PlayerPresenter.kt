@@ -156,7 +156,7 @@ class PlayerPresenter(
             PlayerEvent.Previous -> previous()
             PlayerEvent.Next -> next()
             is PlayerEvent.Zap -> zap(event.stream)
-            is PlayerEvent.SendChat -> sendChat(event.text)
+            is PlayerEvent.SendChat -> sendChat(event.text, event.replyTo)
             is PlayerEvent.PickedEmote -> scope.launch { settings.addRecentEmote(event.name) }
             is PlayerEvent.SetAdActive -> setAdActive(event.active)
             is PlayerEvent.SetPreferredQuality -> setPreferredQuality(event.id)
@@ -203,11 +203,11 @@ class PlayerPresenter(
     }
 
     /** Sends a chat message; the result (or the reason it did not go out) comes back on [sent]. Own messages arrive through chat itself. */
-    private fun sendChat(text: String) {
+    private fun sendChat(text: String, replyTo: String?) {
         val message = text.trim()
         val channelId = mutableState.value.current?.channelId
         if (message.isEmpty() || channelId == null) return
-        scope.launch { mutableSent.emit(repository.sendChat(channelId, message)) }
+        scope.launch { mutableSent.emit(if (replyTo.isNullOrBlank()) repository.sendChat(channelId, message) else repository.sendReply(channelId, message, replyTo)) }
         wake()
     }
 

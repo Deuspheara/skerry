@@ -505,6 +505,28 @@ class PlayerPresenterTest {
         assertEquals(listOf<SendResult>(SendResult.Dropped("slow mode")), outcomes)
     }
 
+    @Test fun aReplyGoesOutWithTheIdOfTheMessageItAnswers() = runTest(dispatcher) {
+        val posted = mutableListOf<Triple<String, String, String?>>()
+        val repository = object : TwitchRepository by repo {
+            override suspend fun sendChat(channelId: String, text: String): SendResult {
+                posted += Triple(channelId, text, null)
+                return SendResult.Sent
+            }
+
+            override suspend fun sendReply(channelId: String, text: String, replyToMessageId: String): SendResult {
+                posted += Triple(channelId, text, replyToMessageId)
+                return SendResult.Sent
+            }
+        }
+        val vm = vm(repository = repository)
+
+        vm.onEvent(PlayerEvent.SendChat("@ana yes", replyTo = "m-42"))
+        vm.onEvent(PlayerEvent.SendChat("plain"))
+        vm.onEvent(PlayerEvent.SendChat("blank reply id", replyTo = " "))
+
+        assertEquals(listOf(Triple("b", "@ana yes", "m-42"), Triple("b", "plain", null), Triple("b", "blank reply id", null)), posted)
+    }
+
     @Test fun sendChatDoesNothingWithoutACurrentChannel() = runTest(dispatcher) {
         val posted = mutableListOf<String>()
         val repository = object : TwitchRepository by repo {

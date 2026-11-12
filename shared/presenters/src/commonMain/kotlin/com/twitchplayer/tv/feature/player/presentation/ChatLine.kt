@@ -5,6 +5,7 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatEmote
 import com.twitchplayer.tv.feature.player.data.chat.ChatEvent
 import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
+import com.twitchplayer.tv.feature.player.data.chat.NoticeKind
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import kotlin.math.pow
 
@@ -23,6 +24,9 @@ sealed interface ChatPiece {
 
 enum class ChatLineKind { Normal, Highlight, Mention, System }
 
+/** The message a line answers, as Twitch reports it: [body] is the parent's text at the time of the reply. */
+data class ChatReplyContext(val parentId: String, val name: String, val login: String, val body: String)
+
 /** A chat event resolved against the channel's assets, ready to draw. Immutable, so a list of them is cheap to diff. */
 data class ChatLine(
     val id: String,
@@ -37,7 +41,16 @@ data class ChatLine(
     val bits: Int = 0,
     /** Lower-case login of the author ("" for system lines): a timeout removes all of a viewer's lines. */
     val login: String = "",
-)
+    /** The message this line answers (null for a plain message). */
+    val reply: ChatReplyContext? = null,
+    /** For a [ChatLineKind.System] line made from a Twitch notification: what it is about, for the card drawn around it. */
+    val notice: NoticeKind? = null,
+    /** An announcement's accent colour name (PRIMARY, BLUE, GREEN, ORANGE, PURPLE) or "". */
+    val accent: String = "",
+) {
+    /** Only a real chat message can be answered. */
+    val canReply: Boolean get() = kind != ChatLineKind.System && login.isNotEmpty()
+}
 
 private const val TWITCH_EMOTE_CDN = "https://static-cdn.jtvnw.net/emoticons/v2/"
 
@@ -46,7 +59,7 @@ private fun twitchEmoteUrl(id: String, format: String) = "$TWITCH_EMOTE_CDN$id/$
 
 internal fun ChatEvent.toLine(assets: ChatAssets, selfLogin: String?, nowMs: Long): ChatLine = when (this) {
     is ChatEvent.Message -> message.toLine(assets, selfLogin, nowMs)
-    is ChatEvent.Notice -> ChatLine(id, ChatLineKind.System, "", 0, emptyList(), listOf(ChatPiece.Text(text)), clockText(nowMs))
+    is ChatEvent.Notice -> ChatLine(id, ChatLineKind.System, "", 0, emptyList(), listOf(ChatPiece.Text(text)), clockText(nowMs), notice = kind.takeIf { it != NoticeKind.Other }, accent = accent)
     else -> error("not a chat line: $this")
 }
 
@@ -54,7 +67,9 @@ internal fun ChatMessage.toLine(assets: ChatAssets, selfLogin: String?, nowMs: L
     val mentionsSelf = selfLogin != null && !login.equals(selfLogin, true) &&
         (
             content.fragments.any { it.type == "mention" && it.mention?.login.equals(selfLogin, true) } ||
-                content.text.contains("@$selfLogin", ignoreCase = true)
+                content.text.contains("@$selfLogin", ignoreCase = true) ||
+                // An answer to one of the viewer's own messages counts as being mentioned.
+                reply?.parentLogin.equals(selfLogin, true)
             )
     return ChatLine(
         id = id,
@@ -70,6 +85,7 @@ internal fun ChatMessage.toLine(assets: ChatAssets, selfLogin: String?, nowMs: L
         time = clockText(nowMs),
         bits = cheer?.bits ?: 0,
         login = login.lowercase(),
+        reply = reply?.takeIf { it.parentId.isNotEmpty() }?.let { ChatReplyContext(it.parentId, it.parentName, it.parentLogin.lowercase(), it.parentBody) },
     )
 }
 

@@ -43,6 +43,9 @@ interface TwitchRepository {
 
     /** Sends [text] to the channel's chat as the signed-in viewer. */
     suspend fun sendChat(channelId: String, text: String): SendResult = SendResult.Failed
+
+    /** Sends [text] as a reply to the message [replyToMessageId] of the same chat. */
+    suspend fun sendReply(channelId: String, text: String, replyToMessageId: String): SendResult = sendChat(channelId, text)
 }
 
 /** What happened to a chat message the viewer sent. */
@@ -145,11 +148,15 @@ class TwitchRepositoryImpl(
         )
     }
 
-    override suspend fun sendChat(channelId: String, text: String): SendResult {
+    override suspend fun sendChat(channelId: String, text: String): SendResult = send(channelId, text, null)
+
+    override suspend fun sendReply(channelId: String, text: String, replyToMessageId: String): SendResult = send(channelId, text, replyToMessageId.takeIf(String::isNotBlank))
+
+    private suspend fun send(channelId: String, text: String, replyTo: String?): SendResult {
         if (!session.hasScope(SCOPE_WRITE_CHAT)) return SendResult.NeedsSignIn
         val me = (session.state.value as? SessionState.SignedIn)?.account?.userId ?: return SendResult.Failed
         return try {
-            val result = api.sendChat(channelId, me, text.trim())
+            val result = api.sendChat(channelId, me, text.trim(), replyTo)
             if (result.isSent) SendResult.Sent else SendResult.Dropped(result.dropReason?.message.orEmpty())
         } catch (e: CancellationException) {
             throw e

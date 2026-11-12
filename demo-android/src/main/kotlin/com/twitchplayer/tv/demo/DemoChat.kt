@@ -13,6 +13,8 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMention
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent
+import com.twitchplayer.tv.feature.player.data.chat.ChatReply
+import com.twitchplayer.tv.feature.player.data.chat.NoticeKind
 import com.twitchplayer.tv.feature.player.data.chat.RoomState
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteGroup
@@ -86,8 +88,15 @@ internal class DemoChat(private val context: Context) : ChatSource {
     }
 
     private fun event(n: Int, heavy: Boolean): ChatEvent {
-        if (!heavy && n % 17 == 16) return ChatEvent.Notice("demo-notice-$n", "Marlou vient de s'abonner pour 6 mois !")
+        if (!heavy && n % 17 == 16) return ChatEvent.Notice("demo-notice-$n", "Marlou vient de s'abonner pour 6 mois !", NoticeKind.Resub)
+        if (!heavy && n % 23 == 22) return ChatEvent.Notice("demo-gift-$n", "ClaraPlays offre 5 abonnements à la communauté !", NoticeKind.GiftCommunity)
+        if (!heavy && n % 29 == 28) return ChatEvent.Notice("demo-announce-$n", "Le live continue jusqu'à minuit, n'oubliez pas de vous hydrater.", NoticeKind.Announcement, "BLUE")
         return ChatEvent.Message(message(n, heavy))
+    }
+
+    private fun previousReply(n: Int): ChatReply {
+        val (parent, _) = users[(n - 1) % users.size]
+        return ChatReply("demo-${n - 1}", "Quelqu'un sait quelle musique est en fond ?", parent, parent.lowercase())
     }
 
     private fun message(n: Int, heavy: Boolean): ChatMessage {
@@ -139,6 +148,8 @@ internal class DemoChat(private val context: Context) : ChatSource {
             content = ChatMessageContent(text, fragments), badges = badges, color = color,
             messageType = if (n % 19 == 7) "channel_points_highlighted" else "text",
             cheer = if (n % 23 == 9) ChatCheer(100) else null,
+            // Every seventh message answers the one before it, so the reply line has something to show.
+            reply = if (!heavy && n > 0 && n % 7 == 3) previousReply(n) else null,
         )
     }
 }

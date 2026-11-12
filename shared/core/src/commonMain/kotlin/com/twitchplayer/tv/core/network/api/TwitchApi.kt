@@ -134,7 +134,7 @@ class TwitchApi(
     suspend fun chatSettings(broadcasterId: String): TwitchChatSettings? = request<HelixPage<TwitchChatSettings>>("chat/settings") { parameter("broadcaster_id", broadcasterId) }.data.firstOrNull()
 
     /** Needs `user:write:chat`. The caller must read `is_sent` / `drop_reason`: a 200 does not mean the message went out. */
-    suspend fun sendChat(broadcasterId: String, senderId: String, message: String): SendChatResult = post("chat/messages", SendChatRequest(broadcasterId, senderId, message)).body<HelixPage<SendChatResult>>().data.firstOrNull() ?: SendChatResult()
+    suspend fun sendChat(broadcasterId: String, senderId: String, message: String, replyToMessageId: String? = null): SendChatResult = post("chat/messages", SendChatRequest(broadcasterId, senderId, message, replyToMessageId)).body<HelixPage<SendChatResult>>().data.firstOrNull() ?: SendChatResult()
 
     /** Upcoming segments; empty when the channel has no schedule (Twitch answers 404 then). */
     suspend fun schedule(broadcasterId: String): List<ScheduleSegment> = try {

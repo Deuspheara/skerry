@@ -18,6 +18,14 @@ import kotlinx.serialization.Serializable
     val cheermote: ChatCheermote? = null,
 )
 
+/** `reply` of a `channel.chat.message` event: the message this one answers (EventSub "parent"). */
+@Serializable data class ChatReply(
+    @SerialName("parent_message_id") val parentId: String = "",
+    @SerialName("parent_message_body") val parentBody: String = "",
+    @SerialName("parent_user_name") val parentName: String = "",
+    @SerialName("parent_user_login") val parentLogin: String = "",
+)
+
 @Serializable data class ChatBadge(@SerialName("set_id") val setId: String, val id: String, val info: String = "")
 
 @Serializable data class ChatCheer(val bits: Int = 0)
@@ -36,6 +44,7 @@ import kotlinx.serialization.Serializable
     @SerialName("color") val color: String? = null,
     @SerialName("cheer") val cheer: ChatCheer? = null,
     @SerialName("message_timestamp") val timestamp: String? = null,
+    @SerialName("reply") val reply: ChatReply? = null,
 )
 
 @Serializable data class ChatMessageContent(val text: String, val fragments: List<ChatFragment> = emptyList())
@@ -44,7 +53,39 @@ import kotlinx.serialization.Serializable
 @Serializable data class ChatNotification(
     @SerialName("system_message") val systemMessage: String = "",
     @SerialName("message") val content: ChatMessageContent? = null,
+    /** "sub", "resub", "sub_gift", "community_sub_gift", "gift_paid_upgrade", "raid", "announcement", "bits_badge_tier", ... */
+    @SerialName("notice_type") val noticeType: String = "",
+    @SerialName("announcement") val announcement: ChatAnnouncement? = null,
 )
+
+/** [color] is the announcement's accent: "PRIMARY", "BLUE", "GREEN", "ORANGE" or "PURPLE". */
+@Serializable data class ChatAnnouncement(val color: String = "")
+
+/** What a chat notification is about, for the card drawn in chat; [Other] covers every type this app does not single out. */
+enum class NoticeKind {
+    Sub,
+    Resub,
+    Gift,
+    GiftCommunity,
+    Raid,
+    Announcement,
+    Bits,
+    Other,
+    ;
+
+    companion object {
+        fun of(noticeType: String): NoticeKind = when (noticeType) {
+            "sub" -> Sub
+            "resub" -> Resub
+            "sub_gift", "gift_paid_upgrade", "prime_paid_upgrade", "pay_it_forward" -> Gift
+            "community_sub_gift" -> GiftCommunity
+            "raid", "unraid" -> Raid
+            "announcement" -> Announcement
+            "bits_badge_tier" -> Bits
+            else -> Other
+        }
+    }
+}
 
 /** What happened on the watched channel, outside the chat lines. */
 sealed interface ChannelNotice {
@@ -60,8 +101,8 @@ sealed interface ChannelNotice {
 sealed interface ChatEvent {
     data class Message(val message: ChatMessage) : ChatEvent
 
-    /** [id] is unique per notice (EventSub message id). */
-    data class Notice(val id: String, val text: String) : ChatEvent
+    /** [id] is unique per notice (EventSub message id). [kind] and [accent] (announcement colour name) say how to dress it. */
+    data class Notice(val id: String, val text: String, val kind: NoticeKind = NoticeKind.Other, val accent: String = "") : ChatEvent
 
     /** A moderator removed one message. */
     data class Deleted(val messageId: String) : ChatEvent
