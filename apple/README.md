@@ -11,6 +11,7 @@ SwiftUI apps for iOS, macOS and tvOS on top of the shared Kotlin core. Plan and 
 | `Config/Base.xcconfig` | Build settings; the public Twitch client id goes in `Config/Local.xcconfig` (git-ignored, see the `.example`). |
 | `iOS/`, `Shared/`, `Resources/`, `Tests/` | The iOS app (target `TwitchIOS`, tests `TwitchIOSTests`): see `docs/IOS_APP.md`. |
 | `scripts/ios-run.sh`, `scripts/sync-strings.py` | Build, install and launch the iOS app on a simulator; generate the string catalog from the Android resources. |
+| `Mac/`, `TV/` | The macOS and Apple TV apps (targets `TwitchMac`, `TwitchTV`, tests `TwitchMacTests`, `TwitchTVTests`): see `docs/APPLE_PLATFORMS.md`. `scripts/mac-run.sh` and `scripts/tv-run.sh` build, run and screenshot them. |
 | `SmokeApp/` | Smoke app (one SwiftUI source set, three targets: `SmokeIOS`, `SmokeMac`, `SmokeTV`) that proves the Kotlin bridge. |
 
 ## Build and run
@@ -48,6 +49,6 @@ The framework is built with **SKIE 0.10.16** (works with Kotlin 2.4.21 and Xcode
 
 ## Not done here
 
-tvOS: the SDK is installed but no tvOS simulator runtime, so `SmokeTV` builds and is not run (and the Kotlin tests of
-`tvosSimulatorArm64` are opt-in, `-PtvosSimulatorTests=true`). Signing, provisioning and distribution are out of scope (ad-hoc signing for
+tvOS: the simulator runtime is a separate 3.8 GB download (`xcodebuild -downloadPlatform tvOS`); the Kotlin tests of
+`tvosSimulatorArm64` stay opt-in (`-PtvosSimulatorTests=true`) because a runtime is not always installed. Signing, provisioning and distribution are out of scope (ad-hoc signing for
 the simulator only; nothing secret is committed).

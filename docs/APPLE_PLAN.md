@@ -27,7 +27,7 @@ open questions of the Phase 1 brief unanswered); each can be changed later witho
 |---|---|---|
 | iOS | `iosArm64`, `iosSimulatorArm64` | simulator (iOS 26.x / 27.0 runtimes installed) |
 | macOS | `macosArm64` | host |
-| tvOS | `tvosArm64`, `tvosSimulatorArm64` | compiles and links; **no tvOS simulator runtime is installed** on this machine (the SDK is), so it cannot be run until the runtime is downloaded in Xcode |
+| tvOS | `tvosArm64`, `tvosSimulatorArm64` | simulator (tvOS 27.0 runtime, downloaded with `xcodebuild -downloadPlatform tvOS`, 3.8 GB) |
 
 ## Steps
 
@@ -35,7 +35,7 @@ open questions of the Phase 1 brief unanswered); each can be changed later witho
   `iosSimulatorArm64` and `macosArm64`, Apple platform seams, `TwitchShared` XCFramework, XcodeGen skeleton and an iOS
   smoke app proving the bridge.
 - **B. iOS app:** navigation (tabs, search, settings), Home/Browse/Category/Following, player with `AVPlayer`, chat, sign-in.
-- **C. macOS and tvOS apps:** same presenters; sidebar and menus on macOS, focus engine and top shelf-like rows on tvOS.
+- **C. macOS and tvOS apps (done, see `docs/APPLE_PLATFORMS.md`):** same presenters; sidebar and menus on macOS, focus engine and card rows on tvOS.
 - **D. Polish:** Liquid Glass pass, PiP/AirPlay/Now Playing, emotes, accessibility, localization (the same 36 locales).
 
 ## Constraints that carry over
