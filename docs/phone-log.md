@@ -105,7 +105,7 @@ Screenshots (Pixel 8 emulator, Android 36, demo data and debug fixtures): [docs/
 
 | Area | Decision |
 |---|---|
-| Navigation | four tabs (Home, Browse, Search, Settings), each with its own back stack (`PhoneNavigator`, no Compose in its rules, 8 unit tests); Material 3 adaptive suite: bottom bar on compact, rail from medium width, no bar on a short landscape window or on detail pages; Back pops, then returns to Home, then leaves; Navigation 3 with saved state and ViewModel scoping per entry, state survives rotation (looked at) |
+| Navigation | **as first built** (replaced, see the redesign section at the end): four tabs (Home, Browse, Search, Settings), each with its own back stack (`PhoneNavigator`), Material 3 adaptive suite (bottom bar on compact, rail from medium width). **Today:** three tabs (Home, Following for a signed-in viewer, Browse) with a custom icon-only bar and rail (from 600 dp), each with its own back stack; Search and Settings are pages opened from the header; Back pops, then returns to Home, then leaves; Navigation 3 with saved state (an unreadable saved stack resets to the tab root) |
 | Theme | Twitch purple, dark by default, Light and "follow the system" in Settings (a phone-only `ThemePreference`, SharedPreferences so the first frame is right); no dynamic colour, to keep the brand; edge-to-edge with bar icons that follow the chosen scheme |
 | Home | "For you" (followed live channels, recommendations, top categories) and "Following" (live + offline) as two sub-tabs; pull to refresh (a short acknowledgement: the presenters expose no "refreshing" flag); skeletons, error with retry, signed-out prompt; the presenter's snapshot-first loading is unchanged |
 | Browse / Category | poster grid with the TV's group filter and sort; category page with the viewer's-language filter chip (check mark when on) and the favourite toggle |
@@ -152,7 +152,7 @@ placeholders). Everything else (labels, errors, chat options, `cd_*` description
 |---|---|
 | `./gradlew check` (whole repo, with the phone) | green |
 | Phone unit tests | **29**, 0 failures: `ThemeModeTest` 4, `PhoneNavigatorTest` 8, `SignInOutcomeTest` 5, `ChannelLogicTest` 5, `PhoneStringsTest` 4, `PhoneGraphTest` 3 (`verify` of `phoneModules()`, the list is production + phone module, and every screen ViewModel resolves from it) |
-| Phone UI tests on the Pixel 8 emulator (`connectedDebugAndroidTest`) | **6 of 6** (home lists followed streams, the four tabs, a category and Back, channel + Watch stub message, search as you type, theme dialog) |
+| Phone UI tests on the Pixel 8 emulator (`connectedDebugAndroidTest`) | **6 of 6** (home lists followed streams, the four tabs, a category and Back, channel + Watch stub message, search as you type, theme dialog; **as first built**: the suite now has 100+ tests, see the redesign section) |
 | Lint / detekt on `:phone` | no baseline, no findings (debug and release; detekt plain, debug, release) |
 | Compose compiler report | **41 composables, 41 skippable, 0 unstable parameters** |
 | Release APK / AAB | **2,500,311 B / 5,870,013 B** (R8 full mode, shrink resources, unsigned); `classes.dex` 3,814,516 B; 0 demo classes in the mapping, no `demo_stream`; `-keep` rules in our files: 0 |
@@ -388,3 +388,13 @@ Plan and research: [phone-redesign.md](phone-redesign.md). What changed in code:
   release as soon as the sensor read about 60 degrees let the system rotate to portrait for a moment first.
 
 Screenshots: `docs/screenshots/phone/redesign-07-*` (expanded), `-08-*` (channel page with the strip), `-09-*` (drag and strip).
+
+### Session, tabs and sign-out (2026-11-12, second review)
+
+- The Following tab needs a viewer, so the bar is drawn from the session: while it is still being read the bar keeps the shape of the last time (`SignedInHint`, a one-bit preference; `PhoneTab.bar`) and a restored
+  Following selection is kept (`PhoneTab.mustLeave`); once the session is known, signed out means two tabs.
+- Signing out drops Following's pages and returns to Home whatever page the viewer was on (`PhoneNavigator.onSignedOut`), and clears the recent searches; signing in again finds Following at its root.
+- Opening a page that is already in the current stack goes back to it instead of stacking it again.
+- A restored live stream, replay or clip comes back paused (`PlayerSessionController.autoplay`).
+- Search: the presenter answers by query (`SearchUiState.resultsFor`), `searching` and `failed` are derived from what was typed and what was answered, so a cancelled request or an earlier failure cannot leave them wrong;
+  recent searches keep ten entries.

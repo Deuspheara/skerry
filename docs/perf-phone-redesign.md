@@ -3,12 +3,12 @@
 Measured 2026-11-12 on the Pixel 8 emulator (`Phone_Pixel8_API36`, arm64, host GPU), `benchmark` build type of `:phone` (R8 full mode, demo data), through
 `:benchmark-phone`. **Emulator-only, indicative.** Nothing here was measured on a real phone or on the real TV.
 
-**Verdict.** The redesign (root-level player sheet, icon-only bar, new headers, search and settings pages) does **not** make the phone slower on any measured path:
-cold start is a little *faster* (first frame about 15-20 % lower with the profile, a smaller gap without it), Home scroll, chat scroll and fullscreen toggle are
-unchanged within the noise, and the new sheet drag runs at 4-5 ms median CPU per frame with the profile. The release APK is 1.9 % smaller than before the
-redesign. The profiles had gone stale (192 lines for removed classes, none for the new hot path) and are regenerated. Three things are stated as limits, not
-hidden: the drag percentiles beyond p50 are noisy on this host, one run of the no-profile drag test is an outlier, and the before/after runs were not taken in the
-same minute.
+**Verdict.** Mixed, and stated with its numbers rather than rounded up. Cold start is a little *faster* (first frame about 15-20 % lower with the profile, a smaller gap without it); Home scroll and chat
+scroll are unchanged within the noise; the new sheet drag runs at 4-5 ms median CPU per frame with the profile; the release APK is 1.9 % smaller than before the redesign. **Not better, and in two places not
+proven equal:** the fullscreen toggle's p90 is **about 22-23 ms with the profile after the redesign (21.8-23.2 ms in the three runs) against 20-21 ms before**, and **without a profile 31.8-33.1 ms in two of three runs
+against 19.9 ms in the third**, so the no-profile case is clearly worse on the host's quieter runs; and the sheet drag has outliers (p90 up to 16 ms with the profile, 134 ms and 98 frames instead of 155 in one no-profile run).
+The picture is no longer re-created on rotation, but the frame numbers do not show a gain from it. The profiles had gone stale (192 lines for removed classes, none for the new hot path) and are regenerated. Limits, not
+hidden: the drag percentiles beyond p50 are noisy on this host, one run of the no-profile drag test is an outlier, and the before/after runs were not taken in the same minute.
 
 ## What changed in the benchmark module
 

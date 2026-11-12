@@ -63,7 +63,7 @@ help-centre pages, so the numbers in section 2 are **our decisions informed by t
 
 ### What the current code does (the reason a refactor is needed)
 
-- `PhoneRoot.kt`: `NavigationSuiteScaffold` (stock M3 bar/rail, labels, 80 dp bar). `LiveKey`, `ReplayKey`, `ClipKey` are **pages on a
+- `PhoneRoot.kt` (as found before the redesign): `NavigationSuiteScaffold` (stock M3 bar/rail, labels, 80 dp bar), since replaced by the custom bar and rail. `LiveKey`, `ReplayKey`, `ClipKey` are **pages on a
   tab back stack**: leaving the page destroys the player (`PlayerViewModel` is keyed `live-$login`, `rememberNativeVideoPlayer` is
   composable-scoped). So a mini player is impossible today without hoisting.
 - `ChannelRoute` receives `onPlay = player::open`, and stream cards in Home, Category and Search currently open the **channel page**
@@ -98,13 +98,13 @@ scheme**, existing dark/light schemes stay (they carry the AA checks already doc
 | Type | existing M3 `Typography`, but titles `titleSmall` 14/20 semibold, meta `bodySmall` 12/16, viewer chip `labelSmall` 11/14 |
 | Motion | existing `LocalReducedMotion` gates everything below |
 
-Tabs stay the same four (Home, Browse, Search, Settings) so deep behaviour and tests stay valid. A rail is kept for width >= 600 dp
+**(Superseded: see section 5.)** The plan kept the four tabs (Home, Browse, Search, Settings); what shipped is Home, Following (signed-in viewers) and Browse, with Search and Settings as pages opened from the header. A rail is kept for width >= 600 dp
 (same custom look, 72 dp wide, icons only).
 
 ### 2.2 Top bars
 
 - **Home / Browse**: no `TopAppBar`. A 56 dp transparent row on the page surface: app mark or title left, **search pill** (36 dp high,
-  `surfaceContainerHigh`, search icon + hint, opens the Search tab) filling the middle, **avatar (28 dp) or sign-in icon** right
+  `surfaceContainerHigh`, search icon + hint, opens the Search page, which is not a tab any more) filling the middle, **avatar (28 dp) or sign-in icon** right
   (opens Settings). It scrolls away with the list (collapsing = it is the first list item, no `nestedScroll` machinery) and comes back
   on a scroll up (`scrollBehavior`-free: a `derivedStateOf` on `firstVisibleItemIndex` toggles an `AnimatedVisibility`-free
   `graphicsLayer.translationY`; one State read).
