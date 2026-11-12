@@ -83,7 +83,7 @@ final class AppModel {
     var tab: AppTab = .home
     var paths: [AppTab: [Route]] = [:]
     var showSignIn = false
-    let session = PlayerSession()
+    let session: PlayerSession
 
     private let lifetime = Lifetime()
     private let settings: SettingsPresenter
@@ -97,6 +97,7 @@ final class AppModel {
             let id = (Bundle.main.object(forInfoDictionaryKey: "TwitchClientId") as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
             graph = TwitchApp.shared.start(clientId: id)
         }
+        session = PlayerSession(graph: graph)
         settings = graph.settings(scope: lifetime.scope)
         let flow = settings.state as SkieSwiftStateFlow<SettingsUiState>
         lifetime.keep(observe(flow) { [weak self] state in

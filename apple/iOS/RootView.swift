@@ -17,6 +17,7 @@ struct RootView: View {
                     .accessibilityHidden(app.tab != tab)
             }
             TabBar()
+            if app.session.target != nil { PlayerSheet() }
         }
         .sheet(isPresented: $app.showSignIn) { SignInSheet() }
         .background(Theme.background.ignoresSafeArea())

@@ -23,12 +23,14 @@ import com.twitchplayer.tv.feature.player.data.stream.VodResolver
 import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
 import com.twitchplayer.tv.feature.search.presentation.SearchPresenter
 import com.twitchplayer.tv.feature.settings.presentation.SettingsPresenter
+import com.twitchplayer.tv.feature.vod.data.VodProgressStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.core.Koin
@@ -95,8 +97,18 @@ class TwitchGraph internal constructor(private val koin: Koin) {
     fun clipsFeed(scope: CoroutineScope): ClipsFeedPresenter = koin.get { parametersOf(scope) }
     fun feedChat(channelId: String, scope: CoroutineScope): FeedChatPresenter = koin.get { parametersOf(channelId, scope) }
 
+    /** Where the viewer stopped in replays: read on open, saved while a replay plays ("continue watching" lists these). */
+    val replayProgress: ReplayProgress get() = ReplayProgress(koin.get())
+
     /** What `AVPlayer` needs: the signed HLS URLs. Swift builds an `AVPlayerItem` from `masterUrl` (live), `playlistUrl` (replay) or a clip file. */
     val playback: PlaybackUrls get() = PlaybackUrls(koin.get(), koin.get(), koin.get())
+}
+
+/** The replay positions, as concrete suspend functions Swift can call (the store itself is a Kotlin interface). */
+class ReplayProgress internal constructor(private val store: VodProgressStore) {
+    suspend fun position(vodId: String): Long = store.progress.first()[vodId]?.positionMs ?: 0L
+
+    suspend fun save(vodId: String, positionMs: Long, durationMs: Long) = store.save(vodId, positionMs, durationMs)
 }
 
 /** Resolves a live channel, a replay or a clip to URLs `AVPlayer` can open (native HLS, no web view). Throws on offline or refused. */

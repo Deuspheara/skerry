@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import TwitchShared
 
 /// What the player was asked to play.
 enum PlaybackTarget: Hashable {
@@ -41,16 +42,20 @@ enum SheetPosition: String { case expanded, collapsed }
 @MainActor
 @Observable
 final class PlayerSession {
+    let playback: PlaybackModel
     private(set) var target: PlaybackTarget?
     var position: SheetPosition = .expanded
     /// Bumped each time a target is opened, so the player view starts a fresh load even for the same channel.
     private(set) var generation = 0
 
+    init(graph: TwitchGraph) { playback = PlaybackModel(graph: graph) }
+
     func open(_ next: PlaybackTarget) {
-        if target == next, position == .collapsed { position = .expanded; return }
+        if target == next { position = .expanded; return }
         target = next
         position = .expanded
         generation += 1
+        playback.start(next)
     }
 
     func expand() { if target != nil { position = .expanded } }
@@ -58,6 +63,7 @@ final class PlayerSession {
     func minimise() { if target != nil { position = .collapsed } }
 
     func close() {
+        playback.end()
         target = nil
         position = .expanded
     }
