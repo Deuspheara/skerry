@@ -35,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -182,9 +183,13 @@ private fun PhoneScaffold(
     }
     Box(Modifier.fillMaxSize()) {
         // While the player is expanded it covers the page: TalkBack must not be able to reach what is behind it.
-        val coveredByPlayer = (session.state as? PlayerSessionState.Open)?.sheet == SheetState.Expanded
+        val open = session.state as? PlayerSessionState.Open
+        val inPip = open?.inPip == true
+        val coveredByPlayer = open?.sheet == SheetState.Expanded || inPip
         Row(
             Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                // The Picture-in-Picture window is the picture alone: the tabs and the page under the sheet are not drawn at all.
+                .graphicsLayer { alpha = if (inPip) 0f else 1f }
                 .then(if (coveredByPlayer) Modifier.clearAndSetSemantics { } else Modifier),
         ) {
             if (chromeVisible && wide) PhoneRail(tabs, navigator.selected, selectTab)

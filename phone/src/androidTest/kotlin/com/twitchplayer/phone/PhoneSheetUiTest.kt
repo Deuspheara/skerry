@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -142,6 +143,27 @@ class PhoneSheetUiTest {
         rule.onNodeWithTag(STAGE_TAG).performTouchInput { swipeUp(startY = bottom - 5f, endY = bottom - 1_500f, durationMillis = 300) }
         waitForText(string(R.string.phone_player_chat_hint))
         assertTrue(!described(string(R.string.phone_player_close)))
+    }
+
+    @Test fun theWindowOfPictureInPictureIsThePictureAloneEvenWhenThePlayerWasAStrip() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        pressBack()
+        waitForStrip()
+
+        scenario!!.onActivity { it.onPictureInPictureModeChanged(true, it.resources.configuration) }
+
+        rule.waitUntil(WAIT_MS) {
+            val stage = rule.onAllNodes(androidx.compose.ui.test.hasTestTag(STAGE_TAG)).fetchSemanticsNodes().firstOrNull()
+            val root = rule.onRoot().fetchSemanticsNode()
+            stage != null && stage.boundsInRoot == root.boundsInRoot
+        }
+        assertTrue("no tab bar in the window", !described(string(R.string.nav_home)))
+        assertTrue("no strip in the window", !described(string(R.string.phone_player_close)))
+
+        scenario!!.onActivity { it.onPictureInPictureModeChanged(false, it.resources.configuration) }
+        waitForStrip()
+        rule.onNodeWithContentDescription(string(R.string.nav_home)).assertIsDisplayed()
     }
 
     @Test fun aHardFlingOfTheExpandedSheetOnlyMinimisesIt() {

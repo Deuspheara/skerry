@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -77,6 +79,11 @@ fun PlayerControlsLayer(
     subtitle: String?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * The system areas (cutout, bars) the controls keep clear of. The scrim itself ignores them and always reaches every edge of the
+     * picture; only the buttons and texts on it are inset.
+     */
+    contentInsets: WindowInsets = WindowInsets(0),
     /** The top-left button: an arrow back by default, a chevron down when it minimises the player. */
     backIcon: ImageVector? = null,
     backDescription: String? = null,
@@ -101,26 +108,28 @@ fun PlayerControlsLayer(
                 ),
             ),
         ) {
-            Row(Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                ControlButton(backIcon ?: Icons.AutoMirrored.Filled.ArrowBack, backDescription ?: stringResource(R.string.player_back), onBack)
-                Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = PhoneColors.OnScrim,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    if (subtitle != null) {
-                        Text(subtitle, style = MaterialTheme.typography.labelMedium, color = PhoneColors.OnScrim.copy(alpha = SUBTITLE_ALPHA), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Box(Modifier.fillMaxSize().windowInsetsPadding(contentInsets)) {
+                Row(Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ControlButton(backIcon ?: Icons.AutoMirrored.Filled.ArrowBack, backDescription ?: stringResource(R.string.player_back), onBack)
+                    Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = PhoneColors.OnScrim,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        if (subtitle != null) {
+                            Text(subtitle, style = MaterialTheme.typography.labelMedium, color = PhoneColors.OnScrim.copy(alpha = SUBTITLE_ALPHA), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
+                    topActions()
                 }
-                topActions()
+                // A little above the middle: the bottom bar keeps its own space on a short (16:9 portrait) picture.
+                Box(Modifier.align(Alignment.Center).offset(y = CENTER_LIFT)) { center() }
+                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.Bottom) { bottom() }
             }
-            // A little above the middle: the bottom bar keeps its own space on a short (16:9 portrait) picture.
-            Box(Modifier.align(Alignment.Center).offset(y = CENTER_LIFT)) { center() }
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.Bottom) { bottom() }
         }
     }
 }

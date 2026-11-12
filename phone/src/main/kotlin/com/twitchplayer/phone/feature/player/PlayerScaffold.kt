@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -182,7 +182,7 @@ fun PlayerScaffold(
                         onBack = if (landscape) onToggleFullscreen else onBack,
                         backIcon = if (!landscape && sheet != null) PhoneIcons.ChevronDown else null,
                         backDescription = if (!landscape && sheet != null) stringResource(R.string.phone_player_minimise) else null,
-                        modifier = if (landscape) Modifier.safeDrawingPadding() else Modifier,
+                        contentInsets = if (landscape) WindowInsets.safeDrawing else WindowInsets(0),
                         topActions = { topActions(chrome) },
                         center = { center(chrome) },
                         bottom = { bottom(chrome) },

@@ -161,6 +161,7 @@ fun PlayerOverlay(
     val threshold = remember { { distance: Float -> DismissPolicy.positionalThreshold(distance, containerHeightPx[0], POSITIONAL_THRESHOLD) } }
     val fling = rememberDeliberateFling(anchored, spec, density.density, threshold)
 
+    val pip = open.inPip
     val owner = rememberTargetStoreOwner(open.target)
     CompositionLocalProvider(LocalViewModelStoreOwner provides owner, LocalPlayerSheet provides sheet) {
         Box(modifier.fillMaxSize()) {
@@ -181,10 +182,12 @@ fun PlayerOverlay(
                                 if (canDismiss) Rest.Dismissed at maxHeight.toFloat()
                             },
                         )
-                        val offset = anchored.requireOffset()
-                        val progress = SheetGeometry.progress(offset, metrics.collapsedPx)
+                        // The Picture-in-Picture window shows the picture and nothing else: the sheet fills it whatever the drag or the tab
+                        // bar's size said, so no bar, strip or page edge can show in it (the window is not the screen it was laid out for).
+                        val offset = if (pip) 0f else anchored.requireOffset()
+                        val progress = if (pip) 0f else SheetGeometry.progress(offset, metrics.collapsedPx)
                         val x = (startChromePx * progress).roundToInt()
-                        val height = SheetGeometry.sheetHeight(maxHeight, stripHeightPx, progress)
+                        val height = if (pip) maxHeight else SheetGeometry.sheetHeight(maxHeight, stripHeightPx, progress)
                         val placeable = measurable.measure(Constraints.fixed((maxWidth - x).coerceAtLeast(0), height))
                         // Relative: with the rail on the right (right-to-left languages) the sheet keeps to the left of it.
                         layout(maxWidth, maxHeight) { placeable.placeRelative(IntOffset(x, offset.roundToInt())) }
