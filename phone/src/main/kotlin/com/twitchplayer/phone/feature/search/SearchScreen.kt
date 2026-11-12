@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,7 +64,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -84,6 +88,7 @@ import com.twitchplayer.phone.ui.components.FilterPill
 import com.twitchplayer.phone.ui.components.LiveBadge
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.PhoneIcons
+import com.twitchplayer.phone.ui.components.itemMotion
 import com.twitchplayer.phone.ui.components.searchMorph
 import com.twitchplayer.phone.ui.theme.PhoneColors
 import com.twitchplayer.tv.core.data.model.Category
@@ -94,11 +99,16 @@ import com.twitchplayer.tv.feature.search.presentation.SearchEvent
 import com.twitchplayer.tv.feature.search.presentation.SearchUiState
 import com.twitchplayer.tv.feature.search.presentation.SearchViewModel
 import com.twitchplayer.tv.feature.search.presentation.VoiceState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val CATEGORY_COLUMNS = 3
+private const val STALE_ALPHA = 0.55f
+private const val DIM_MS = 180
+private const val STALE_AFTER_MS = 150L
+private val PROGRESS_HEIGHT = 2.dp
 private const val SKELETON_ROWS = 5
 private val PillHeight = 40.dp
 
@@ -172,11 +182,20 @@ fun SearchRoute(
                 onMic = startVoice,
                 onClear = { text.setTextAndPlaceCursorAtEnd("") },
             )
-            val answered = !state.searching && state.query == text.text.toString()
-            if (searching && answered && state.results is ResultsUi.Found) {
+            // Stale-while-revalidate: what answered the previous query stays on screen while the next one is on its way, a little dimmed
+            // with a thin progress line once the wait is noticeable (a quick answer changes nothing visible but the rows themselves).
+            val waiting = searching && state.searching
+            val slow = rememberAfterDelay(waiting)
+            val dim by animateFloatAsState(if (slow && state.results is ResultsUi.Found) STALE_ALPHA else 1f, tween(DIM_MS), label = "search-stale")
+            Box(Modifier.fillMaxWidth().height(PROGRESS_HEIGHT)) {
+                if (slow && searching) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth().height(PROGRESS_HEIGHT), color = MaterialTheme.colorScheme.primary, trackColor = Color.Transparent)
+                }
+            }
+            if (searching && state.results is ResultsUi.Found) {
                 FilterRow(filter) { filter = it }
             }
-            LazyColumn(Modifier.fillMaxSize().imePadding(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            LazyColumn(Modifier.fillMaxSize().imePadding().graphicsLayer { alpha = dim }, verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 if (state.voice == VoiceState.Idle && mic.denied) {
                     item(key = "mic-denied") {
                         Text(
@@ -196,6 +215,21 @@ fun SearchRoute(
         }
     }
     VoiceDialog(voice, onCancel = { onEvent(SearchEvent.CancelVoice) })
+}
+
+/** True once [active] has been true for [STALE_AFTER_MS] without a break: a short wait shows nothing, a long one shows the dim and the progress line. */
+@Composable
+private fun rememberAfterDelay(active: Boolean): Boolean {
+    var slow by remember { mutableStateOf(false) }
+    LaunchedEffect(active) {
+        if (active) {
+            delay(STALE_AFTER_MS)
+            slow = true
+        } else {
+            slow = false
+        }
+    }
+    return slow
 }
 
 /** The pill of the header, grown: back arrow outside it on the left, the search glyph, the text, a clear button and the microphone. */
@@ -277,12 +311,12 @@ private fun LazyListScope.suggestions(state: SearchUiState, onEvent: (SearchEven
                 TextButton(onClick = { onEvent(SearchEvent.ClearRecents) }) { Text(stringResource(R.string.phone_search_clear_recents)) }
             }
         }
-        items(state.recents, key = { "recent-$it" }) { recent -> RecentRow(recent, onPick = { onPickRecent(recent) }, onRemove = { onEvent(SearchEvent.RemoveRecent(recent)) }, modifier = Modifier.animateItem()) }
+        items(state.recents, key = { "recent-$it" }) { recent -> RecentRow(recent, onPick = { onPickRecent(recent) }, onRemove = { onEvent(SearchEvent.RemoveRecent(recent)) }, modifier = Modifier.itemMotion(this)) }
     }
     val live = (state.results as? ResultsUi.Trends)?.channels.orEmpty()
     if (live.isNotEmpty()) {
         item(key = "live-header") { SectionTitle(stringResource(R.string.phone_search_live_now)) }
-        items(live, key = { "live-${it.id}" }) { channel -> ChannelResultRow(channel, onClick = { onOpen(channel) }, modifier = Modifier.animateItem()) }
+        items(live, key = { "live-${it.id}" }) { channel -> ChannelResultRow(channel, onClick = { onOpen(channel) }, modifier = Modifier.itemMotion(this)) }
     }
     if (state.recents.isEmpty() && live.isEmpty()) {
         item(key = "hint") {
@@ -318,8 +352,8 @@ private fun LazyListScope.results(
             )
         }
 
-        // A query that has not been answered yet never shows what answered the one before it.
-        state.searching || (found == null && !noResult) -> {
+        // The skeleton is only for a first load with nothing to show: later queries keep the previous answer on screen until theirs arrives.
+        found == null && !noResult -> {
             items(SKELETON_ROWS, key = { "skeleton-$it" }) { SkeletonRow() }
         }
 
@@ -350,13 +384,13 @@ private fun LazyListScope.foundResults(
             ChannelResultRow(channel, onClick = {
                 onOpened()
                 if (channel.isLive) onWatch(channel.login) else onChannel(channel.login)
-            }, modifier = Modifier.animateItem())
+            }, modifier = Modifier.itemMotion(this))
         }
     }
     if (showCategories) {
         if (filter == SearchFilter.All) item(key = "categories-header") { SectionTitle(stringResource(R.string.sec_categories)) }
         items(found.categories.chunked(CATEGORY_COLUMNS), key = { row -> "categories-${row.first().id}" }) { row ->
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.itemMotion(this).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { category ->
                     CategoryCard(category, onClick = {
                         onOpened()

@@ -54,6 +54,7 @@ import com.twitchplayer.phone.ui.components.ScreenPadding
 import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.StreamColumnMin
 import com.twitchplayer.phone.ui.components.fullSpanItem
+import com.twitchplayer.phone.ui.components.itemMotion
 import com.twitchplayer.phone.ui.components.streamLayout
 import com.twitchplayer.phone.ui.components.streamRowSpacing
 import com.twitchplayer.tv.core.presentation.Load
@@ -152,7 +153,7 @@ fun CategoryRoute(
                         fullSpanItem("empty") { MessageState(title = stringResource(R.string.state_no_live), modifier = Modifier.padding(top = 48.dp)) }
                     }
                     items(ui.streams, key = { it.channelId }, contentType = { "stream" }) { stream ->
-                        StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
+                        StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
                     }
                 }
             }

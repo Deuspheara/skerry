@@ -34,7 +34,8 @@ fun Avatar(url: String?, name: String, size: Dp, modifier: Modifier = Modifier) 
     ) {
         Text(
             text = name.take(1).uppercase(),
-            style = MaterialTheme.typography.titleMedium,
+            // The initial of a small picture is a label, not a title.
+            style = if (size < SMALL_AVATAR) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
         if (!url.isNullOrEmpty()) {
@@ -43,5 +44,6 @@ fun Avatar(url: String?, name: String, size: Dp, modifier: Modifier = Modifier) 
     }
 }
 
+private val SMALL_AVATAR = 36.dp
 val AvatarSmall = 40.dp
 val AvatarLarge = 72.dp

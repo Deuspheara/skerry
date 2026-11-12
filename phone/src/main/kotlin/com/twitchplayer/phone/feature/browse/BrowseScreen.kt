@@ -40,6 +40,7 @@ import com.twitchplayer.phone.ui.components.PosterColumnMin
 import com.twitchplayer.phone.ui.components.RefreshBox
 import com.twitchplayer.phone.ui.components.ScreenPadding
 import com.twitchplayer.phone.ui.components.SkeletonBlock
+import com.twitchplayer.phone.ui.components.itemMotion
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.feature.browse.presentation.BrowseEvent
 import com.twitchplayer.tv.feature.browse.presentation.BrowseFilter
@@ -103,7 +104,7 @@ fun BrowseRoute(
                             MessageState(title = stringResource(R.string.state_no_result), modifier = Modifier.padding(top = 48.dp))
                         }
                     }
-                    items(ui.categories, key = { it.id }) { category -> CategoryCard(category, onClick = { onCategory(category) }) }
+                    items(ui.categories, key = { it.id }) { category -> CategoryCard(category, onClick = { onCategory(category) }, modifier = Modifier.itemMotion(this)) }
                 }
             }
         }

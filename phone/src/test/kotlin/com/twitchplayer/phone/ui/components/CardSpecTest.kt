@@ -5,8 +5,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CardSpecTest {
-    @Test fun aCategoryNameAlwaysTakesTwoLinesSoCardsStayLevel() {
-        assertEquals(2, CardSpec.CATEGORY_NAME_LINES)
+    @Test fun aCategoryNameIsOneEllipsizedLineSoNoSecondLineIsReserved() {
+        assertEquals(1, CardSpec.CATEGORY_NAME_LINES)
+    }
+
+    @Test fun theWideLayoutsDoNotReserveTitleLines() {
+        assertEquals(StreamLayout.Wide, StreamLayout.WideSingleColumn)
     }
 
     @Test fun aCompactRowIsAsTallAsItsSixteenByNineThumbnail() {

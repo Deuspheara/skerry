@@ -46,6 +46,7 @@ import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.StreamCardSkeleton
 import com.twitchplayer.phone.ui.components.StreamColumnMin
 import com.twitchplayer.phone.ui.components.fullSpanItem
+import com.twitchplayer.phone.ui.components.itemMotion
 import com.twitchplayer.phone.ui.components.sectionHeader
 import com.twitchplayer.phone.ui.components.streamLayout
 import com.twitchplayer.phone.ui.components.streamRowSpacing
@@ -102,7 +103,7 @@ private fun FollowingList(live: List<com.twitchplayer.tv.core.data.model.LiveStr
     ) {
         if (live.isNotEmpty()) {
             items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
             }
         } else {
             fullSpanItem("nothing-live") { Text(nothingLive, style = MaterialTheme.typography.bodyLarge) }
@@ -110,7 +111,7 @@ private fun FollowingList(live: List<com.twitchplayer.tv.core.data.model.LiveStr
         if (offline.isNotEmpty()) {
             sectionHeader("offline-header", offlineTitle)
             items(offline, key = { "offline-${it.id}" }, span = { GridItemSpan(maxLineSpan) }, contentType = { "channel" }) { channel ->
-                Column {
+                Column(Modifier.itemMotion(this)) {
                     ChannelListItem(channel, onClick = { onChannel(channel.login) })
                     HorizontalDivider(Modifier.padding(start = CHANNEL_DIVIDER_INSET, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 }

@@ -44,6 +44,7 @@ import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.StreamCardSkeleton
 import com.twitchplayer.phone.ui.components.StreamColumnMin
 import com.twitchplayer.phone.ui.components.fullSpanItem
+import com.twitchplayer.phone.ui.components.itemMotion
 import com.twitchplayer.phone.ui.components.sectionHeader
 import com.twitchplayer.phone.ui.components.streamLayout
 import com.twitchplayer.phone.ui.components.streamRowSpacing
@@ -104,13 +105,13 @@ private fun ForYou(content: HomeContent, onWatch: (String) -> Unit, onCategory: 
         if (content.following.isNotEmpty()) {
             sectionHeader("following-header", followingTitle)
             items(content.following, key = { "following-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
             }
         }
         if (content.forYou.isNotEmpty()) {
             sectionHeader("for-you-header", forYouTitle)
             items(content.forYou, key = { "for-you-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
             }
         }
         if (content.categories.isNotEmpty()) {
