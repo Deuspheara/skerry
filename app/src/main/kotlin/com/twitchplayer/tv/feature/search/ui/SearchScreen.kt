@@ -212,11 +212,14 @@ private fun QueryBox(query: String) {
     }
 }
 
+private const val TV_RECENTS_SHOWN = 4
+
 @Composable
 private fun Recents(recents: List<String>, onRecent: (String) -> Unit) {
     // The row keeps its height when empty so the keyboard never shifts.
     LazyRow(Modifier.fillMaxWidth().height(36.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 2.dp, vertical = 2.dp)) {
-        items(recents, key = { it }) { recent ->
+        // The store keeps ten now (the phone lists them all); the TV row keeps showing the four it always did.
+        items(recents.take(TV_RECENTS_SHOWN), key = { it }) { recent ->
             Chip(recent, { onRecent(recent) }, compact = true, leadingIcon = TvIcons.Clock)
         }
     }
