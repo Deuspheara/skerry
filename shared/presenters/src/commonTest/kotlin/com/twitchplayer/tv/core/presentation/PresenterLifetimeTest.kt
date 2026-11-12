@@ -128,7 +128,7 @@ class PresenterLifetimeTest {
             }
         }
         val scope = uiScope()
-        val auth = AuthPresenter(session, scope)
+        val auth = AuthPresenter(session, FakeSettings(), scope)
         auth.onEvent(AuthEvent.SignIn)
         assertEquals(code, auth.state.value.code)
 

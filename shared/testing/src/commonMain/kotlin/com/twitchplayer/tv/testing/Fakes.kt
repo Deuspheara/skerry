@@ -40,7 +40,7 @@ class FakeSession(initial: SessionState = SessionState.SignedIn(Account("me", "c
     }
 }
 
-private const val MAX_RECENTS = 4
+private const val MAX_RECENTS = 10
 
 class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
     private val mutable = MutableStateFlow(initial)
@@ -66,6 +66,9 @@ class FakeRepository(
 ) : TwitchRepository {
     var failNext = false
     val searchCalls = mutableListOf<String>()
+
+    /** When set, a search waits for it (a request that is still on its way). */
+    var searchGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
     private fun check() {
         if (failNext) {
             failNext = false
@@ -90,6 +93,7 @@ class FakeRepository(
     }
     override suspend fun search(query: String): SearchResults {
         searchCalls += query
+        searchGate?.await()
         check()
         return searchResult
     }

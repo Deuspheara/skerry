@@ -155,6 +155,6 @@ class DataStoreSettingsRepository(
         val RECENTS = stringPreferencesKey("recent_searches")
         val CATEGORIES = stringSetPreferencesKey("followed_categories")
         const val SEPARATOR = "\n"
-        const val MAX_RECENTS = 4
+        const val MAX_RECENTS = 10
     }
 }

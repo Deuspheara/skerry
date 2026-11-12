@@ -168,6 +168,82 @@ class SearchPresenterTest {
         assertTrue(vm.state.value.results is ResultsUi.Found)
     }
 
+    @Test fun aNewQueryAfterAFailureClearsTheFailureAtOnceAndNeverShowsTheOldAnswerUnderIt() = runTest(dispatcher) {
+        val vm = presenter()
+        runCurrent()
+        repo.failNext = true
+        vm.onEvent(SearchEvent.SetQuery("first"))
+        advanceTimeBy(301)
+        runCurrent()
+        assertEquals(true, vm.state.value.failed)
+
+        vm.onEvent(SearchEvent.SetQuery("second"))
+
+        // Before the debounce has even run: nothing failed for "second", it is being searched, and the answer on hand is for "first".
+        assertEquals(false, vm.state.value.failed)
+        assertEquals(true, vm.state.value.searching)
+        assertEquals("first", vm.state.value.resultsFor)
+        advanceTimeBy(301)
+        runCurrent()
+        assertEquals(false, vm.state.value.searching)
+        assertEquals("second", vm.state.value.resultsFor)
+    }
+
+    @Test fun rapidRetypingSearchesOnlyTheLastQueryAndEndsNotSearching() = runTest(dispatcher) {
+        val vm = presenter()
+        runCurrent()
+
+        listOf("l", "lu", "lun", "luna").forEach {
+            vm.onEvent(SearchEvent.SetQuery(it))
+            advanceTimeBy(50)
+            assertEquals(true, vm.state.value.searching, "while typing, the screen is waiting")
+        }
+        advanceTimeBy(301)
+        runCurrent()
+
+        assertEquals(listOf("luna"), repo.searchCalls)
+        assertEquals(false, vm.state.value.searching)
+        assertEquals("luna", vm.state.value.resultsFor)
+    }
+
+    @Test fun aSearchCancelledByANewKeystrokeNeverLeavesSearchingSet() = runTest(dispatcher) {
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        repo.searchGate = gate
+        val vm = presenter()
+        runCurrent()
+
+        vm.onEvent(SearchEvent.SetQuery("a"))
+        advanceTimeBy(301)
+        runCurrent()
+        assertEquals(true, vm.state.value.searching, "the request for a is on its way")
+
+        vm.onEvent(SearchEvent.SetQuery("ab"))
+        advanceTimeBy(301)
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+
+        assertEquals(listOf("a", "ab"), repo.searchCalls)
+        assertEquals(false, vm.state.value.searching)
+        assertEquals(false, vm.state.value.failed)
+        assertEquals("ab", vm.state.value.resultsFor)
+    }
+
+    @Test fun clearingTheQueryEndsSearchingAndBringsTheTrendsBack() = runTest(dispatcher) {
+        val vm = presenter()
+        runCurrent()
+        vm.onEvent(SearchEvent.SetQuery("lun"))
+        advanceTimeBy(301)
+        runCurrent()
+
+        vm.onEvent(SearchEvent.Clear)
+        runCurrent()
+
+        assertEquals(false, vm.state.value.searching)
+        assertEquals(false, vm.state.value.failed)
+        assertTrue(vm.state.value.results is ResultsUi.Trends)
+    }
+
     @Test fun aRecentSearchCanBeRemovedOnItsOwn() = runTest(dispatcher) {
         val vm = presenter(settings = FakeSettings(AppSettings(recentSearches = listOf("a", "b", "c"))))
         runCurrent()
@@ -188,13 +264,13 @@ class SearchPresenterTest {
         assertEquals(emptyList<String>(), vm.state.value.recents)
     }
 
-    @Test fun recentsAreDedupedAndCappedAtFour() = runTest(dispatcher) {
+    @Test fun recentsAreDedupedAndCappedAtTen() = runTest(dispatcher) {
         val settings = FakeSettings()
         val vm = presenter(settings = settings)
-        listOf("a", "b", "c", "d", "e", "b").forEach {
+        listOf("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "b").forEach {
             vm.onEvent(SearchEvent.SetQuery(it))
             vm.onEvent(SearchEvent.CommitQuery)
         }
-        assertEquals(listOf("b", "e", "d", "c"), vm.state.value.recents)
+        assertEquals(listOf("b", "l", "k", "j", "i", "h", "g", "f", "e", "d"), vm.state.value.recents)
     }
 }

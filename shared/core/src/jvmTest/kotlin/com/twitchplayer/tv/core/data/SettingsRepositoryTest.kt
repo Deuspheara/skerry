@@ -65,4 +65,43 @@ class SettingsRepositoryTest {
         assertEquals(ChatMode.Compact, settings.chatMode)
         assertEquals(PlayerEngine.WebView, settings.playerEngine)
     }
+
+    @Test fun recentSearchesAreDedupedNewestFirstAndCappedAtTen() = runBlocking {
+        val repo = DataStoreSettingsRepository(store())
+        ('a'..'l').forEach { repo.addRecentSearch(it.toString()) }
+        repo.addRecentSearch("c")
+
+        assertEquals(listOf("c", "l", "k", "j", "i", "h", "g", "f", "e", "d"), repo.settings.first().recentSearches)
+    }
+
+    @Test fun oneRecentSearchCanBeRemovedAndTheRestKeepTheirOrder() = runBlocking {
+        val repo = DataStoreSettingsRepository(store())
+        listOf("a", "b", "c").forEach { repo.addRecentSearch(it) }
+
+        repo.removeRecentSearch("b")
+        assertEquals(listOf("c", "a"), repo.settings.first().recentSearches)
+        repo.removeRecentSearch("missing")
+        assertEquals(listOf("c", "a"), repo.settings.first().recentSearches)
+        repo.removeRecentSearch("c")
+        repo.removeRecentSearch("a")
+        assertEquals(emptyList(), repo.settings.first().recentSearches)
+    }
+
+    @Test fun allRecentSearchesCanBeClearedAndTheListWorksAfterwards() = runBlocking {
+        val repo = DataStoreSettingsRepository(store())
+        listOf("a", "b").forEach { repo.addRecentSearch(it) }
+
+        repo.clearRecentSearches()
+        assertEquals(emptyList(), repo.settings.first().recentSearches)
+        repo.addRecentSearch("again")
+        assertEquals(listOf("again"), repo.settings.first().recentSearches)
+    }
+
+    @Test fun aSearchWithTheSeparatorInItIsStoredWithoutBreakingTheList() = runBlocking {
+        val repo = DataStoreSettingsRepository(store())
+        repo.addRecentSearch("one\u001Ftwo")
+        repo.addRecentSearch("three")
+
+        assertEquals(2, repo.settings.first().recentSearches.size)
+    }
 }

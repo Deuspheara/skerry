@@ -20,8 +20,10 @@ data class SettingsUiState(
     val playerEngine: PlayerEngine = PlayerEngine.Fallback,
     val showStats: Boolean = false,
     val followRaids: Boolean = false,
-    /** Account login, or null when signed out. */
+    /** Account login, or null when signed out (or while the session is still loading: see [sessionLoading]). */
     val account: String? = null,
+    /** The stored session has not been read yet: [account] being null does not mean signed out. */
+    val sessionLoading: Boolean = true,
 )
 
 sealed interface SettingsEvent {
@@ -42,7 +44,7 @@ class SettingsPresenter(
     defaultEngine: PlayerEngine = PlayerEngine.Fallback,
 ) {
     val state: StateFlow<SettingsUiState> = combine(settings.settings, session.state) { s, session ->
-        SettingsUiState(s.chatMode, s.chat, s.animationsEnabled, s.playerEngine, s.showStats, s.followRaids, (session as? SessionState.SignedIn)?.account?.login)
+        SettingsUiState(s.chatMode, s.chat, s.animationsEnabled, s.playerEngine, s.showStats, s.followRaids, (session as? SessionState.SignedIn)?.account?.login, sessionLoading = session is SessionState.Loading)
     }.stateIn(scope, SharingStarted.Lazily, SettingsUiState(playerEngine = defaultEngine))
 
     fun onEvent(event: SettingsEvent) {

@@ -5,6 +5,7 @@ import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SessionState
 import com.twitchplayer.tv.core.network.auth.DeviceCodeResponse
 import com.twitchplayer.tv.testing.FakeSession
+import com.twitchplayer.tv.testing.FakeSettings
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -48,7 +49,7 @@ class AuthPresenterTest {
 
     @Test fun signInShowsTheCodeUntilItEnds() = runTest(dispatcher) {
         val session = SigningIn(code)
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         assertNull(auth.state.value.code)
 
         auth.onEvent(AuthEvent.SignIn)
@@ -60,7 +61,7 @@ class AuthPresenterTest {
 
     @Test fun aSecondSignInWhileOneRunsIsIgnored() = runTest(dispatcher) {
         val session = SigningIn(code)
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
         auth.onEvent(AuthEvent.SignIn)
         assertEquals(1, session.calls)
@@ -68,7 +69,7 @@ class AuthPresenterTest {
 
     @Test fun cancelStopsTheSignInAndClearsTheCode() = runTest(dispatcher) {
         val session = SigningIn(code)
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
         auth.onEvent(AuthEvent.Cancel)
         assertNull(auth.state.value.code)
@@ -79,21 +80,21 @@ class AuthPresenterTest {
 
     @Test fun signOutAsksTheSession() = runTest(dispatcher) {
         val session = SigningIn(code)
-        AuthPresenter(session, backgroundScope).onEvent(AuthEvent.SignOut)
+        AuthPresenter(session, FakeSettings(), backgroundScope).onEvent(AuthEvent.SignOut)
         advanceUntilIdle()
         assertEquals(true, session.signedOut)
     }
 
     @Test fun signOutWithTheFakeSessionEndsTheSession() = runTest(dispatcher) {
         val session = FakeSession(SessionState.SignedIn(Account("me", "camille")))
-        AuthPresenter(session, backgroundScope).onEvent(AuthEvent.SignOut)
+        AuthPresenter(session, FakeSettings(), backgroundScope).onEvent(AuthEvent.SignOut)
         advanceUntilIdle()
         assertEquals(SessionState.SignedOut, session.state.value)
     }
 
     @Test fun aGrantedSignInEndsWithASuccessResultAndNoCode() = runTest(dispatcher) {
         val session = SigningIn(code)
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
 
         session.finish.complete(Unit)
@@ -104,7 +105,7 @@ class AuthPresenterTest {
 
     @Test fun aRefusedExpiredOrFailedSignInEndsWithAFailedResult() = runTest(dispatcher) {
         val session = SigningIn(code).apply { granted = false }
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
 
         session.finish.complete(Unit)
@@ -116,7 +117,7 @@ class AuthPresenterTest {
 
     @Test fun anExceptionInsideTheSignInIsAFailureNotACrash() = runTest(dispatcher) {
         val session = SigningIn(code).apply { failure = IllegalStateException("disk full") }
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
 
         session.finish.complete(Unit)
@@ -127,7 +128,7 @@ class AuthPresenterTest {
 
     @Test fun theResultStaysUntilTheUiHasShownIt() = runTest(dispatcher) {
         val session = SigningIn(code).apply { granted = false }
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
         session.finish.complete(Unit)
         advanceUntilIdle()
@@ -141,7 +142,7 @@ class AuthPresenterTest {
 
     @Test fun cancellingIsNotAResult() = runTest(dispatcher) {
         val session = SigningIn(code)
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
 
         auth.onEvent(AuthEvent.Cancel)
@@ -152,7 +153,7 @@ class AuthPresenterTest {
 
     @Test fun aNewSignInClearsTheLastResultBeforeItsCodeArrives() = runTest(dispatcher) {
         val session = SigningIn(code).apply { granted = false }
-        val auth = AuthPresenter(session, backgroundScope)
+        val auth = AuthPresenter(session, FakeSettings(), backgroundScope)
         auth.onEvent(AuthEvent.SignIn)
         session.finish.complete(Unit)
         advanceUntilIdle()
@@ -167,5 +168,15 @@ class AuthPresenterTest {
         advanceUntilIdle()
         assertEquals(SignInResult.Failed, auth.state.value.result)
         assertEquals(2, session.calls)
+    }
+
+    @Test fun signingOutForgetsTheRecentSearches() = runTest(dispatcher) {
+        val settings = FakeSettings(com.twitchplayer.tv.core.data.model.AppSettings(recentSearches = listOf("a", "b")))
+        val session = FakeSession(SessionState.SignedIn(Account("me", "camille")))
+
+        AuthPresenter(session, settings, backgroundScope).onEvent(AuthEvent.SignOut)
+        advanceUntilIdle()
+
+        assertEquals(emptyList(), settings.settings.value.recentSearches)
     }
 }

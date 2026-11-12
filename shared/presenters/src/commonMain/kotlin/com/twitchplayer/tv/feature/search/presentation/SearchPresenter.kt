@@ -51,10 +51,15 @@ data class SearchUiState(
     val recents: ImmutableList<String> = persistentListOf(),
     val results: ResultsUi = ResultsUi.Trends(persistentListOf()),
     val voice: VoiceState = VoiceState.Idle,
-    /** A search for [query] is on its way (typing settled, the answer not here yet). */
+    /**
+     * What [query] has not been answered yet: it was just typed (the debounce is running), a request is on its way, or a retry was asked.
+     * While true, [results] belongs to an older query and a screen must not show it under the new one.
+     */
     val searching: Boolean = false,
-    /** The last search could not be made (no network, Twitch refused); [results] then still shows the trends. */
+    /** The answer to the current query could not be fetched (no network, Twitch refused); never true while [searching]. */
     val failed: Boolean = false,
+    /** The (trimmed) query [results] answers. */
+    val resultsFor: String = "",
 )
 
 sealed interface SearchEvent {
@@ -90,8 +95,6 @@ class SearchPresenter(
     private val query = MutableStateFlow("")
     private val voice = MutableStateFlow<VoiceState>(VoiceState.Idle)
     private val retry = MutableStateFlow(0)
-    private val searching = MutableStateFlow(false)
-    private val failed = MutableStateFlow(false)
     private var voiceJob: Job? = null
 
     private val trends = flow {
@@ -101,33 +104,43 @@ class SearchPresenter(
         )
     }.stateIn(scope, SharingStarted.Lazily, persistentListOf())
 
-    private val results = combine(query.map { it.trim() }.distinctUntilChanged(), retry) { q, _ -> q }.debounce { if (it.isEmpty()) 0 else debounceMs }
-        .flatMapLatest { q ->
+    /** What came back for a query (and the retry count it was asked at): the answer is only current while both still match what was typed. */
+    private data class Answer(val query: String, val retries: Int, val results: ResultsUi, val failed: Boolean)
+
+    private val answers = combine(query.map { it.trim() }.distinctUntilChanged(), retry) { q, retries -> q to retries }
+        .debounce { (q, _) -> if (q.isEmpty()) 0 else debounceMs }
+        .flatMapLatest { (q, retries) ->
             if (q.isEmpty()) {
-                searching.value = false
-                failed.value = false
-                trends.map<_, ResultsUi> { ResultsUi.Trends(it) }
+                trends.map { Answer(q, retries, ResultsUi.Trends(it), failed = false) }
             } else {
                 flow {
-                    searching.value = true
-                    failed.value = false
                     val found = runCatching { repository.search(q) }.getOrNull()
-                    failed.value = found == null
-                    searching.value = false
                     emit(
                         when {
-                            found == null || (found.channels.isEmpty() && found.categories.isEmpty()) -> ResultsUi.Trends(trends.value, noResult = true)
-                            else -> ResultsUi.Found(found.channels.toImmutableList(), found.categories.toImmutableList())
+                            found == null -> Answer(q, retries, ResultsUi.Trends(trends.value), failed = true)
+                            found.channels.isEmpty() && found.categories.isEmpty() -> Answer(q, retries, ResultsUi.Trends(trends.value, noResult = true), failed = false)
+                            else -> Answer(q, retries, ResultsUi.Found(found.channels.toImmutableList(), found.categories.toImmutableList()), failed = false)
                         },
                     )
                 }
             }
         }
+        .stateIn(scope, SharingStarted.Lazily, Answer("", 0, ResultsUi.Trends(persistentListOf()), failed = false))
 
-    private val status = combine(searching, failed) { isSearching, hasFailed -> isSearching to hasFailed }
-
-    val state: StateFlow<SearchUiState> = combine(query, settings.settings.map { it.recentSearches }, results, voice, status) { q, recents, r, v, st ->
-        SearchUiState(q, recents.toImmutableList(), r, v, searching = st.first, failed = st.second)
+    // "Searching" and "failed" are derived from the typed query and the answer, not kept as flags: a cancelled search (another key typed
+    // meanwhile) or a failure from an earlier query can never leave one of them set for the wrong query.
+    val state: StateFlow<SearchUiState> = combine(query, settings.settings.map { it.recentSearches }, answers, voice, retry) { q, recents, answer, v, retries ->
+        val typed = q.trim()
+        val current = (typed.isEmpty() && answer.query.isEmpty()) || (answer.query == typed && answer.retries == retries)
+        SearchUiState(
+            query = q,
+            recents = recents.toImmutableList(),
+            results = answer.results,
+            voice = v,
+            searching = typed.isNotEmpty() && !current,
+            failed = answer.failed && current,
+            resultsFor = answer.query,
+        )
     }.stateIn(scope, SharingStarted.Lazily, SearchUiState())
 
     fun onEvent(event: SearchEvent) {
