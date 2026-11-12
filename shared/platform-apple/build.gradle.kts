@@ -3,6 +3,16 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFrameworkConfig
 
 plugins {
   id("twitchplayer.kmp-apple-library")
+  alias(libs.plugins.skie)
+}
+
+// SKIE turns suspend functions into `async`, StateFlow into AsyncSequence and sealed classes into Swift enums; it also uploads
+// build analytics by default, which this build switches off.
+skie {
+  analytics {
+    disableUpload.set(true)
+    enabled.set(false)
+  }
 }
 
 // The Apple implementations of the platform seams, the Koin entry point for Swift and the `TwitchShared` XCFramework that

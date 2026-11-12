@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.platform.apple
 
+import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.ui.ChannelKeyBus
@@ -47,16 +48,27 @@ import org.koin.core.parameter.parametersOf
 object TwitchApp {
     private var graph: TwitchGraph? = null
 
-    /** Starts Koin with the production graph (once) and returns it. Later calls return the same graph. */
-    fun start(clientId: String): TwitchGraph = graph ?: TwitchGraph(startKoin { modules(appleModules(AppleConfig(clientId))) }.koin).also { graph = it }
+    /**
+     * Starts Koin with the production graph (once), loads the stored Twitch session and returns the graph. Later calls return the same
+     * graph. Without the session start every screen would wait forever for "who is signed in".
+     */
+    fun start(clientId: String): TwitchGraph = graph ?: TwitchGraph(startKoin { modules(appleModules(AppleConfig(clientId))) }.koin).also {
+        it.startSession()
+        graph = it
+    }
 }
 
 /** The presenters and services of the running app. */
 class TwitchGraph internal constructor(private val koin: Koin) {
+    internal fun startSession() = koin.get<SessionRepository>().start()
+
     /** Call from `scenePhase == .active` (and `applicationDidBecomeActive` on macOS): visible feeds refresh when old enough. */
     val foreground: ForegroundSignal get() = koin.get()
     val channelKeys: ChannelKeyBus get() = koin.get()
     val tokens: TokenStore get() = koin.get()
+
+    /** Checks of the Apple platform seams, for the smoke app and for diagnostics. */
+    val selfTest: AppleSelfTest get() = AppleSelfTest(koin.get(), koin.get(), koin.get())
 
     fun auth(scope: CoroutineScope): AuthPresenter = koin.get { parametersOf(scope) }
     fun home(scope: CoroutineScope): HomePresenter = koin.get { parametersOf(scope) }
