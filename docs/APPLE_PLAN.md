@@ -43,3 +43,40 @@ open questions of the Phase 1 brief unanswered); each can be changed later witho
 `AGENTS.md` applies: no platform API in `commonMain` (`verifyCommonMain` stays in `check`), platform code behind interfaces
 injected through Koin, presenters expose `StateFlow` plus `onEvent`, conventions in `build-logic/`, pinned versions, no
 attribution in commits.
+
+## Status (step A, done)
+
+- All shared modules compile for the five Apple targets; their tests run on macOS (`macosArm64Test`) and the iOS simulator
+  (`iosSimulatorArm64Test`) as part of `./gradlew check`: 362 tests plus 11 in `:shared:platform-apple` (snapshot files, number
+  format, DataStore, Keychain round trip on macOS, and the full presenter graph resolved from the production module list).
+  `tvosSimulatorArm64Test` is opt-in (no tvOS runtime installed here).
+- `:shared:platform-apple` holds the Apple platform seams (`AppleLogger`, `AppleDeviceProfile`, `AppleNumberFormatter`,
+  `AppleSnapshotStorage`, `KeychainTokenStore`, `AppleDataStores`, `AppleNetworkStatus` on Network.framework, Darwin engine,
+  `UnavailableVoiceInput`), the Koin graph (`appleModules`) and the Swift entry point (`TwitchApp`, `TwitchGraph`, `PresenterScope`).
+- `apple/scripts/build-shared.sh` produces the static `TwitchShared.xcframework` (iOS device and simulator, macOS, tvOS device and
+  simulator) with SKIE. The XcodeGen project builds the smoke app for the iOS simulator and device, macOS and the tvOS simulator.
+- Verified by running: the iOS smoke app on an iPhone 17 (iOS 26.5) simulator shows the settings presenter state, the Home presenter
+  reaching `SignedOut`, and the snapshot and Keychain round trips; the macOS smoke app launches and stays up.
+
+### Found on the way
+
+- `Dispatchers.IO` is not available in common Kotlin/Native code: `ioDispatcher` is an `expect val` in `:shared:core`.
+- The first run of the Swift smoke app showed Home loading forever: `TwitchApp.start` did not call `SessionRepository.start()`
+  (Android does it in `Application.onCreate`). It does now.
+- Keychain access needs a signed app: the unsigned Kotlin/Native test executable on the iOS simulator gets `errSecMissingEntitlement`, so
+  that round trip is tested on macOS and by the (ad-hoc signed) smoke app.
+- SKIE sends build analytics by default; the build disables it (`skie { analytics { ... } }`).
+- Debug XCFramework size is about 380 MB (five static slices with debug info); release is far smaller and what apps link.
+
+### Not verified
+
+tvOS runtime (no simulator runtime installed), a physical device, the `Toggle animations` round trip through the DataStore (the button
+was not tapped), Linux CI for the Android jobs now that Apple targets exist (the Kotlin plugin disables them off a Mac, but the CI was not
+re-run), and Xcode stable releases (everything here ran on Xcode 27.0 beta 4).
+
+## Next: step B (iOS app)
+
+Needs from you: the Twitch client id in `apple/Config/Local.xcconfig`; a decision on the minimum OS versions (iOS 18 assumed); and, for a
+real device, a development team id. Work: replace the smoke app by the real app (tab bar with Home, Browse, Following, Search, Settings,
+sign-in with the device code, lists from the presenters, player with `AVPlayer` + chat), a `Glass` helper with `#available(iOS 26, *)`,
+image loading, and the emote rendering.

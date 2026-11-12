@@ -1,0 +1,79 @@
+# XcodeGen spec (https://github.com/yonaskolb/XcodeGen). The .xcodeproj is generated and git-ignored:
+#   apple/scripts/build-shared.sh && (cd apple && xcodegen generate)
+name: TwitchPlayerApple
+options:
+  bundleIdPrefix: com.twitchplayer
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+    tvOS: "18.0"
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    # arm64 only (AGENTS.md): the XCFramework has no x86_64 slice, and without this the simulator builds an x86_64 variant too.
+    ARCHS: arm64
+    EXCLUDED_ARCHS: x86_64
+    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+    # No team, no provisioning: simulator and local runs only (see docs/APPLE_PLAN.md). Ad-hoc signing gives the app the
+    # entitlements the Keychain needs on the simulator.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+packages: {}
+targetTemplates:
+  Smoke:
+    type: application
+    sources:
+      - path: SmokeApp
+    dependencies:
+      - framework: Frameworks/TwitchShared.xcframework
+        embed: false
+        link: true
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_TwitchClientId: "$(TWITCH_CLIENT_ID)"
+targets:
+  SmokeIOS:
+    templates: [Smoke]
+    platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.smoke
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        TARGETED_DEVICE_FAMILY: "1,2"
+  SmokeMac:
+    templates: [Smoke]
+    platform: macOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.smoke
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_OUTGOING_NETWORK_CONNECTIONS: YES
+  SmokeTV:
+    templates: [Smoke]
+    platform: tvOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.smoke
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+schemes:
+  SmokeIOS:
+    build:
+      targets:
+        SmokeIOS: all
+    run:
+      config: Debug
+  SmokeMac:
+    build:
+      targets:
+        SmokeMac: all
+  SmokeTV:
+    build:
+      targets:
+        SmokeTV: all

@@ -1,0 +1,2 @@
+// Copy to Local.xcconfig (git-ignored).
+TWITCH_CLIENT_ID = your-public-twitch-client-id
