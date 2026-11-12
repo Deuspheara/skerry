@@ -2,6 +2,7 @@ package com.twitchplayer.phone.feature.player
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
@@ -77,6 +79,7 @@ import org.koin.core.parameter.parametersOf
 fun LivePlayerRoute(
     login: String,
     onBack: () -> Unit,
+    onOpenChannel: (String) -> Unit,
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = koinViewModel(key = "live-$login", parameters = { parametersOf(login) }),
@@ -233,9 +236,15 @@ fun LivePlayerRoute(
             },
             portraitContent = {
                 Column(Modifier.weight(1f).fillMaxWidth()) {
-                    StreamInfo(current?.avatarUrl, title, current?.categoryName, current?.startedAtMs ?: 0L, state.notice) {
-                        channelUrl(state.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } }
-                    }
+                    StreamInfo(
+                        avatarUrl = current?.avatarUrl,
+                        name = title,
+                        category = current?.categoryName,
+                        startedAtMs = current?.startedAtMs ?: 0L,
+                        notice = state.notice,
+                        onOpenChannel = { onOpenChannel(state.login) },
+                        onOpenTwitch = { channelUrl(state.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } } },
+                    )
                     HorizontalDivider()
                     if (layoutChatMode(state.chatMode, false) == ChatMode.Hidden) {
                         MessageState(
@@ -309,7 +318,7 @@ private fun androidx.compose.foundation.layout.BoxScope.StageStatus(status: Nati
 
 /** Title, category, viewers and uptime under the picture, plus raids / stream-ended notices, and a button to open the channel on twitch.tv. */
 @Composable
-private fun StreamInfo(avatarUrl: String?, name: String, category: String?, startedAtMs: Long, notice: ChannelNotice?, onOpenTwitch: () -> Unit) {
+private fun StreamInfo(avatarUrl: String?, name: String, category: String?, startedAtMs: Long, notice: ChannelNotice?, onOpenChannel: () -> Unit, onOpenTwitch: () -> Unit) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -320,12 +329,19 @@ private fun StreamInfo(avatarUrl: String?, name: String, category: String?, star
     val uptime = liveForLabel(startedAtMs, now)
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Avatar(avatarUrl, name, 40.dp)
-            Column(Modifier.weight(1f)) {
-                Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                val line = listOfNotNull(category?.ifBlank { null }, uptime?.let { stringResource(R.string.phone_live_for, it) }).joinToString(" · ")
-                if (line.isNotEmpty()) {
-                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            // The streamer (picture and name) leads to the channel page; the button at the end opens twitch.tv.
+            Row(
+                Modifier.weight(1f).clickable(onClickLabel = stringResource(R.string.phone_player_open_channel), role = Role.Button, onClick = onOpenChannel),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Avatar(avatarUrl, name, 40.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    val line = listOfNotNull(category?.ifBlank { null }, uptime?.let { stringResource(R.string.phone_live_for, it) }).joinToString(" · ")
+                    if (line.isNotEmpty()) {
+                        Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    }
                 }
             }
             ControlButton(

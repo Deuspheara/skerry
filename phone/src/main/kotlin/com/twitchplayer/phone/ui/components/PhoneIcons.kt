@@ -39,6 +39,8 @@ object PhoneIcons {
         )
     }
 
+    val ChevronDown: ImageVector by lazy { icon("ChevronDown", "M7.41,8.59L12,13.17l4.59,-4.58L18,10l-6,6 -6,-6 1.41,-1.41z") }
+
     val Pause: ImageVector by lazy { icon("Pause", "M6,19h4V5H6v14zM14,5v14h4V5h-4z") }
 
     val Fullscreen: ImageVector by lazy {

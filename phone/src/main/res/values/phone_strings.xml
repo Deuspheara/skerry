@@ -57,6 +57,9 @@
 
     <!-- Player -->
     <string name="phone_player_toggle_controls">Show or hide the controls</string>
+    <string name="phone_player_minimise">Minimise the player</string>
+    <string name="phone_player_close">Close the player</string>
+    <string name="phone_player_expand">Expand the player</string>
     <string name="phone_player_pip">Picture in picture</string>
     <string name="phone_player_chat_toggle">Chat</string>
     <string name="phone_player_show_chat">Show chat</string>

@@ -66,6 +66,11 @@ fun ClipRoute(
             ClipLoad.Failed(error.toClipFailure())
         }
     }
+    val sheet = LocalPlayerSheet.current
+    if (sheet != null && sheet.strip && load !is ClipLoad.Ready) {
+        PendingStrip(title, sheet, modifier)
+        return
+    }
     Box(modifier.fillMaxSize().background(Color.Black)) {
         when (val state = load) {
             ClipLoad.Loading -> {

@@ -45,6 +45,9 @@
 
     <!-- Player -->
     <string name="phone_player_toggle_controls">إظهار عناصر التحكم أو إخفاؤها</string>
+    <string name="phone_player_minimise">تصغير المشغّل</string>
+    <string name="phone_player_close">إغلاق المشغّل</string>
+    <string name="phone_player_expand">تكبير المشغّل</string>
     <string name="phone_player_pip">صورة داخل صورة</string>
     <string name="phone_player_chat_toggle">الدردشة</string>
     <string name="phone_player_show_chat">إظهار الدردشة</string>

@@ -185,10 +185,7 @@ class PhoneUiTest {
 
     @Test fun aChannelPageOffersWatchAndWatchOpensThePlayer() {
         launch()
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
-
-        waitForText(string(R.string.watch))
+        rule.openChannelPageFromPlayer(context)
         rule.onNodeWithText(string(R.string.sec_replays)).assertIsDisplayed()
         rule.onNodeWithText(string(R.string.watch)).performClick()
 
@@ -197,9 +194,7 @@ class PhoneUiTest {
 
     @Test fun theChannelPageKeepsItsBackStackAcrossARotation() {
         launch()
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
-        waitForText(string(R.string.watch))
+        rule.openChannelPageFromPlayer(context)
 
         recreate()
 
@@ -260,9 +255,7 @@ class PhoneUiTest {
 
     @Test fun theFollowButtonOnAChannelPageHasA48DpTarget() {
         launch()
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
-        waitForText(string(R.string.watch))
+        rule.openChannelPageFromPlayer(context)
 
         // The follow control is a real button, with a touch target tall enough to hit.
         assertTouchTarget(hasText(string(R.string.followed)) and hasClickAction())

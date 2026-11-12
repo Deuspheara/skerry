@@ -1,13 +1,19 @@
 package com.twitchplayer.phone
 
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.twitchplayer.phone.feature.player.OrientationLock
 import com.twitchplayer.phone.feature.player.PlayerRestoration
+import com.twitchplayer.phone.feature.player.PlayerSessionController
+import com.twitchplayer.phone.feature.player.PlayerSessionEvent
+import com.twitchplayer.phone.feature.player.PlayerSessionState
+import com.twitchplayer.phone.feature.player.SheetState
 import com.twitchplayer.phone.feature.player.choose
 import com.twitchplayer.phone.feature.player.rememberPlayerRestoration
 import com.twitchplayer.phone.feature.player.toRestore
+import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.tv.core.data.model.ChatMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -70,5 +76,29 @@ class PlayerRestorationUiTest {
             assertEquals(ChatMode.Overlay, restoration.toRestore())
             assertEquals("Overlay", restoration.chatMode)
         }
+    }
+
+    @Test fun aSessionComesBackWhereTheSheetWasAfterTheProcessWasKilled() {
+        val tester = StateRestorationTester(rule)
+        lateinit var session: PlayerSessionController
+        tester.setContent { session = rememberSaveable(saver = PlayerSessionController.Saver) { PlayerSessionController() } }
+        rule.runOnIdle {
+            session.open(PlaybackTarget.Live("shroud"))
+            session.dispatch(PlayerSessionEvent.Minimise)
+        }
+
+        tester.emulateSavedInstanceStateRestore()
+
+        rule.runOnIdle { assertEquals(PlayerSessionState.Open(PlaybackTarget.Live("shroud"), SheetState.Collapsed), session.state) }
+    }
+
+    @Test fun aClosedSessionStaysClosedAfterTheProcessWasKilled() {
+        val tester = StateRestorationTester(rule)
+        lateinit var session: PlayerSessionController
+        tester.setContent { session = rememberSaveable(saver = PlayerSessionController.Saver) { PlayerSessionController() } }
+
+        tester.emulateSavedInstanceStateRestore()
+
+        rule.runOnIdle { assertEquals(PlayerSessionState.Closed, session.state) }
     }
 }

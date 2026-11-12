@@ -77,6 +77,9 @@ fun PlayerControlsLayer(
     subtitle: String?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The top-left button: an arrow back by default, a chevron down when it minimises the player. */
+    backIcon: ImageVector? = null,
+    backDescription: String? = null,
     topActions: @Composable RowScope.() -> Unit = {},
     center: @Composable () -> Unit = {},
     bottom: @Composable ColumnScope.() -> Unit = {},
@@ -99,7 +102,7 @@ fun PlayerControlsLayer(
             ),
         ) {
             Row(Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                ControlButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.player_back), onBack)
+                ControlButton(backIcon ?: Icons.AutoMirrored.Filled.ArrowBack, backDescription ?: stringResource(R.string.player_back), onBack)
                 Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
                     Text(
                         title,

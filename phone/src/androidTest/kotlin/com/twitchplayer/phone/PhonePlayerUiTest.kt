@@ -100,14 +100,8 @@ class PhonePlayerUiTest {
 
     private fun gone(text: String) = rule.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()
 
-    /** Home -> the first live stream's channel page -> Watch. */
-    private fun openLivePlayer() {
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
-        waitForText(string(R.string.watch))
-        rule.onNodeWithText(string(R.string.watch)).performClick()
-        waitForText(string(R.string.phone_player_chat_hint))
-    }
+    /** Home -> a tap on the first live stream: the player with its chat opens straight away. */
+    private fun openLivePlayer() = rule.openFirstStreamPlayer(context)
 
     /** A tap on the picture away from every button (the centre holds the play button, the top the back button). */
     private fun tapEmptyPicture() = rule.onNodeWithTag(STAGE_TAG).performTouchInput { click(Offset(width / 2f, height * EMPTY_BAND)) }
@@ -206,8 +200,8 @@ class PhonePlayerUiTest {
 
     @Test fun aReplayOffersTheSpeedChipsAndTheChosenOneIsSelected() {
         launch()
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        // A tap on the stream plays it; the streamer row under the player leads to the channel page, which lists the replays.
+        rule.openChannelPageFromPlayer(context)
         // The first replay of the demo channel.
         waitForText("Session du mardi soir")
         rule.onNodeWithText("Session du mardi soir").performClick()
@@ -224,8 +218,6 @@ class PhonePlayerUiTest {
         launch(module { single<TwitchPlaybackResolver> { OfflineResolver() } })
         waitForDescription("Lunaria")
         rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
-        waitForText(string(R.string.watch))
-        rule.onNodeWithText(string(R.string.watch)).performClick()
 
         waitForText(string(R.string.phone_channel_offline))
         rule.onNodeWithText(string(R.string.state_retry)).assertIsDisplayed()
@@ -237,8 +229,6 @@ class PhonePlayerUiTest {
         launch(module { single<TwitchPlaybackResolver> { resolver } })
         waitForDescription("Lunaria")
         rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
-        waitForText(string(R.string.watch))
-        rule.onNodeWithText(string(R.string.watch)).performClick()
 
         waitForText(string(R.string.state_error))
         val before = resolver.calls
@@ -269,8 +259,7 @@ class PhonePlayerUiTest {
 
     @Test fun aReplayPageNamesItsChannelAndOffersTheChannelsOtherReplays() {
         launch()
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        rule.openChannelPageFromPlayer(context)
         waitForText("Session du mardi soir")
         rule.onNodeWithText("Session du mardi soir").performClick()
 
@@ -283,8 +272,7 @@ class PhonePlayerUiTest {
 
     @Test fun aReplayThePersonPausedIsStillPausedAfterTheAppWasStoppedAndStartedAgain() {
         launch()
-        waitForDescription("Lunaria")
-        rule.onNodeWithContentDescription("Lunaria", substring = true).performClick()
+        rule.openChannelPageFromPlayer(context)
         waitForText("Session du mardi soir")
         rule.onNodeWithText("Session du mardi soir").performClick()
         waitForText(string(R.string.phone_player_speed))

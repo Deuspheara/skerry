@@ -1,6 +1,7 @@
 package com.twitchplayer.phone.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -46,31 +48,29 @@ import com.twitchplayer.phone.feature.browse.BrowseRoute
 import com.twitchplayer.phone.feature.browse.CategoryRoute
 import com.twitchplayer.phone.feature.channel.ChannelRoute
 import com.twitchplayer.phone.feature.home.HomeRoute
-import com.twitchplayer.phone.feature.player.ClipRoute
-import com.twitchplayer.phone.feature.player.LivePlayerRoute
-import com.twitchplayer.phone.feature.player.ReplayRoute
-import com.twitchplayer.phone.feature.player.toInfo
+import com.twitchplayer.phone.feature.player.PlayerOverlay
+import com.twitchplayer.phone.feature.player.PlayerSessionController
+import com.twitchplayer.phone.feature.player.PlayerSessionEvent
+import com.twitchplayer.phone.feature.player.PlayerSessionState
+import com.twitchplayer.phone.feature.player.SheetGeometry
 import com.twitchplayer.phone.feature.search.SearchRoute
 import com.twitchplayer.phone.feature.settings.SettingsRoute
 import com.twitchplayer.phone.navigation.BrowseKey
 import com.twitchplayer.phone.navigation.CategoryKey
 import com.twitchplayer.phone.navigation.ChannelKey
-import com.twitchplayer.phone.navigation.ClipKey
 import com.twitchplayer.phone.navigation.HomeKey
 import com.twitchplayer.phone.navigation.KIND_TAB
-import com.twitchplayer.phone.navigation.LiveKey
 import com.twitchplayer.phone.navigation.NAV_KIND
 import com.twitchplayer.phone.navigation.PhoneNavigator
 import com.twitchplayer.phone.navigation.PhoneTab
 import com.twitchplayer.phone.navigation.PlaybackTarget
-import com.twitchplayer.phone.navigation.PlayerLauncher
-import com.twitchplayer.phone.navigation.ReplayKey
 import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
 import com.twitchplayer.phone.navigation.phoneTransition
 import com.twitchplayer.phone.navigation.rememberScreenFill
 import com.twitchplayer.phone.ui.components.HeaderActions
 import com.twitchplayer.phone.ui.components.PhoneBottomBar
+import com.twitchplayer.phone.ui.components.PhoneChrome
 import com.twitchplayer.phone.ui.components.PhoneRail
 import com.twitchplayer.phone.ui.components.isWideWindow
 import com.twitchplayer.phone.ui.theme.PhoneTheme
@@ -138,90 +138,101 @@ private fun PhoneScaffold(
     val navigator = remember(stacks) {
         PhoneNavigator(stacks, PhoneTab.valueOf(selectedName)) { selectedName = it.name }
     }
-    val player = remember(navigator) { PlayerLauncher { target -> navigator.push(target.toKey()) } }
+    // The player is a sheet above the tabs and their pages, not a page: it keeps playing while the viewer browses (see PlayerOverlay).
+    val session = rememberSaveable(saver = PlayerSessionController.Saver) { PlayerSessionController() }
+    val sessionOpen = session.state is PlayerSessionState.Open
+    val openChannel = { login: String ->
+        session.dispatch(PlayerSessionEvent.Minimise)
+        navigator.push(ChannelKey(login))
+    }
     val header = remember(navigator, account) {
         HeaderActions(account, onSearch = { navigator.selectTab(PhoneTab.Search) }, onProfile = { navigator.selectTab(PhoneTab.Settings) })
     }
     val wide = isWideWindow()
     val chromeVisible = navigator.showsNavigation
     val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
-    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        if (chromeVisible && wide) PhoneRail(navigator.selected, selectTab)
-        Column(Modifier.weight(1f).fillMaxHeight()) {
-            // The bar's or the rail's insets are spent there: the page must not pad for them a second time.
-            val spent = when {
-                !chromeVisible -> WindowInsets(0)
-                wide -> WindowInsets.systemBars.only(WindowInsetsSides.Start)
-                else -> WindowInsets.navigationBars
-            }
-            Box(Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(spent)) {
-                BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
-                val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
-                Box(Modifier.fillMaxSize()) {
-                    NavDisplay(
-                        backStack = navigator.currentStack,
-                        modifier = Modifier.fillMaxSize(),
-                        onBack = { navigator.back() },
-                        entryDecorators = listOf(
-                            rememberScreenFill(),
-                            rememberSaveableStateHolderNavEntryDecorator(),
-                            rememberViewModelStoreNavEntryDecorator(),
-                        ),
-                        transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
-                        popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-                        predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-                        entryProvider = entryProvider<NavKey> {
-                            entry<HomeKey>(metadata = tab) {
-                                HomeRoute(
-                                    onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                    onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                                    onSignIn = onSignIn,
-                                    header = header,
-                                )
-                            }
-                            entry<BrowseKey>(metadata = tab) {
-                                BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = header)
-                            }
-                            entry<SearchKey>(metadata = tab) {
-                                SearchRoute(
-                                    onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                    onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                                )
-                            }
-                            entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
-                            entry<CategoryKey> { key ->
-                                CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
-                            }
-                            entry<LiveKey> { key -> LivePlayerRoute(key.login, onBack = navigator::pop, onSignIn = onSignIn) }
-                            entry<ReplayKey> { key ->
-                                ReplayRoute(
-                                    info = key.toInfo(),
-                                    onBack = navigator::pop,
-                                    onOpenChannel = { login -> navigator.push(ChannelKey(login)) },
-                                    // Another replay of the same channel replaces this page (Back leads to where this one was opened from).
-                                    onOpenReplay = { target ->
-                                        navigator.pop()
-                                        navigator.push(target.toKey())
-                                    },
-                                )
-                            }
-                            entry<ClipKey> { key -> ClipRoute(key.slug, key.title, onBack = navigator::pop) }
-                            entry<ChannelKey> { key ->
-                                ChannelRoute(
-                                    login = key.login,
-                                    onBack = navigator::pop,
-                                    onPlay = player::open,
-                                    onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                    onSignIn = onSignIn,
-                                )
-                            }
-                        },
-                    )
-                    // Inside the scaffold's content area: above the bar, beside the rail, above the keyboard and the gesture bar, whatever the text size.
-                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
+    Box(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            if (chromeVisible && wide) PhoneRail(navigator.selected, selectTab)
+            Column(Modifier.weight(1f).fillMaxHeight()) {
+                // The bar's or the rail's insets are spent there: the page must not pad for them a second time.
+                val spent = when {
+                    !chromeVisible -> WindowInsets(0)
+                    wide -> WindowInsets.systemBars.only(WindowInsetsSides.Start)
+                    else -> WindowInsets.navigationBars
                 }
+                // While a player is open its strip sits over the bottom of the page: the page ends above it (and above the gesture bar when the
+                // tab bar, which normally covers that inset, is not showing).
+                val spendsNavigationBar = sessionOpen && (!chromeVisible || wide)
+                Box(
+                    Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(spent)
+                        .then(if (spendsNavigationBar) Modifier.navigationBarsPadding() else Modifier)
+                        .padding(bottom = if (sessionOpen) SheetGeometry.STRIP_HEIGHT else 0.dp),
+                ) {
+                    BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
+                    val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
+                    Box(Modifier.fillMaxSize()) {
+                        NavDisplay(
+                            backStack = navigator.currentStack,
+                            modifier = Modifier.fillMaxSize(),
+                            onBack = { navigator.back() },
+                            entryDecorators = listOf(
+                                rememberScreenFill(),
+                                rememberSaveableStateHolderNavEntryDecorator(),
+                                rememberViewModelStoreNavEntryDecorator(),
+                            ),
+                            transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
+                            popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                            predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                            entryProvider = entryProvider<NavKey> {
+                                entry<HomeKey>(metadata = tab) {
+                                    HomeRoute(
+                                        onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
+                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                        onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                        onSignIn = onSignIn,
+                                        header = header,
+                                    )
+                                }
+                                entry<BrowseKey>(metadata = tab) {
+                                    BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = header)
+                                }
+                                entry<SearchKey>(metadata = tab) {
+                                    SearchRoute(
+                                        onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
+                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                        onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                    )
+                                }
+                                entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
+                                entry<CategoryKey> { key ->
+                                    CategoryRoute(key, onBack = navigator::pop, onWatch = { login -> session.open(PlaybackTarget.Live(login)) }, onSignIn = onSignIn)
+                                }
+                                entry<ChannelKey> { key ->
+                                    ChannelRoute(
+                                        login = key.login,
+                                        onBack = navigator::pop,
+                                        onPlay = session::open,
+                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                        onSignIn = onSignIn,
+                                    )
+                                }
+                            },
+                        )
+                        // Inside the scaffold's content area: above the bar, beside the rail, above the keyboard and the gesture bar, whatever the text size.
+                        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
+                    }
+                }
+                if (chromeVisible && !wide) PhoneBottomBar(navigator.selected, selectTab)
             }
-            if (chromeVisible && !wide) PhoneBottomBar(navigator.selected, selectTab)
         }
+        val bottomChrome by animateDpAsState(if (chromeVisible && !wide) PhoneChrome.BarHeight + PhoneChrome.Hairline else 0.dp, label = "player-bottom-chrome")
+        PlayerOverlay(
+            session = session,
+            bottomChrome = bottomChrome,
+            startChrome = if (chromeVisible && wide) PhoneChrome.RailWidth + PhoneChrome.Hairline else 0.dp,
+            onOpenChannel = openChannel,
+            onSignIn = onSignIn,
+        )
     }
 }

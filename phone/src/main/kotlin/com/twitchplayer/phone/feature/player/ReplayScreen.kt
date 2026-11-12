@@ -98,6 +98,11 @@ fun ReplayRoute(
             ReplayLoad.Failed(error.toReplayError())
         }
     }
+    val sheet = LocalPlayerSheet.current
+    if (sheet != null && sheet.strip && load !is ReplayLoad.Ready) {
+        PendingStrip(info.title, sheet, modifier)
+        return
+    }
     Box(modifier.fillMaxSize().background(Color.Black)) {
         when (val state = load) {
             ReplayLoad.Loading -> {

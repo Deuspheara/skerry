@@ -66,7 +66,7 @@ import org.koin.core.parameter.parametersOf
 fun CategoryRoute(
     key: CategoryKey,
     onBack: () -> Unit,
-    onChannel: (String) -> Unit,
+    onWatch: (String) -> Unit,
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoryViewModel = koinViewModel(key = "category-${key.id}") { parametersOf(key.id) },
@@ -149,7 +149,7 @@ fun CategoryRoute(
                         fullSpanItem("empty") { MessageState(title = stringResource(R.string.state_no_live), modifier = Modifier.padding(top = 48.dp)) }
                     }
                     items(ui.streams, key = { it.channelId }, contentType = { "stream" }) { stream ->
-                        StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
+                        StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
                     }
                 }
             }

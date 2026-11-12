@@ -60,6 +60,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeRoute(
+    onWatch: (String) -> Unit,
     onChannel: (String) -> Unit,
     onCategory: (Category) -> Unit,
     onSignIn: () -> Unit,
@@ -90,13 +91,13 @@ fun HomeRoute(
         if (tab == 0) {
             LoadHost(home, onRetry = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
                 RefreshBox(onRefresh = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }) {
-                    ForYou(content, onChannel, onCategory)
+                    ForYou(content, onWatch, onCategory)
                 }
             }
         } else {
             LoadHost(follows, onRetry = { followsViewModel.presenter.onEvent(FollowsEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
                 RefreshBox(onRefresh = { followsViewModel.presenter.onEvent(FollowsEvent.Retry) }) {
-                    Following(content.live, content.offline, onChannel)
+                    Following(content.live, content.offline, onWatch, onChannel)
                 }
             }
         }
@@ -104,7 +105,7 @@ fun HomeRoute(
 }
 
 @Composable
-private fun ForYou(content: HomeContent, onChannel: (String) -> Unit, onCategory: (Category) -> Unit) {
+private fun ForYou(content: HomeContent, onWatch: (String) -> Unit, onCategory: (Category) -> Unit) {
     if (content.following.isEmpty() && content.forYou.isEmpty() && content.categories.isEmpty()) {
         MessageState(title = stringResource(R.string.state_no_live), body = stringResource(R.string.phone_home_empty), modifier = Modifier.fillMaxSize())
         return
@@ -123,13 +124,13 @@ private fun ForYou(content: HomeContent, onChannel: (String) -> Unit, onCategory
         if (content.following.isNotEmpty()) {
             sectionHeader("following-header", followingTitle)
             items(content.following, key = { "following-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
             }
         }
         if (content.forYou.isNotEmpty()) {
             sectionHeader("for-you-header", forYouTitle)
             items(content.forYou, key = { "for-you-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
             }
         }
         if (content.categories.isNotEmpty()) {
@@ -146,7 +147,7 @@ private fun ForYou(content: HomeContent, onChannel: (String) -> Unit, onCategory
 }
 
 @Composable
-private fun Following(live: List<com.twitchplayer.tv.core.data.model.LiveStream>, offline: List<com.twitchplayer.tv.core.data.model.ChannelRef>, onChannel: (String) -> Unit) {
+private fun Following(live: List<com.twitchplayer.tv.core.data.model.LiveStream>, offline: List<com.twitchplayer.tv.core.data.model.ChannelRef>, onWatch: (String) -> Unit, onChannel: (String) -> Unit) {
     if (live.isEmpty() && offline.isEmpty()) {
         MessageState(title = stringResource(R.string.state_no_live), body = stringResource(R.string.phone_following_empty), modifier = Modifier.fillMaxSize())
         return
@@ -163,7 +164,7 @@ private fun Following(live: List<com.twitchplayer.tv.core.data.model.LiveStream>
     ) {
         if (live.isNotEmpty()) {
             items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onChannel(stream.login) }, layout = layout)
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
             }
         } else {
             fullSpanItem("nothing-live") { Text(nothingLive, style = MaterialTheme.typography.bodyLarge) }

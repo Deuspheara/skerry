@@ -50,6 +50,9 @@
 
     <!-- Player -->
     <string name="phone_player_toggle_controls">Afficher ou masquer les commandes</string>
+    <string name="phone_player_minimise">Réduire le lecteur</string>
+    <string name="phone_player_close">Fermer le lecteur</string>
+    <string name="phone_player_expand">Agrandir le lecteur</string>
     <string name="phone_player_pip">Image dans l’image</string>
     <string name="phone_player_chat_toggle">Chat</string>
     <string name="phone_player_show_chat">Afficher le chat</string>

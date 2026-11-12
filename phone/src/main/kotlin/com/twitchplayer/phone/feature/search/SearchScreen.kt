@@ -68,7 +68,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** Search: a field with voice input, recent searches, trending channels, and channel and category results. */
 @Composable
-fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, modifier: Modifier = Modifier, viewModel: SearchViewModel = koinViewModel()) {
+fun SearchRoute(onWatch: (String) -> Unit, onChannel: (String) -> Unit, onCategory: (Category) -> Unit, modifier: Modifier = Modifier, viewModel: SearchViewModel = koinViewModel()) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
     val onEvent = viewModel.presenter::onEvent
     val text = rememberTextFieldState(state.query)
@@ -182,7 +182,7 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                     if (results.channels.isNotEmpty()) {
                         item(key = "trends-header") { SectionHeader(stringResource(R.string.sec_trends), Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) }
                         items(results.channels, key = { "trend-${it.id}" }) { channel ->
-                            ChannelRow(channel, onClick = { onChannel(channel.login) })
+                            ChannelRow(channel, onClick = { if (channel.isLive) onWatch(channel.login) else onChannel(channel.login) })
                         }
                     }
                 }
@@ -200,7 +200,7 @@ fun SearchRoute(onChannel: (String) -> Unit, onCategory: (Category) -> Unit, mod
                     if (results.channels.isNotEmpty()) {
                         item(key = "channels-header") { SectionHeader(stringResource(R.string.sec_channels), Modifier.padding(horizontal = 16.dp)) }
                         items(results.channels, key = { "channel-${it.id}" }) { channel ->
-                            ChannelRow(channel, onClick = { onChannel(channel.login) })
+                            ChannelRow(channel, onClick = { if (channel.isLive) onWatch(channel.login) else onChannel(channel.login) })
                         }
                     }
                     if (results.categories.isNotEmpty()) {

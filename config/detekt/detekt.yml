@@ -49,4 +49,6 @@ Compose:
     # transitions at any depth: a parameter on every composable in between would be worse than one documented local.
     # LocalPlayerHost hands the player pages the activity's Picture-in-Picture, orientation and immersive-mode controls (an interface, a
     # no-op default for tests and previews): the alternative is threading it through every composable of the player layout.
-    allowedCompositionLocals: LocalReducedMotion, LocalPlayerHost
+    # LocalPlayerSheet hands a player page what the sheet hosting it knows (drag progress, strip state, minimise / expand / close); a page
+    # drawn on its own (a test, a preview) has none and behaves as expanded.
+    allowedCompositionLocals: LocalReducedMotion, LocalPlayerHost, LocalPlayerSheet
