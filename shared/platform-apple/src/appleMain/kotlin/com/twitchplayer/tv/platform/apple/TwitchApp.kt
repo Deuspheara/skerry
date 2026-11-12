@@ -56,6 +56,17 @@ object TwitchApp {
         it.startSession()
         graph = it
     }
+
+    /**
+     * Starts the app on the offline fictional data (launch argument `-demo`): screenshots, UI tests, no account and no network. [signedIn] false
+     * shows the sign-in flow. Never called from a release build.
+     */
+    fun startDemo(signedIn: Boolean): TwitchGraph = graph ?: TwitchGraph(
+        startKoin { modules(appleModules(AppleConfig("demo-client-id")) + appleDemoModule(signedIn)) }.koin,
+    ).also {
+        it.startSession()
+        graph = it
+    }
 }
 
 /** The presenters and services of the running app. */
