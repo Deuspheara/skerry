@@ -43,10 +43,11 @@ enum Route: Hashable {
 struct LaunchMode {
     let demo: Bool
     let signedOut: Bool
-    /// Debug launch arguments for screenshots and UI tests: `-tab following`, `-push search|settings|channel:<login>|category:<id>:<name>`, `-open <login>`.
+    /// Debug launch arguments for screenshots and UI tests: `-tab following`, `-push search|settings|channel:<login>|category:<id>:<name>`, `-open <login>`, `-sheet signin`.
     let tab: String?
     let push: String?
     let open: String?
+    let sheet: String?
 
     static func argument(_ name: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
@@ -58,10 +59,10 @@ struct LaunchMode {
     static let current = LaunchMode(
         demo: ProcessInfo.processInfo.arguments.contains("-demo"),
         signedOut: ProcessInfo.processInfo.arguments.contains("-demo-signed-out"),
-        tab: argument("-tab"), push: argument("-push"), open: argument("-open"),
+        tab: argument("-tab"), push: argument("-push"), open: argument("-open"), sheet: argument("-sheet"),
     )
     #else
-    static let current = LaunchMode(demo: false, signedOut: false, tab: nil, push: nil, open: nil)
+    static let current = LaunchMode(demo: false, signedOut: false, tab: nil, push: nil, open: nil, sheet: nil)
     #endif
 }
 
@@ -76,6 +77,8 @@ final class AppModel {
     /// The stored session has not been read yet: `account == nil` does not mean signed out.
     private(set) var sessionLoading = true
     private(set) var animationsEnabled = true
+    /// The latest settings, for the Settings page and anything that needs a preference (chat look, autoplay).
+    private(set) var settingsState: SettingsUiState?
 
     var tab: AppTab = .home
     var paths: [AppTab: [Route]] = [:]
@@ -98,6 +101,7 @@ final class AppModel {
         let flow = settings.state as SkieSwiftStateFlow<SettingsUiState>
         lifetime.keep(observe(flow) { [weak self] state in
             guard let self else { return }
+            self.settingsState = state
             self.account = state.account
             self.sessionLoading = state.sessionLoading
             self.animationsEnabled = state.animationsEnabled
@@ -120,6 +124,7 @@ final class AppModel {
             default: break
             }
         }
+        if launch.sheet == "signin" { showSignIn = true }
         if let login = launch.open {
             session.open(.live(login: login, name: login, title: login, avatarUrl: nil, thumbnailUrl: ""))
         }
@@ -178,6 +183,12 @@ final class AppModel {
     func onSignedOut() {
         paths[.following] = []
         if tab == .following { tab = .home }
+    }
+
+    func signOut() {
+        let auth = graph.auth(scope: lifetime.scope)
+        auth.onEvent(event: AuthEventSignOut.shared)
+        onSignedOut()
     }
 
     func onSettingsEvent(_ event: any SettingsEvent) {

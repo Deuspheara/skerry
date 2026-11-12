@@ -81,3 +81,70 @@ final class CategoryModel {
     func toggleFavorite() { presenter.onEvent(event: CategoryEventToggleFavorite.shared) }
     func retry() { presenter.onEvent(event: CategoryEventRetry.shared) }
 }
+
+/// Sign-in with the device code: the presenter asks Twitch for a code, shows it, and finishes when the viewer approves it on twitch.tv/activate.
+@MainActor
+@Observable
+final class SignInModel {
+    private(set) var code: DeviceCodeResponse?
+    private(set) var result: SignInResult?
+    /// When the code stops working.
+    private(set) var expiresAt: Date?
+    private let presenter: AuthPresenter
+    private let lifetime = Lifetime()
+
+    init(graph: TwitchGraph) {
+        presenter = graph.auth(scope: lifetime.scope)
+        let flow = presenter.state as SkieSwiftStateFlow<SignInUiState>
+        lifetime.keep(observe(flow) { [weak self] state in
+            guard let self else { return }
+            if let code = state.code, self.code?.userCode != code.userCode { self.expiresAt = Date().addingTimeInterval(TimeInterval(code.expiresIn)) }
+            self.code = state.code
+            self.result = state.result
+        })
+        presenter.onEvent(event: AuthEventSignIn.shared)
+    }
+
+    func retry() { presenter.onEvent(event: AuthEventSignIn.shared) }
+    func cancel() { presenter.onEvent(event: AuthEventCancel.shared) }
+    func resultShown() { presenter.onEvent(event: AuthEventResultShown.shared) }
+    func signOut() { presenter.onEvent(event: AuthEventSignOut.shared) }
+}
+
+@MainActor
+@Observable
+final class SearchModel {
+    private(set) var state: SearchUiState?
+    private let presenter: SearchPresenter
+    private let lifetime = Lifetime()
+
+    init(graph: TwitchGraph) {
+        presenter = graph.search(scope: lifetime.scope)
+        let flow = presenter.state as SkieSwiftStateFlow<SearchUiState>
+        lifetime.keep(observe(flow) { [weak self] state in self?.state = state })
+    }
+
+    func setQuery(_ text: String) { presenter.onEvent(event: SearchEventSetQuery(value: text)) }
+    func commit() { presenter.onEvent(event: SearchEventCommitQuery.shared) }
+    func clear() { presenter.onEvent(event: SearchEventClear.shared) }
+    func retry() { presenter.onEvent(event: SearchEventRetry.shared) }
+    func removeRecent(_ query: String) { presenter.onEvent(event: SearchEventRemoveRecent(query: query)) }
+    func clearRecents() { presenter.onEvent(event: SearchEventClearRecents.shared) }
+}
+
+@MainActor
+@Observable
+final class ChannelModel {
+    private(set) var state: ChannelUiState?
+    private let presenter: ChannelPresenter
+    private let lifetime = Lifetime()
+
+    init(graph: TwitchGraph, login: String) {
+        presenter = graph.channel(login: login, scope: lifetime.scope)
+        let flow = presenter.state as SkieSwiftStateFlow<ChannelUiState>
+        lifetime.keep(observe(flow) { [weak self] state in self?.state = state })
+    }
+
+    func retry() { presenter.onEvent(event: ChannelEventRetry.shared) }
+    func loadMoreReplays(channelId: String, firstCursor: String?) { presenter.onEvent(event: ChannelEventLoadMoreReplays(channelId: channelId, firstCursor: firstCursor)) }
+}
