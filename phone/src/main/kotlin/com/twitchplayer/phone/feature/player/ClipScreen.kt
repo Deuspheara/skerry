@@ -119,12 +119,15 @@ private fun ClipPlayer(slug: String, url: String, title: String, onBack: () -> U
             }
         }
         exo.addListener(listener)
-        playback.setSource(url, restoration.positionMs ?: 0L, recording = false, playWhenReady = true)
+        playback.setSource(url, resumableRestoredPosition(restoration.positionMs, restoration.durationMs) ?: 0L, recording = false, playWhenReady = true)
         // The player itself is released by `playback` (a RememberObserver) when this page leaves the composition.
         onDispose { exo.removeListener(listener) }
     }
     // Where the clip is, kept for a page brought back after the process was killed.
-    SavePlaybackPosition(exo, POSITION_SAVE_MS, enabled = true) { restoration.positionMs = it }
+    SavePlaybackPosition(exo, POSITION_SAVE_MS, enabled = true) {
+        restoration.positionMs = it
+        restoration.durationMs = exo.duration.takeIf { d -> d > 0 }
+    }
     val togglePlay = { exo.playWhenReady = !exo.playWhenReady }
     val shareText = clipShareText(title, slug)
     val shareLabel = stringResource(R.string.phone_player_share)

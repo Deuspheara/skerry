@@ -162,13 +162,14 @@ private fun ReplayPlayer(
     val snapshot = rememberPlayerSnapshot(exo, pollMs = POLL_MS)
     PauseWhenInBackground(exo)
     val qualityChoice = remember(settings, appScope) { QualityChoice(settings, appScope) }
-    val decision = remember(vod.vodId) { decideStart(ready.saved, restoration.positionMs) }
+    val knownDurationMs = maxOf(info.durationSeconds * MILLIS, vod.durationMs)
+    val decision = remember(vod.vodId) { decideStart(ready.saved, resumableRestoredPosition(restoration.positionMs, knownDurationMs)) }
     var startAt by remember(vod.vodId) { mutableStateOf((decision as? StartDecision.Start)?.atMs) }
     var selected by remember(vod.vodId) { mutableStateOf(ReplayQuality.initial(vod.variants, ready.preferredQuality)) }
     var started by remember(vod.vodId) { mutableStateOf(false) }
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     var dragging by remember { mutableStateOf(false) }
-    val duration = if (snapshot.durationMs > 0) snapshot.durationMs else maxOf(info.durationSeconds * MILLIS, vod.durationMs)
+    val duration = if (snapshot.durationMs > 0) snapshot.durationMs else knownDurationMs
 
     DisposableEffect(exo) {
         val listener = object : Player.Listener {

@@ -125,7 +125,7 @@ fun LivePlayerRoute(
     val restoration = rememberPlayerRestoration(login)
     val setChatMode: (ChatMode) -> Unit = { mode -> restoration.choose(mode) { presenter.onEvent(PlayerEvent.SetChatMode(it)) } }
     DisposableEffect(Unit) {
-        restoration.toRestore(state.chatMode)?.let { presenter.onEvent(PlayerEvent.SetChatMode(it)) }
+        restoration.toRestore()?.let { presenter.onEvent(PlayerEvent.SetChatMode(it)) }
         onDispose { }
     }
     val needsSignIn = stringResource(R.string.chat_needs_signin)

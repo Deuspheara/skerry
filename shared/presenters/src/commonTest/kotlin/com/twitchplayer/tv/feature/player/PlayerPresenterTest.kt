@@ -201,6 +201,19 @@ class PlayerPresenterTest {
         assertEquals(ChatMode.Hidden, vm.state.value.chatMode)
     }
 
+    @Test fun everyChoiceMadeBeforeTheSavedDefaultLoadsSurvivesItWhateverTheDefaultIs() = runTest(dispatcher) {
+        // The placeholder before settings load is Hidden: a choice equal to it, or to the default, must still win over the late default.
+        for (default in ChatMode.entries) {
+            for (chosen in ChatMode.entries) {
+                val vm = vm(chat = default, settingsOverride = LateSettings(FakeSettings(AppSettings(chatMode = default)), delayMs = 1_000))
+                vm.onEvent(PlayerEvent.SetChatMode(chosen))
+                advanceTimeBy(2_000)
+                runCurrent()
+                assertEquals(chosen, vm.state.value.chatMode, "default $default, chosen $chosen")
+            }
+        }
+    }
+
     @Test fun fullscreenSuppressesChatWithoutLosingTheChoice() = runTest(dispatcher) {
         val vm = vm(chat = ChatMode.Compact)
         runCurrent()

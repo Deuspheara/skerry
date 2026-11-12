@@ -18,6 +18,15 @@ fun decideStart(saved: VodProgress?, continueAtMs: Long?): StartDecision = when 
     else -> StartDecision.Start(0L)
 }
 
+/**
+ * A position kept across the process being killed, or null when it must not be resumed: within the last [VodProgress.END_MARGIN_MS] of a
+ * known length (the same rule as the saved progress of a replay) the page would reopen on the credits or the last frame. An unknown
+ * length (a clip that never reported one) keeps the position.
+ */
+fun resumableRestoredPosition(positionMs: Long?, durationMs: Long?): Long? = positionMs?.takeIf {
+    durationMs == null || durationMs <= 0 || it <= durationMs - VodProgress.END_MARGIN_MS
+}
+
 /** What to do with the saved position of a replay at a given moment. */
 enum class ProgressAction { Save, Clear, Skip }
 

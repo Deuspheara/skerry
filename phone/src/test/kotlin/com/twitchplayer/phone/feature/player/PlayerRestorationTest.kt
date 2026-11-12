@@ -62,29 +62,39 @@ class PlayerRestorationTest {
         assertEquals(listOf(ChatMode.Hidden), sent)
     }
 
-    @Test fun theSavedModeIsHandedBackWhenThePresenterStartedOnAnotherOne() {
-        val restoration = PlayerRestoration(chatMode = "Overlay")
-
-        assertEquals(ChatMode.Overlay, restoration.toRestore(current = ChatMode.Compact))
+    @Test fun everyChosenModeIsHandedBackWhateverThePresenterStartedOn() {
+        // Including a choice equal to the presenter's placeholder (Hidden, until the saved default has loaded): comparing would drop it.
+        for (chosen in ChatMode.entries) {
+            assertEquals(chosen, PlayerRestoration(chatMode = chosen.name).toRestore())
+        }
     }
 
-    @Test fun nothingIsHandedBackWhenThePresenterAlreadyHasTheSavedMode() {
-        assertNull(PlayerRestoration(chatMode = "Overlay").toRestore(current = ChatMode.Overlay))
+    @Test fun aChoiceOfHiddenSurvivesAProcessDeathEvenThoughHiddenIsThePlaceholder() {
+        val restored = roundTrip(PlayerRestoration().also { it.choose(ChatMode.Hidden) { } })
+
+        assertEquals(ChatMode.Hidden, restored.toRestore())
     }
 
     @Test fun nothingIsHandedBackForAPageTheViewerNeverTouched() {
-        assertNull(PlayerRestoration().toRestore(current = ChatMode.Compact))
+        assertNull(PlayerRestoration().toRestore())
     }
 
     @Test fun anUnknownSavedModeIsIgnored() {
-        assertNull(PlayerRestoration(chatMode = "FromAnOlderBuild").toRestore(current = ChatMode.Compact))
+        assertNull(PlayerRestoration(chatMode = "FromAnOlderBuild").toRestore())
     }
 
     @Test fun readingTheSavedModeNeverChangesIt() {
         val restoration = PlayerRestoration(chatMode = "Overlay")
 
-        restoration.toRestore(current = ChatMode.Compact)
+        restoration.toRestore()
 
         assertEquals("Overlay", restoration.chatMode)
+    }
+
+    @Test fun theClipLengthSurvivesASaveAndRestoreAndAnOlderSaveWithoutOneStillLoads() {
+        assertEquals(30_000L, roundTrip(PlayerRestoration(positionMs = 10_000L, durationMs = 30_000L)).durationMs)
+        val older = with(PlayerRestoration.Saver) { restore(listOf("Overlay", "Landscape", 5_000L))!! }
+        assertEquals(5_000L, older.positionMs)
+        assertNull(older.durationMs)
     }
 }

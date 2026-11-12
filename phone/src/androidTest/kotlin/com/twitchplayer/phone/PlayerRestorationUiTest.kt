@@ -65,9 +65,9 @@ class PlayerRestorationUiTest {
         tester.emulateSavedInstanceStateRestore()
 
         rule.runOnIdle {
-            // A new presenter starts on the default mode; the saved choice is what it is given, and reading it changes nothing.
-            assertEquals(ChatMode.Overlay, restoration.toRestore(current = ChatMode.Compact))
-            assertEquals(ChatMode.Overlay, restoration.toRestore(current = ChatMode.Compact))
+            // The saved choice is what a new presenter is given, whatever mode it starts on, and reading it changes nothing.
+            assertEquals(ChatMode.Overlay, restoration.toRestore())
+            assertEquals(ChatMode.Overlay, restoration.toRestore())
             assertEquals("Overlay", restoration.chatMode)
         }
     }
