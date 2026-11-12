@@ -1,16 +1,21 @@
 package com.twitchplayer.phone.feature.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -20,7 +25,6 @@ import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,18 +41,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -143,34 +150,84 @@ fun PhoneChatList(
     }
 }
 
-/** The message box under the chat: one line, Send on the keyboard's action and on the button; it clears after sending. */
+/**
+ * The message box under the chat: a single pill (40 dp for one line, up to three lines) like the live apps use, not an outlined
+ * field. The send button is a circle that only appears once there is something to send. Send on the keyboard's action and on the
+ * button; it clears after sending. The row is [ChatInputSpec.ROW_HEIGHT] tall whether or not the button is shown, so nothing jumps.
+ */
 @Composable
 fun ChatInputRow(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
     var text by rememberSaveable { mutableStateOf("") }
-    val send = {
-        val message = text.trim()
-        if (message.isNotEmpty()) {
+    val send: () -> Unit = {
+        ChatInputSpec.outgoing(text)?.let { message ->
             onSend(message)
             text = ""
         }
     }
-    Row(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+    val canSend = ChatInputSpec.canSend(text)
+    Row(
+        modifier.fillMaxWidth().heightIn(min = ChatInputSpec.ROW_HEIGHT).padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        BasicTextField(
             value = text,
-            onValueChange = { text = it.take(MAX_MESSAGE) },
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-            placeholder = { Text(stringResource(R.string.phone_player_chat_hint)) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            onValueChange = { text = ChatInputSpec.limit(it) },
+            modifier = Modifier.weight(1f).heightIn(min = ChatInputSpec.PILL_HEIGHT),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            maxLines = ChatInputSpec.MAX_LINES,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send, capitalization = KeyboardCapitalization.Sentences),
             keyboardActions = KeyboardActions(onSend = { send() }),
+            decorationBox = { field ->
+                Box(
+                    Modifier.clip(RoundedCornerShape(ChatInputSpec.PILL_RADIUS))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .heightIn(min = ChatInputSpec.PILL_HEIGHT)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (text.isEmpty()) {
+                        Text(stringResource(R.string.phone_player_chat_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    }
+                    field()
+                }
+            },
         )
-        IconButton(onClick = send, enabled = text.isNotBlank(), modifier = Modifier.padding(start = 4.dp).size(48.dp)) {
-            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.chat_send))
+        if (canSend) {
+            // A 48 dp touch target around a 36 dp circle.
+            IconButton(onClick = send, modifier = Modifier.size(ChatInputSpec.SEND_TARGET)) {
+                Box(Modifier.size(ChatInputSpec.SEND_CIRCLE).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send,
+                        contentDescription = stringResource(R.string.chat_send),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
         }
     }
 }
 
-private const val MAX_MESSAGE = 500
+/** Sizes and rules of the chat box; plain values so a JVM test pins them. */
+object ChatInputSpec {
+    val PILL_HEIGHT = 40.dp
+    val ROW_HEIGHT = 52.dp
+    val PILL_RADIUS = 20.dp
+    val SEND_CIRCLE = 36.dp
+    val SEND_TARGET = 48.dp
+    const val MAX_LINES = 3
+    const val MAX_MESSAGE = 500
+
+    fun limit(text: String): String = text.take(MAX_MESSAGE)
+
+    fun canSend(text: String): Boolean = text.isNotBlank()
+
+    /** What is sent for what was typed: trimmed, or null when there is nothing to send. */
+    fun outgoing(text: String): String? = text.trim().takeIf { it.isNotEmpty() }
+}
+
 private const val MAX_PLURAL = 99
 
 /** Chat needs a signed-in viewer (Twitch only lets an account read it through the API this app uses). */
