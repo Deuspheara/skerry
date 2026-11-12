@@ -1,6 +1,7 @@
 package com.twitchplayer.phone.feature.auth
 
-import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
@@ -75,6 +78,16 @@ fun SignInDialog(code: DeviceCodeResponse, onCancel: () -> Unit, clock: ElapsedC
     }
     var openFailed by remember { mutableStateOf(false) }
     var copied by remember { mutableStateOf(false) }
+    // The code stays on the clipboard only while this dialog is open and the code valid.
+    val everCopied = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    DisposableEffect(code.userCode) {
+        onDispose { if (everCopied.value) clearCopiedCode(context, code.userCode) }
+    }
+    DisposableEffect(remaining == 0) {
+        if (remaining == 0 && everCopied.value) clearCopiedCode(context, code.userCode)
+        onDispose { }
+    }
     LaunchedEffect(copied) {
         if (copied) {
             delay(COPIED_MS)
@@ -120,9 +133,10 @@ fun SignInDialog(code: DeviceCodeResponse, onCancel: () -> Unit, clock: ElapsedC
                     )
                     IconButton(
                         onClick = {
-                            scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(copyLabel, code.userCode))) }
+                            scope.launch { clipboard.setClipEntry(ClipEntry(CodeClipboard.clip(copyLabel, code.userCode))) }
                             haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                             copied = true
+                            everCopied.value = true
                         },
                         modifier = Modifier.size(COPY_SLOT),
                     ) {
@@ -156,3 +170,8 @@ private const val TICK_MS = 500L
 private const val COPIED_MS = 2_000L
 private val COPY_SLOT = 48.dp
 private val CODE_LETTER_SPACING = 4.sp
+
+private fun clearCopiedCode(context: Context, code: String) {
+    val manager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+    runCatching { CodeClipboard.clearIfOurs(manager, code) }
+}
