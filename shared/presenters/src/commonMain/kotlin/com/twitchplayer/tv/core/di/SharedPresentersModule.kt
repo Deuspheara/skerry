@@ -34,10 +34,10 @@ import org.koin.dsl.module
 fun sharedPresentersModule(): Module = module {
     single { ChannelKeyBus() }
     factory { params -> AuthPresenter(get(), params.get<CoroutineScope>()) }
-    factory { params -> HomePresenter(get(), get(), get(), params.get<CoroutineScope>()) }
-    factory { params -> FollowsPresenter(get(), get(), params.get<CoroutineScope>()) }
-    factory { params -> BrowsePresenter(get(), get(), params.get<CoroutineScope>()) }
-    factory { params -> CategoryPresenter(params.get<String>(), get(), get(), get(), get(), params.get<CoroutineScope>()) }
+    factory { params -> HomePresenter(get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
+    factory { params -> FollowsPresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
+    factory { params -> BrowsePresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
+    factory { params -> CategoryPresenter(params.get<String>(), get(), get(), get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
     factory { params -> ChannelPresenter(params.get<String>(), get(), get(), get(), params.get<CoroutineScope>()) }
     factory { params -> SearchPresenter(get(), get(), get(), params.get<CoroutineScope>()) }
     factory { params -> SettingsPresenter(get(), get(), params.get<CoroutineScope>(), get<AppConfig>().defaultPlayerEngine) }

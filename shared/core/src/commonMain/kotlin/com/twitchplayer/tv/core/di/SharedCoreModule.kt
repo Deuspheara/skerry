@@ -17,6 +17,7 @@ import com.twitchplayer.tv.core.network.api.twitchHttpClient
 import com.twitchplayer.tv.core.network.auth.DeviceCodeAuth
 import com.twitchplayer.tv.core.network.auth.TokenValidator
 import com.twitchplayer.tv.core.platform.AppConfig
+import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.feature.vod.data.DataStoreVodProgressStore
 import com.twitchplayer.tv.feature.vod.data.VodProgressStore
@@ -48,7 +49,8 @@ fun sharedCoreModule(): Module = module {
     single<SessionRepository> { TwitchSessionRepository(get(), get(), get(), get(), onSignedOut = forgetAccountData(get(), get())) }
     single<TokenSource> { get<SessionRepository>() }
     single { TwitchApi(get(), get<AppConfig>().clientId, get()) }
-    single<TwitchRepository> { TwitchRepositoryImpl(get(), get()) }
+    single<TwitchRepository> { TwitchRepositoryImpl(get(), get(), get()) }
+    single { ForegroundSignal() }
     single { LiveWatcher(get(), get()) }
     single<SettingsRepository> {
         DataStoreSettingsRepository(

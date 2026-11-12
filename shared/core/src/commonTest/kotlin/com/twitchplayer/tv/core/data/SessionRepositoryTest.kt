@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -65,6 +66,40 @@ class SessionRepositoryTest {
         repo.start()
         assertEquals(SessionState.SignedOut, repo.state.await { it !is SessionState.Loading })
         assertNull(repo.current())
+    }
+
+    @Test fun theStoredAccountIsShownBeforeTheTokensAreDecryptedAndRequestsWaitForThem() = runTest {
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val slow = object : com.twitchplayer.tv.core.network.auth.TokenStore by store {
+            override suspend fun read(): TwitchTokens? {
+                gate.await()
+                return store.read()
+            }
+        }
+        store.tokens = tokens()
+        store.account = Account("42", "camille")
+        val http = mockClient { json("{}", HttpStatusCode.NotFound) }
+        val repo = TwitchSessionRepository(slow, DeviceCodeAuth(http, "cid"), TokenValidator(http, "cid"), scope)
+        repo.start()
+
+        // The Keystore is still working: the account is known, the token is not, and a request must wait.
+        assertEquals(Account("42", "camille"), (repo.state.await { it is SessionState.SignedIn } as SessionState.SignedIn).account)
+        assertNull(repo.current())
+        val waiting = scope.launch { repo.awaitReady() }
+        realTime { kotlinx.coroutines.yield() }
+        assertTrue(waiting.isActive, "the request must not be sent before the tokens are loaded")
+
+        gate.complete(Unit)
+        realTime { waiting.join() }
+        assertEquals("old", repo.current())
+    }
+
+    @Test fun withoutStoredTokensTheSessionIsReadyAndSignedOut() = runTest {
+        val repo = repo("any")
+        repo.start()
+        repo.state.await { it !is SessionState.Loading }
+        realTime { repo.awaitReady() }
+        assertEquals(SessionState.SignedOut, repo.state.value)
     }
 
     @Test fun validStoredTokensSignTheAccountIn() = runTest {

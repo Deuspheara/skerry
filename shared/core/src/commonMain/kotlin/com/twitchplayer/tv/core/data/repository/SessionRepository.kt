@@ -8,6 +8,7 @@ import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.network.auth.TokenValidator
 import com.twitchplayer.tv.core.network.auth.TwitchTokens
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,13 @@ interface SessionRepository : TokenSource {
     suspend fun signIn(onCode: (DeviceCodeResponse) -> Unit): Boolean
     suspend fun signOut()
 
+    /**
+     * Suspends until the stored tokens have been read (they are decrypted off the main thread and can take a while on a cold start), so a
+     * request is never sent before the session can sign it. [state] may already say [SessionState.SignedIn] before this returns: the account
+     * is plain data, read first, so screens show their stored copy while the tokens load.
+     */
+    suspend fun awaitReady() = Unit
+
     /** The stored token was granted [scope] (sessions from before a scope was added lack it until the viewer signs in again). */
     fun hasScope(scope: String): Boolean = true
 }
@@ -54,10 +62,13 @@ class TwitchSessionRepository(
     private val mutableState = MutableStateFlow<SessionState>(SessionState.Loading)
     override val state: StateFlow<SessionState> = mutableState.asStateFlow()
     private val lock = Mutex()
+    private val ready = CompletableDeferred<Unit>()
 
     @Volatile private var tokens: TwitchTokens? = null
 
     override fun current(): String? = tokens?.accessToken
+
+    override suspend fun awaitReady() = ready.await()
 
     override fun hasScope(scope: String): Boolean = tokens?.scopes?.contains(scope) == true
 
@@ -78,16 +89,19 @@ class TwitchSessionRepository(
 
     override fun start() {
         scope.launch {
+            // The last validated account is plain data, read before the tokens: screens show their stored copy at once instead of waiting for
+            // the Keystore to decrypt the tokens (their requests wait for [awaitReady]). The startup validation Twitch requires runs right
+            // after, in parallel with them, and ends the session if the token was revoked (an expired token is refreshed by the first
+            // request that gets a 401).
+            tokenStore.readAccount()?.let { if (mutableState.value is SessionState.Loading) mutableState.value = SessionState.SignedIn(it) }
             val stored = tokenStore.read()
             if (stored == null) {
                 mutableState.value = SessionState.SignedOut
+                ready.complete(Unit)
                 return@launch
             }
             tokens = stored
-            // Screens start loading with the last validated account at once; the startup validation Twitch requires
-            // runs right after, in parallel with them, and ends the session if the token was revoked (an expired
-            // token is refreshed by the first request that gets a 401).
-            tokenStore.readAccount()?.let { if (mutableState.value is SessionState.Loading) mutableState.value = SessionState.SignedIn(it) }
+            ready.complete(Unit)
             while (tokens != null) {
                 validateOnce()
                 delay(VALIDATE_INTERVAL_MS)
@@ -121,6 +135,7 @@ class TwitchSessionRepository(
             .getOrNull() ?: return false
         tokenStore.save(granted)
         tokens = granted
+        ready.complete(Unit)
         validateOnce()
         start()
         return mutableState.value is SessionState.SignedIn

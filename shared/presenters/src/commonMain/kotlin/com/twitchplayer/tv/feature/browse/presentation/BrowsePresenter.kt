@@ -3,8 +3,11 @@ package com.twitchplayer.tv.feature.browse.presentation
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.core.data.model.CategoryGroup
 import com.twitchplayer.tv.core.data.repository.SessionRepository
+import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
+import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.presentation.Load
+import com.twitchplayer.tv.core.presentation.LoadCache
 import com.twitchplayer.tv.core.presentation.Loader
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.builtins.ListSerializer
 
 enum class BrowseFilter(val group: CategoryGroup?) { All(null), Games(CategoryGroup.Games), Irl(CategoryGroup.Irl), Music(CategoryGroup.Music), Creative(CategoryGroup.Creative) }
 
@@ -46,8 +50,16 @@ class BrowsePresenter(
     session: SessionRepository,
     scope: CoroutineScope,
     loadDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    snapshots: SnapshotCache? = null,
+    foreground: ForegroundSignal? = null,
 ) {
-    private val loader = Loader(scope, session, loadDispatcher) { repository.topCategories() }
+    private val cache = snapshots?.let { store ->
+        LoadCache<List<Category>>(
+            read = { user -> store.read(SNAPSHOT, user, ListSerializer(Category.serializer())) },
+            write = { user, categories -> store.write(SNAPSHOT, user, ListSerializer(Category.serializer()), categories) },
+        )
+    }
+    private val loader = Loader(scope, session, loadDispatcher, cache, foreground) { repository.topCategories() }
     private val filter = MutableStateFlow(BrowseFilter.All)
     private val sort = MutableStateFlow(BrowseSort.Popularity)
 
@@ -66,5 +78,9 @@ class BrowsePresenter(
             BrowseEvent.ToggleSort -> sort.update { if (it == BrowseSort.Popularity) BrowseSort.Alphabetical else BrowseSort.Popularity }
             BrowseEvent.Retry -> loader.reload()
         }
+    }
+
+    private companion object {
+        const val SNAPSHOT = "browse"
     }
 }

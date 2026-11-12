@@ -3,9 +3,12 @@ package com.twitchplayer.tv.feature.category.presentation
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SettingsRepository
+import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.platform.DeviceProfile
+import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.presentation.Load
+import com.twitchplayer.tv.core.presentation.LoadCache
 import com.twitchplayer.tv.core.presentation.Loader
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -19,6 +22,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.builtins.ListSerializer
 
 data class CategoryUiState(val streams: ImmutableList<LiveStream>, val favorite: Boolean)
 
@@ -57,12 +61,23 @@ class CategoryPresenter(
     device: DeviceProfile,
     private val scope: CoroutineScope,
     loadDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    snapshots: SnapshotCache? = null,
+    foreground: ForegroundSignal? = null,
 ) {
     private val myLanguage = twitchLanguage(device.languageTag)
 
     // Starts on the viewer's language: a category's top streams are otherwise mostly in other languages.
     private val languageOnly = MutableStateFlow(true)
-    private val loader = Loader(scope, session, loadDispatcher) {
+
+    // One stored copy per category and language filter, so the list comes back at once the next time the viewer opens it.
+    private val snapshotName: String get() = "category-$categoryId-${if (languageOnly.value) myLanguage else "all"}"
+    private val cache = snapshots?.let { store ->
+        LoadCache<ImmutableList<LiveStream>>(
+            read = { user -> store.read(snapshotName, user, ListSerializer(LiveStream.serializer()))?.toImmutableList() },
+            write = { user, streams -> store.write(snapshotName, user, ListSerializer(LiveStream.serializer()), streams) },
+        )
+    }
+    private val loader = Loader(scope, session, loadDispatcher, cache, foreground) {
         repository.categoryStreams(categoryId, myLanguage.takeIf { languageOnly.value }).toImmutableList()
     }
 

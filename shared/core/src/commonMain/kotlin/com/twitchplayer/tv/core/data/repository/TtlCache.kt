@@ -10,21 +10,28 @@ import kotlin.time.TimeSource
  * advance while the device is in deep sleep, unlike `SystemClock.elapsedRealtime`): a cached value can outlive its TTL
  * by the sleep time, which only costs one stale read after wake-up.
  */
-internal class TtlCache<T>(private val ttlMs: Long, private val timeSource: TimeSource = TimeSource.Monotonic) {
+internal class TtlCache<T>(
+    private val ttlMs: Long,
+    private val timeSource: TimeSource = TimeSource.Monotonic,
+    /** A forced reload is skipped when the value was loaded less than this ago: two screens refreshing together share one request. */
+    private val forceCoalesceMs: Long = 0,
+) {
     private val mutex = Mutex()
     private var value: T? = null
     private var loadedAt: TimeMark? = null
 
     suspend fun get(force: Boolean = false, load: suspend () -> T): T = mutex.withLock {
         val cached = value
-        if (!force && cached != null && isFresh()) return cached
+        if (cached != null && (if (force) isYoungerThan(forceCoalesceMs) else isFresh())) return cached
         load().also {
             value = it
             loadedAt = timeSource.markNow()
         }
     }
 
-    private fun isFresh(): Boolean = loadedAt?.let { it.elapsedNow().inWholeMilliseconds < ttlMs } == true
+    private fun isFresh(): Boolean = isYoungerThan(ttlMs)
+
+    private fun isYoungerThan(ms: Long): Boolean = loadedAt?.let { it.elapsedNow().inWholeMilliseconds < ms } == true
 
     suspend fun invalidate() = mutex.withLock { value = null }
 }

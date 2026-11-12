@@ -5,6 +5,7 @@ import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
+import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.presentation.Load
 import com.twitchplayer.tv.core.presentation.LoadCache
 import com.twitchplayer.tv.core.presentation.Loader
@@ -41,6 +42,7 @@ class HomePresenter(
     snapshots: SnapshotCache?,
     scope: CoroutineScope,
     loadDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    foreground: ForegroundSignal? = null,
 ) {
     private val cache = snapshots?.let { store ->
         LoadCache<HomeContent>(
@@ -48,7 +50,7 @@ class HomePresenter(
             write = { user, c -> store.write(SNAPSHOT, user, HomeSnapshot.serializer(), HomeSnapshot(c.following, c.forYou, c.categories)) },
         )
     }
-    private val loader = Loader(scope, session, loadDispatcher, cache) {
+    private val loader = Loader(scope, session, loadDispatcher, cache, foreground) {
         coroutineScope {
             val follows = async { repository.follows(force = true) }
             val forYou = async { repository.recommended() }

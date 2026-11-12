@@ -21,8 +21,6 @@ import com.twitchplayer.tv.feature.player.data.chat.RoomState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 
 interface TwitchRepository {
     suspend fun follows(force: Boolean = false): Follows
@@ -62,20 +60,23 @@ sealed interface SendResult {
 class TwitchRepositoryImpl(
     private val api: TwitchApi,
     private val session: SessionRepository,
+    /** Where the profile pictures are kept between sessions; null keeps them in memory only. */
+    snapshots: SnapshotCache? = null,
 ) : TwitchRepository {
-    /** Immutable snapshot swapped atomically: safe to read and extend from any dispatcher. */
-    private val avatarState = MutableStateFlow<Map<String, String>>(emptyMap())
-    private val avatars: Map<String, String> get() = avatarState.value
-    private val followsCache = TtlCache<Follows>(60_000)
+    /** Profile pictures by channel id: in memory and, through [snapshots], on disk for a week. */
+    private val avatarStore = AvatarStore(snapshots)
+
+    // Two screens asking for the follows at the same moment (Home and Following refreshing together) share one request.
+    private val followsCache = TtlCache<Follows>(60_000, forceCoalesceMs = FORCE_COALESCE_MS)
     private val categoriesCache = TtlCache<List<Category>>(10 * 60_000)
 
     private fun userId(): String = (session.state.value as? SessionState.SignedIn)?.account?.userId ?: throw IllegalStateException("signed out")
 
+    /** Fetches the pictures of the ids not known yet, 100 per request (Helix limit), and keeps them. One call per batch, never one per card. */
     private suspend fun loadAvatars(ids: Collection<String>) {
-        val missing = ids.filter { !avatars.containsKey(it) }.distinct().chunked(100)
-        for (chunk in missing) {
-            val users = api.usersByIds(chunk)
-            avatarState.update { current -> current + users.associate { it.id to it.avatarUrl } }
+        avatarStore.ensureLoaded()
+        for (chunk in avatarStore.missing(ids).chunked(AVATAR_BATCH)) {
+            avatarStore.put(api.usersByIds(chunk).associate { it.id to it.avatarUrl })
         }
     }
 
@@ -88,6 +89,7 @@ class TwitchRepositoryImpl(
             val liveIds = live.mapTo(HashSet()) { it.userId }
             val offlineRaw = followed.filter { it.broadcasterId !in liveIds }.take(40)
             loadAvatars(live.map { it.userId } + offlineRaw.map { it.broadcasterId })
+            val avatars = avatarStore.urls()
             Follows(
                 live = live.sortedByDescending { it.viewerCount }.map { it.toLive(avatars) },
                 offline = offlineRaw.map { ChannelRef(it.broadcasterId, it.login, it.name, avatars[it.broadcasterId], isLive = false) },
@@ -101,6 +103,7 @@ class TwitchRepositoryImpl(
         val followedIds = runCatching { follows().live.mapTo(HashSet()) { it.channelId } }.getOrDefault(emptySet())
         val streams = top.await().filter { it.userId !in followedIds }
         loadAvatars(streams.map { it.userId })
+        val avatars = avatarStore.urls()
         streams.map { it.toLive(avatars) }
     }
 
@@ -111,6 +114,7 @@ class TwitchRepositoryImpl(
     override suspend fun categoryStreams(categoryId: String, language: String?): List<LiveStream> {
         val streams = api.streams(first = 40, categoryId = categoryId, language = language).data
         loadAvatars(streams.map { it.userId })
+        val avatars = avatarStore.urls()
         return streams.map { it.toLive(avatars) }
     }
 
@@ -128,7 +132,7 @@ class TwitchRepositoryImpl(
     override suspend fun liveStream(login: String): LiveStream? {
         val stream = api.streamByLogin(login) ?: return null
         runCatching { loadAvatars(listOf(stream.userId)) }
-        return stream.toLive(avatars)
+        return stream.toLive(avatarStore.urls())
     }
 
     override suspend fun roomState(channelId: String): RoomState? = runCatching { api.chatSettings(channelId) }.getOrNull()?.let {
@@ -169,11 +173,12 @@ class TwitchRepositoryImpl(
             .getOrDefault(false)
         val live = liveJob.await()
         val replays = replaysJob.await()
-        avatarState.update { it + (user.id to user.avatarUrl) }
+        avatarStore.put(mapOf(user.id to user.avatarUrl))
         val similarRaw = runCatching {
             api.streams(first = 12, categoryId = live?.categoryId?.ifEmpty { null }).data.filter { it.userId != user.id }.take(8)
         }.getOrDefault(emptyList())
         runCatching { loadAvatars(similarRaw.map { it.userId }) }
+        val avatars = avatarStore.urls()
         ChannelDetails(
             channel = ChannelRef(user.id, user.login, user.displayName, user.avatarUrl.ifEmpty { null }, live != null, live?.viewerCount ?: 0),
             stream = live?.toLive(avatars),
@@ -186,6 +191,9 @@ class TwitchRepositoryImpl(
         )
     }
 }
+
+private const val FORCE_COALESCE_MS = 3_000L
+private const val AVATAR_BATCH = 100
 
 internal fun TwitchVideo.toReplay() = Replay(
     id,

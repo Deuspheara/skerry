@@ -1,12 +1,15 @@
 package com.twitchplayer.tv.core.data
 
 import com.twitchplayer.tv.core.FakeSessionRepository
+import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepositoryImpl
 import com.twitchplayer.tv.core.json
 import com.twitchplayer.tv.core.mockClient
 import com.twitchplayer.tv.core.network.api.TokenSource
 import com.twitchplayer.tv.core.network.api.TwitchApi
+import com.twitchplayer.tv.core.platform.SnapshotStorage
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +20,17 @@ class TwitchRepositoryAvatarTest {
 
     private fun stream(id: String) = """{"id":"s$id","user_id":"$id","user_login":"l$id","user_name":"N$id","title":"t","viewer_count":${id.toInt() * 10},"thumbnail_url":"https://x/{width}x{height}.jpg","started_at":"2026-11-07T09:12:00Z"}"""
 
-    private val repository = TwitchRepositoryImpl(
+    private class Memory : SnapshotStorage {
+        val files = mutableMapOf<String, String>()
+        override suspend fun read(name: String): String? = files[name]
+        override suspend fun write(name: String, text: String) {
+            files[name] = text
+        }
+        override suspend fun clear() = files.clear()
+    }
+
+    private val storage = Memory()
+    private fun newRepository() = TwitchRepositoryImpl(
         TwitchApi(
             mockClient { request ->
                 when (request.url.encodedPath) {
@@ -43,7 +56,10 @@ class TwitchRepositoryAvatarTest {
             },
         ),
         FakeSessionRepository(),
+        SnapshotCache(storage, io = Dispatchers.Unconfined),
     )
+
+    private val repository = newRepository()
 
     @Test fun followsLoadsEachAvatarOnceAndKeepsItAcrossRefreshes() = runTest {
         val first = repository.follows(force = true)
@@ -63,5 +79,15 @@ class TwitchRepositoryAvatarTest {
         assertEquals(listOf("https://x/avatar1.png", "https://x/avatar4.png"), category.map { it.avatarUrl })
         assertEquals(2, userRequests.size)
         assertEquals(listOf("4"), userRequests.last())
+    }
+
+    @Test fun theAvatarsComeFromDiskAfterARestartWithNoRequest() = runTest {
+        repository.follows(force = true)
+        assertEquals(1, userRequests.size)
+
+        val restarted = newRepository()
+        val again = restarted.follows(force = true)
+        assertEquals(1, userRequests.size, "a cold start must not ask Twitch for pictures it saved")
+        assertEquals("https://x/avatar1.png", again.live.first { it.channelId == "1" }.avatarUrl)
     }
 }

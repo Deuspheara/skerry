@@ -7,6 +7,7 @@ import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.platform.AppConfig
 import com.twitchplayer.tv.core.platform.DeviceProfile
+import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
@@ -66,6 +67,7 @@ private val fakePlatform = module {
             },
         )
     }
+    single { ForegroundSignal() }
     single { AppConfig(clientId = "cid", defaultPlayerEngine = PlayerEngine.WebView) }
     single<DeviceProfile> {
         object : DeviceProfile {

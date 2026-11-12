@@ -10,11 +10,13 @@ import com.twitchplayer.tv.app.TwitchTvApp
 import com.twitchplayer.tv.core.data.model.AppSettings
 import com.twitchplayer.tv.core.data.repository.SettingsRepository
 import com.twitchplayer.tv.core.designsystem.theme.TvTheme
+import com.twitchplayer.tv.core.platform.ForegroundSignal
 import com.twitchplayer.tv.core.ui.AppLocales
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
     private val settings: SettingsRepository by inject()
+    private val foreground: ForegroundSignal by inject()
 
     // Before Android 13 the in-app language is applied here; from 13 on the platform does it.
     override fun attachBaseContext(newBase: Context) = super.attachBaseContext(AppLocales.wrap(newBase))
@@ -27,5 +29,11 @@ class MainActivity : ComponentActivity() {
                 TwitchTvApp(onQuit = ::finish)
             }
         }
+    }
+
+    /** Back on screen (from the home screen, another app, the screen turning on): feeds older than their TTL refresh themselves. */
+    override fun onStart() {
+        super.onStart()
+        foreground.appCameToForeground()
     }
 }

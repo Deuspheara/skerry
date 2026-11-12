@@ -2,6 +2,8 @@ package com.twitchplayer.tv.core.presentation
 
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SessionState
+import com.twitchplayer.tv.core.platform.ForegroundSignal
+import com.twitchplayer.tv.core.platform.WallClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** Screen data lifecycle shared by every network-backed screen. */
 sealed interface Load<out T> {
@@ -40,6 +43,9 @@ class LoadCache<T>(
  * Stale-while-revalidate: while a load runs, the screen keeps what it already shows for the same account, or else the
  * [cache]d copy from the last session, instead of a spinner; the fresh result replaces it (screens animate the change).
  * A failed load keeps the shown data and only becomes [Load.Failed] when there was nothing to show.
+ *
+ * With a [foreground] signal the data also refreshes when the app comes back and the data is at least [refreshAfterMs] old
+ * (measured on [clock]); a load that is already running is left alone.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class Loader<T>(
@@ -47,9 +53,16 @@ class Loader<T>(
     session: SessionRepository,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val cache: LoadCache<T>? = null,
+    foreground: ForegroundSignal? = null,
+    private val clock: WallClock = WallClock.System,
+    private val refreshAfterMs: Long = FOREGROUND_REFRESH_MS,
     private val block: suspend () -> T,
 ) {
     private val tick = MutableStateFlow(0)
+
+    /** When the last fresh result arrived (epoch ms, 0 = never) and whether a load is running: what the foreground refresh decides on. */
+    private val loadedAtMs = MutableStateFlow(0L)
+    private val loading = MutableStateFlow(false)
     private var lastUser: String? = null
     private var lastReady: Load.Ready<T>? = null
 
@@ -73,15 +86,21 @@ class Loader<T>(
                         }
                         val shown = lastReady ?: cache?.read(user)?.let { Load.Ready(it) }
                         emit(shown ?: Load.Loading)
+                        loading.value = true
                         try {
+                            // The stored copy is already on screen; the request waits for the tokens (see SessionRepository.awaitReady).
+                            session.awaitReady()
                             val fresh = Load.Ready(block())
                             lastReady = fresh
+                            loadedAtMs.value = clock.nowMillis()
                             emit(fresh)
                             cache?.write(user, fresh.data)
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
                             if (shown == null) emit(Load.Failed)
+                        } finally {
+                            loading.value = false
                         }
                     }
                 }
@@ -90,7 +109,25 @@ class Loader<T>(
         .flowOn(dispatcher)
         .stateIn(scope, SharingStarted.Lazily, Load.Loading)
 
+    init {
+        // Back in the foreground: refresh when the data is older than [refreshAfterMs] (or was never loaded), unless a load is already running
+        // (an overlapping one would only cancel and restart it). The shown data stays until the new copy replaces it, so the scroll never resets.
+        if (foreground != null) {
+            scope.launch {
+                foreground.events.collect {
+                    val age = clock.nowMillis() - loadedAtMs.value
+                    if (!loading.value && age >= refreshAfterMs) reload()
+                }
+            }
+        }
+    }
+
     fun reload() {
         tick.value++
+    }
+
+    companion object {
+        /** Live lists (streams, follows) are refreshed on return to the app when they are at least this old. */
+        const val FOREGROUND_REFRESH_MS = 60_000L
     }
 }

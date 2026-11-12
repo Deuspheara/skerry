@@ -41,4 +41,14 @@ class TtlCacheTest {
         assertEquals(1, loads)
         assertEquals(List(5) { 1 }, results)
     }
+
+    @Test fun aForcedReloadRightAfterALoadIsCoalescedAndALaterOneIsNot() = runTest {
+        val coalescing = TtlCache<Int>(ttlMs = 60_000, timeSource = time, forceCoalesceMs = 3_000)
+        assertEquals(1, coalescing.get(load = load))
+        time += 2_999.milliseconds
+        assertEquals(1, coalescing.get(force = true, load = load), "two screens refreshing together share one load")
+        time += 1.milliseconds
+        assertEquals(2, coalescing.get(force = true, load = load))
+        assertEquals(2, loads)
+    }
 }

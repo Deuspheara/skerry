@@ -35,6 +35,7 @@ data class Category(
 @Serializable
 enum class CategoryGroup { Games, Irl, Music, Creative }
 
+@Serializable
 data class ChannelRef(
     val id: String,
     val login: String,
