@@ -93,4 +93,7 @@
     <string name="phone_chat_cancel_reply">إلغاء الرد</string>
     <string name="phone_chat_reply_context">رداً على %1$s: %2$s</string>
     <string name="phone_chat_mention_suggestions">المشاركون في الدردشة</string>
+    <string name="phone_following_continue">متابعة المشاهدة</string>
+    <string name="phone_following_last_live">شوهدت مباشرة %1$s</string>
+    <string name="phone_following_resume_description">%1$s، %2$s، تمت مشاهدة %3$d%%</string>
 </resources>

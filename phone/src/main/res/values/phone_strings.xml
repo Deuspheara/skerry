@@ -105,4 +105,7 @@
     <string name="phone_chat_cancel_reply">Cancel reply</string>
     <string name="phone_chat_reply_context">In reply to %1$s: %2$s</string>
     <string name="phone_chat_mention_suggestions">Chatters</string>
+    <string name="phone_following_continue">Continue watching</string>
+    <string name="phone_following_last_live">Last seen live %1$s</string>
+    <string name="phone_following_resume_description">%1$s, %2$s, %3$d%% watched</string>
 </resources>

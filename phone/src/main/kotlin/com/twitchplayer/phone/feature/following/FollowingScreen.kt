@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.home.CHANNEL_DIVIDER_INSET
 import com.twitchplayer.phone.feature.home.CardSkeletonGrid
+import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.components.CategoryCard
 import com.twitchplayer.phone.ui.components.ChannelListItem
 import com.twitchplayer.phone.ui.components.GridSpacing
@@ -52,6 +53,8 @@ import com.twitchplayer.phone.ui.components.streamLayout
 import com.twitchplayer.phone.ui.components.streamRowSpacing
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.core.presentation.Load
+import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingItem
+import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsEvent
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomeContent
@@ -65,12 +68,15 @@ import org.koin.compose.viewmodel.koinViewModel
 fun FollowingRoute(
     onWatch: (String) -> Unit,
     onChannel: (String) -> Unit,
+    onReplay: (PlaybackTarget.Replay) -> Unit,
     onSignIn: () -> Unit,
     header: HeaderActions,
     modifier: Modifier = Modifier,
     viewModel: FollowsViewModel = koinViewModel(),
+    continueViewModel: ContinueWatchingViewModel = koinViewModel(),
 ) {
     val follows by viewModel.presenter.state.collectAsStateWithLifecycle()
+    val resumable by continueViewModel.presenter.items.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -79,21 +85,29 @@ fun FollowingRoute(
     ) { padding ->
         LoadHost(follows, onRetry = { viewModel.presenter.onEvent(FollowsEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
             RefreshBox(onRefresh = { viewModel.presenter.onEvent(FollowsEvent.Retry) }) {
-                FollowingList(content.live, content.offline, onWatch, onChannel)
+                FollowingList(content.live, content.offline, resumable, onWatch, onChannel, onReplay)
             }
         }
     }
 }
 
 @Composable
-private fun FollowingList(live: List<com.twitchplayer.tv.core.data.model.LiveStream>, offline: List<com.twitchplayer.tv.core.data.model.ChannelRef>, onWatch: (String) -> Unit, onChannel: (String) -> Unit) {
-    if (live.isEmpty() && offline.isEmpty()) {
+private fun FollowingList(
+    live: List<com.twitchplayer.tv.core.data.model.LiveStream>,
+    offline: List<com.twitchplayer.tv.core.data.model.ChannelRef>,
+    resumable: List<ContinueWatchingItem>,
+    onWatch: (String) -> Unit,
+    onChannel: (String) -> Unit,
+    onReplay: (PlaybackTarget.Replay) -> Unit,
+) {
+    if (live.isEmpty() && offline.isEmpty() && resumable.isEmpty()) {
         MessageState(title = stringResource(R.string.state_no_live), body = stringResource(R.string.phone_following_empty), modifier = Modifier.fillMaxSize())
         return
     }
     val layout = streamLayout()
     val nothingLive = stringResource(R.string.state_no_live)
     val offlineTitle = stringResource(R.string.sec_offline)
+    val continueTitle = stringResource(R.string.phone_following_continue)
     LazyVerticalGrid(
         columns = GridCells.Adaptive(StreamColumnMin),
         contentPadding = ScreenPadding,
@@ -101,6 +115,12 @@ private fun FollowingList(live: List<com.twitchplayer.tv.core.data.model.LiveStr
         verticalArrangement = streamRowSpacing(layout),
         modifier = Modifier.fillMaxSize(),
     ) {
+        if (resumable.isNotEmpty()) {
+            sectionHeader("continue-header", continueTitle)
+            fullSpanItem("continue-row", contentType = "continue") {
+                ContinueWatchingRow(resumable, onReplay)
+            }
+        }
         if (live.isNotEmpty()) {
             items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
                 StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))

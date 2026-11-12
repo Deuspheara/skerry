@@ -250,6 +250,7 @@ private fun PhoneScaffold(
                                             FollowingRoute(
                                                 onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
                                                 onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                                onReplay = { target -> session.open(target) },
                                                 onSignIn = onSignIn,
                                                 header = headers.getValue(PhoneTab.Following),
                                             )

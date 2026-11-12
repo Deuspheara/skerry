@@ -165,7 +165,8 @@ fun ChannelListItem(channel: ChannelRef, onClick: () -> Unit, modifier: Modifier
                     Text(stringResource(R.string.phone_channel_live_viewers, viewers), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Text(stringResource(R.string.phone_channel_offline), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val lastSeen = rememberLastSeenText(channel.lastSeenLiveMs)
+                Text(lastSeen ?: stringResource(R.string.phone_channel_offline), color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         },
         leadingContent = { Avatar(channel.avatarUrl, channel.name, AvatarSmall) },
@@ -191,4 +192,14 @@ object CardSpec {
 
     /** Height of a compact stream row at the default font size: the thumbnail's. */
     val compactRowHeight = COMPACT_THUMBNAIL_WIDTH / THUMBNAIL_RATIO
+}
+
+/** "Last seen live 3 days ago" for an offline channel the app has seen live before; null when it never has. */
+@Composable
+fun rememberLastSeenText(lastSeenMs: Long): String? {
+    if (lastSeenMs <= 0L) return null
+    val ago = remember(lastSeenMs) {
+        android.text.format.DateUtils.getRelativeTimeSpanString(lastSeenMs, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS).toString()
+    }
+    return stringResource(R.string.phone_following_last_live, ago)
 }
