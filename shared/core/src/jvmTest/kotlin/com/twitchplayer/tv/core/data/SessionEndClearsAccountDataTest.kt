@@ -57,6 +57,7 @@ class SessionEndClearsAccountDataTest {
     private suspend fun seed(settings: DataStoreSettingsRepository) {
         settings.addRecentSearch("lunaria")
         settings.addRecentSearch("chess")
+        settings.addRecentEmote("Kappa")
         files["snapshot"] = "kept for the account"
     }
 
@@ -76,6 +77,7 @@ class SessionEndClearsAccountDataTest {
 
         withTimeout(5_000) { repo.state.first { it is SessionState.SignedOut } }
         assertEquals(emptyList(), settings.settings.first().recentSearches)
+        assertEquals(emptyList(), settings.settings.first().recentEmotes)
         assertEquals(emptyMap(), files)
     }
 
@@ -93,6 +95,7 @@ class SessionEndClearsAccountDataTest {
         repo.signOut()
 
         assertEquals(emptyList(), settings.settings.first().recentSearches)
+        assertEquals(emptyList(), settings.settings.first().recentEmotes)
         assertEquals(emptyMap(), files)
     }
 

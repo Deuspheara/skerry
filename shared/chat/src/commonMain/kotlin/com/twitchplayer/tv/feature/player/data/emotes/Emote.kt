@@ -28,9 +28,33 @@ data class EmoteChange(val added: List<Emote> = emptyList(), val removed: Set<St
  * repository isolates them per provider. An empty list means "this channel has none".
  */
 interface EmoteProvider {
+    /** Which tab of the emote picker this provider's emotes belong to. */
+    val source: EmoteSource get() = EmoteSource.Other
+
     suspend fun global(): List<Emote>
     suspend fun channel(channelId: String): List<Emote>
 
     /** Push updates for the channel's set, for providers that have them. Collected while chat is open. */
     fun changes(channelId: String): Flow<EmoteChange> = emptyFlow()
+}
+
+/** Where an emote comes from: the picker has one tab per source. [Other] is for sources a test or a new provider has not named. */
+enum class EmoteSource { Twitch, SevenTv, Bttv, Ffz, Other }
+
+/** Which list of a source an emote is in. [Locked] are Twitch emotes of the channel the viewer cannot use (not subscribed...). */
+enum class EmoteSection { Channel, Global, OtherChannels, Locked }
+
+/** One list of the emote picker: the emotes of one [section] of one [source], in the provider's own order. */
+data class EmoteGroup(val source: EmoteSource, val section: EmoteSection, val emotes: List<Emote>)
+
+/** What the picker needs to know about the viewer's own Twitch emotes. */
+enum class UserEmoteAccess {
+    /** The viewer's emotes were loaded: usable and locked channel emotes are told apart, subscriber emotes of other channels are listed. */
+    Known,
+
+    /** The token lacks `user:read:emotes` (a session from before it was requested): every channel emote is listed as usable. */
+    NeedsSignIn,
+
+    /** Signed out, or the call failed: only global and channel emotes are listed. */
+    Unavailable,
 }

@@ -19,6 +19,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.concurrent.Volatile
 
 const val SCOPE_WRITE_CHAT = "user:write:chat"
+const val SCOPE_READ_EMOTES = "user:read:emotes"
 
 sealed interface SessionState {
     data object Loading : SessionState
@@ -135,8 +136,8 @@ class TwitchSessionRepository(
     }
 
     private companion object {
-        /** [SCOPE_WRITE_CHAT] is new: a token from before it was added keeps working for everything else. */
-        val SCOPES = setOf("user:read:follows", "user:read:chat", SCOPE_WRITE_CHAT)
+        /** [SCOPE_WRITE_CHAT] and [SCOPE_READ_EMOTES] are newer: a token from before they were added keeps working for everything else. */
+        val SCOPES = setOf("user:read:follows", "user:read:chat", SCOPE_WRITE_CHAT, SCOPE_READ_EMOTES)
         const val VALIDATE_INTERVAL_MS = 60 * 60 * 1000L
     }
 }

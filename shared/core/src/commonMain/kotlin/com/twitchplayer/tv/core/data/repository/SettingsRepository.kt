@@ -17,7 +17,15 @@ import com.twitchplayer.tv.core.data.model.PlayerEngine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-interface SettingsRepository {
+/** The emotes the viewer picked last (the list itself is [AppSettings.recentEmotes]); apart from [SettingsRepository] to keep that one small. */
+interface RecentEmotesRepository {
+    /** The emote [name] was picked: it moves to the front of the recents (at most [MAX_RECENT_EMOTES]). */
+    suspend fun addRecentEmote(name: String)
+
+    suspend fun clearRecentEmotes()
+}
+
+interface SettingsRepository : RecentEmotesRepository {
     val settings: Flow<AppSettings>
     suspend fun setChatMode(mode: ChatMode)
     suspend fun updateChat(transform: (ChatSettings) -> ChatSettings)
@@ -36,6 +44,8 @@ interface SettingsRepository {
     suspend fun toggleCategory(id: String)
 }
 
+const val MAX_RECENT_EMOTES = 24
+
 class DataStoreSettingsRepository(
     private val store: DataStore<Preferences>,
     /** What chat settings start from (and fall back to). Low-memory TVs start with fewer animated emotes. */
@@ -51,6 +61,7 @@ class DataStoreSettingsRepository(
         chat = toChatSettings(),
         animationsEnabled = this[ANIMATIONS] ?: true,
         recentSearches = this[RECENTS]?.split(SEPARATOR)?.filter(String::isNotBlank).orEmpty(),
+        recentEmotes = this[RECENT_EMOTES]?.split(SEPARATOR)?.filter(String::isNotBlank).orEmpty(),
         followedCategories = this[CATEGORIES].orEmpty(),
         playerEngine = this[PLAYER_ENGINE].toEnum() ?: defaultPlayerEngine,
         preferredQuality = this[PREFERRED_QUALITY]?.takeIf { it.isNotBlank() },
@@ -115,6 +126,19 @@ class DataStoreSettingsRepository(
         store.edit { prefs -> prefs.remove(RECENTS) }
     }
 
+    override suspend fun addRecentEmote(name: String) {
+        val clean = name.trim()
+        if (clean.isEmpty() || SEPARATOR in clean) return
+        store.edit { prefs ->
+            val current = prefs[RECENT_EMOTES]?.split(SEPARATOR).orEmpty().filter { it.isNotBlank() && it != clean }
+            prefs[RECENT_EMOTES] = (listOf(clean) + current).take(MAX_RECENT_EMOTES).joinToString(SEPARATOR)
+        }
+    }
+
+    override suspend fun clearRecentEmotes() {
+        store.edit { prefs -> prefs.remove(RECENT_EMOTES) }
+    }
+
     override suspend fun toggleCategory(id: String) {
         store.edit { prefs ->
             val current = prefs[CATEGORIES].orEmpty()
@@ -153,6 +177,7 @@ class DataStoreSettingsRepository(
         val SHOW_STATS = booleanPreferencesKey("show_stats")
         val FOLLOW_RAIDS = booleanPreferencesKey("follow_raids")
         val RECENTS = stringPreferencesKey("recent_searches")
+        val RECENT_EMOTES = stringPreferencesKey("recent_emotes")
         val CATEGORIES = stringSetPreferencesKey("followed_categories")
         const val SEPARATOR = "\n"
         const val MAX_RECENTS = 10

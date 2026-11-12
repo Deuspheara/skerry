@@ -66,6 +66,19 @@ class SettingsRepositoryTest {
         assertEquals(PlayerEngine.WebView, settings.playerEngine)
     }
 
+    @Test fun recentEmotesAreDedupedNewestFirstCappedAndIgnoreBlankOrMultilineNames() = runBlocking {
+        val repo = DataStoreSettingsRepository(store())
+        (1..30).forEach { repo.addRecentEmote("e$it") }
+        repo.addRecentEmote("e25")
+        repo.addRecentEmote("  ")
+        repo.addRecentEmote("two\nlines")
+        val recents = repo.settings.first().recentEmotes
+        assertEquals(24, recents.size)
+        assertEquals(listOf("e25", "e30", "e29"), recents.take(3))
+        repo.clearRecentEmotes()
+        assertEquals(emptyList(), repo.settings.first().recentEmotes)
+    }
+
     @Test fun recentSearchesAreDedupedNewestFirstAndCappedAtTen() = runBlocking {
         val repo = DataStoreSettingsRepository(store())
         ('a'..'l').forEach { repo.addRecentSearch(it.toString()) }

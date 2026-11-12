@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -37,7 +38,10 @@ class EmoteRepository(
      * Emits once every provider answered (or [initialWaitMs] passed: slow providers must not hold chat back),
      * then again whenever a set changes. Never throws, never completes.
      */
-    fun emotes(channelId: String): Flow<Map<String, Emote>> = channelFlow {
+    fun emotes(channelId: String): Flow<Map<String, Emote>> = snapshots(channelId).map { it.emotes }.distinctUntilChanged()
+
+    /** [emotes] plus the same emotes as the picker's lists. One subscription feeds both, so the live pushes are listened to once. */
+    fun snapshots(channelId: String): Flow<EmoteSnapshot> = channelFlow {
         val layers = MutableStateFlow<Map<Layer, List<Emote>>>(emptyMap())
 
         suspend fun load(index: Int, scope: Scope, ttl: Long, fetch: suspend () -> List<Emote>) {
@@ -63,8 +67,8 @@ class EmoteRepository(
             }
         }
         withTimeoutOrNull(initialWaitMs) { first.awaitAll() }
-        send(merge(layers.value))
-        launch { layers.collect { send(merge(it)) } }
+        send(snapshot(layers.value))
+        launch { layers.collect { send(snapshot(it)) } }
 
         providers.forEachIndexed { index, provider ->
             // Live pushes (when the provider has them) are applied on top of the channel layer...
@@ -90,6 +94,17 @@ class EmoteRepository(
     private enum class Scope { Global, Channel }
     private data class Layer(val provider: Int, val scope: Scope)
 
+    private fun snapshot(layers: Map<Layer, List<Emote>>) = EmoteSnapshot(merge(layers), groups(layers))
+
+    /** Channel lists first, then global ones, each in provider order; a provider that has nothing (or failed) has no list. */
+    private fun groups(layers: Map<Layer, List<Emote>>): List<EmoteGroup> = Scope.entries.reversed().flatMap { scope ->
+        providers.mapIndexedNotNull { index, provider ->
+            layers[Layer(index, scope)]?.takeIf { it.isNotEmpty() }?.let {
+                EmoteGroup(provider.source, if (scope == Scope.Channel) EmoteSection.Channel else EmoteSection.Global, it)
+            }
+        }
+    }
+
     private fun merge(layers: Map<Layer, List<Emote>>): Map<String, Emote> = mergeEmoteLayers(
         // Lowest precedence first; later puts win. Channel beats global, then provider order decides.
         Scope.entries.flatMap { scope -> providers.indices.reversed().map { layers[Layer(it, scope)].orEmpty() } },
@@ -102,6 +117,9 @@ class EmoteRepository(
         const val CHANNEL_TTL_MS = 5 * 60_000L
     }
 }
+
+/** The merged name -> emote map chat lines are resolved with, and the same emotes as picker lists. */
+data class EmoteSnapshot(val emotes: Map<String, Emote>, val groups: List<EmoteGroup>)
 
 /** Layers from lowest to highest precedence: a name present in several keeps the last one's emote. Names are case-sensitive. */
 internal fun mergeEmoteLayers(layers: List<List<Emote>>): Map<String, Emote> {

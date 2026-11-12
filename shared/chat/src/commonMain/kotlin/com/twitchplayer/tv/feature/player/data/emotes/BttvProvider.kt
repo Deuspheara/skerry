@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
  * Updates are refreshed by the repository's periodic reload (the BTTV socket is not used).
  */
 class BttvProvider(private val http: HttpClient) : EmoteProvider {
+    override val source: EmoteSource = EmoteSource.Bttv
+
     override suspend fun global(): List<Emote> = http.getOrNull<List<BttvEmote>>("https://api.betterttv.net/3/cached/emotes/global").orEmpty().map { it.toEmote() }
 
     override suspend fun channel(channelId: String): List<Emote> {

@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -68,6 +69,12 @@ class PlayerPresenter(
 
     private val chatFeed = ChatFeed(chatSource, chatAssets, tuning.chatBatchMs, mapper = tuning.chatMapper)
     val chat: StateFlow<ImmutableList<ChatLine>> = chatFeed.lines
+
+    /** The emote lists of the channel and the viewer's recent emotes, for the picker and the `:` suggestions. */
+    val emotePicker: StateFlow<EmotePickerState> = combine(chatFeed.currentAssets, settings.settings.map { it.recentEmotes }.distinctUntilChanged()) { assets, recentNames ->
+        val known = assets.groups.asSequence().flatMap { it.emotes }.associateBy { it.name }
+        EmotePickerState(assets.groups.toImmutableList(), recentNames.mapNotNull(known::get).toImmutableList(), assets.access)
+    }.distinctUntilChanged().stateIn(scope, SharingStarted.Eagerly, EmotePickerState())
 
     /** Slow / followers-only / subscribers-only / emote-only / unique-chat modes of the room, live. */
     val room: StateFlow<RoomState> = chatFeed.room
@@ -150,6 +157,7 @@ class PlayerPresenter(
             PlayerEvent.Next -> next()
             is PlayerEvent.Zap -> zap(event.stream)
             is PlayerEvent.SendChat -> sendChat(event.text)
+            is PlayerEvent.PickedEmote -> scope.launch { settings.addRecentEmote(event.name) }
             is PlayerEvent.SetAdActive -> setAdActive(event.active)
             is PlayerEvent.SetPreferredQuality -> setPreferredQuality(event.id)
         }

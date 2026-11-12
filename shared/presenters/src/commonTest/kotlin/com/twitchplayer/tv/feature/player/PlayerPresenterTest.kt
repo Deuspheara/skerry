@@ -15,6 +15,11 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatEvent
 import com.twitchplayer.tv.feature.player.data.chat.ChatFragment
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent
+import com.twitchplayer.tv.feature.player.data.emotes.Emote
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteGroup
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteSection
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteSource
+import com.twitchplayer.tv.feature.player.data.emotes.UserEmoteAccess
 import com.twitchplayer.tv.feature.player.presentation.PlayerCommand
 import com.twitchplayer.tv.feature.player.presentation.PlayerEvent
 import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
@@ -65,13 +70,35 @@ class PlayerPresenterTest {
 
     private fun message(id: String) = ChatEvent.Message(ChatMessage(id, "b", "u", "nick", "nick", ChatMessageContent("hi $id", listOf(ChatFragment("text", "hi $id")))))
 
-    private fun TestScope.vm(login: String = "b", chat: ChatMode = ChatMode.Hidden, settingsOverride: SettingsRepository? = null, repository: TwitchRepository = repo): PlayerPresenter = PlayerPresenter(
+    private fun TestScope.vm(login: String = "b", chat: ChatMode = ChatMode.Hidden, settingsOverride: SettingsRepository? = null, repository: TwitchRepository = repo, assets: ChatAssets = ChatAssets.Empty): PlayerPresenter = PlayerPresenter(
         login, repository, FakeSession(), settingsOverride ?: FakeSettings(AppSettings(chatMode = chat)),
-        chatAssets = ChatAssetsSource { flowOf(ChatAssets.Empty) },
+        chatAssets = ChatAssetsSource { flowOf(assets) },
         chatSource = ChatSource { _, _ -> chatFlow as Flow<ChatEvent> },
         channelKeys = keys, scope = backgroundScope, defaultEngine = PlayerEngine.Native,
         tuning = PlayerTuning(idleMs = 4_000, chatBatchMs = 250, chatMapper = dispatcher),
     ).also { vm -> vm.state.onEach { }.launchIn(backgroundScope) }
+
+    @Test fun theEmotePickerListsTheChannelsEmotesAndTheViewersRecentsThatStillExist() = runTest(dispatcher) {
+        val kappa = Emote("Kappa", "k")
+        val hype = Emote("HYPE", "h")
+        val groups = listOf(EmoteGroup(EmoteSource.Twitch, EmoteSection.Global, listOf(kappa)), EmoteGroup(EmoteSource.SevenTv, EmoteSection.Channel, listOf(hype)))
+        val settings = FakeSettings(AppSettings(chatMode = ChatMode.Compact, recentEmotes = listOf("HYPE", "GoneEmote", "Kappa")))
+        val vm = vm(settingsOverride = settings, assets = ChatAssets(emptyMap(), emptyMap(), groups, UserEmoteAccess.NeedsSignIn))
+        runCurrent()
+        val picker = vm.emotePicker.value
+        assertEquals(groups, picker.groups.toList())
+        assertEquals(listOf(hype, kappa), picker.recent.toList(), "a recent that is not in this channel's lists is skipped")
+        assertEquals(UserEmoteAccess.NeedsSignIn, picker.access)
+        assertEquals(listOf(EmoteSource.Twitch, EmoteSource.SevenTv), picker.sources)
+    }
+
+    @Test fun pickingAnEmoteMovesItToTheFrontOfTheRecents() = runTest(dispatcher) {
+        val settings = FakeSettings(AppSettings(recentEmotes = listOf("a", "b")))
+        val vm = vm(settingsOverride = settings)
+        vm.onEvent(PlayerEvent.PickedEmote("b"))
+        runCurrent()
+        assertEquals(listOf("b", "a"), settings.settings.value.recentEmotes)
+    }
 
     @Test fun controlsHideAfterFourSecondsAndAnyKeyWakesThem() = runTest(dispatcher) {
         val vm = vm()

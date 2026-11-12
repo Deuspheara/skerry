@@ -4,6 +4,8 @@ import com.twitchplayer.tv.feature.player.data.emotes.Emote
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteChange
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteProvider
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteSection
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteSource
 import com.twitchplayer.tv.feature.player.data.emotes.applyChange
 import com.twitchplayer.tv.feature.player.data.emotes.mergeEmoteLayers
 import kotlinx.coroutines.CompletableDeferred
@@ -29,6 +31,7 @@ private class FakeProvider(
     private val failing: Boolean = false,
     val pushes: MutableSharedFlow<EmoteChange> = MutableSharedFlow(extraBufferCapacity = 8),
     private val gate: CompletableDeferred<Unit>? = null,
+    override val source: EmoteSource = EmoteSource.Other,
 ) : EmoteProvider {
     var globalCalls = 0
     var channelCalls = 0
@@ -58,6 +61,21 @@ class EmoteRepositoryTest {
         assertEquals("https://bttv-channel/Both", merged.getValue("Both").url, "a channel emote of a lower-priority provider still beats a global one")
         assertEquals("https://7tv-global/Same", merged.getValue("Same").url, "global tie: 7TV before BTTV")
         assertEquals("https://ffz-channel/Solo", merged.getValue("Solo").url)
+    }
+
+    @Test fun snapshotsListEachProvidersChannelEmotesBeforeItsGlobalOnesAndSkipEmptyOrFailedLists() = runTest {
+        val sevenTv = FakeProvider(global = listOf(emote("G7", "a")), channel = listOf(emote("C7", "a")), source = EmoteSource.SevenTv)
+        val bttv = FakeProvider(failing = true, source = EmoteSource.Bttv)
+        val ffz = FakeProvider(global = listOf(emote("GF", "c")), source = EmoteSource.Ffz)
+        val groups = EmoteRepository(listOf(sevenTv, bttv, ffz)).snapshots("c").first().groups
+        assertEquals(
+            listOf(
+                Triple(EmoteSource.SevenTv, EmoteSection.Channel, listOf("C7")),
+                Triple(EmoteSource.SevenTv, EmoteSection.Global, listOf("G7")),
+                Triple(EmoteSource.Ffz, EmoteSection.Global, listOf("GF")),
+            ),
+            groups.map { Triple(it.source, it.section, it.emotes.map(Emote::name)) },
+        )
     }
 
     @Test fun globalTieIsDecidedByProviderOrder() {

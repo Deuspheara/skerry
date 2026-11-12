@@ -27,6 +27,8 @@ class SevenTvProvider(
     /** A client for the long-lived event stream: one without a read timeout, built by the platform. */
     private val eventsHttp: () -> HttpClient,
 ) : EmoteProvider {
+    override val source: EmoteSource = EmoteSource.SevenTv
+
     // Copy-on-write snapshot: channel() and changes() run on different threads (a JVM-only concurrent map before the move to common).
     private val setIds = MutableStateFlow<Map<String, String>>(emptyMap())
 

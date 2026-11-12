@@ -82,6 +82,22 @@ data class TwitchBadgeVersion(
     val title: String = "",
 )
 
+/**
+ * An emote of `GET /chat/emotes/global`, `GET /chat/emotes` (a channel's) or `GET /chat/emotes/user`. [emoteType] is `subscriptions`,
+ * `bitstier`, `follower`, `globals`, `smilies`... (free text: the API lists more over time); [ownerId] is the channel it belongs to.
+ * The image is the documented CDN template, so only the id and the available [format]s matter (`static`, plus `animated` for some).
+ */
+@Serializable
+data class TwitchEmote(
+    val id: String,
+    val name: String,
+    @SerialName("emote_type") val emoteType: String = "",
+    @SerialName("emote_set_id") val emoteSetId: String = "",
+    @SerialName("owner_id") val ownerId: String = "",
+    val format: List<String> = emptyList(),
+    val tier: String = "",
+)
+
 /** `GET /clips`: [id] is the clip's slug (what Twitch's player interface takes). Helix gives no playable URL. */
 @Serializable
 data class TwitchClip(

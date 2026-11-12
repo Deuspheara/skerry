@@ -41,6 +41,11 @@ class ChatFeed(
     private val mutableLines = MutableStateFlow<ImmutableList<ChatLine>>(persistentListOf())
     val lines: StateFlow<ImmutableList<ChatLine>> = mutableLines.asStateFlow()
 
+    private val mutableAssets = MutableStateFlow(ChatAssets.Empty)
+
+    /** The badges and emotes of the channel being watched, as chat resolves lines with them (the emote picker reads the lists). */
+    val currentAssets: StateFlow<ChatAssets> = mutableAssets.asStateFlow()
+
     private val mutableRoom = MutableStateFlow(RoomState())
 
     /** The room's modes (slow, followers-only...): from [setRoom] at the start, then live. */
@@ -58,12 +63,13 @@ class ChatFeed(
     fun clear() {
         mutableLines.value = persistentListOf()
         mutableRoom.value = RoomState()
+        mutableAssets.value = ChatAssets.Empty
     }
 
     /** Streams until cancelled. Asset changes (late providers, live emote edits) apply to the messages that follow. */
     suspend fun run(channelId: String, userId: String, selfLogin: String?) = coroutineScope {
         // Written by the assets collector, read on the mapper dispatcher: a StateFlow gives the cross-thread visibility.
-        val current = MutableStateFlow(ChatAssets.Empty)
+        val current = mutableAssets
         val firstAssets = CompletableDeferred<Unit>()
         launch {
             assets.assets(channelId).collect {

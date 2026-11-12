@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
  * previous emote (flip, rotate...) and are not supported: they stay plain text.
  */
 class FfzProvider(private val http: HttpClient) : EmoteProvider {
+    override val source: EmoteSource = EmoteSource.Ffz
+
     override suspend fun global(): List<Emote> {
         val global = http.getOrNull<FfzGlobal>("https://api.frankerfacez.com/v1/set/global") ?: return emptyList()
         return global.defaultSets.flatMap { global.sets[it.toString()]?.emoticons.orEmpty() }.mapNotNull { it.toEmote() }

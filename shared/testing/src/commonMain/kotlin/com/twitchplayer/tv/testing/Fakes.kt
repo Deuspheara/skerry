@@ -41,6 +41,7 @@ class FakeSession(initial: SessionState = SessionState.SignedIn(Account("me", "c
 }
 
 private const val MAX_RECENTS = 10
+private const val MAX_RECENT_EMOTES = 24
 
 class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
     private val mutable = MutableStateFlow(initial)
@@ -55,6 +56,8 @@ class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
     override suspend fun addRecentSearch(query: String) = mutable.update { it.copy(recentSearches = (listOf(query) + it.recentSearches.filter { r -> r != query }).take(MAX_RECENTS)) }
     override suspend fun removeRecentSearch(query: String) = mutable.update { it.copy(recentSearches = it.recentSearches.filter { r -> r != query }) }
     override suspend fun clearRecentSearches() = mutable.update { it.copy(recentSearches = emptyList()) }
+    override suspend fun addRecentEmote(name: String) = mutable.update { it.copy(recentEmotes = (listOf(name) + it.recentEmotes.filter { r -> r != name }).take(MAX_RECENT_EMOTES)) }
+    override suspend fun clearRecentEmotes() = mutable.update { it.copy(recentEmotes = emptyList()) }
     override suspend fun toggleCategory(id: String) = mutable.update { it.copy(followedCategories = if (id in it.followedCategories) it.followedCategories - id else it.followedCategories + id) }
 }
 

@@ -149,6 +149,19 @@ class TwitchApi(
     suspend fun globalBadges(): HelixPage<TwitchBadgeSet> = request("chat/badges/global")
     suspend fun channelBadges(broadcasterId: String): HelixPage<TwitchBadgeSet> = request("chat/badges") { parameter("broadcaster_id", broadcasterId) }
 
+    /** Twitch's global emotes (smilies, Kappa...). No scope. */
+    suspend fun globalEmotes(): HelixPage<TwitchEmote> = request("chat/emotes/global")
+
+    /** The channel's own emotes: subscriber tiers, follower and bits emotes. No scope; says nothing about what the viewer may use. */
+    suspend fun channelEmotes(broadcasterId: String): HelixPage<TwitchEmote> = request("chat/emotes") { parameter("broadcaster_id", broadcasterId) }
+
+    /** Every emote [userId] may use (own subscriptions, follower emotes of [broadcasterId]...). Needs `user:read:emotes`; paged by [after]. */
+    suspend fun userEmotes(userId: String, broadcasterId: String? = null, after: String? = null): HelixPage<TwitchEmote> = request("chat/emotes/user") {
+        parameter("user_id", userId)
+        broadcasterId?.let { parameter("broadcaster_id", it) }
+        after?.let { parameter("after", it) }
+    }
+
     private companion object {
         const val BASE = "https://api.twitch.tv/helix"
     }

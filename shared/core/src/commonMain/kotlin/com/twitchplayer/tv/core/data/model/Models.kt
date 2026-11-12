@@ -127,6 +127,8 @@ data class AppSettings(
     val chat: ChatSettings = ChatSettings(),
     val animationsEnabled: Boolean = true,
     val recentSearches: List<String> = emptyList(),
+    /** Names of the emotes the viewer picked last, newest first. */
+    val recentEmotes: List<String> = emptyList(),
     val followedCategories: Set<String> = emptySet(),
     val playerEngine: PlayerEngine = PlayerEngine.Fallback,
     /** Video quality picked in the native player (a variant id such as "720p60"); null = the default policy. */

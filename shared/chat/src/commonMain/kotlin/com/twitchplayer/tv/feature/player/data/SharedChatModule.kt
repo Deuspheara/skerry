@@ -10,7 +10,7 @@ import org.koin.dsl.module
 
 /**
  * The platform-independent bindings of `:shared:chat`. Needs from the app, besides `sharedCoreModule()` (which provides the
- * `HttpClient`, `TwitchApi`, `TokenSource` and [AppConfig]):
+ * `HttpClient`, `TwitchApi`, `TokenSource`, `SessionRepository` and [AppConfig]):
  *
  * - `HttpClientEngineFactory<*>` (the chat connection builds its own WebSocket client on it)
  * - [com.twitchplayer.tv.core.platform.Logger]
@@ -23,6 +23,6 @@ fun sharedChatModule(): Module = module {
         val streamClients = get<EventStreamClientFactory>()
         EmoteRepository(listOf(SevenTvProvider(get(), { streamClients.create() }), BttvProvider(get()), FfzProvider(get())))
     }
-    single<ChatAssetsSource> { ChatAssetsRepository(get(), get()) }
+    single<ChatAssetsSource> { ChatAssetsRepository(get(), get(), get()) }
     single<ChatSource> { EventSubChatSource(tokens = get(), clientId = get<AppConfig>().clientId, engine = get(), logger = get()) }
 }

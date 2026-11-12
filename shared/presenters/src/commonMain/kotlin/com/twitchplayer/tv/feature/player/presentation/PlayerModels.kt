@@ -51,6 +51,9 @@ sealed interface PlayerEvent {
     data class Zap(val stream: LiveStream) : PlayerEvent
     data class SendChat(val text: String) : PlayerEvent
 
+    /** The viewer put the emote [name] in their message (from the picker or a suggestion): it goes to the front of the recents. */
+    data class PickedEmote(val name: String) : PlayerEvent
+
     /** An ad break is on screen (a notice's visible time only counts once it is over). */
     data class SetAdActive(val active: Boolean) : PlayerEvent
     data class SetPreferredQuality(val id: String) : PlayerEvent
