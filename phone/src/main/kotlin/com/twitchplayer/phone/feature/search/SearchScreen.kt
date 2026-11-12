@@ -403,7 +403,7 @@ private fun ChannelResultRow(channel: ChannelRef, onClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     // The mark keeps its size at any font size: it is a label, not reading text.
                     CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1f)) { LiveBadge() }
-                    Text(stringResource(R.string.phone_channel_live_viewers, viewers), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.phone_search_viewers, viewers), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 Text(stringResource(R.string.phone_channel_offline), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

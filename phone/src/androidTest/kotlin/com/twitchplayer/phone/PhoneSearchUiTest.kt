@@ -121,9 +121,13 @@ class PhoneSearchUiTest {
     @Test fun theChannelsLiveNowAreSuggestedBeforeAnythingIsTyped() {
         launch()
         openSearch()
+        // The LIVE mark says live: the viewers line only counts them.
+        rule.waitUntil(WAIT_MS) { present(string(R.string.phone_search_live_now)) }
 
         rule.onNodeWithText(string(R.string.phone_search_live_now)).assertIsDisplayed()
         rule.waitUntil(WAIT_MS) { present("Kestrel FR") }
+        assertTrue("no 'Live · 22.9K viewers' next to the LIVE mark", rule.onAllNodesWithText("Live ·", substring = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(rule.onAllNodesWithText("22.9K viewers", substring = true).fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test fun resultsComeWithAFilterRowAndAChannelRowShowsItsLiveMarkAndViewers() {

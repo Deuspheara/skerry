@@ -23,8 +23,9 @@
     <string name="phone_language_filter">Language</string>
     <string name="phone_favorite_on">In your favourites</string>
     <string name="phone_favorite_off">Not in your favourites</string>
-    <string name="phone_search_hint">Find a channel or a category</string>
+    <string name="phone_search_hint">Search channels</string>
     <string name="phone_settings_language">Language</string>
+    <string name="phone_search_viewers">%1$s viewers</string>
 
     <string name="phone_search_recent">Recent searches</string>
     <string name="phone_search_filter_all">All</string>

@@ -278,9 +278,33 @@ class PhoneSheetUiTest {
         scenario!!.recreate()
 
         waitForText(string(R.string.phone_player_chat_hint))
+        // Loaded and paused: the player is ready with a picture and is not asked to play, and the control offers Play.
+        rule.waitUntil(WAIT_MS) { player()?.playbackState == androidx.media3.common.Player.STATE_READY }
         waitForDescription(string(R.string.player_play))
         Thread.sleep(SETTLE_WAIT_MS * 2)
-        assertTrue("it did not start by itself", !described(string(R.string.player_pause)))
+        assertEquals(false, player()?.playWhenReady)
+        assertEquals(false, player()?.isPlaying)
+        assertTrue("the control says Play, not Pause", described(string(R.string.player_play)) && !described(string(R.string.player_pause)))
+    }
+
+    @Test fun aRestoredPausedStreamThatTheViewerStartedIsNeverPausedAgainByATurnOfThePhone() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        scenario!!.recreate()
+        waitForText(string(R.string.phone_player_chat_hint))
+        rule.waitUntil(WAIT_MS) { player()?.playbackState == androidx.media3.common.Player.STATE_READY }
+        waitForDescription(string(R.string.player_play))
+
+        rule.onNodeWithContentDescription(string(R.string.player_play)).performClick()
+        rule.waitUntil(WAIT_MS) { player()?.playWhenReady == true }
+
+        scenario!!.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE }
+        rule.waitUntil(WAIT_MS) { orientation() == Configuration.ORIENTATION_LANDSCAPE }
+        scenario!!.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT }
+        rule.waitUntil(WAIT_MS) { orientation() == Configuration.ORIENTATION_PORTRAIT }
+        Thread.sleep(SETTLE_WAIT_MS * 2)
+
+        assertEquals("the viewer's Play stays", true, player()?.playWhenReady)
     }
 
     @Test fun theChatBoxIsNamedWhileEmptyAndReadsWhatWasTypedOnceItHasText() {
@@ -310,6 +334,17 @@ class PhoneSheetUiTest {
         waitForDescription(string(R.string.player_play))
         Thread.sleep(SETTLE_WAIT_MS * 2)
         assertTrue("it did not start by itself", !described(string(R.string.player_pause)))
+    }
+
+    /** What the picture's player is doing, read on the main thread (Media3 insists on it). */
+    private data class PlayerState(val playbackState: Int, val playWhenReady: Boolean, val isPlaying: Boolean)
+
+    private fun player(): PlayerState? {
+        var found: PlayerState? = null
+        scenario!!.onActivity { activity ->
+            found = playerViews(activity.window.decorView).firstOrNull()?.player?.let { PlayerState(it.playbackState, it.playWhenReady, it.isPlaying) }
+        }
+        return found
     }
 
     private fun orientation(): Int {

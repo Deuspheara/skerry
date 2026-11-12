@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -110,6 +111,42 @@ class PhoneLayoutUiTest {
         assertEquals(screenWidthPx().toFloat(), picture.right, 2f)
         rule.onNodeWithText(string(R.string.phone_player_chat_hint)).assertIsDisplayed()
         rule.saveScreenshot("rtl-expanded")
+    }
+
+    private fun setLocale(tag: String) {
+        context.getSystemService(LocaleManager::class.java).applicationLocales = LocaleList.forLanguageTags(tag)
+    }
+
+    /** The hint of the header's pill and of the search field, at 1x on this 411 dp wide screen, is shown whole. */
+    private fun hintsAreShownWhole() {
+        val hint = string(R.string.phone_search_hint)
+        rule.waitUntil(WAIT_MS) { rule.onAllNodesWithText(hint, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        fun check(where: String) = rule.onAllNodesWithText(hint, useUnmergedTree = true).fetchSemanticsNodes().forEach { node ->
+            val results = mutableListOf<TextLayoutResult>()
+            node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+            results.firstOrNull()?.let { layout -> assertTrue("the hint is cut in $where: '$hint'", (0 until layout.lineCount).none(layout::isLineEllipsized)) }
+        }
+        check("the header pill")
+        rule.onNodeWithContentDescription(string(R.string.nav_search)).performClick()
+        rule.waitUntil(WAIT_MS) { rule.onAllNodes(androidx.compose.ui.test.hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        check("the search field")
+    }
+
+    @Test fun theSearchHintIsShownWholeInEnglish() {
+        launch()
+        hintsAreShownWhole()
+    }
+
+    @Test fun theSearchHintIsShownWholeInFrench() {
+        setLocale("fr")
+        launch()
+        hintsAreShownWhole()
+    }
+
+    @Test fun theSearchHintIsShownWholeInArabic() {
+        arabic()
+        launch()
+        hintsAreShownWhole()
     }
 
     private fun stripTextsDoNotOverflow() {

@@ -111,12 +111,18 @@ fun LivePlayerRoute(
         presenter.onEvent(PlayerEvent.Attach(login))
         onDispose { }
     }
-    val startPlaying = remember(login) { autoplay }
+    // A restored session starts paused, once: this page remembers it did, so nothing that runs again later pauses a stream the viewer has
+    // since started. The player is paused at once (no sound before the presenter has the stream), and the presenter is told as soon as it
+    // has it, so its Play / Pause button knows the stream is paused.
+    val pauseAtStart = remember(login) { booleanArrayOf(!autoplay, !autoplay) }
     DisposableEffect(state.login) {
         if (state.login.isNotEmpty()) {
             player.load(state.login)
-            // A paused start is the player's own "paused by the viewer" (set after load, which clears it): the stream resolves and waits for the play button.
-            if (!startPlaying) player.pause()
+            if (pauseAtStart[0]) {
+                // The player's own "paused by the viewer" (set after load, which clears it): the stream resolves and waits for the play button.
+                player.pause()
+                pauseAtStart[0] = false
+            }
         }
         onDispose { }
     }
@@ -128,6 +134,14 @@ fun LivePlayerRoute(
                 PlayerCommand.ToggleMute -> player.toggleMute()
             }
         }
+    }
+
+    DisposableEffect(state.current != null) {
+        if (state.current != null && pauseAtStart[1]) {
+            pauseAtStart[1] = false
+            presenter.onEvent(PlayerEvent.TogglePause)
+        }
+        onDispose { }
     }
 
     val snackbar = remember { SnackbarHostState() }

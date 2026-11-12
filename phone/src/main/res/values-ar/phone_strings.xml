@@ -16,8 +16,9 @@
     <string name="phone_language_filter">اللغة</string>
     <string name="phone_favorite_on">في المفضلة</string>
     <string name="phone_favorite_off">ليست في المفضلة</string>
-    <string name="phone_search_hint">ابحث عن قناة أو فئة</string>
+    <string name="phone_search_hint">ابحث عن قناة</string>
     <string name="phone_settings_language">اللغة</string>
+    <string name="phone_search_viewers">%1$s مشاهد</string>
     <string name="phone_search_recent">عمليات البحث الأخيرة</string>
     <string name="phone_search_filter_all">الكل</string>
     <string name="phone_search_clear_recents">مسح الكل</string>

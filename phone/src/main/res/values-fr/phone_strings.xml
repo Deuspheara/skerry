@@ -18,8 +18,9 @@
     <string name="phone_language_filter">Langue</string>
     <string name="phone_favorite_on">Dans vos favoris</string>
     <string name="phone_favorite_off">Pas dans vos favoris</string>
-    <string name="phone_search_hint">Trouvez une chaîne ou une catégorie</string>
+    <string name="phone_search_hint">Rechercher une chaîne</string>
     <string name="phone_settings_language">Langue</string>
+    <string name="phone_search_viewers">%1$s spectateurs</string>
 
     <string name="phone_search_recent">Recherches récentes</string>
     <string name="phone_search_filter_all">Tout</string>
