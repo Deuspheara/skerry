@@ -1,30 +1,27 @@
 package com.twitchplayer.phone.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,13 +31,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -77,7 +69,9 @@ import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
 import com.twitchplayer.phone.navigation.phoneTransition
 import com.twitchplayer.phone.navigation.rememberScreenFill
-import com.twitchplayer.phone.ui.components.PhoneIcons
+import com.twitchplayer.phone.ui.components.PhoneBottomBar
+import com.twitchplayer.phone.ui.components.PhoneRail
+import com.twitchplayer.phone.ui.components.isWideWindow
 import com.twitchplayer.phone.ui.theme.PhoneTheme
 import com.twitchplayer.phone.ui.theme.ThemePreference
 import com.twitchplayer.phone.ui.theme.systemAnimationsOff
@@ -142,120 +136,85 @@ private fun PhoneScaffold(
         PhoneNavigator(stacks, PhoneTab.valueOf(selectedName)) { selectedName = it.name }
     }
     val player = remember(navigator) { PlayerLauncher { target -> navigator.push(target.toKey()) } }
-    val adaptive = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfoV2())
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            PhoneTab.entries.forEachIndexed { index, tab ->
-                item(
-                    selected = tab == navigator.selected,
-                    onClick = { navigator.selectTab(tab) },
-                    icon = { Icon(tab.icon(), contentDescription = null) },
-                    label = { NavLabel(stringResource(tab.label())) },
-                    // In a rail the first item sat right under the status bar, above the page title: it starts level with the title.
-                    modifier = if (index == 0 && navigator.showsNavigation && adaptive != NavigationSuiteType.NavigationBar) {
-                        Modifier.padding(top = RAIL_TOP_GAP)
-                    } else {
-                        Modifier
-                    },
-                )
+    val wide = isWideWindow()
+    val chromeVisible = navigator.showsNavigation
+    val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
+    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        if (chromeVisible && wide) PhoneRail(navigator.selected, selectTab)
+        Column(Modifier.weight(1f).fillMaxHeight()) {
+            // The bar's or the rail's insets are spent there: the page must not pad for them a second time.
+            val spent = when {
+                !chromeVisible -> WindowInsets(0)
+                wide -> WindowInsets.systemBars.only(WindowInsetsSides.Start)
+                else -> WindowInsets.navigationBars
             }
-        },
-        layoutType = if (navigator.showsNavigation) adaptive else NavigationSuiteType.None,
-        containerColor = MaterialTheme.colorScheme.background,
-    ) {
-        BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
-        val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
-        Box(Modifier.fillMaxSize()) {
-            NavDisplay(
-                backStack = navigator.currentStack,
-                modifier = Modifier.fillMaxSize(),
-                onBack = { navigator.back() },
-                entryDecorators = listOf(
-                    rememberScreenFill(),
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                ),
-                transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
-                popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-                predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-                entryProvider = entryProvider<NavKey> {
-                    entry<HomeKey>(metadata = tab) {
-                        HomeRoute(
-                            onChannel = { login -> navigator.push(ChannelKey(login)) },
-                            onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                            onSignIn = onSignIn,
-                        )
-                    }
-                    entry<BrowseKey>(metadata = tab) {
-                        BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn)
-                    }
-                    entry<SearchKey>(metadata = tab) {
-                        SearchRoute(
-                            onChannel = { login -> navigator.push(ChannelKey(login)) },
-                            onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                        )
-                    }
-                    entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
-                    entry<CategoryKey> { key ->
-                        CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
-                    }
-                    entry<LiveKey> { key -> LivePlayerRoute(key.login, onBack = navigator::pop, onSignIn = onSignIn) }
-                    entry<ReplayKey> { key ->
-                        ReplayRoute(
-                            info = key.toInfo(),
-                            onBack = navigator::pop,
-                            onOpenChannel = { login -> navigator.push(ChannelKey(login)) },
-                            // Another replay of the same channel replaces this page (Back leads to where this one was opened from).
-                            onOpenReplay = { target ->
-                                navigator.pop()
-                                navigator.push(target.toKey())
-                            },
-                        )
-                    }
-                    entry<ClipKey> { key -> ClipRoute(key.slug, key.title, onBack = navigator::pop) }
-                    entry<ChannelKey> { key ->
-                        ChannelRoute(
-                            login = key.login,
-                            onBack = navigator::pop,
-                            onPlay = player::open,
-                            onChannel = { login -> navigator.push(ChannelKey(login)) },
-                            onSignIn = onSignIn,
-                        )
-                    }
-                },
-            )
-            // Inside the scaffold's content area: above the bar, beside the rail, above the keyboard and the gesture bar, whatever the text size.
-            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
+            Box(Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(spent)) {
+                BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
+                val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
+                Box(Modifier.fillMaxSize()) {
+                    NavDisplay(
+                        backStack = navigator.currentStack,
+                        modifier = Modifier.fillMaxSize(),
+                        onBack = { navigator.back() },
+                        entryDecorators = listOf(
+                            rememberScreenFill(),
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
+                        ),
+                        transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
+                        popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                        predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                        entryProvider = entryProvider<NavKey> {
+                            entry<HomeKey>(metadata = tab) {
+                                HomeRoute(
+                                    onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                    onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                    onSignIn = onSignIn,
+                                )
+                            }
+                            entry<BrowseKey>(metadata = tab) {
+                                BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn)
+                            }
+                            entry<SearchKey>(metadata = tab) {
+                                SearchRoute(
+                                    onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                    onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                )
+                            }
+                            entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
+                            entry<CategoryKey> { key ->
+                                CategoryRoute(key, onBack = navigator::pop, onChannel = { login -> navigator.push(ChannelKey(login)) }, onSignIn = onSignIn)
+                            }
+                            entry<LiveKey> { key -> LivePlayerRoute(key.login, onBack = navigator::pop, onSignIn = onSignIn) }
+                            entry<ReplayKey> { key ->
+                                ReplayRoute(
+                                    info = key.toInfo(),
+                                    onBack = navigator::pop,
+                                    onOpenChannel = { login -> navigator.push(ChannelKey(login)) },
+                                    // Another replay of the same channel replaces this page (Back leads to where this one was opened from).
+                                    onOpenReplay = { target ->
+                                        navigator.pop()
+                                        navigator.push(target.toKey())
+                                    },
+                                )
+                            }
+                            entry<ClipKey> { key -> ClipRoute(key.slug, key.title, onBack = navigator::pop) }
+                            entry<ChannelKey> { key ->
+                                ChannelRoute(
+                                    login = key.login,
+                                    onBack = navigator::pop,
+                                    onPlay = player::open,
+                                    onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                    onSignIn = onSignIn,
+                                )
+                            }
+                        },
+                    )
+                    // Inside the scaffold's content area: above the bar, beside the rail, above the keyboard and the gesture bar, whatever the text size.
+                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
+                }
+            }
+            if (chromeVisible && !wide) PhoneBottomBar(navigator.selected, selectTab)
         }
     }
 }
-
-private fun PhoneTab.icon(): ImageVector = when (this) {
-    PhoneTab.Home -> Icons.Filled.Home
-    PhoneTab.Browse -> PhoneIcons.Browse
-    PhoneTab.Search -> Icons.Filled.Search
-    PhoneTab.Settings -> Icons.Filled.Settings
-}
-
-private fun PhoneTab.label(): Int = when (this) {
-    PhoneTab.Home -> R.string.nav_home
-    PhoneTab.Browse -> R.string.nav_browse
-    PhoneTab.Search -> R.string.nav_search
-    PhoneTab.Settings -> R.string.phone_nav_settings
-}
-
-private val RAIL_TOP_GAP = 16.dp
-
-/**
- * A bar label: one line, and its text scale is capped so "Settings" still fits a quarter of the width at the largest system font size
- * (the page content keeps the full scale; Material's own guidance allows capping the navigation labels).
- */
-@Composable
-private fun NavLabel(text: String) {
-    val density = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = minOf(density.fontScale, NAV_LABEL_MAX_FONT_SCALE))) {
-        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
-}
-
-private const val NAV_LABEL_MAX_FONT_SCALE = 1.3f

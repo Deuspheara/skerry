@@ -3,6 +3,8 @@ package com.twitchplayer.phone
 import android.content.Context
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -95,7 +97,7 @@ class PhoneUiTest {
 
     private fun waitForText(text: String) = rule.waitUntil(WAIT_MS) { rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
-    private fun openTab(labelRes: Int) = rule.onNode(isSelectable() and hasText(string(labelRes))).performClick()
+    private fun openTab(labelRes: Int) = rule.onNode(isSelectable() and hasContentDescription(string(labelRes))).performClick()
 
     private fun pressBack() = scenario!!.onActivity { it.onBackPressedDispatcher.onBackPressed() }
 
@@ -134,6 +136,21 @@ class PhoneUiTest {
         check(live >= MIN_VISIBLE_STREAMS) { "only $live stream rows composed" }
     }
 
+    @Test fun theBarIsIconOnlyWithFourDescribedSelectableTabsInAFixedOrder() {
+        launch()
+        waitForDescription("Lunaria")
+
+        val labels = listOf(R.string.nav_home, R.string.nav_browse, R.string.nav_search, R.string.phone_nav_settings).map(::string)
+        // Drawn in this order, left to right (or top to bottom in a rail), each a selectable tab named for TalkBack.
+        val xs = labels.map { rule.onNode(isSelectable() and hasContentDescription(it)).fetchSemanticsNode().boundsInRoot }
+        check(xs.zipWithNext().all { (a, b) -> a.left < b.left || a.top < b.top }) { "tab order changed: $xs" }
+        rule.onNode(isSelectable() and hasContentDescription(labels[0])).assertIsSelected()
+        rule.onNode(isSelectable() and hasContentDescription(labels[1])).assertIsNotSelected()
+        labels.forEach { assertTouchTarget(isSelectable() and hasContentDescription(it)) }
+        // Icon-only: no tab label is drawn as text.
+        labels.forEach { rule.onNode(hasText(it) and isSelectable()).assertDoesNotExist() }
+    }
+
     @Test fun theFourTabsOpenTheirScreens() {
         launch()
         waitForDescription("Lunaria")
@@ -157,13 +174,13 @@ class PhoneUiTest {
         rule.onNodeWithContentDescription("Valmoor").performClick()
         waitForDescription("Lunaria")
         // The bar is for tab roots only: a page uses the whole screen.
-        rule.onNode(isSelectable() and hasText(string(R.string.nav_browse))).assertDoesNotExist()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_browse))).assertDoesNotExist()
         // The language filter names its choices.
         rule.onNodeWithText(string(R.string.filter_all_languages)).assertIsDisplayed()
 
         pressBack()
         waitForDescription("Valmoor")
-        rule.onNode(isSelectable() and hasText(string(R.string.nav_browse))).assertIsDisplayed()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_browse))).assertIsDisplayed()
     }
 
     @Test fun aChannelPageOffersWatchAndWatchOpensThePlayer() {
@@ -189,7 +206,7 @@ class PhoneUiTest {
         waitForText(string(R.string.watch))
         pressBack()
         waitForDescription("Lunaria")
-        rule.onNode(isSelectable() and hasText(string(R.string.nav_home))).assertIsDisplayed()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_home))).assertIsDisplayed()
     }
 
     @Test fun searchFindsChannelsAsYouType() {
