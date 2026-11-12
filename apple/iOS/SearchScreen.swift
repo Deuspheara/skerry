@@ -164,39 +164,3 @@ struct SearchScreen: View {
         }
     }
 }
-
-/// A channel result: avatar with a red ring when live, the name, and the viewers beside a LIVE badge. A live channel opens the player, an offline one the channel page.
-struct ChannelResultRow: View {
-    @Environment(AppModel.self) private var app
-    let channel: ChannelRef
-
-    var body: some View {
-        Button {
-            if channel.isLive {
-                app.session.open(.live(login: channel.login, name: channel.name, title: channel.name, avatarUrl: channel.avatarUrl, thumbnailUrl: ""))
-            } else {
-                app.push(.channel(login: channel.login))
-            }
-        } label: {
-            HStack(spacing: 12) {
-                Avatar(url: channel.avatarUrl, name: channel.name, size: 46)
-                    .overlay(Circle().stroke(Theme.live, lineWidth: channel.isLive ? 2 : 0).padding(-3))
-                    .padding(3)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(channel.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-                    if channel.isLive {
-                        HStack(spacing: 6) {
-                            LiveBadge()
-                            Text(String(format: String(localized: "phone_search_viewers"), formatViewers(channel.viewers))).font(.caption).foregroundStyle(Theme.textSecondary)
-                        }
-                    } else {
-                        Text("phone_channel_offline").font(.footnote).foregroundStyle(Theme.textSecondary)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle())
-    }
-}

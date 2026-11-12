@@ -199,7 +199,7 @@ final class PlayerController: NSObject {
     // MARK: System integration
 
     private func configureAudioSession() {
-        #if os(iOS)
+        #if os(iOS) || os(tvOS)
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .moviePlayback)
         try? session.setActive(true)

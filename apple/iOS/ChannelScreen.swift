@@ -109,32 +109,3 @@ struct ChannelScreen: View {
         .scrollIndicators(.hidden)
     }
 }
-
-struct ReplayRow: View {
-    let replay: Replay
-    let channel: ChannelRef
-    let progress: VodProgress?
-    var onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                ZStack(alignment: .bottom) {
-                    Thumbnail(url: replay.thumbnailUrl)
-                    if let progress, replay.durationSeconds > 0 {
-                        ProgressView(value: min(1, Double(progress.positionMs) / (Double(replay.durationSeconds) * 1000))).tint(Theme.accent).padding(6)
-                    }
-                }
-                .frame(width: 148)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(replay.title).font(.subheadline.weight(.semibold)).lineLimit(1)
-                    Text(replay.duration).font(.footnote).foregroundStyle(Theme.textSecondary)
-                    Text(String(format: String(localized: "replay_views"), formatViewers(replay.views))).font(.caption).foregroundStyle(Theme.textSecondary)
-                }
-                Spacer(minLength: 0)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle())
-    }
-}

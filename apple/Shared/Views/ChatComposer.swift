@@ -34,16 +34,22 @@ struct ChatComposer: View {
             if app.isSignedIn || app.launch.demo {
                 HStack(spacing: 8) {
                     Button { togglePicker() } label: {
-                        Image(systemName: pickerOpen ? "keyboard" : "face.smiling").font(.title3).frame(width: 36, height: 36)
+                        Image(systemName: inlinePicker && pickerOpen ? "keyboard" : "face.smiling").font(.title3).frame(width: 36, height: 36)
                     }
                     .buttonStyle(.plain).foregroundStyle(Theme.textSecondary)
-                    .accessibilityLabel(Text(pickerOpen ? "phone_emote_keyboard" : "phone_emote_button"))
+                    .accessibilityLabel(Text(inlinePicker && pickerOpen ? "phone_emote_keyboard" : "phone_emote_button"))
+                    #if os(macOS)
+                    .help(Text("phone_emote_button"))
+                    .popover(isPresented: $pickerOpen, arrowEdge: .top) {
+                        if let picker = playback.picker { EmotePanel(picker: picker, onPick: { insert($0) }).frame(width: 340, height: 360) }
+                    }
+                    #endif
                     TextField("phone_player_chat_hint", text: $text, axis: .vertical)
                         .lineLimit(1...3)
                         .focused($focused)
                         .submitLabel(.send)
                         .onSubmit(send)
-                        .textInputAutocapitalization(.sentences)
+                        .sentenceCapitalization()
                         .accessibilityLabel(Text(text.isEmpty ? "phone_player_chat_hint" : ""))
                     if !text.trimmingCharacters(in: .whitespaces).isEmpty {
                         Button(action: send) {
@@ -61,18 +67,29 @@ struct ChatComposer: View {
                     .glass(in: Capsule(), interactive: true).buttonStyle(.plain).padding(.horizontal, 10)
             }
             if let problem = playback.sendProblem { Text(problem).font(.footnote).foregroundStyle(.red) }
+            #if !os(macOS)
             if pickerOpen, let picker = playback.picker {
                 EmotePanel(picker: picker, onPick: { insert($0) }).frame(height: 280).transition(.move(edge: .bottom))
             }
+            #endif
         }
         .padding(.vertical, 6)
-        .onChange(of: focused) { _, now in if now { pickerOpen = false } }
+        .onChange(of: focused) { _, now in if now, inlinePicker { pickerOpen = false } }
         .animation(app.motion, value: pickerOpen)
+    }
+
+    /// The iPhone's panel takes the keyboard's place; on the Mac it is a popover next to the field and the field keeps the keyboard.
+    private var inlinePicker: Bool {
+        #if os(macOS)
+        false
+        #else
+        true
+        #endif
     }
 
     private func togglePicker() {
         pickerOpen.toggle()
-        if pickerOpen { focused = false } else { focused = true }
+        if inlinePicker { focused = !pickerOpen }
     }
 
     private func send() {
@@ -132,7 +149,7 @@ struct EmotePanel: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
-                TextField("phone_emote_search_hint", text: $query).textInputAutocapitalization(.never).autocorrectionDisabled()
+                TextField("phone_emote_search_hint", text: $query).noCapitalization().autocorrectionDisabled()
                 if !query.isEmpty { Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.plain).accessibilityLabel(Text("phone_emote_search_clear")) }
             }
             .padding(.horizontal, 12).frame(height: 36).background(Theme.surface, in: Capsule()).padding(.horizontal, 10)

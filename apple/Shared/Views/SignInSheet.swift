@@ -2,6 +2,8 @@ import SwiftUI
 import TwitchShared
 #if canImport(UIKit)
 import UIKit
+#else
+import AppKit
 #endif
 
 /// Device-code sign-in: open twitch.tv/activate, enter (or paste) the code, and the sheet closes itself when Twitch confirms.
@@ -85,6 +87,15 @@ struct SignInSheet: View {
     private func copy(_ value: String, expiresIn: TimeInterval) {
         #if canImport(UIKit)
         UIPasteboard.general.setItems([["public.utf8-plain-text": value]], options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(expiresIn)])
+        #else
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(value, forType: .string)
+        // The Mac has no expiring pasteboard item: clear it ourselves when the code expires, unless something else was copied since.
+        let count = NSPasteboard.general.changeCount
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(expiresIn))
+            if NSPasteboard.general.changeCount == count { NSPasteboard.general.clearContents() }
+        }
         #endif
         copied = true
     }
