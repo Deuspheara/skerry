@@ -298,6 +298,7 @@ fun LivePlayerRoute(
                         name = title,
                         category = current?.categoryName,
                         startedAtMs = current?.startedAtMs ?: 0L,
+                        labels = listOfNotNull(current?.language?.takeIf { it.isNotBlank() }?.uppercase()) + current?.tags.orEmpty(),
                         notice = state.notice,
                         onOpenChannel = { onOpenChannel(state.login) },
                         onOpenTwitch = { channelUrl(state.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } } },
@@ -377,7 +378,7 @@ private fun androidx.compose.foundation.layout.BoxScope.StageStatus(status: Nati
 
 /** Title, category, viewers and uptime under the picture, plus raids / stream-ended notices, and a button to open the channel on twitch.tv. */
 @Composable
-private fun StreamInfo(avatarUrl: String?, name: String, category: String?, startedAtMs: Long, notice: ChannelNotice?, onOpenChannel: () -> Unit, onOpenTwitch: () -> Unit) {
+private fun StreamInfo(avatarUrl: String?, name: String, category: String?, startedAtMs: Long, labels: List<String>, notice: ChannelNotice?, onOpenChannel: () -> Unit, onOpenTwitch: () -> Unit) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -410,7 +411,25 @@ private fun StreamInfo(avatarUrl: String?, name: String, category: String?, star
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        StreamTags(labels)
         NoticeBanner(notice)
+    }
+}
+
+/** The language and the tags the broadcaster set, as small pills in one scrolling row; nothing when there are none. */
+@Composable
+private fun StreamTags(labels: List<String>) {
+    if (labels.isEmpty()) return
+    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(labels.size) { index ->
+            Text(
+                labels[index],
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+        }
     }
 }
 

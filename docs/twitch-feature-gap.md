@@ -201,3 +201,23 @@ Scale: impact (user value), effort (S ≤ 2 days, M ≤ 1 week, L > 1 week), fea
 * Any 2025-2026 changes to the official app's feed, Stories, or Following drawer.
 * The Helix hype-train deprecation date (single secondary source).
 * Media3 preload behaviour on live and low-latency HLS; data and battery cost of live previews.
+
+---
+
+## 5. Status after the implementation pass (2026-11-12)
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Emote picker | Done (docs/EMOTES.md). |
+| 2 | Replies and mentions | Done: reply context line, swipe / long-press / TalkBack action to reply, reply bar, `reply_parent_message_id` on send, answer-to-me counts as a mention, `@name` suggestions from who wrote in the chat. The `reply` field of the EventSub message and the send parameter are as documented; **not run against a live chat**. |
+| 3 | Following: offline list, continue watching, last seen | Done: offline channels carry "last seen live" (recorded by this app each time the follows are read, because Twitch has no per-channel last-stream time for a whole list), a "Continue watching" row from the saved replay positions (one batched `GET /videos?id=`). Followed categories: not done (GQL only). |
+| 4 | Vertical Discover feed | Done as the "warm neighbour" version, see docs/discover-feed.md. The ads / terms question is still open. |
+| 5 | Clips feed | Done as the Clips half of Discover (week's most viewed clips of the four busiest categories). |
+| 6 | Audio-only and sleep timer | Sleep timer done (live and replays, 15 to 90 minutes). Audio-only was already a quality in the list; the stage now says "Audio only" with the streamer's picture instead of staying black. **No background (screen-off) listening**: the app pauses on stop and has no media service. |
+| 7 | Vertical-stream-aware layout | Done: the expanded portrait picture takes the stream's own shape (up to 42 % of the sheet), 16:9 otherwise. |
+| 8 | In-app live alerts, per-channel toggles | Not done. True push is not possible without a backend. |
+| 9 | Rich chat notices | Done: subscription, resubscription, gifts, raid, announcement (with its colour) and bits badge notices are cards with an icon and an accent. |
+| 10 | Moderator tools | Not done (small audience). |
+| 11 to 15 | Stories, channel points, predictions, polls, hype train, drops, follow, VOD chapters, whispers | Not done, not feasible or not worth the risk, for the reasons in section 2. |
+
+Also added: the stream's language and tags as pills under the title in the live player.
