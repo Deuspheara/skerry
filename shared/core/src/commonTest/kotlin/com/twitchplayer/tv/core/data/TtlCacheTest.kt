@@ -1,6 +1,8 @@
 package com.twitchplayer.tv.core.data
 
 import com.twitchplayer.tv.core.data.repository.TtlCache
+import com.twitchplayer.tv.core.data.repository.WallClockTimeSource
+import com.twitchplayer.tv.core.platform.WallClock
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -50,5 +52,24 @@ class TtlCacheTest {
         time += 1.milliseconds
         assertEquals(2, coalescing.get(force = true, load = load))
         assertEquals(2, loads)
+    }
+
+    @Test fun theDefaultClockKeepsRunningWhileTheDeviceSleeps() = runTest {
+        var wall = 1_000_000L
+        val sleeping = TtlCache<Int>(ttlMs = 60_000, timeSource = WallClockTimeSource(WallClock { wall }))
+        assertEquals(1, sleeping.get(load = load))
+        wall += 30_000
+        assertEquals(1, sleeping.get(load = load))
+        // An hour in a pocket: the monotonic clock would not have moved, the wall clock has.
+        wall += 3_600_000
+        assertEquals(2, sleeping.get(load = load))
+    }
+
+    @Test fun aClockSetBackwardsNeverMakesTheValueLookFresh() = runTest {
+        var wall = 1_000_000L
+        val moved = TtlCache<Int>(ttlMs = 60_000, timeSource = WallClockTimeSource(WallClock { wall }))
+        assertEquals(1, moved.get(load = load))
+        wall -= 5_000
+        assertEquals(2, moved.get(load = load))
     }
 }

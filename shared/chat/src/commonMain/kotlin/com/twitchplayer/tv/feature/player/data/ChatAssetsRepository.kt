@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * What a chat line needs to be drawn: badge image URLs by "set:version" and third-party emotes by word.
@@ -43,12 +45,22 @@ fun interface ChatAssetsSource {
     fun assets(broadcasterId: String): Flow<ChatAssets>
 }
 
+/**
+ * The light version of [ChatAssetsSource], for a chat that is only read over a picture (the Discover feed): one answer with the badges and
+ * the third-party emotes as they are (cached), and nothing else. No Twitch emote lists, no paging of the viewer's own emotes, no live emote
+ * connection, no periodic refresh.
+ */
+fun interface LiteChatAssets {
+    fun lite(broadcasterId: String): Flow<ChatAssets>
+}
+
 class ChatAssetsRepository(
     private val api: TwitchApi,
     private val emotes: EmoteRepository,
     private val session: SessionRepository,
     private val now: () -> Long = WallClock.System::nowMillis,
-) : ChatAssetsSource {
+) : ChatAssetsSource,
+    LiteChatAssets {
     private var globalBadges: Map<String, String>? = null
     private var globalEmotes: List<TwitchEmote>? = null
     private var userEmotes: CachedUserEmotes? = null
@@ -63,6 +75,16 @@ class ChatAssetsRepository(
         combine(emotes.snapshots(broadcasterId), twitch) { snapshot, own ->
             ChatAssets(badges.await(), snapshot.emotes, own.groups + snapshot.groups, own.access)
         }.collect { send(it) }
+    }
+
+    /** Channel badges already fetched, newest last; at most [CHANNEL_BADGE_CACHE]: swiping through the feed does not ask again for a channel just seen. */
+    private val channelBadges = LinkedHashMap<String, Map<String, String>>()
+    private val badgeLock = Mutex()
+
+    override fun lite(broadcasterId: String): Flow<ChatAssets> = channelFlow {
+        val badges = async { loadBadges(broadcasterId, cacheChannel = true) }
+        val third = async { guarded { emotes.once(broadcasterId) }.orEmpty() }
+        send(ChatAssets(badges.await(), third.await()))
     }
 
     private suspend fun loadTwitchEmotes(broadcasterId: String): TwitchEmoteLists = coroutineScope {
@@ -106,10 +128,24 @@ class ChatAssetsRepository(
         null
     }
 
-    private suspend fun loadBadges(broadcasterId: String): Map<String, String> = coroutineScope {
+    private suspend fun loadBadges(broadcasterId: String, cacheChannel: Boolean = false): Map<String, String> = coroutineScope {
         val global = async { globalBadges ?: runCatching { badgeUrls(api.globalBadges().data) }.getOrNull()?.also { globalBadges = it } ?: emptyMap() }
-        val channel = async { runCatching { badgeUrls(api.channelBadges(broadcasterId).data) }.getOrDefault(emptyMap()) }
+        val channel = async { channelBadgesOf(broadcasterId, cacheChannel) }
         global.await() + channel.await()
+    }
+
+    /** The channel's badges: from the small cache when [cacheChannel] and seen recently, else fetched (and then kept when [cacheChannel]). */
+    private suspend fun channelBadgesOf(broadcasterId: String, cacheChannel: Boolean): Map<String, String> {
+        val cached = if (cacheChannel) badgeLock.withLock { channelBadges[broadcasterId] } else null
+        return cached ?: runCatching { badgeUrls(api.channelBadges(broadcasterId).data) }.getOrNull()?.also { fetched ->
+            if (cacheChannel) {
+                badgeLock.withLock {
+                    channelBadges.remove(broadcasterId)
+                    channelBadges[broadcasterId] = fetched
+                    while (channelBadges.size > CHANNEL_BADGE_CACHE) channelBadges.remove(channelBadges.keys.first())
+                }
+            }
+        }.orEmpty()
     }
 
     private fun badgeUrls(sets: List<TwitchBadgeSet>): Map<String, String> = sets.flatMap { set -> set.versions.map { "${set.setId}:${it.id}" to it.image2x } }.toMap()
@@ -117,6 +153,7 @@ class ChatAssetsRepository(
     private companion object {
         const val USER_TTL_MS = 10 * 60_000L
         const val MAX_USER_PAGES = 30
+        const val CHANNEL_BADGE_CACHE = 20
     }
 }
 

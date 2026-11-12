@@ -65,7 +65,7 @@ class BrowsePresenter(
 
     val state: StateFlow<Load<BrowseUiState>> = combine(loader.state, filter, sort) { load, f, s ->
         when (load) {
-            is Load.Ready -> Load.Ready(BrowseUiState(f, s, applyBrowse(load.data, f, s).toImmutableList()))
+            is Load.Ready -> load.withData(BrowseUiState(f, s, applyBrowse(load.data, f, s).toImmutableList()))
             Load.Loading -> Load.Loading
             Load.SignedOut -> Load.SignedOut
             Load.Failed -> Load.Failed

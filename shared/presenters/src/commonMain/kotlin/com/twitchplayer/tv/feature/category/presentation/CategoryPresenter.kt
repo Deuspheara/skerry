@@ -83,7 +83,7 @@ class CategoryPresenter(
 
     private val content: StateFlow<Load<CategoryUiState>> = combine(loader.state, settings.settings.map { categoryId in it.followedCategories }) { load, favorite ->
         when (load) {
-            is Load.Ready -> Load.Ready(CategoryUiState(load.data, favorite))
+            is Load.Ready -> load.withData(CategoryUiState(load.data, favorite))
             Load.Loading -> Load.Loading
             Load.SignedOut -> Load.SignedOut
             Load.Failed -> Load.Failed

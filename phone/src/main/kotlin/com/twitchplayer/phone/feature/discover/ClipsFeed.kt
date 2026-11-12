@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,7 +25,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,7 +36,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,9 +57,11 @@ import com.twitchplayer.phone.ui.components.RemoteImage
 import com.twitchplayer.tv.core.data.model.FeedClip
 import com.twitchplayer.tv.core.ui.formatViewers
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedViewModel
+import com.twitchplayer.tv.feature.feed.presentation.FeedMerge
 import com.twitchplayer.tv.feature.player.data.stream.ClipResolver
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,7 +81,7 @@ fun ClipsRoute(
 ) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        LoadHost(state.load, onRetry = viewModel.presenter::retry, onSignIn = onSignIn, skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) }) { content ->
+        LoadHost(state.load, onRetry = viewModel.presenter::retry, onSignIn = onSignIn, skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) }, staleMarker = false) { content ->
             if (content.clips.isEmpty()) {
                 MessageState(title = stringResource(R.string.phone_feed_clips_empty), modifier = Modifier.fillMaxSize())
             } else {
@@ -96,21 +101,22 @@ private fun ClipsPager(
     resolver: ClipResolver = koinInject(),
 ) {
     val context = LocalContext.current
-    var frozen by remember { mutableStateOf<ImmutableList<FeedClip>?>(null) }
-    val shown = frozen ?: clips
+    // Frozen on the first composition; a refresh only changes what is ahead of the page the viewer rests on (see FeedMerge).
+    var shown by remember { mutableStateOf(clips) }
     val pagerState = rememberPagerState { shown.size }
     val settled = pagerState.settledPage
-    DisposableEffect(settled) {
-        if (settled > 0 && frozen == null) frozen = clips
+    DisposableEffect(clips) {
+        shown = FeedMerge.merge(shown, clips, pagerState.settledPage) { it.slug }
         onDispose { }
     }
     var muted by rememberSaveable { mutableStateOf(true) }
     var asked by remember { mutableStateOf(emptySet<String>()) }
-    val players = remember { listOf(RecordedPlayback(context), RecordedPlayback(context)) }
+    // handleAudioFocus = false: muted clips must not pause the viewer's music; focus is taken when the sound is turned on.
+    val players = remember { listOf(RecordedPlayback(context, handleAudioFocus = false), RecordedPlayback(context, handleAudioFocus = false)) }
     players.forEach { PauseWhenInBackground(it.exo) }
     // The slug each player holds, and the files already resolved (a resolved address is kept: a clip swiped back to is not asked for again).
     val holding = remember { mutableStateListOf<String?>(null, null) }
-    val urls = remember { mutableStateMapOf<String, String>() }
+    val urls = remember { ClipUrlCache() }
 
     LaunchedEffect(settled, shown, autoplayAllowed, playerOpen, muted, asked) {
         val clip = shown.getOrNull(settled) ?: return@LaunchedEffect
@@ -118,14 +124,17 @@ private fun ClipsPager(
         val other = (settled + 1) % PLAYERS
         players[slot].exo.volume = if (muted) 0f else 1f
         players[other].exo.volume = 0f
+        players[slot].setAudioFocus(FeedAudio.takesFocus(muted, playerOpen))
+        players[other].setAudioFocus(false)
         if (playerOpen) {
             players[slot].exo.pause()
             players[other].exo.pause()
             return@LaunchedEffect
         }
         val play = autoplayAllowed || clip.slug in asked
+        // A resolved address older than ClipUrlCache keeps is asked for again (a clip swiped back to long after, in a player that holds another).
         if (holding[slot] != clip.slug) {
-            val url = urls[clip.slug] ?: resolve(resolver, clip.slug)?.also { urls[clip.slug] = it }
+            val url = urls.get(clip.slug) ?: resolve(resolver, clip.slug)?.also { urls.put(clip.slug, it) }
             if (url != null) {
                 players[slot].exo.repeatMode = Player.REPEAT_MODE_ONE
                 players[slot].setSource(url, 0L, recording = false, playWhenReady = play)
@@ -136,7 +145,7 @@ private fun ClipsPager(
         }
         val upcoming = shown.getOrNull(settled + 1)
         if (upcoming != null && autoplayAllowed && holding[other] != upcoming.slug) {
-            val url = urls[upcoming.slug] ?: resolve(resolver, upcoming.slug)?.also { urls[upcoming.slug] = it }
+            val url = urls.get(upcoming.slug) ?: resolve(resolver, upcoming.slug)?.also { urls.put(upcoming.slug, it) }
             if (url != null) {
                 players[other].exo.repeatMode = Player.REPEAT_MODE_ONE
                 players[other].setSource(url, 0L, recording = false, playWhenReady = false)
@@ -145,7 +154,8 @@ private fun ClipsPager(
         }
     }
 
-    VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize().background(Color.Black), beyondViewportPageCount = 0, key = { shown[it].slug }) { page ->
+    val fling = PagerDefaults.flingBehavior(state = pagerState, pagerSnapDistance = PagerSnapDistance.atMost(1))
+    VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize().background(Color.Black), beyondViewportPageCount = 0, flingBehavior = fling, key = { shown[it].slug }) { page ->
         val clip = shown[page]
         ClipPage(
             clip = clip,
@@ -163,12 +173,19 @@ private fun ClipsPager(
     }
 }
 
-private suspend fun resolve(resolver: ClipResolver, slug: String): String? = try {
-    resolver.resolve(slug).firstOrNull()?.url
-} catch (e: CancellationException) {
-    throw e
-} catch (_: Exception) {
-    null
+/** The address of the clip's best file, asked for up to [ClipRetry.ATTEMPTS] times (a refusal is often a hiccup); null when it keeps failing. */
+private suspend fun resolve(resolver: ClipResolver, slug: String): String? {
+    for (attempt in 1..ClipRetry.ATTEMPTS) {
+        delay(ClipRetry.delayBefore(attempt))
+        try {
+            resolver.resolve(slug).firstOrNull()?.url?.let { return it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Try again, then give up: the page keeps its thumbnail.
+        }
+    }
+    return null
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -192,18 +209,36 @@ private fun ClipPage(
     val snapshot = rememberPlayerSnapshot(player.exo)
     val showVideo = mine && snapshot.hasPicture
     val views = remember(clip.views) { formatViewers(clip.views) }
+    val openLabel = stringResource(R.string.phone_feed_clip_open)
+    val togglePlayLabel = stringResource(if (snapshot.playWhenReady) R.string.player_pause else R.string.player_play)
+    val togglePlay = { if (player.exo.isPlaying) player.exo.pause() else player.exo.play() }
     val description = stringResource(R.string.phone_feed_clip_description, clip.title, clip.channelName, views, index + 1, count)
     Box(
         Modifier.fillMaxSize().background(Color.Black)
-            .semantics { contentDescription = description }
+            .semantics {
+                contentDescription = description
+                customActions = listOf(
+                    CustomAccessibilityAction(togglePlayLabel) {
+                        togglePlay()
+                        true
+                    },
+                    CustomAccessibilityAction(openLabel) {
+                        onOpen()
+                        true
+                    },
+                )
+            }
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                onClickLabel = openLabel,
                 onClick = onOpen,
-                onLongClick = { if (player.exo.isPlaying) player.exo.pause() else player.exo.play() },
+                onLongClickLabel = togglePlayLabel,
+                onLongClick = togglePlay,
             ),
     ) {
-        if (mine) ExoVideoSurface(player.exo, Modifier.fillMaxSize())
+        // The surface is only built for the page the viewer rests on, never while it slides in (see the live pager).
+        if (mine && settledPage) ExoVideoSurface(player.exo, Modifier.fillMaxSize())
         if (!showVideo) RemoteImage(clip.thumbnailUrl, Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Transparent, SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = SCRIM_ALPHA))))
         if (tapToPlay && settledPage) {

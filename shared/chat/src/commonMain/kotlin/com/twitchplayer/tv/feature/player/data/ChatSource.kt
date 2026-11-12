@@ -22,6 +22,8 @@ class EventSubChatSource(
     private val logger: Logger,
 ) : ChatSource {
     override fun events(broadcasterId: String, userId: String): Flow<ChatEvent> = channelFlow {
+        // The connection is signed with the stored token: it waits for the session to have read it (bounded, see TokenSource.awaitReady).
+        tokens.awaitReady()
         val http = EventSubChatClient.createHttpClient(engine)
         val client = EventSubChatClient(http, clientId, { tokens.current().orEmpty() }, logger)
         launch { client.run(broadcasterId, userId) }

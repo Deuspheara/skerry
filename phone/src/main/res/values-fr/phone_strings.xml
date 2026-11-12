@@ -132,4 +132,7 @@
     <string name="phone_feed_clip_description">%1$s, %2$s, %3$s vues, %4$d sur %5$d</string>
     <string name="phone_feed_clip_open">Ouvrir le clip</string>
     <string name="phone_feed_clips_empty">Aucun clip à afficher pour le moment.</string>
+    <string name="phone_search_updating">Mise à jour des résultats</string>
+    <string name="phone_stale_failed">Actualisation impossible</string>
+    <string name="phone_stale_ago">Actualisation impossible · mis à jour %1$s</string>
 </resources>

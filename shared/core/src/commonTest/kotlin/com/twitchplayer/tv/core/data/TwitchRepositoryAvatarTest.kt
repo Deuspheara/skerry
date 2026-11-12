@@ -1,6 +1,7 @@
 package com.twitchplayer.tv.core.data
 
 import com.twitchplayer.tv.core.FakeSessionRepository
+import com.twitchplayer.tv.core.data.repository.AvatarStore
 import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepositoryImpl
 import com.twitchplayer.tv.core.json
@@ -9,6 +10,7 @@ import com.twitchplayer.tv.core.network.api.TokenSource
 import com.twitchplayer.tv.core.network.api.TwitchApi
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -57,6 +59,8 @@ class TwitchRepositoryAvatarTest {
         ),
         FakeSessionRepository(),
         SnapshotCache(storage, io = Dispatchers.Unconfined),
+        // The pictures are written in the background in production; here the writer runs inline so a restart can be simulated.
+        AvatarStore(SnapshotCache(storage, io = Dispatchers.Unconfined), writeScope = CoroutineScope(Dispatchers.Unconfined), debounceMs = 0),
     )
 
     private val repository = newRepository()

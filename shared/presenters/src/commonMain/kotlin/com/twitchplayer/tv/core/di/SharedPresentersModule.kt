@@ -7,6 +7,7 @@ import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedPresenter
+import com.twitchplayer.tv.feature.feed.presentation.FeedChatPresenter
 import com.twitchplayer.tv.feature.feed.presentation.FeedPresenter
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
@@ -22,7 +23,7 @@ import org.koin.dsl.module
  * Presenter factories. Presenters are not singletons: the UI layer creates one per screen and owns its lifecycle by
  * passing the [CoroutineScope] it cancels (Android: a holder `ViewModel` passes `viewModelScope`).
  * `koin.get<HomePresenter> { parametersOf(scope) }`; `CategoryPresenter` takes `parametersOf(categoryId, scope)` and
- * `ChannelPresenter` and `PlayerPresenter` `parametersOf(login, scope)`.
+ * `ChannelPresenter` and `PlayerPresenter` `parametersOf(login, scope)`; `FeedChatPresenter` `parametersOf(channelId, scope)`.
  *
  * Besides the bindings of `sharedCoreModule()` these platform bindings must be provided (a test resolves every
  * presenter against fakes of exactly this list):
@@ -31,7 +32,7 @@ import org.koin.dsl.module
  * - `NetworkStatus` (is the connection metered: the Discover feed's autoplay)
  * - `VoiceInput` (speech recognition for search)
  *
- * The player presenter also needs `ChatSource` and `ChatAssetsSource` from `sharedChatModule()`, and `AppConfig` from the
+ * The player presenter also needs `ChatSource` and `ChatAssetsSource` (and the feed chat `LiteChatAssets`) from `sharedChatModule()`, and `AppConfig` from the
  * platform (the engine a fresh install starts with). `ChannelKeyBus` (hardware channel keys the activity forwards) is a
  * singleton of this module.
  */
@@ -41,6 +42,7 @@ fun sharedPresentersModule(): Module = module {
     factory { params -> HomePresenter(get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
     factory { params -> FollowsPresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
     factory { params -> ClipsFeedPresenter(get(), get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
+    factory { params -> FeedChatPresenter(params.get<String>(), get(), get(), get(), get(), params.get<CoroutineScope>()) }
     factory { params -> FeedPresenter(get(), get(), get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
     factory { params -> ContinueWatchingPresenter(get(), get(), params.get<CoroutineScope>()) }
     factory { params -> BrowsePresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }

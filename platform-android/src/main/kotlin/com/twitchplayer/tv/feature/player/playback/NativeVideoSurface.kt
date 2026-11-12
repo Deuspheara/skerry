@@ -25,10 +25,12 @@ fun rememberNativeVideoPlayer(
     preferredQuality: () -> String?,
     onQualityPicked: (String) -> Unit,
     qualityLabels: () -> QualityLabels,
+    /** See [NativeVideoPlayer]: false for previews that must not take audio focus until the sound is turned on. */
+    handleAudioFocus: Boolean = true,
 ): NativeVideoPlayer {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val player = remember(resolver) { NativeVideoPlayer(context, resolver, scope, preferredQuality, onQualityPicked, qualityLabels) }
+    val player = remember(resolver) { NativeVideoPlayer(context, resolver, scope, preferredQuality, onQualityPicked, qualityLabels, handleAudioFocus) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(player, lifecycle) {
         val observer = LifecycleEventObserver { _, event ->

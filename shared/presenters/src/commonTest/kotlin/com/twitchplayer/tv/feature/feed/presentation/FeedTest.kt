@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -191,5 +193,65 @@ class ClipsFeedPresenterTest {
         presenter.retry()
         advanceUntilIdle()
         assertIs<Load.Ready<ClipsContent>>(presenter.state.value.load)
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class FeedChatPresenterTest {
+    private fun message(id: String) = com.twitchplayer.tv.feature.player.data.chat.ChatEvent.Message(
+        com.twitchplayer.tv.feature.player.data.chat.ChatMessage(
+            id,
+            "b",
+            "u",
+            "Nick",
+            "nick",
+            com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent("hi $id", listOf(com.twitchplayer.tv.feature.player.data.chat.ChatFragment("text", "hi $id"))),
+        ),
+    )
+
+    private val events = kotlinx.coroutines.flow.MutableSharedFlow<com.twitchplayer.tv.feature.player.data.chat.ChatEvent>(extraBufferCapacity = 64)
+    private val connections = mutableListOf<Pair<String, String>>()
+    private var liteCalls = 0
+    private val source = com.twitchplayer.tv.feature.player.data.ChatSource { channel, user ->
+        connections += channel to user
+        events
+    }
+    private val lite = com.twitchplayer.tv.feature.player.data.LiteChatAssets {
+        liteCalls++
+        kotlinx.coroutines.flow.flowOf(com.twitchplayer.tv.feature.player.data.ChatAssets.Empty)
+    }
+
+    @Test fun itReadsOneChannelWithTheLightAssetsAndKeepsOnlyTheNewestLines() = runTest {
+        val dispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)
+        val presenter = FeedChatPresenter("chan-1", FakeSession(), FakeSettings(), source, lite, backgroundScope, dispatcher)
+        runCurrent()
+        advanceTimeBy(10)
+        runCurrent()
+        assertEquals(listOf("chan-1" to "me"), connections)
+        assertEquals(1, liteCalls, "the light assets, once")
+        repeat(30) { events.emit(message("m$it")) }
+        advanceTimeBy(300)
+        runCurrent()
+        assertEquals(12, presenter.lines.value.size)
+        assertEquals("m29", presenter.lines.value.last().id)
+    }
+
+    @Test fun signedOutItNeverConnects() = runTest {
+        val dispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)
+        FeedChatPresenter("chan-1", FakeSession(com.twitchplayer.tv.core.data.repository.SessionState.SignedOut), FakeSettings(), source, lite, backgroundScope, dispatcher)
+        runCurrent()
+        advanceTimeBy(500)
+        runCurrent()
+        assertTrue(connections.isEmpty())
+    }
+
+    @Test fun itFollowsTheViewersChatLook() = runTest {
+        val dispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)
+        val settings = FakeSettings()
+        val presenter = FeedChatPresenter("chan-1", FakeSession(), settings, source, lite, backgroundScope, dispatcher)
+        runCurrent()
+        settings.updateChat { it.copy(showBadges = false) }
+        runCurrent()
+        assertFalse(presenter.chatSettings.value.showBadges)
     }
 }

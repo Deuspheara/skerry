@@ -46,10 +46,14 @@ fun sharedCoreModule(): Module = module {
     single { DeviceCodeAuth(get(), get<AppConfig>().clientId) }
     single { TokenValidator(get(), get<AppConfig>().clientId) }
     single { SnapshotCache(get()) }
-    single<SessionRepository> { TwitchSessionRepository(get(), get(), get(), get(), onSignedOut = forgetAccountData(get(), get())) }
+    single<SessionRepository> {
+        val koin = this
+        TwitchSessionRepository(get(), get(), get(), get(), onSignedOut = forgetAccountData(get(), get(), get()) { listOf(koin.get<TwitchRepositoryImpl>()) })
+    }
     single<TokenSource> { get<SessionRepository>() }
     single { TwitchApi(get(), get<AppConfig>().clientId, get()) }
-    single<TwitchRepository> { TwitchRepositoryImpl(get(), get(), get()) }
+    single { TwitchRepositoryImpl(get(), get(), get()) }
+    single<TwitchRepository> { get<TwitchRepositoryImpl>() }
     single { ForegroundSignal() }
     single { LiveWatcher(get(), get()) }
     single<SettingsRepository> {

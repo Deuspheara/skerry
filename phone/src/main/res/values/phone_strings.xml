@@ -138,4 +138,7 @@
     <string name="phone_feed_clip_description">%1$s, %2$s, %3$s views, %4$d of %5$d</string>
     <string name="phone_feed_clip_open">Open the clip</string>
     <string name="phone_feed_clips_empty">No clips to show right now.</string>
+    <string name="phone_search_updating">Updating results</string>
+    <string name="phone_stale_failed">Couldn\'t refresh</string>
+    <string name="phone_stale_ago">Couldn\'t refresh · updated %1$s</string>
 </resources>

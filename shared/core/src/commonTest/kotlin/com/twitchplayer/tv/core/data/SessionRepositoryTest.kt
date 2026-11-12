@@ -155,4 +155,42 @@ class SessionRepositoryTest {
         assertEquals(false, repo.hasScope("user:write:chat"))
         assertTrue(FakeSessionRepository().hasScope("anything")) // the interface default
     }
+
+    private fun sessionOver(tokenStore: com.twitchplayer.tv.core.network.auth.TokenStore, timeoutMs: Long = 200L) = TwitchSessionRepository(
+        tokenStore,
+        DeviceCodeAuth(mockClient { json("{}") }, "cid"),
+        TokenValidator(mockClient { json("{}", HttpStatusCode.Unauthorized) }, "cid"),
+        scope,
+        readyTimeoutMs = timeoutMs,
+    )
+
+    @Test fun aTokenStoreThatThrowsIsSignedOutAndRequestsAreReleased() = runTest {
+        val throwing = object : com.twitchplayer.tv.core.network.auth.TokenStore {
+            override suspend fun save(tokens: TwitchTokens) = Unit
+            override suspend fun read(): TwitchTokens? = error("keystore broke")
+            override suspend fun saveAccount(account: Account) = Unit
+            override suspend fun readAccount(): Account? = error("keystore broke")
+            override suspend fun clear() = Unit
+        }
+        val session = sessionOver(throwing)
+        session.start()
+        session.awaitReady()
+        session.state.await { it is SessionState.SignedOut }
+        assertNull(session.current())
+    }
+
+    @Test fun aTokenStoreThatNeverAnswersDelaysARequestByTheTimeoutAndNoMore() = runTest {
+        val hanging = object : com.twitchplayer.tv.core.network.auth.TokenStore {
+            override suspend fun save(tokens: TwitchTokens) = Unit
+            override suspend fun read(): TwitchTokens? = kotlinx.coroutines.awaitCancellation()
+            override suspend fun saveAccount(account: Account) = Unit
+            override suspend fun readAccount(): Account? = null
+            override suspend fun clear() = Unit
+        }
+        val session = sessionOver(hanging, timeoutMs = 150L)
+        session.start()
+        val started = kotlin.time.TimeSource.Monotonic.markNow()
+        realTime { session.awaitReady() }
+        assertTrue(started.elapsedNow().inWholeMilliseconds < 5_000, "awaitReady came back after its timeout instead of hanging")
+    }
 }

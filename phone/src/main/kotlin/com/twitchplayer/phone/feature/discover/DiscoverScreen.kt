@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
@@ -40,8 +42,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.player.PhoneChatList
 import com.twitchplayer.phone.feature.player.overVideoPanelColor
+import com.twitchplayer.phone.feature.player.rememberPlayerSnapshot
 import com.twitchplayer.phone.feature.player.toPhoneStyle
 import com.twitchplayer.phone.ui.components.Avatar
 import com.twitchplayer.phone.ui.components.LiveBadge
@@ -62,7 +67,9 @@ import com.twitchplayer.phone.ui.components.RemoteImage
 import com.twitchplayer.phone.ui.components.ViewersBadge
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.ui.formatViewers
+import com.twitchplayer.tv.feature.feed.presentation.FeedChatViewModel
 import com.twitchplayer.tv.feature.feed.presentation.FeedEvent
+import com.twitchplayer.tv.feature.feed.presentation.FeedMerge
 import com.twitchplayer.tv.feature.feed.presentation.FeedUiState
 import com.twitchplayer.tv.feature.feed.presentation.FeedViewModel
 import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
@@ -71,7 +78,6 @@ import com.twitchplayer.tv.feature.player.playback.NativeVideoPlayer
 import com.twitchplayer.tv.feature.player.playback.NativeVideoSurface
 import com.twitchplayer.tv.feature.player.playback.QualityLabels
 import com.twitchplayer.tv.feature.player.playback.rememberNativeVideoPlayer
-import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
@@ -151,6 +157,7 @@ private fun LiveFeed(
             onRetry = onRetry,
             onSignIn = onSignIn,
             skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) },
+            staleMarker = false,
         ) { content ->
             if (content.streams.isEmpty()) {
                 MessageState(title = stringResource(R.string.phone_feed_empty), modifier = Modifier.fillMaxSize())
@@ -179,13 +186,13 @@ private fun FeedPager(
     onOpen: (String) -> Unit,
     onChannel: (String) -> Unit,
 ) {
-    // Once the viewer has swiped, a refresh of the list must not move the streams under them: the list they started with stays.
-    var frozen by remember { mutableStateOf<ImmutableList<LiveStream>?>(null) }
-    val shown = frozen ?: streams
+    // The list is frozen on the first composition: a refresh only changes what is AHEAD of the page the viewer rests on (see FeedMerge), so
+    // nothing moves, reorders or disappears under them, whatever the refresh ranked first.
+    var shown by remember { mutableStateOf(streams) }
     val pagerState = rememberPagerState { shown.size }
     val settled = pagerState.settledPage
-    DisposableEffect(settled) {
-        if (settled > 0 && frozen == null) frozen = streams
+    DisposableEffect(streams) {
+        shown = FeedMerge.merge(shown, streams, pagerState.settledPage) { it.channelId }
         onDispose { }
     }
 
@@ -197,9 +204,10 @@ private fun FeedPager(
 
     val labels = QualityLabels(stringResource(R.string.quality_auto), stringResource(R.string.quality_audio_only))
     val currentLabels by rememberUpdatedState(labels)
+    // handleAudioFocus = false: a muted preview must not pause the viewer's music (focus is taken when the sound is turned on, see FeedAudio).
     val players = listOf(
-        rememberNativeVideoPlayer(resolver, preferredQuality = { PREVIEW_QUALITY }, onQualityPicked = {}, qualityLabels = { currentLabels }),
-        rememberNativeVideoPlayer(resolver, preferredQuality = { PREVIEW_QUALITY }, onQualityPicked = {}, qualityLabels = { currentLabels }),
+        rememberNativeVideoPlayer(resolver, preferredQuality = { PREVIEW_QUALITY }, onQualityPicked = {}, qualityLabels = { currentLabels }, handleAudioFocus = false),
+        rememberNativeVideoPlayer(resolver, preferredQuality = { PREVIEW_QUALITY }, onQualityPicked = {}, qualityLabels = { currentLabels }, handleAudioFocus = false),
     )
     val currentOnSettle by rememberUpdatedState(onSettle)
     LaunchedEffect(settled, shown, autoplayAllowed, playerOpen, muted, asked) {
@@ -208,6 +216,8 @@ private fun FeedPager(
         val next = players[(settled + 1) % PLAYERS]
         current.exoPlayer.volume = if (muted) 0f else 1f
         next.exoPlayer.volume = 0f
+        current.setAudioFocus(FeedAudio.takesFocus(muted, playerOpen))
+        next.setAudioFocus(false)
         if (playerOpen) {
             // The full player is on top: it plays, the previews stop (sound, data and a decoder less).
             current.pause()
@@ -233,7 +243,9 @@ private fun FeedPager(
         onDispose { }
     }
 
-    VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize().background(Color.Black), beyondViewportPageCount = 0, key = { shown[it].channelId }) { page ->
+    // One page per fling: a long fling would otherwise compose and decode pages that go by in a blink.
+    val fling = PagerDefaults.flingBehavior(state = pagerState, pagerSnapDistance = PagerSnapDistance.atMost(1))
+    VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize().background(Color.Black), beyondViewportPageCount = 0, flingBehavior = fling, key = { shown[it].channelId }) { page ->
         val stream = shown[page]
         FeedPage(
             stream = stream,
@@ -244,7 +256,7 @@ private fun FeedPager(
             view = FeedView(
                 muted = muted,
                 chatOn = chatOn,
-                showChatFor = if (dwelled == stream.login && !playerOpen && page == settled) stream.login else null,
+                showChatFor = if (dwelled == stream.login && !playerOpen && page == settled) stream.channelId else null,
                 tapToPlay = !autoplayAllowed && stream.login !in asked,
             ),
             actions = FeedActions(
@@ -285,12 +297,31 @@ private fun FeedPage(
     val viewers = remember(stream.viewers) { formatViewers(stream.viewers) }
     val description = stringResource(R.string.phone_feed_page_description, stream.name, stream.categoryName, viewers, index + 1, count)
     val source = remember { MutableInteractionSource() }
+    val openLabel = stringResource(R.string.phone_feed_open)
+    val snapshot = rememberPlayerSnapshot(player.exoPlayer)
+    val togglePlayLabel = stringResource(if (snapshot.playWhenReady) R.string.player_pause else R.string.player_play)
+    val togglePlay = { if (player.exoPlayer.isPlaying) player.pause() else player.play() }
     Box(
         Modifier.fillMaxSize().background(Color.Black)
-            .semantics(mergeDescendants = false) { contentDescription = description }
-            .combinedClickable(interactionSource = source, indication = null, onClick = onOpen, onLongClick = { if (player.exoPlayer.isPlaying) player.pause() else player.play() }),
+            .semantics(mergeDescendants = false) {
+                contentDescription = description
+                // The gestures of the page, as actions a screen reader can list: the long press is not discoverable without them.
+                customActions = listOf(
+                    CustomAccessibilityAction(togglePlayLabel) {
+                        togglePlay()
+                        true
+                    },
+                    CustomAccessibilityAction(openLabel) {
+                        onOpen()
+                        true
+                    },
+                )
+            }
+            .combinedClickable(interactionSource = source, indication = null, onClickLabel = openLabel, onClick = onOpen, onLongClickLabel = togglePlayLabel, onLongClick = togglePlay),
     ) {
-        if (mine) NativeVideoSurface(player, Modifier.fillMaxSize())
+        // The surface (a PlayerView, expensive to create) is only built for the page the viewer rests on, never while it slides in: the swipe
+        // itself draws a picture and text, and the video appears as soon as the page settles (its player has been prepared since the last page).
+        if (mine && isSettled) NativeVideoSurface(player, Modifier.fillMaxSize())
         // The picture stands in until the stream really plays (and stays when autoplay is off or the channel went offline).
         if (!showVideo) RemoteImage(stream.thumbnailUrl, Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Transparent, SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = SCRIM_ALPHA))))
@@ -342,16 +373,16 @@ internal fun RailButton(icon: androidx.compose.ui.graphics.vector.ImageVector, d
  * of its own that is cleared when this leaves the screen: swiping on closes the connection, a feed never holds more than one.
  */
 @Composable
-private fun FeedChat(login: String, modifier: Modifier = Modifier) {
-    val owner = remember(login) {
+private fun FeedChat(channelId: String, modifier: Modifier = Modifier) {
+    val owner = remember(channelId) {
         object : ViewModelStoreOwner {
             override val viewModelStore = ViewModelStore()
         }
     }
     DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
     androidx.compose.runtime.CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
-        val viewModel: PlayerViewModel = koinViewModel(key = "feed-$login", parameters = { parametersOf(login) })
-        val chat by viewModel.presenter.chat.collectAsStateWithLifecycle()
+        val viewModel: FeedChatViewModel = koinViewModel(key = "feed-$channelId", parameters = { parametersOf(channelId) })
+        val chat by viewModel.presenter.lines.collectAsStateWithLifecycle()
         val settings by viewModel.presenter.chatSettings.collectAsStateWithLifecycle()
         val style = remember(settings) { settings.toPhoneStyle() }
         val last = remember(chat) { chat.takeLast(CHAT_LINES).toImmutableList() }

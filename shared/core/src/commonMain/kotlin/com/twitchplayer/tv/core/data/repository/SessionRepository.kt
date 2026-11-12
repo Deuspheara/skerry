@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.concurrent.Volatile
 
 const val SCOPE_WRITE_CHAT = "user:write:chat"
@@ -39,12 +40,8 @@ interface SessionRepository : TokenSource {
     suspend fun signIn(onCode: (DeviceCodeResponse) -> Unit): Boolean
     suspend fun signOut()
 
-    /**
-     * Suspends until the stored tokens have been read (they are decrypted off the main thread and can take a while on a cold start), so a
-     * request is never sent before the session can sign it. [state] may already say [SessionState.SignedIn] before this returns: the account
-     * is plain data, read first, so screens show their stored copy while the tokens load.
-     */
-    suspend fun awaitReady() = Unit
+    // [awaitReady] (from TokenSource): [state] may already say SignedIn before it returns: the account is plain data, read first, so screens
+    // show their stored copy while the tokens load.
 
     /** The stored token was granted [scope] (sessions from before a scope was added lack it until the viewer signs in again). */
     fun hasScope(scope: String): Boolean = true
@@ -58,6 +55,8 @@ class TwitchSessionRepository(
     private val scope: CoroutineScope,
     /** Clears what was kept for the account (screen snapshots) when the session ends. */
     private val onSignedOut: suspend () -> Unit = {},
+    /** How long [awaitReady] waits for the token store (a test shortens it). */
+    private val readyTimeoutMs: Long = READY_TIMEOUT_MS,
 ) : SessionRepository {
     private val mutableState = MutableStateFlow<SessionState>(SessionState.Loading)
     override val state: StateFlow<SessionState> = mutableState.asStateFlow()
@@ -68,7 +67,10 @@ class TwitchSessionRepository(
 
     override fun current(): String? = tokens?.accessToken
 
-    override suspend fun awaitReady() = ready.await()
+    /** Waits for the tokens, at most [READY_TIMEOUT_MS]: a store that throws or never answers must not hold every request forever. */
+    override suspend fun awaitReady() {
+        withTimeoutOrNull(readyTimeoutMs) { ready.await() }
+    }
 
     override fun hasScope(scope: String): Boolean = tokens?.scopes?.contains(scope) == true
 
@@ -93,8 +95,9 @@ class TwitchSessionRepository(
             // the Keystore to decrypt the tokens (their requests wait for [awaitReady]). The startup validation Twitch requires runs right
             // after, in parallel with them, and ends the session if the token was revoked (an expired token is refreshed by the first
             // request that gets a 401).
-            tokenStore.readAccount()?.let { if (mutableState.value is SessionState.Loading) mutableState.value = SessionState.SignedIn(it) }
-            val stored = tokenStore.read()
+            // A store that throws (a damaged Keystore entry, a failed decryption) counts as nothing stored: signed out, and requests are released.
+            readOrNull { tokenStore.readAccount() }?.let { if (mutableState.value is SessionState.Loading) mutableState.value = SessionState.SignedIn(it) }
+            val stored = readOrNull { tokenStore.read() }
             if (stored == null) {
                 mutableState.value = SessionState.SignedOut
                 ready.complete(Unit)
@@ -107,6 +110,14 @@ class TwitchSessionRepository(
                 delay(VALIDATE_INTERVAL_MS)
             }
         }
+    }
+
+    private suspend fun <T> readOrNull(read: suspend () -> T?): T? = try {
+        read()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     private suspend fun validateOnce() {
@@ -154,5 +165,8 @@ class TwitchSessionRepository(
         /** [SCOPE_WRITE_CHAT] and [SCOPE_READ_EMOTES] are newer: a token from before they were added keeps working for everything else. */
         val SCOPES = setOf("user:read:follows", "user:read:chat", SCOPE_WRITE_CHAT, SCOPE_READ_EMOTES)
         const val VALIDATE_INTERVAL_MS = 60 * 60 * 1000L
+
+        /** The longest a request waits for the stored tokens to be read ([awaitReady]). */
+        const val READY_TIMEOUT_MS = 10_000L
     }
 }

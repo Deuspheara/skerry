@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,7 +42,7 @@ class EmoteRepository(
     fun emotes(channelId: String): Flow<Map<String, Emote>> = snapshots(channelId).map { it.emotes }.distinctUntilChanged()
 
     /** [emotes] plus the same emotes as the picker's lists. One subscription feeds both, so the live pushes are listened to once. */
-    fun snapshots(channelId: String): Flow<EmoteSnapshot> = channelFlow {
+    fun snapshots(channelId: String, live: Boolean = true): Flow<EmoteSnapshot> = channelFlow {
         val layers = MutableStateFlow<Map<Layer, List<Emote>>>(emptyMap())
 
         suspend fun load(index: Int, scope: Scope, ttl: Long, fetch: suspend () -> List<Emote>) {
@@ -68,6 +69,8 @@ class EmoteRepository(
         }
         withTimeoutOrNull(initialWaitMs) { first.awaitAll() }
         send(snapshot(layers.value))
+        // Not live: one answer from the (cached) lists and nothing more: no push connection, no periodic refresh.
+        if (!live) return@channelFlow
         launch { layers.collect { send(snapshot(it)) } }
 
         providers.forEachIndexed { index, provider ->
@@ -90,6 +93,9 @@ class EmoteRepository(
         }
         awaitClose()
     }.distinctUntilChanged()
+
+    /** The channel's third-party emotes as they are now (from the cache when fresh), without following later changes: for a read-only glance at a chat. */
+    suspend fun once(channelId: String): Map<String, Emote> = snapshots(channelId, live = false).first().emotes
 
     private enum class Scope { Global, Channel }
     private data class Layer(val provider: Int, val scope: Scope)

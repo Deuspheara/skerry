@@ -25,7 +25,17 @@ sealed interface Load<out T> {
     data object SignedOut : Load<Nothing>
     data object Failed : Load<Nothing>
 
-    data class Ready<T>(val data: T) : Load<T>
+    /**
+     * [loadedAtMs] is when [data] was fetched (epoch ms; 0 when unknown, as for a copy read from the disk). [refreshFailed]: the last attempt to
+     * refresh failed and [data] is what was already shown, so the screen can say it is not up to date.
+     */
+    data class Ready<T>(val data: T, val loadedAtMs: Long = 0L, val refreshFailed: Boolean = false) : Load<T> {
+        /** The same freshness information on other [data] (a screen that derives its own state from the loaded one). */
+        fun <R> withData(other: R): Ready<R> = Ready(other, loadedAtMs, refreshFailed)
+
+        /** Age of [data] at [nowMs]; null when unknown. */
+        fun ageMs(nowMs: Long): Long? = if (loadedAtMs > 0L) (nowMs - loadedAtMs).coerceAtLeast(0L) else null
+    }
 }
 
 /** Where a [Loader] keeps its last good result per account (see `SnapshotCache`). */
@@ -90,15 +100,17 @@ class Loader<T>(
                         try {
                             // The stored copy is already on screen; the request waits for the tokens (see SessionRepository.awaitReady).
                             session.awaitReady()
-                            val fresh = Load.Ready(block())
+                            val loadedAt = clock.nowMillis()
+                            val fresh = Load.Ready(block(), loadedAtMs = loadedAt)
                             lastReady = fresh
-                            loadedAtMs.value = clock.nowMillis()
+                            loadedAtMs.value = loadedAt
                             emit(fresh)
                             cache?.write(user, fresh.data)
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            if (shown == null) emit(Load.Failed)
+                            // What was on screen stays, marked as not refreshed; only a screen with nothing to show becomes an error.
+                            emit(shown?.copy(refreshFailed = true) ?: Load.Failed)
                         } finally {
                             loading.value = false
                         }

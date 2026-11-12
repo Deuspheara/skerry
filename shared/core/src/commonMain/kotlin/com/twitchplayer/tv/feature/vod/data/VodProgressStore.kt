@@ -35,6 +35,9 @@ interface VodProgressStore {
     /** Stores [positionMs]; a position within the last seconds of a known length clears the entry instead. */
     suspend fun save(vodId: String, positionMs: Long, durationMs: Long)
     suspend fun clear(vodId: String)
+
+    /** Forgets every position (the account ended). */
+    suspend fun clearAll() = Unit
 }
 
 class DataStoreVodProgressStore(
@@ -60,6 +63,10 @@ class DataStoreVodProgressStore(
 
     override suspend fun clear(vodId: String) {
         store.edit { it.remove(stringPreferencesKey(PREFIX + vodId)) }
+    }
+
+    override suspend fun clearAll() {
+        store.edit { prefs -> prefs.asMap().keys.filter { it.name.startsWith(PREFIX) }.forEach { prefs.remove(it) } }
     }
 
     private companion object {

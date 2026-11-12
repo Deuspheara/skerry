@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import com.twitchplayer.tv.core.MemoryTokenStore
+import com.twitchplayer.tv.core.data.repository.AccountScoped
 import com.twitchplayer.tv.core.data.repository.DataStoreSettingsRepository
 import com.twitchplayer.tv.core.data.repository.SessionState
 import com.twitchplayer.tv.core.data.repository.SnapshotCache
@@ -15,6 +16,7 @@ import com.twitchplayer.tv.core.network.auth.DeviceCodeAuth
 import com.twitchplayer.tv.core.network.auth.TokenValidator
 import com.twitchplayer.tv.core.network.auth.TwitchTokens
 import com.twitchplayer.tv.core.platform.SnapshotStorage
+import com.twitchplayer.tv.feature.vod.data.DataStoreVodProgressStore
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +56,18 @@ class SessionEndClearsAccountDataTest {
         return DataStoreSettingsRepository(store)
     }
 
+    private val progress: DataStoreVodProgressStore by lazy {
+        DataStoreVodProgressStore(PreferenceDataStoreFactory.create(scope = scope) { File(folder, "vod.preferences_pb") })
+    }
+    private val scoped = object : AccountScoped {
+        var forgotten = 0
+        override suspend fun forgetAccount() {
+            forgotten++
+        }
+    }
+
     private suspend fun seed(settings: DataStoreSettingsRepository) {
+        progress.save("v1", 120_000, 3_600_000)
         settings.addRecentSearch("lunaria")
         settings.addRecentSearch("chess")
         settings.addRecentEmote("Kappa")
@@ -70,7 +83,7 @@ class SessionEndClearsAccountDataTest {
             DeviceCodeAuth(mockClient { json("""{"message":"Invalid refresh token"}""", HttpStatusCode.BadRequest) }, "cid"),
             TokenValidator(mockClient { json("{}", HttpStatusCode.Unauthorized) }, "cid"),
             scope,
-            onSignedOut = forgetAccountData(SnapshotCache(storage), settings),
+            onSignedOut = forgetAccountData(SnapshotCache(storage), settings, progress) { listOf(scoped) },
         )
 
         repo.start()
@@ -79,6 +92,8 @@ class SessionEndClearsAccountDataTest {
         assertEquals(emptyList(), settings.settings.first().recentSearches)
         assertEquals(emptyList(), settings.settings.first().recentEmotes)
         assertEquals(emptyMap(), files)
+        assertEquals(emptyMap(), progress.progress.first(), "the replay positions behind continue watching go too")
+        assertEquals(1, scoped.forgotten, "so do the pictures and last-seen times held in memory")
     }
 
     @Test fun signingOutForgetsThemToo() = runBlocking {
@@ -88,7 +103,7 @@ class SessionEndClearsAccountDataTest {
             DeviceCodeAuth(mockClient { json("{}") }, "cid"),
             TokenValidator(mockClient { json("{}", HttpStatusCode.Unauthorized) }, "cid"),
             scope,
-            onSignedOut = forgetAccountData(SnapshotCache(storage), settings),
+            onSignedOut = forgetAccountData(SnapshotCache(storage), settings, progress) { listOf(scoped) },
         )
         seed(settings)
 
@@ -97,6 +112,8 @@ class SessionEndClearsAccountDataTest {
         assertEquals(emptyList(), settings.settings.first().recentSearches)
         assertEquals(emptyList(), settings.settings.first().recentEmotes)
         assertEquals(emptyMap(), files)
+        assertEquals(emptyMap(), progress.progress.first())
+        assertEquals(1, scoped.forgotten)
     }
 
     @Test fun aSessionThatKeepsWorkingKeepsTheRecentSearches() = runBlocking {
@@ -113,7 +130,7 @@ class SessionEndClearsAccountDataTest {
             DeviceCodeAuth(http, "cid"),
             TokenValidator(http, "cid"),
             scope,
-            onSignedOut = forgetAccountData(SnapshotCache(storage), settings),
+            onSignedOut = forgetAccountData(SnapshotCache(storage), settings, progress) { listOf(scoped) },
         )
         repo.start()
         withTimeout(5_000) { repo.state.first { it is SessionState.SignedIn } }
@@ -121,5 +138,7 @@ class SessionEndClearsAccountDataTest {
         assertEquals("fresh", repo.refresh(rejected = "old"))
 
         assertEquals(listOf("chess", "lunaria"), settings.settings.first().recentSearches)
+        assertEquals(setOf("v1"), progress.progress.first().keys, "a session that keeps working keeps the watch history")
+        assertEquals(0, scoped.forgotten)
     }
 }

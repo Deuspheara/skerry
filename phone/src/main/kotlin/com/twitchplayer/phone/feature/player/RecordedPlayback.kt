@@ -26,7 +26,7 @@ class RecordedPlayback(private val context: Context, handleAudioFocus: Boolean =
         context,
         DefaultRenderersFactory(context).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF).setEnableDecoderFallback(true),
     )
-        .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), handleAudioFocus)
+        .setAudioAttributes(AUDIO_ATTRIBUTES, handleAudioFocus)
         .setHandleAudioBecomingNoisy(true)
         .build()
 
@@ -50,6 +50,11 @@ class RecordedPlayback(private val context: Context, handleAudioFocus: Boolean =
         exo.playWhenReady = playWhenReady
     }
 
+    /** Takes audio focus (pausing other apps' sound) or gives it back; for a player built with `handleAudioFocus = false` (the muted Discover clips). */
+    fun setAudioFocus(enabled: Boolean) {
+        exo.setAudioAttributes(AUDIO_ATTRIBUTES, enabled)
+    }
+
     /** True once the player is released; releasing again is harmless. */
     var isReleased: Boolean = false
         private set
@@ -70,5 +75,6 @@ class RecordedPlayback(private val context: Context, handleAudioFocus: Boolean =
 
     private companion object {
         const val HTTP_TIMEOUT_MS = 8_000
+        val AUDIO_ATTRIBUTES: AudioAttributes = AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build()
     }
 }

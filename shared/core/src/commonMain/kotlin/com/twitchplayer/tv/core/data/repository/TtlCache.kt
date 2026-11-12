@@ -6,13 +6,13 @@ import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 /**
- * Single-value cache with a time-to-live; concurrent callers share one in-flight load. Time is monotonic (it may not
- * advance while the device is in deep sleep, unlike `SystemClock.elapsedRealtime`): a cached value can outlive its TTL
- * by the sleep time, which only costs one stale read after wake-up.
+ * Single-value cache with a time-to-live; concurrent callers share one in-flight load. Time is the wall clock by default
+ * ([WallClockTimeSource]), which keeps running while the device sleeps: a value cached before the phone went in a pocket is stale when
+ * it comes out. (The JVM's monotonic clock stops in deep sleep.)
  */
 internal class TtlCache<T>(
     private val ttlMs: Long,
-    private val timeSource: TimeSource = TimeSource.Monotonic,
+    private val timeSource: TimeSource = WallClockTimeSource(),
     /** A forced reload is skipped when the value was loaded less than this ago: two screens refreshing together share one request. */
     private val forceCoalesceMs: Long = 0,
 ) {

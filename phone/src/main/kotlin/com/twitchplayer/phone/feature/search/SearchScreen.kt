@@ -67,6 +67,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -75,6 +77,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -195,7 +198,15 @@ fun SearchRoute(
             if (searching && state.results is ResultsUi.Found) {
                 FilterRow(filter) { filter = it }
             }
-            LazyColumn(Modifier.fillMaxSize().imePadding().graphicsLayer { alpha = dim }, verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            // Rows that answer the previous query are dimmed AND say so to a screen reader, and they do not take taps while the new answer is
+            // on its way: tapping a row that is about to be replaced would open the wrong thing.
+            val stale = slow && state.results is ResultsUi.Found
+            val updating = stringResource(R.string.phone_search_updating)
+            LazyColumn(
+                Modifier.fillMaxSize().imePadding().graphicsLayer { alpha = dim }
+                    .then(if (stale) Modifier.semantics { stateDescription = updating }.blockTouches() else Modifier),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+            ) {
                 if (state.voice == VoiceState.Idle && mic.denied) {
                     item(key = "mic-denied") {
                         Text(
@@ -215,6 +226,13 @@ fun SearchRoute(
         }
     }
     VoiceDialog(voice, onCancel = { onEvent(SearchEvent.CancelVoice) })
+}
+
+/** Swallows every touch before the children see it: nothing under this takes a tap (or scrolls) while it is applied. */
+private fun Modifier.blockTouches(): Modifier = pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+    }
 }
 
 /** True once [active] has been true for [STALE_AFTER_MS] without a break: a short wait shows nothing, a long one shows the dim and the progress line. */

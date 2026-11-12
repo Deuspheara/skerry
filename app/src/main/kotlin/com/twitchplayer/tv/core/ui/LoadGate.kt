@@ -10,11 +10,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.twitchplayer.tv.R
@@ -23,6 +26,7 @@ import com.twitchplayer.tv.core.designsystem.component.TvButton
 import com.twitchplayer.tv.core.designsystem.component.TvSpinner
 import com.twitchplayer.tv.core.designsystem.icon.TvIcons
 import com.twitchplayer.tv.core.presentation.Load
+import com.twitchplayer.tv.core.presentation.RefreshHold
 import kotlinx.coroutines.delay
 
 /**
@@ -38,13 +42,33 @@ fun <T> LoadGate(
     skeleton: (@Composable () -> Unit)? = null,
     ready: @Composable (T) -> Unit,
 ) {
-    val wasLoading = remember { mutableStateOf(load is Load.Loading) }
-    if (load is Load.Loading) wasLoading.value = true
-    when (load) {
+    // A refreshed list never replaces the one under the focus ring while the viewer is pressing keys (see RefreshHold): the new list waits
+    // until they stop, or focus leaves the rows. Every other change (loading, an error, the first data) is shown at once.
+    val hold = remember { RefreshHold() }
+    var focusedWithin by remember { mutableStateOf(false) }
+    val focusedNow by rememberUpdatedState(focusedWithin)
+    var shown by remember { mutableStateOf(load) }
+    LaunchedEffect(load) {
+        if (load is Load.Ready && shown is Load.Ready) {
+            while (hold.shouldHold(focusedNow)) delay(hold.remainingMs().coerceAtLeast(HOLD_POLL_MS))
+        }
+        shown = load
+    }
+    val current = shown
+    val wasLoading = remember { mutableStateOf(current is Load.Loading) }
+    if (current is Load.Loading) wasLoading.value = true
+    when (current) {
         is Load.Ready -> {
             // Content that follows a loading state in this composition enters with a short stagger of its first cards.
             val gate = remember { if (wasLoading.value) StaggerGate() else null }
-            CompositionLocalProvider(LocalStagger provides gate) { ready(load.data) }
+            Box(
+                Modifier.onFocusChanged { focusedWithin = it.hasFocus }.onPreviewKeyEvent {
+                    hold.interacted()
+                    false
+                },
+            ) {
+                CompositionLocalProvider(LocalStagger provides gate) { ready(current.data) }
+            }
         }
 
         // Most loads (and every cached one) finish within a few frames: the placeholder only shows when it takes a while.
@@ -115,3 +139,5 @@ private fun FocusHold() {
     LaunchedEffect(Unit) { runCatching { requester.requestFocus() } }
     Box(Modifier.size(1.dp).focusRequester(requester).focusable())
 }
+
+private const val HOLD_POLL_MS = 250L

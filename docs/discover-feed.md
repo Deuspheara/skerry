@@ -16,8 +16,9 @@ discovery feed. It is built on documented APIs only; what it cannot know (Twitch
 `FeedRanking.rank(followed, top, language, seen)`: the viewer's followed channels that are live (at most eight, most viewers first), then the
 busiest streams (`TwitchRepository.recommended()`) in the viewer's language (a stream with an unknown language stays), each channel once, at most
 40, channels already rested on during the session pushed to the end. Pure function, unit-tested. `FeedPresenter` wraps it in the same `Loader` as
-Home (stale-while-revalidate, refresh when the app comes back). The UI freezes the list it started with once the viewer has swiped, so a refresh
-never moves streams under them.
+Home (stale-while-revalidate, refresh when the app comes back). The UI freezes the list on its first composition and merges a refresh with
+`FeedMerge`: the pages up to the one the viewer rests on never move, reorder or disappear (a refresh that ranks the watched channel last, because
+it counts as seen, changes nothing under them); only what is ahead follows the refreshed order, minus streams that ended. Tested in `FeedMergeTest`.
 
 ## Players (`phone/.../discover/DiscoverScreen.kt`)
 
@@ -29,8 +30,13 @@ never moves streams under them.
   `Playing`; until then it draws the thumbnail.
 * The previews pause when the full player sheet is open, when the app stops (the player's own lifecycle rule) and when the tab is left (the players are
   released with the composition).
-* Chat connects through a normal `PlayerViewModel` kept in a `ViewModelStore` of its own, cleared as soon as the viewer leaves the page: one chat
-  connection at most (EventSub's 10-point budget).
+* Chat is a **read-only, light connection** (`FeedChatPresenter`, `LiteChatAssets`), not the player's presenter: messages only, the last twelve
+  lines kept; no emote picker flow, no Twitch emote lists, no paging of the viewer's own emotes, no room modes, no zap list, no channel lookup
+  (the channel id comes with the stream), no live 7TV connection (the third-party emotes are read once, from the cache when fresh) and channel badges
+  cached for the last twenty channels. It lives in a `ViewModelStore` of its own, cleared as soon as the viewer leaves the page: one chat connection
+  at most (EventSub's 10-point budget).
+* **Audio focus:** the preview players are built with `handleAudioFocus = false`, so opening Discover does not pause the viewer's music or podcast.
+  Focus is taken when the viewer turns the sound on and given back when they mute or the full player opens (`FeedAudio.takesFocus`).
 
 ## Autoplay and data (`FeedAutoplay`, `NetworkStatus`)
 
@@ -53,6 +59,24 @@ Helix for their most viewed clips of the last seven days (`GET /clips?game_id=&s
 the channels' logins and pictures in one batched users call. The clip's file is resolved page by page with the same `GqlClipResolver` as the clip
 player (unofficial, see docs/TWITCH_INTEGRATION.md). Same rules as the live pager: two players, the next clip prepared paused, nothing fetched ahead
 when autoplay is not allowed, looping and muted until the sound is turned on, a tap opens the clip in the full player.
+
+## Swipe cost (reasoned from the code, not measured)
+The perf report showed a P90 of about 32 ms for the swipe. What changed, to move work out of the swipe itself:
+* The video surface (`PlayerView`, a `SurfaceView`: expensive to create) is only built for the page the viewer rests on, never while a page slides in:
+  the swipe draws a picture and text, and the video appears as soon as the page settles (its player has been prepared since the previous page).
+* A fling moves **one page** (`PagerSnapDistance.atMost(1)`): a long fling no longer composes and decodes pages that go by in a blink.
+* Everything that starts a player, a chat or a network call is keyed on the **settled** page (`LaunchedEffect(settled, ...)`), not on the scroll
+  position; the chat additionally waits two seconds.
+* The previous page's player is the next page's: it is reloaded (not left running) as soon as the page settles, and both are released with the tab.
+* Chat: the light connection above is a fraction of the player's chat work (no emote list requests, no live connection).
+Re-measure on a device with the frame benchmark before claiming a number.
+
+## Clips: address expiry and retries
+A resolved clip address is kept 10 minutes (`ClipUrlCache`, wall clock) and asked for again after that; a failed resolution is retried three times with a
+growing wait before the page settles for its thumbnail. The week's clips list (`feedClips()`) is cached for 10 minutes.
+
+## Accessibility
+Each page exposes its two gestures as TalkBack custom actions and click labels: open the stream with chat, pause / resume the preview.
 
 ## Not done
 

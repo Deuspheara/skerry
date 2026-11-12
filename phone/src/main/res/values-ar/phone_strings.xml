@@ -130,4 +130,7 @@
     <string name="phone_feed_clip_description">%1$s، %2$s، %3$s مشاهدة، %4$d من %5$d</string>
     <string name="phone_feed_clip_open">افتح المقطع</string>
     <string name="phone_feed_clips_empty">لا توجد مقاطع لعرضها الآن.</string>
+    <string name="phone_search_updating">جارٍ تحديث النتائج</string>
+    <string name="phone_stale_failed">تعذّر التحديث</string>
+    <string name="phone_stale_ago">تعذّر التحديث · آخر تحديث %1$s</string>
 </resources>

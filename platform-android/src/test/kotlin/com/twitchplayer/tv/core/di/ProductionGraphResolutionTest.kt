@@ -7,6 +7,7 @@ import com.twitchplayer.tv.feature.browse.presentation.BrowseViewModel
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedViewModel
+import com.twitchplayer.tv.feature.feed.presentation.FeedChatViewModel
 import com.twitchplayer.tv.feature.feed.presentation.FeedViewModel
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
@@ -66,6 +67,7 @@ class ProductionGraphResolutionTest {
         assertNotNull(koin.get<ContinueWatchingViewModel>().presenter)
         assertNotNull(koin.get<FeedViewModel>().presenter)
         assertNotNull(koin.get<ClipsFeedViewModel>().presenter)
+        assertNotNull(koin.get<FeedChatViewModel> { parametersOf("42") }.presenter)
         assertNotNull(koin.get<BrowseViewModel>().presenter)
         assertNotNull(koin.get<SearchViewModel>().presenter)
         assertNotNull(koin.get<SettingsViewModel>().presenter)

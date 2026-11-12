@@ -38,6 +38,13 @@ class TwitchApiException(val status: Int) : Exception("Twitch API error ($status
 interface TokenSource {
     fun current(): String?
     suspend fun refresh(rejected: String? = null): String?
+
+    /**
+     * Suspends until the stored tokens have been read (they are decrypted off the main thread and can take a while on a cold start), so a
+     * request is never sent before the session can sign it. Bounded: a token store that never answers delays a request by at most the
+     * implementation's timeout, it never hangs it. Returns at once when there is nothing to wait for.
+     */
+    suspend fun awaitReady() = Unit
 }
 
 class TwitchApi(
@@ -52,6 +59,7 @@ class TwitchApi(
     }
 
     private suspend fun raw(path: String, params: HttpRequestBuilder.() -> Unit): HttpResponse {
+        tokens.awaitReady()
         val token = tokens.current() ?: throw TwitchApiException(401)
         var response = call(path, token, params)
         if (response.status.value == 401) {
@@ -63,6 +71,7 @@ class TwitchApi(
 
     /** POST with a JSON body; same one-refresh-on-401 rule as [raw]. Non-2xx throws [TwitchApiException]. */
     private suspend fun post(path: String, body: SendChatRequest): HttpResponse {
+        tokens.awaitReady()
         val token = tokens.current() ?: throw TwitchApiException(401)
         suspend fun send(t: String) = http.post("$BASE/$path") {
             header("Client-Id", clientId)

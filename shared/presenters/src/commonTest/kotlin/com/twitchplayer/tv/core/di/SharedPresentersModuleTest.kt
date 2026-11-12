@@ -16,6 +16,7 @@ import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedPresenter
+import com.twitchplayer.tv.feature.feed.presentation.FeedChatPresenter
 import com.twitchplayer.tv.feature.feed.presentation.FeedPresenter
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
@@ -82,6 +83,7 @@ private val fakePlatform = module {
     // From sharedChatModule(): the player presenter reads chat through these two.
     single<ChatSource> { ChatSource { _, _ -> emptyFlow() } }
     single<ChatAssetsSource> { ChatAssetsSource { flowOf(ChatAssets.Empty) } }
+    single<com.twitchplayer.tv.feature.player.data.LiteChatAssets> { com.twitchplayer.tv.feature.player.data.LiteChatAssets { flowOf(ChatAssets.Empty) } }
     single<VoiceInput> {
         object : VoiceInput {
             override fun isAvailable() = false
@@ -100,6 +102,7 @@ class SharedPresentersModuleTest {
             koin.get<FollowsPresenter> { parametersOf(scope) }
             koin.get<ContinueWatchingPresenter> { parametersOf(scope) }
             koin.get<FeedPresenter> { parametersOf(scope) }
+            koin.get<FeedChatPresenter> { parametersOf("42", scope) }
             koin.get<ClipsFeedPresenter> { parametersOf(scope) }
             koin.get<BrowsePresenter> { parametersOf(scope) }
             koin.get<CategoryPresenter> { parametersOf("cat", scope) }

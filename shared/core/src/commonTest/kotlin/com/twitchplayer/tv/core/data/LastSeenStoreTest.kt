@@ -59,4 +59,12 @@ class LastSeenStoreTest {
         val ids = (1..LastSeenStore.MAX_ENTRIES + 20).map { "id$it" }
         assertEquals(LastSeenStore.MAX_ENTRIES, store().record("me", ids).size)
     }
+
+    @Test fun clearForgetsWhatWasSeenEvenForTheSameAccount() = runTest {
+        val store = store()
+        store.record("me", listOf("1"))
+        store.clear()
+        storage.files.clear() // the snapshots are cleared first when the account ends
+        assertNull(store.record("me", emptyList())["1"])
+    }
 }

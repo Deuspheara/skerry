@@ -68,21 +68,33 @@ sealed interface SendResult {
     data object Failed : SendResult
 }
 
-class TwitchRepositoryImpl(
+class TwitchRepositoryImpl internal constructor(
     private val api: TwitchApi,
     private val session: SessionRepository,
-    /** Where the profile pictures are kept between sessions; null keeps them in memory only. */
-    snapshots: SnapshotCache? = null,
-) : TwitchRepository {
-    /** Profile pictures by channel id: in memory and, through [snapshots], on disk for a week. */
-    private val avatarStore = AvatarStore(snapshots)
+    snapshots: SnapshotCache?,
+    /** Profile pictures by channel id: in memory and on disk for a week (written in the background, see [AvatarStore]). */
+    private val avatarStore: AvatarStore,
+) : TwitchRepository,
+    AccountScoped {
+    /** [snapshots] is where the pictures are kept between sessions; null keeps them in memory only. */
+    constructor(api: TwitchApi, session: SessionRepository, snapshots: SnapshotCache? = null) : this(api, session, snapshots, AvatarStore(snapshots))
 
     /** When each followed channel was last seen live by this app, kept on disk. */
     private val lastSeen = LastSeenStore(snapshots)
 
+    override suspend fun forgetAccount() {
+        avatarStore.clear()
+        lastSeen.clear()
+        followsCache.invalidate()
+        clipsCache.invalidate()
+    }
+
     // Two screens asking for the follows at the same moment (Home and Following refreshing together) share one request.
     private val followsCache = TtlCache<Follows>(60_000, forceCoalesceMs = FORCE_COALESCE_MS)
     private val categoriesCache = TtlCache<List<Category>>(10 * 60_000)
+
+    /** The Discover clips list changes slowly and costs five requests: kept for ten minutes. */
+    private val clipsCache = TtlCache<List<FeedClip>>(10 * 60_000)
 
     private fun userId(): String = (session.state.value as? SessionState.SignedIn)?.account?.userId ?: throw IllegalStateException("signed out")
 
@@ -181,7 +193,9 @@ class TwitchRepositoryImpl(
         }
     }
 
-    override suspend fun feedClips(): List<FeedClip> = coroutineScope {
+    override suspend fun feedClips(): List<FeedClip> = clipsCache.get { loadFeedClips() }
+
+    private suspend fun loadFeedClips(): List<FeedClip> = coroutineScope {
         val since = isoUtc(WallClock.System.nowMillis() - FEED_CLIP_DAYS * DAY_MS)
         val games = categoriesCache.get { api.topCategories(first = 100).data.map { it.toCategory() } }.take(FEED_CLIP_GAMES)
         val clips = games.map { game -> async { runCatching { api.clipsByGame(game.id, since, FEED_CLIPS_PER_GAME) }.getOrDefault(emptyList()) } }

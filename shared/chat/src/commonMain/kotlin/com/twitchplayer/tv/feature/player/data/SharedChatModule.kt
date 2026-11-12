@@ -23,6 +23,8 @@ fun sharedChatModule(): Module = module {
         val streamClients = get<EventStreamClientFactory>()
         EmoteRepository(listOf(SevenTvProvider(get(), { streamClients.create() }), BttvProvider(get()), FfzProvider(get())))
     }
-    single<ChatAssetsSource> { ChatAssetsRepository(get(), get(), get()) }
+    single { ChatAssetsRepository(get(), get(), get()) }
+    single<ChatAssetsSource> { get<ChatAssetsRepository>() }
+    single<LiteChatAssets> { get<ChatAssetsRepository>() }
     single<ChatSource> { EventSubChatSource(tokens = get(), clientId = get<AppConfig>().clientId, engine = get(), logger = get()) }
 }

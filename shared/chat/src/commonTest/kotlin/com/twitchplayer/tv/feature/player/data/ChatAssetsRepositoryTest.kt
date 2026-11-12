@@ -153,4 +153,23 @@ class ChatAssetsRepositoryTest {
         assertNotNull(before)
         assertEquals(before, urls.count { "chat/emotes/user" in it }, "zapping does not re-read the viewer's emotes")
     }
+
+    @Test fun theLiteAssetsAreBadgesAndThirdPartyEmotesOnlyWithNoEmoteListsAndNoUserEmotePaging() = runTest {
+        val provider = OneProvider(EmoteSource.SevenTv, listOf(Emote("catJam", "https://x/catJam")))
+        val repo = repository(FakeSession(Account("9", "me"), setOf(SCOPE_READ_EMOTES)), api(), listOf(provider))
+        val assets = repo.lite("42").first()
+        assertEquals(setOf("catJam"), assets.emotes.keys)
+        assertTrue(assets.groups.isEmpty(), "no picker lists in a chat that is only read")
+        assertTrue(urls.none { "chat/emotes" in it }, "no Twitch emote list, no viewer emotes: $urls")
+        assertTrue(urls.any { "chat/badges" in it }, "the badges are still fetched")
+    }
+
+    @Test fun theChannelBadgesOfAChannelJustSeenAreNotFetchedAgain() = runTest {
+        val repo = repository(FakeSession(Account("9", "me")), api())
+        repo.lite("42").first()
+        val before = urls.count { "chat/badges?" in it }
+        repo.lite("42").first()
+        assertEquals(before, urls.count { "chat/badges?" in it }, "the second look at the same channel used the cache")
+        assertEquals(1, before)
+    }
 }

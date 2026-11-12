@@ -10,6 +10,8 @@ import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedPresenter
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedViewModel
+import com.twitchplayer.tv.feature.feed.presentation.FeedChatPresenter
+import com.twitchplayer.tv.feature.feed.presentation.FeedChatViewModel
 import com.twitchplayer.tv.feature.feed.presentation.FeedPresenter
 import com.twitchplayer.tv.feature.feed.presentation.FeedViewModel
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
@@ -39,6 +41,10 @@ val viewModelModule = module {
     viewModel { HomeViewModel { scope -> get<HomePresenter> { parametersOf(scope) } } }
     viewModel { FollowsViewModel { scope -> get<FollowsPresenter> { parametersOf(scope) } } }
     viewModel { ClipsFeedViewModel { scope -> get<ClipsFeedPresenter> { parametersOf(scope) } } }
+    viewModel { params ->
+        val channelId = params.get<String>()
+        FeedChatViewModel { scope -> get<FeedChatPresenter> { parametersOf(channelId, scope) } }
+    }
     viewModel { FeedViewModel { scope -> get<FeedPresenter> { parametersOf(scope) } } }
     viewModel { ContinueWatchingViewModel { scope -> get<ContinueWatchingPresenter> { parametersOf(scope) } } }
     viewModel { BrowseViewModel { scope -> get<BrowsePresenter> { parametersOf(scope) } } }

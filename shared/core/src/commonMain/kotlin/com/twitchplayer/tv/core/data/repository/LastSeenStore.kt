@@ -36,6 +36,12 @@ internal class LastSeenStore(
         merged
     }
 
+    /** Forgets every time (the account ended): memory now, the disk copy goes with the snapshots. */
+    suspend fun clear() = lock.withLock {
+        seen = emptyMap()
+        userId = null
+    }
+
     companion object {
         const val TTL_MS = 60 * 24 * 60 * 60_000L
         const val MAX_ENTRIES = 400

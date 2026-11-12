@@ -64,6 +64,11 @@ class NativeVideoPlayer(
     private val onQualityPicked: (String) -> Unit,
     /** Resolved every time the quality list is built (as `context.getString` was), so it follows the current language. */
     private val qualityLabels: () -> QualityLabels,
+    /**
+     * False for a player that must not interrupt the viewer's music or podcast just by existing (the Discover previews, muted): it takes audio
+     * focus only when [setAudioFocus] says so (the viewer turns the sound on). The player screens leave it true.
+     */
+    handleAudioFocus: Boolean = true,
 ) : VideoPlayer {
     val exoPlayer: ExoPlayer = ExoPlayer.Builder(
         context,
@@ -79,7 +84,7 @@ class NativeVideoPlayer(
                 .setPrioritizeTimeOverSizeThresholds(true)
                 .build(),
         )
-        .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
+        .setAudioAttributes(AUDIO_ATTRIBUTES, handleAudioFocus)
         .setHandleAudioBecomingNoisy(true)
         .build()
 
@@ -268,6 +273,11 @@ class NativeVideoPlayer(
         exoPlayer.playWhenReady = false
     }
 
+    /** Takes audio focus (pausing other apps' sound) or gives it back; only meaningful for a player built with `handleAudioFocus = false`. */
+    fun setAudioFocus(enabled: Boolean) {
+        exoPlayer.setAudioAttributes(AUDIO_ATTRIBUTES, enabled)
+    }
+
     override fun toggleMute() {
         exoPlayer.volume = if (exoPlayer.volume > 0f) 0f else 1f
     }
@@ -327,6 +337,7 @@ class NativeVideoPlayer(
 
     private companion object {
         const val TAG = "NativeVideoPlayer"
+        val AUDIO_ATTRIBUTES: AudioAttributes = AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build()
         const val MIN_BUFFER_MS = 5_000
         const val MAX_BUFFER_MS = 15_000
         const val START_BUFFER_MS = 1_000

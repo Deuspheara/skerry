@@ -43,7 +43,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -102,6 +104,8 @@ fun <T> LoadHost(
     onSignIn: () -> Unit,
     skeleton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    /** Whether a refresh that failed shows its marker above the content (a full-bleed page such as Discover says it another way). */
+    staleMarker: Boolean = true,
     content: @Composable (T) -> Unit,
 ) {
     // The skeleton, the message and the content cross-fade into each other; a refresh that only swaps the data of the content (same kind)
@@ -132,13 +136,45 @@ fun <T> LoadHost(
                     onAction = onRetry,
                 )
 
-                is Load.Ready -> content(state.data)
+                is Load.Ready -> Column(Modifier.fillMaxSize()) {
+                    if (staleMarker) StaleMarker(state, onRetry)
+                    Box(Modifier.weight(1f).fillMaxWidth()) { content(state.data) }
+                }
             }
         }
     }
 }
 
 private const val LOAD_FADE_MS = 200
+
+/** A refresh that failed under the minutes before which an age is not worth saying: the marker then only says it could not refresh. */
+private const val STALE_AGE_MS = 3 * 60_000L
+
+/**
+ * Shown above data that is on screen although the last refresh failed: "Couldn't refresh", with how long ago it was fetched once that is a few
+ * minutes (the age of a copy read from the disk is not known), and a button to try again. Nothing when the data is up to date. It is a live
+ * region, so a screen reader announces it when it appears (a pull to refresh that failed says so).
+ */
+@Composable
+fun StaleMarker(load: Load<*>, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    val ready = load as? Load.Ready<*> ?: return
+    if (!ready.refreshFailed) return
+    val now = System.currentTimeMillis()
+    val age = ready.ageMs(now)
+    val text = if (age != null && age >= STALE_AGE_MS) {
+        val ago = android.text.format.DateUtils.getRelativeTimeSpanString(ready.loadedAtMs, now, android.text.format.DateUtils.MINUTE_IN_MILLIS).toString()
+        stringResource(R.string.phone_stale_ago, ago)
+    } else {
+        stringResource(R.string.phone_stale_failed)
+    }
+    Row(
+        modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(start = 16.dp, end = 4.dp).semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).padding(vertical = 8.dp))
+        androidx.compose.material3.TextButton(onClick = onRetry) { Text(stringResource(R.string.state_retry)) }
+    }
+}
 
 /** A neutral block that breathes slowly while content loads; still when motion is reduced. */
 @Composable
