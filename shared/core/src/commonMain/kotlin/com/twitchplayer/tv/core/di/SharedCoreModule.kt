@@ -10,6 +10,7 @@ import com.twitchplayer.tv.core.data.repository.SnapshotCache
 import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.data.repository.TwitchRepositoryImpl
 import com.twitchplayer.tv.core.data.repository.TwitchSessionRepository
+import com.twitchplayer.tv.core.data.repository.forgetAccountData
 import com.twitchplayer.tv.core.network.api.TokenSource
 import com.twitchplayer.tv.core.network.api.TwitchApi
 import com.twitchplayer.tv.core.network.api.twitchHttpClient
@@ -44,7 +45,7 @@ fun sharedCoreModule(): Module = module {
     single { DeviceCodeAuth(get(), get<AppConfig>().clientId) }
     single { TokenValidator(get(), get<AppConfig>().clientId) }
     single { SnapshotCache(get()) }
-    single<SessionRepository> { TwitchSessionRepository(get(), get(), get(), get(), onSignedOut = get<SnapshotCache>()::clear) }
+    single<SessionRepository> { TwitchSessionRepository(get(), get(), get(), get(), onSignedOut = forgetAccountData(get(), get())) }
     single<TokenSource> { get<SessionRepository>() }
     single { TwitchApi(get(), get<AppConfig>().clientId, get()) }
     single<TwitchRepository> { TwitchRepositoryImpl(get(), get()) }

@@ -33,7 +33,7 @@ import org.koin.dsl.module
  */
 fun sharedPresentersModule(): Module = module {
     single { ChannelKeyBus() }
-    factory { params -> AuthPresenter(get(), get(), params.get<CoroutineScope>()) }
+    factory { params -> AuthPresenter(get(), params.get<CoroutineScope>()) }
     factory { params -> HomePresenter(get(), get(), get(), params.get<CoroutineScope>()) }
     factory { params -> FollowsPresenter(get(), get(), params.get<CoroutineScope>()) }
     factory { params -> BrowsePresenter(get(), get(), params.get<CoroutineScope>()) }

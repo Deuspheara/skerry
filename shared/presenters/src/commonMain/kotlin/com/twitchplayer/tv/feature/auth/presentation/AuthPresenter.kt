@@ -1,7 +1,6 @@
 package com.twitchplayer.tv.feature.auth.presentation
 
 import com.twitchplayer.tv.core.data.repository.SessionRepository
-import com.twitchplayer.tv.core.data.repository.SettingsRepository
 import com.twitchplayer.tv.core.network.auth.DeviceCodeResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +31,7 @@ sealed interface AuthEvent {
 }
 
 /** Device-code sign-in shared by every screen that needs a session. */
-class AuthPresenter(private val session: SessionRepository, private val settings: SettingsRepository, private val scope: CoroutineScope) {
+class AuthPresenter(private val session: SessionRepository, private val scope: CoroutineScope) {
     private val mutable = MutableStateFlow(SignInUiState())
     val state: StateFlow<SignInUiState> = mutable.asStateFlow()
     private var job: Job? = null
@@ -47,11 +46,7 @@ class AuthPresenter(private val session: SessionRepository, private val settings
             }
 
             AuthEvent.SignOut -> {
-                // What was searched stays with the person who searched it: it goes with the account.
-                scope.launch {
-                    session.signOut()
-                    settings.clearRecentSearches()
-                }
+                scope.launch { session.signOut() }
             }
 
             AuthEvent.ResultShown -> mutable.update { it.copy(result = null) }

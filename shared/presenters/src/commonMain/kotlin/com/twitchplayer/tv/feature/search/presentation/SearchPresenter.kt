@@ -99,8 +99,8 @@ class SearchPresenter(
 
     private val trends = flow {
         emit(
-            runCatching { repository.recommended().take(TRENDS).map { ChannelRef(it.channelId, it.login, it.name, it.avatarUrl, true, it.viewers) } }
-                .getOrDefault(emptyList()).toImmutableList(),
+            attempt { repository.recommended().take(TRENDS).map { ChannelRef(it.channelId, it.login, it.name, it.avatarUrl, true, it.viewers) } }
+                .orEmpty().toImmutableList(),
         )
     }.stateIn(scope, SharingStarted.Lazily, persistentListOf())
 
@@ -114,7 +114,7 @@ class SearchPresenter(
                 trends.map { Answer(q, retries, ResultsUi.Trends(it), failed = false) }
             } else {
                 flow {
-                    val found = runCatching { repository.search(q) }.getOrNull()
+                    val found = attempt { repository.search(q) }
                     emit(
                         when {
                             found == null -> Answer(q, retries, ResultsUi.Trends(trends.value), failed = true)
@@ -208,6 +208,16 @@ class SearchPresenter(
         voice.value = VoiceState.Failed
         delay(FAILED_MS)
         voice.value = VoiceState.Idle
+    }
+
+    /** The result of [block], or null when it failed. A cancellation is not a failure: it must reach the coroutine that was cancelled. */
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
+    private suspend fun <T> attempt(block: suspend () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
     }
 
     private companion object {
