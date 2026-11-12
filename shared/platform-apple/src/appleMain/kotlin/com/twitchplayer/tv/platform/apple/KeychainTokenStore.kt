@@ -27,6 +27,9 @@ import platform.Foundation.dataUsingEncoding
 import platform.Security.SecItemAdd
 import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
+import platform.Security.SecItemUpdate
+import platform.Security.errSecItemNotFound
+import platform.Security.errSecMissingEntitlement
 import platform.Security.errSecSuccess
 import platform.Security.kSecAttrAccessible
 import platform.Security.kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
@@ -37,6 +40,7 @@ import platform.Security.kSecClassGenericPassword
 import platform.Security.kSecMatchLimit
 import platform.Security.kSecMatchLimitOne
 import platform.Security.kSecReturnData
+import platform.Security.kSecUseDataProtectionKeychain
 import platform.Security.kSecValueData
 
 /**
@@ -76,20 +80,49 @@ class KeychainTokenStore(private val service: String = DEFAULT_SERVICE) : TokenS
         remove(ACCOUNT)
     }
 
+    /**
+     * Which Keychain the items live in. The data-protection keychain (the only one on iOS and tvOS) needs the app's keychain entitlement; a
+     * macOS app that is ad-hoc signed or sandboxed without it gets `errSecMissingEntitlement`, and then the file-based login keychain is used
+     * (remembered, so the failing call is not repeated). Reads look in both, so a token written by an earlier run is never lost.
+     */
+    private var dataProtection = true
+
+    /** Writes the item in place (`SecItemUpdate`), adding it when it does not exist yet: a failed write never removes the previous value. */
     private fun put(account: String, text: String) {
-        remove(account)
         val data = text.toNsData()
-        val status = query(account, { dictionary, retained ->
+        var status = write(account, data, dataProtection)
+        if (status == errSecMissingEntitlement && dataProtection) {
+            dataProtection = false
+            status = write(account, data, false)
+        }
+        check(status == errSecSuccess) { "Keychain write failed ($status)" }
+    }
+
+    private fun write(account: String, data: NSData, protection: Boolean): Int {
+        val updated = query(account, protection, { _, _ -> }) { target ->
+            val attributes = CFDictionaryCreateMutable(null, 0, null, null)
+            val value = CFBridgingRetain(data)
+            try {
+                CFDictionaryAddValue(attributes, kSecValueData, value)
+                SecItemUpdate(target, attributes)
+            } finally {
+                CFRelease(value)
+                CFRelease(attributes)
+            }
+        }
+        if (updated != errSecItemNotFound) return updated
+        return query(account, protection, { dictionary, retained ->
             val value = CFBridgingRetain(data).also(retained::add)
             CFDictionaryAddValue(dictionary, kSecValueData, value)
             CFDictionaryAddValue(dictionary, kSecAttrAccessible, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
         }) { SecItemAdd(it, null) }
-        check(status == errSecSuccess) { "Keychain write failed ($status)" }
     }
 
-    private fun get(account: String): String? = memScoped {
+    private fun get(account: String): String? = read(account, dataProtection) ?: read(account, !dataProtection)
+
+    private fun read(account: String, protection: Boolean): String? = memScoped {
         val result = alloc<CFTypeRefVar>()
-        val status = query(account, { dictionary, _ ->
+        val status = query(account, protection, { dictionary, _ ->
             CFDictionaryAddValue(dictionary, kSecReturnData, kCFBooleanTrue)
             CFDictionaryAddValue(dictionary, kSecMatchLimit, kSecMatchLimitOne)
         }) { SecItemCopyMatching(it, result.ptr) }
@@ -99,20 +132,22 @@ class KeychainTokenStore(private val service: String = DEFAULT_SERVICE) : TokenS
     }
 
     private fun remove(account: String) {
-        query(account, { _, _ -> }) { SecItemDelete(it) }
+        query(account, true, { _, _ -> }) { SecItemDelete(it) }
+        query(account, false, { _, _ -> }) { SecItemDelete(it) }
     }
 
     /**
-     * Builds the attribute dictionary of one item (class, service, account + whatever [extra] adds) and runs [call] with it.
+     * Builds the attribute dictionary of one item (class, service, account, the keychain flavour + whatever [extra] adds) and runs [call] with it.
      * The dictionary does not retain its keys and values (null callbacks), so every value created here is released after the call.
      */
-    private fun <T> query(account: String, extra: (CFMutableDictionaryRef?, MutableList<CFTypeRef?>) -> Unit, call: (CFDictionaryRef?) -> T): T {
+    private fun <T> query(account: String, protection: Boolean, extra: (CFMutableDictionaryRef?, MutableList<CFTypeRef?>) -> Unit, call: (CFDictionaryRef?) -> T): T {
         val dictionary = CFDictionaryCreateMutable(null, 0, null, null)
         val retained = mutableListOf<CFTypeRef?>()
         try {
             CFDictionaryAddValue(dictionary, kSecClass, kSecClassGenericPassword)
             CFDictionaryAddValue(dictionary, kSecAttrService, CFBridgingRetain(service).also(retained::add))
             CFDictionaryAddValue(dictionary, kSecAttrAccount, CFBridgingRetain(account).also(retained::add))
+            if (protection) CFDictionaryAddValue(dictionary, kSecUseDataProtectionKeychain, kCFBooleanTrue)
             extra(dictionary, retained)
             return call(dictionary)
         } finally {

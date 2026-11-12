@@ -79,6 +79,36 @@ class AppleDataStoreTest {
 @OptIn(ExperimentalNativeApi::class)
 private val keychainAvailableInTests: Boolean = Platform.osFamily == OsFamily.MACOSX
 
+/** The real directories of the platform (not scratch ones): on tvOS only Caches and tmp are writable, and the files must really be written there. */
+@OptIn(ExperimentalNativeApi::class)
+class ApplePathsTest {
+    @Test fun theSupportDirectoryExistsAndIsWritableOnThisPlatform() = runTest {
+        val directory = ApplePaths.supportDirectory()
+        assertTrue(NSFileManager.defaultManager.isWritableFileAtPath(directory), "not writable: $directory")
+        if (Platform.osFamily == OsFamily.TVOS) assertTrue("/Caches/" in directory, "tvOS must use Caches: $directory")
+    }
+
+    @Test fun aDataStoreInTheDefaultDirectoryWritesAndReadsBack() = runTest {
+        val key = stringPreferencesKey("k")
+        val store = AppleDataStores.create("paths-test-" + NSUUID().UUIDString)
+        store.edit { it[key] = "v" }
+        assertEquals("v", store.data.first()[key])
+    }
+
+    @Test fun theDefaultSnapshotStorageWritesReadsAndClears() = runTest {
+        val storage = AppleSnapshotStorage()
+        storage.write("paths_test", "x")
+        assertEquals("x", storage.read("paths_test"))
+        storage.clear()
+        assertNull(storage.read("paths_test"))
+    }
+
+    @Test fun anImpossibleDirectoryIsReportedNotSwallowed() {
+        val failure = runCatching { ensureDirectory("/System/twitchplayer-cannot-exist/x") }.exceptionOrNull()
+        assertTrue(failure is IllegalStateException && "Could not create" in (failure.message ?: ""), failure.toString())
+    }
+}
+
 class KeychainTokenStoreTest {
     private val service = "com.twitchplayer.tests." + NSUUID().UUIDString
 
@@ -102,6 +132,13 @@ class KeychainTokenStoreTest {
         store.save(TwitchTokens("a2", "r2", 2L, setOf("x")))
         assertEquals(TwitchTokens("a2", "r2", 2L, setOf("x")), store.read())
         store.clear()
+    }
+
+    @Test fun anotherStoreOnTheSameServiceSeesTheItems() = runTest {
+        if (!keychainAvailableInTests) return@runTest
+        KeychainTokenStore(service).save(TwitchTokens("shared", "r", 1L, emptySet()))
+        assertEquals("shared", KeychainTokenStore(service).read()?.accessToken)
+        KeychainTokenStore(service).clear()
     }
 
     @Test fun nothingStoredReadsAsNull() = runTest {
