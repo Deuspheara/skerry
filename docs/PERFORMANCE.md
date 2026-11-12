@@ -95,3 +95,5 @@ Release build, real account, 1080p60 Twitch source (the panel only offers 60 Hz:
 The Media3 player removed the WebView's per-video-frame redraw of the app window and two redundant full-screen fills;
 chat toggling went from vsync->done p50/p99 40.6/154 ms to ~24/73-90 ms. Method, numbers, the remaining one-frame
 composition spike and the layout decision (resize once, SurfaceView) are in `docs/NATIVE_PLAYER.md`.
+
+Phone app: see [perf-phone.md](perf-phone.md) (startup with and without the Baseline Profile, frame timing, sizes, the phone's regression policy).

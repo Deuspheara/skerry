@@ -298,7 +298,7 @@ Not testable under instrumentation: the control **auto-hide timer** (Media3 is p
 
 ### Phone performance baseline (emulator, so indicative: fast host CPU, GPU pinned to vsync)
 
-Pixel 8 AVD (API 36, arm64), `benchmark` build type (R8 on, demo data), no baseline profile yet (step D).
+Pixel 8 AVD (API 36, arm64), `benchmark` build type (R8 on, demo data), no baseline profile at that time (added in step D, numbers in [perf-phone.md](perf-phone.md)).
 
 | Measure | Result |
 |---|---|
@@ -311,7 +311,7 @@ Tools: `PKG=com.twitchplayer.phone ANDROID_SERIAL=emulator-5554 benchmark/tools/
 
 ## Unverified
 
-The real phone (screen locked, not used); TalkBack output (semantics checked, not the screen reader); reduced motion seen running; a completed sign-in and real chat sending with a Twitch account (chat and sending run on demo data); Picture-in-Picture before Android 12 and on devices without the feature (code path guarded and reviewed, not run); real streams (the demo clip is a 12-second looping test pattern: live-edge behaviour, ad breaks and quality switching on real HLS are the TV player's, reused, not re-measured on the phone); phone performance on hardware (emulator numbers only); no phone baseline profile yet (step D); CI on GitHub (no remote).
+The real phone (screen locked, not used); TalkBack output (semantics checked, not the screen reader); reduced motion seen running; a completed sign-in and real chat sending with a Twitch account (chat and sending run on demo data); Picture-in-Picture before Android 12 and on devices without the feature (code path guarded and reviewed, not run); real streams (the demo clip is a 12-second looping test pattern: live-edge behaviour, ad breaks and quality switching on real HLS are the TV player's, reused, not re-measured on the phone); phone performance on hardware (emulator numbers only); CI on GitHub (no remote). See the Phase 3 summary at the end for what was added later.
 
 ## Step C review follow-up
 
@@ -325,3 +325,33 @@ The real phone (screen locked, not used); TalkBack output (semantics checked, no
 - The grey rectangle in the demo player is the demo video art, not a layout fault.
 - Test counts, `check --rerun-tasks` (JVM, debug variants): phone 115, shared/presenters 144 jvm + 140 android-host, shared/core 39 + 29, shared/chat 41 + 41, shared/stream 40 + 24, shared/player-api 7 + 7, platform-android 15, app 23, build-logic 11. Instrumented `:phone` suite: 49, all green on an API 36 emulator.
 - All timings in this document come from an emulator and are not device numbers.
+
+## Step D: performance standard (2026-11-12)
+
+- **`:benchmark-phone`**: Macrobenchmark module for the phone (`com.android.test`, targets `:phone`), touch journeys over the demo data (Home, Browse, Category, Search, Channel, Settings, replay, live player with chat scroll and fullscreen both ways), cold-start and frame-timing benchmarks, and the Baseline Profile generator. `:phone` got a `nonMinified` build type, an explicit `profileinstaller`, and Home now reports its drawn state (`ReportDrawnWhen`).
+- **Profiles** in `phone/src/main/baselineProfiles/`: Baseline 38,686 rules (2,258 phone, 2,014 shared TV-namespace code), startup 21,557 (610 / 824). Packaged in APK and AAB, `profileinstaller` present, **99.3 %** of the surviving startup classes in `classes.dex`, R8 full mode with minify + shrink and 0 own `-keep` rules, analyzer 98.9 / 99.1 / 99.1 %.
+- **Result** (emulator, three runs, see [perf-phone.md](perf-phone.md)): cold start with the profile is 20-31 % faster to first frame and 21-33 % faster to the Home content than with no AOT compilation; frame timing is unchanged by the profile. Absolute numbers are inflated by a memory-starved host and are not a statement about the app.
+- **Cost**: release APK 3,779,635 -> 3,927,149 B (+3.9 %); about +131 KB of it is the startup profile (two dex files). The TV APK is unchanged (4,001,682 B).
+- **Findings along the way**: `pressHome()` on a playing live page enters Picture-in-Picture (as designed; the benchmark setup now avoids it); UiAutomator `fling` degrades into taps on a starved emulator (journeys use explicit swipes); one ANR was seen at a host load average of 31 (see perf-phone.md, "Noise").
+- **CI**: the static job compiles `:benchmark-phone`, the release job checks the baseline profile in both APKs and AABs (TV and phone) and runs `check-profile-packaging.py` for the phone. Every task named in `ci.yml` resolves (`./gradlew --dry-run` over the exact task list).
+- **Deviation**: the benchmark Kotlin scenarios are not shared with `:benchmark` (touch vs D-pad; nothing in common but the rule setup); the generic parts (profile generation script, framestats, catalog entries) are shared. The benchmark runner drives `am instrument` after building, not `connectedBenchmarkAndroidTest`, to keep Gradle's memory out of the measurement.
+
+## Phase 3 summary (Android phone UI)
+
+| Step | What | Review score |
+|---|---|---|
+| A | shared Android modules (`:platform-android`, `:demo-android`, `shared-strings`), no TV change | 8 |
+| B | the phone app: Home, Browse, Category, Search, Channel, Settings, sign-in | 7.5, then 8 after the follow-up |
+| C | native playback: live with chat, replays, clips, fullscreen, Picture-in-Picture, restoration, lifecycle | 7, then 7.5; the last fixes (PiP dismissal, position saved on pause and stop, one writer for the chat mode, final screenshots) are not scored |
+| D | Macrobenchmark module, Baseline and startup profiles, perf document, docs and CI | to be scored |
+
+**Where it stands**: the phone app builds, runs and is tested on the demo data end to end (120 JVM unit tests in `:phone`, 49 instrumented tests on an API 36 emulator, shared presenters 144 + 140, `check --rerun-tasks` green); release APK 3.93 MB, AAB 8.80 MB; profiles generated and verified; the TV app unchanged (4,001,682 B) and not re-measured.
+
+**Known gaps** (none hidden):
+- No validation on a real phone: everything above ran on an emulator or in JVM tests; performance numbers are emulator-only.
+- TalkBack: semantics are asserted in tests (labels, roles, 48 dp targets), the screen reader itself was never run.
+- Language switch on API 24-32: `Activity.recreate()` rebuilds the player (picture black, re-buffer, then it resumes from its saved state); the switch is only reachable from Settings, where no player is shown. Not run on such an emulator.
+- 34 of the 36 locales fall back to English for the phone-only strings (the TV's 36 translations are reused; English and French exist for the phone's own).
+- Follow and unfollow are not possible: the app's viewer tokens cannot call the follow API (the channel page links to Twitch).
+- The TV was not re-measured after Phase 3 (its APK is byte-identical, its profile unchanged).
+- Picture-in-Picture before Android 12 and on devices without the feature were not run; the first fix for the PiP dismissal was wrong and was corrected by driving the real window (see step C follow-up).
