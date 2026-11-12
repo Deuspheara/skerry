@@ -57,6 +57,7 @@ import com.twitchplayer.tv.core.data.repository.SendResult
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SessionState
 import com.twitchplayer.tv.feature.player.data.chat.ChannelNotice
+import com.twitchplayer.tv.feature.player.data.stream.StreamVariant
 import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
 import com.twitchplayer.tv.feature.player.playback.NativeStatus
 import com.twitchplayer.tv.feature.player.playback.NativeVideoSurface
@@ -95,6 +96,7 @@ fun LivePlayerRoute(
     val picker by presenter.emotePicker.collectAsStateWithLifecycle()
     val chatSettings by presenter.chatSettings.collectAsStateWithLifecycle()
     val sessionState by session.state.collectAsStateWithLifecycle()
+    val preferredQuality by presenter.preferredQuality.collectAsStateWithLifecycle()
     val host = LocalPlayerHost.current
     val inPip by host.inPictureInPicture.collectAsStateWithLifecycle()
 
@@ -169,6 +171,10 @@ fun LivePlayerRoute(
     }
 
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
+    val sleep = rememberSleepTimer()
+    var sleepOpen by remember { mutableStateOf(false) }
+    // When the timer runs out the stream pauses, like pressing pause (the presenter keeps the state in step).
+    SleepTimerEffect(sleep) { if (snapshot.playWhenReady) presenter.onEvent(PlayerEvent.TogglePause) }
     val failed = status is NativeStatus.Failed
     val signedIn = sessionState is SessionState.SignedIn
     val selfLogin = (sessionState as? SessionState.SignedIn)?.account?.login
@@ -193,8 +199,14 @@ fun LivePlayerRoute(
             onBack = onBack,
             onTogglePlay = { presenter.onEvent(PlayerEvent.TogglePause) },
             restoration = restoration,
-            pinned = qualities != null,
+            pinned = qualities != null || sleepOpen,
             video = { videoModifier -> NativeVideoSurface(player, videoModifier) },
+            stageOverlay = {
+                // Audio only: no picture comes, so the stage says so (and whose stream it is) instead of staying black.
+                if (preferredQuality == StreamVariant.AUDIO_ONLY && !failed && !snapshot.hasPicture) {
+                    AudioOnlyStage(name = title, avatarUrl = current?.avatarUrl, modifier = Modifier.align(Alignment.Center))
+                }
+            },
             stageTop = { chrome ->
                 // Above the control layer: undimmed (the scrim would grey the last lines) and tappable (Retry).
                 StageStatus(status = status, hasPicture = snapshot.hasPicture, onRetry = { player.load(state.login) })
@@ -208,6 +220,10 @@ fun LivePlayerRoute(
                 }
             },
             topActions = { chrome ->
+                SleepTimerChip(sleep, onClick = {
+                    chrome.controls.touch()
+                    sleepOpen = true
+                })
                 if (host.canPictureInPicture) {
                     ControlButton(PhoneIcons.PictureInPicture, stringResource(R.string.phone_player_pip), { host.enterPictureInPicture() })
                 }
@@ -254,6 +270,14 @@ fun LivePlayerRoute(
                             player.loadQualities { qualities = it }
                         },
                     )
+                    ControlButton(
+                        PhoneIcons.Timer,
+                        stringResource(R.string.phone_player_sleep_timer),
+                        {
+                            chrome.controls.touch()
+                            sleepOpen = true
+                        },
+                    )
                     FullscreenButton(chrome)
                 }
             },
@@ -296,6 +320,7 @@ fun LivePlayerRoute(
             },
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding())
+        if (sleepOpen) SleepTimerSheet(sleep, onDismiss = { sleepOpen = false })
         qualities?.let { options ->
             QualitySheet(
                 qualities = options,

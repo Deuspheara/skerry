@@ -77,6 +77,13 @@ object PhoneIcons {
 
     val Diamond: ImageVector by lazy { icon("Diamond", "M12,2L3,9l9,13 9,-13z") }
 
+    val Timer: ImageVector by lazy {
+        icon(
+            "Timer",
+            "M15,1L9,1v2h6L15,1zM11,14h2L13,8h-2v6zM19.03,7.39l1.42,-1.42c-0.43,-0.51 -0.9,-0.99 -1.41,-1.41l-1.42,1.42C16.07,4.74 14.12,4 12,4c-4.97,0 -9,4.03 -9,9s4.02,9 9,9 9,-4.03 9,-9c0,-2.12 -0.74,-4.07 -1.97,-5.61zM12,20c-3.87,0 -7,-3.13 -7,-7s3.13,-7 7,-7 7,3.13 7,7 -3.13,7 -7,7z",
+        )
+    }
+
     val Pause: ImageVector by lazy { icon("Pause", "M6,19h4V5H6v14zM14,5v14h4V5h-4z") }
 
     val Fullscreen: ImageVector by lazy {

@@ -31,6 +31,8 @@ internal fun PlayerSheetLayout(
     stripPictureWidthPx: Int,
     stage: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    /** Width / height of the expanded picture; read while measuring, so a stream whose shape differs from 16:9 only re-measures. */
+    pictureAspect: (widthPx: Int, heightPx: Int) -> Float = { _, _ -> VIDEO_WIDTH_BY_HEIGHT },
     side: (@Composable () -> Unit)? = null,
     body: (@Composable () -> Unit)? = null,
     strip: (@Composable () -> Unit)? = null,
@@ -76,7 +78,7 @@ internal fun PlayerSheetLayout(
 
             SheetMode.Portrait -> {
                 val p = progress()
-                val expandedPicture = (width / VIDEO_WIDTH_BY_HEIGHT).toInt()
+                val expandedPicture = (width / pictureAspect(width, height)).toInt()
                 val pictureWidth = SheetGeometry.lerp(width, stripPictureWidthPx, p)
                 val pictureHeight = SheetGeometry.lerp(expandedPicture, stripHeightPx, p)
                 val top = SheetGeometry.lerp(statusBarPx, 0, p)

@@ -212,6 +212,7 @@ fun PlayerScaffold(
             drawRect(if (mode == SheetMode.Portrait) lerp(background, stripBackground, progress()) else Color.Black)
         },
         stage = stage,
+        pictureAspect = { widthPx, heightPx -> SheetGeometry.pictureAspect(snapshot.videoWidth, snapshot.videoHeight, widthPx, heightPx) },
         side = if (mode == SheetMode.Landscape) landscapeSide?.let { side -> { side(chrome) } } else null,
         body = if (mode == SheetMode.Portrait && (sheet == null || sheet.bodyVisible)) {
             {

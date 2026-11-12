@@ -108,4 +108,14 @@
     <string name="phone_following_continue">Continue watching</string>
     <string name="phone_following_last_live">Last seen live %1$s</string>
     <string name="phone_following_resume_description">%1$s, %2$s, %3$d%% watched</string>
+    <string name="phone_player_sleep_timer">Sleep timer</string>
+    <string name="phone_player_sleep_timer_title">Stop playing after</string>
+    <plurals name="phone_player_sleep_timer_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <string name="phone_player_sleep_timer_hour">1 hour</string>
+    <string name="phone_player_sleep_timer_hour_half">1 hour 30 minutes</string>
+    <string name="phone_player_sleep_timer_cancel">Turn off the timer</string>
+    <string name="phone_player_sleep_timer_active">Sleep timer, %1$s left</string>
 </resources>

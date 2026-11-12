@@ -138,3 +138,14 @@ private val CENTER_BUTTON = 64.dp
 private val CENTER_LIFT = (-12).dp
 private const val CONTROLS_EDGE_STOP = 0.4f
 private const val SUBTITLE_ALPHA = 0.8f
+
+/** What the stage shows while only the sound plays (the audio-only quality): the streamer's picture and the words "Audio only". */
+@Composable
+fun AudioOnlyStage(name: String, avatarUrl: String?, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+        com.twitchplayer.phone.ui.components.Avatar(avatarUrl, name, AUDIO_ONLY_AVATAR)
+        Text(stringResource(R.string.quality_audio_only), color = PhoneColors.OnScrim, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+    }
+}
+
+private val AUDIO_ONLY_AVATAR = 72.dp

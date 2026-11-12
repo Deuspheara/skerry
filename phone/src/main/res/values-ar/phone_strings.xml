@@ -96,4 +96,18 @@
     <string name="phone_following_continue">متابعة المشاهدة</string>
     <string name="phone_following_last_live">شوهدت مباشرة %1$s</string>
     <string name="phone_following_resume_description">%1$s، %2$s، تمت مشاهدة %3$d%%</string>
+    <string name="phone_player_sleep_timer">مؤقت النوم</string>
+    <string name="phone_player_sleep_timer_title">إيقاف التشغيل بعد</string>
+    <plurals name="phone_player_sleep_timer_minutes">
+        <item quantity="zero">%1$d دقيقة</item>
+        <item quantity="one">دقيقة</item>
+        <item quantity="two">دقيقتان</item>
+        <item quantity="few">%1$d دقائق</item>
+        <item quantity="many">%1$d دقيقة</item>
+        <item quantity="other">%1$d دقيقة</item>
+    </plurals>
+    <string name="phone_player_sleep_timer_hour">ساعة واحدة</string>
+    <string name="phone_player_sleep_timer_hour_half">ساعة ونصف</string>
+    <string name="phone_player_sleep_timer_cancel">إيقاف المؤقت</string>
+    <string name="phone_player_sleep_timer_active">مؤقت النوم، متبقي %1$s</string>
 </resources>

@@ -178,6 +178,9 @@ private fun ReplayPlayer(
     var started by remember(vod.vodId) { mutableStateOf(false) }
     val startPlaying = remember(vod.vodId) { autoplay }
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
+    val sleep = rememberSleepTimer()
+    var sleepOpen by remember { mutableStateOf(false) }
+    SleepTimerEffect(sleep) { exo.pause() }
     var dragging by remember { mutableStateOf(false) }
     val duration = if (snapshot.durationMs > 0) snapshot.durationMs else knownDurationMs
 
@@ -230,7 +233,7 @@ private fun ReplayPlayer(
         onBack = onBack,
         onTogglePlay = togglePlay,
         restoration = restoration,
-        pinned = dragging || qualities != null || (decision is StartDecision.Ask && startAt == null),
+        pinned = dragging || qualities != null || sleepOpen || (decision is StartDecision.Ask && startAt == null),
         video = { videoModifier -> ExoVideoSurface(exo, videoModifier) },
         stageOverlay = {
             val ask = decision as? StartDecision.Ask
@@ -272,6 +275,18 @@ private fun ReplayPlayer(
                         }
                     },
                     trailing = {
+                        SleepTimerChip(sleep, onClick = {
+                            chrome.controls.touch()
+                            sleepOpen = true
+                        })
+                        ControlButton(
+                            PhoneIcons.Timer,
+                            stringResource(R.string.phone_player_sleep_timer),
+                            {
+                                chrome.controls.touch()
+                                sleepOpen = true
+                            },
+                        )
                         if (vod.variants.size > 1) {
                             ControlButton(
                                 PhoneIcons.Quality,
@@ -301,6 +316,7 @@ private fun ReplayPlayer(
             )
         },
     )
+    if (sleepOpen) SleepTimerSheet(sleep, onDismiss = { sleepOpen = false })
     qualities?.let { options ->
         QualitySheet(
             qualities = options,

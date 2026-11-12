@@ -97,4 +97,19 @@ class DismissPolicyTest {
         assertEquals(247f, DismissPolicy.positionalThreshold(380f, 2_400f, 0.4f), 0.5f)
         assertEquals(760f, DismissPolicy.positionalThreshold(1_900f, 2_400f, 0.4f), 0.5f)
     }
+
+    @Test fun aSixteenByNineStreamKeepsTheClassicPicture() {
+        assertEquals(16f / 9f, SheetGeometry.pictureAspect(1920, 1080, 1_080, 2_400), 0.001f)
+        assertEquals(16f / 9f, SheetGeometry.pictureAspect(2560, 1080, 1_080, 2_400), 0.001f) // anything wider stays 16:9
+        assertEquals(16f / 9f, SheetGeometry.pictureAspect(0, 0, 1_080, 2_400), 0.001f) // nothing decoded yet
+    }
+
+    @Test fun aNarrowerStreamGetsATallerPictureButNeverMoreThanTheCap() {
+        // 4:3 on a 1080 x 2400 sheet: 1.333, the picture is 810 px tall (34 % of the sheet).
+        assertEquals(4f / 3f, SheetGeometry.pictureAspect(1440, 1080, 1_080, 2_400), 0.001f)
+        // A vertical 9:16 broadcast would want 1920 px: it stops at 42 % of the sheet (1008 px), a 1.071 aspect.
+        val vertical = SheetGeometry.pictureAspect(1080, 1920, 1_080, 2_400)
+        assertEquals(1_080f / (2_400f * 0.42f), vertical, 0.001f)
+        assertTrue(1_080f / vertical <= 2_400f * 0.42f + 1f)
+    }
 }

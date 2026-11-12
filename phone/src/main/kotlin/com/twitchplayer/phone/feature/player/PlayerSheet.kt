@@ -47,6 +47,21 @@ object SheetGeometry {
     private const val STRIP_FADE_START = 0.5f
     private const val CONTROLS_FADE_END = 0.15f
 
+    /** The portrait picture is never taller than this share of the sheet (the chat, the stream info and the keyboard need the rest). */
+    private const val MAX_PICTURE_HEIGHT_FRACTION = 0.42f
+
+    /**
+     * The expanded portrait picture's width / height. A 16:9 stream (and anything wider) keeps 16:9; a narrower one (4:3, or a vertical
+     * broadcast) gets a taller picture so it is not a thin strip with black sides, up to [MAX_PICTURE_HEIGHT_FRACTION] of the
+     * [containerHeightPx]. Unknown size (nothing decoded yet): 16:9.
+     */
+    fun pictureAspect(videoWidth: Int, videoHeight: Int, widthPx: Int, containerHeightPx: Int): Float {
+        if (minOf(videoWidth, videoHeight) <= 0 || minOf(widthPx, containerHeightPx) <= 0) return PICTURE_ASPECT
+        val natural = videoWidth.toFloat() / videoHeight
+        val tallest = widthPx / (containerHeightPx * MAX_PICTURE_HEIGHT_FRACTION)
+        return natural.coerceAtLeast(tallest).coerceAtMost(PICTURE_ASPECT)
+    }
+
     fun stripHeight(fontScale: Float): Dp = STRIP_HEIGHT * fontScale.coerceIn(1f, MAX_STRIP_FONT_SCALE)
 
     /** The small picture of the strip is 16:9 and as tall as the strip. */
