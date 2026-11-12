@@ -252,7 +252,8 @@ class PhonePlayerUiTest {
         openLivePlayer()
         showControls()
 
-        listOf(R.string.player_back, R.string.player_fullscreen, R.string.player_quality).forEach { assertTouchTarget(string(it)) }
+        // In portrait the top-left button minimises the player (a chevron down).
+        listOf(R.string.phone_player_minimise, R.string.player_fullscreen, R.string.player_quality).forEach { assertTouchTarget(string(it)) }
         assertTouchTarget(string(R.string.phone_player_chat_toggle))
         assertTouchTarget(string(R.string.player_sound))
     }
