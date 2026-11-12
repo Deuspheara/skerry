@@ -51,6 +51,7 @@ import com.twitchplayer.phone.ui.components.LiveBadge
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.phone.ui.components.ViewersBadge
+import com.twitchplayer.phone.ui.theme.LocalReducedMotion
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.repository.SendResult
 import com.twitchplayer.tv.core.data.repository.SessionRepository
@@ -91,6 +92,7 @@ fun LivePlayerRoute(
     val presenter = viewModel.presenter
     val state by presenter.state.collectAsStateWithLifecycle()
     val chat by presenter.chat.collectAsStateWithLifecycle()
+    val picker by presenter.emotePicker.collectAsStateWithLifecycle()
     val chatSettings by presenter.chatSettings.collectAsStateWithLifecycle()
     val sessionState by session.state.collectAsStateWithLifecycle()
     val host = LocalPlayerHost.current
@@ -170,6 +172,7 @@ fun LivePlayerRoute(
     val failed = status is NativeStatus.Failed
     val signedIn = sessionState is SessionState.SignedIn
     val style = remember(chatSettings) { chatSettings.toPhoneStyle() }
+    val animateEmotes = style.animatedEmotes && !LocalReducedMotion.current
     val current = state.current
     val title = current?.name?.ifBlank { null } ?: state.login
     val uriHandler = LocalUriHandler.current
@@ -251,7 +254,9 @@ fun LivePlayerRoute(
                 if (layoutChatMode(state.chatMode, true) == ChatMode.Compact) {
                     Column(Modifier.width(SIDE_PANEL).fillMaxHeight().background(MaterialTheme.colorScheme.surface).safeDrawingPadding()) {
                         ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f))
-                        if (signedIn) ChatInputRow({ presenter.onEvent(PlayerEvent.SendChat(it)) })
+                        if (signedIn) {
+                            ChatComposer({ presenter.onEvent(PlayerEvent.SendChat(it)) }, picker, animateEmotes, { presenter.onEvent(PlayerEvent.PickedEmote(it)) }, handleInsets = false)
+                        }
                     }
                 }
             },
@@ -277,7 +282,7 @@ fun LivePlayerRoute(
                     } else {
                         ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f))
                         if (signedIn) {
-                            ChatInputRow({ presenter.onEvent(PlayerEvent.SendChat(it)) }, Modifier.navigationBarsPadding().imePadding())
+                            ChatComposer({ presenter.onEvent(PlayerEvent.SendChat(it)) }, picker, animateEmotes, { presenter.onEvent(PlayerEvent.PickedEmote(it)) })
                         }
                     }
                 }

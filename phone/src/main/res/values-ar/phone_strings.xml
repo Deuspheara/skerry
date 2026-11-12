@@ -66,4 +66,26 @@
     <string name="phone_player_speed">سرعة التشغيل</string>
     <string name="phone_player_open_channel">فتح القناة</string>
     <string name="phone_player_more_from">المزيد من %1$s</string>
+
+    <!-- Emotes -->
+    <string name="phone_emote_button">الرموز التعبيرية</string>
+    <string name="phone_emote_keyboard">لوحة المفاتيح</string>
+    <string name="phone_emote_search_hint">ابحث عن رمز تعبيري</string>
+    <string name="phone_emote_search_clear">مسح البحث</string>
+    <string name="phone_emote_tab_recent">الأحدث</string>
+    <string name="phone_emote_section_channel">القناة</string>
+    <string name="phone_emote_section_global">عامة</string>
+    <string name="phone_emote_section_other">قنواتك الأخرى</string>
+    <string name="phone_emote_section_locked">اشترك لاستخدامها</string>
+    <string name="phone_emote_signin_again">سجّل الخروج ثم الدخول لرؤية الرموز التي يمكنك استخدامها</string>
+    <string name="phone_emote_empty">لا توجد رموز</string>
+    <string name="phone_emote_unavailable">لا توجد رموز متاحة بعد</string>
+    <string name="phone_emote_insert">إدراج</string>
+    <string name="phone_emote_preview_close">إغلاق المعاينة</string>
+    <string name="phone_emote_description">رمز %1$s</string>
+    <string name="phone_emote_locked_description">رمز %1$s، لا يمكنك استخدامه بعد</string>
+    <string name="phone_emote_suggestions">اقتراحات الرموز</string>
+    <string name="phone_emote_animated">متحرك</string>
+    <string name="phone_emote_origin">%1$s · %2$s</string>
+    <string name="phone_emote_source_other">أخرى</string>
 </resources>

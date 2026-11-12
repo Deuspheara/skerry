@@ -78,4 +78,26 @@
     <string name="phone_player_speed">Playback speed</string>
     <string name="phone_player_open_channel">Open channel</string>
     <string name="phone_player_more_from">More from %1$s</string>
+
+    <!-- Emotes -->
+    <string name="phone_emote_button">Emotes</string>
+    <string name="phone_emote_keyboard">Keyboard</string>
+    <string name="phone_emote_search_hint">Search emotes</string>
+    <string name="phone_emote_search_clear">Clear the search</string>
+    <string name="phone_emote_tab_recent">Recent</string>
+    <string name="phone_emote_section_channel">Channel</string>
+    <string name="phone_emote_section_global">Global</string>
+    <string name="phone_emote_section_other">Your other channels</string>
+    <string name="phone_emote_section_locked">Subscribe to use these</string>
+    <string name="phone_emote_signin_again">Sign out and in again to see the emotes you can use</string>
+    <string name="phone_emote_empty">No emotes found</string>
+    <string name="phone_emote_unavailable">No emotes available yet</string>
+    <string name="phone_emote_insert">Insert</string>
+    <string name="phone_emote_preview_close">Close the preview</string>
+    <string name="phone_emote_description">Emote %1$s</string>
+    <string name="phone_emote_locked_description">Emote %1$s, you cannot use it yet</string>
+    <string name="phone_emote_suggestions">Emote suggestions</string>
+    <string name="phone_emote_animated">Animated</string>
+    <string name="phone_emote_origin">%1$s · %2$s</string>
+    <string name="phone_emote_source_other">Other</string>
 </resources>

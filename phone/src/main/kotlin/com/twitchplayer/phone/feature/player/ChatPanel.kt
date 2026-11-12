@@ -1,6 +1,7 @@
 package com.twitchplayer.phone.feature.player
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,6 +44,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -50,17 +53,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.tv.feature.player.presentation.ChatLine
 import com.twitchplayer.tv.feature.player.ui.animationAllowance
 import kotlinx.collections.immutable.ImmutableList
@@ -152,19 +158,22 @@ fun PhoneChatList(
 
 /**
  * The message box under the chat: a single pill (40 dp for one line, up to three lines) like the live apps use, not an outlined
- * field. The send button is a circle that only appears once there is something to send. Send on the keyboard's action and on the
- * button; it clears after sending. The row is [ChatInputSpec.ROW_HEIGHT] tall whether or not the button is shown, so nothing jumps.
+ * field, with the emote button at its end. The send button is a circle that only appears once there is something to send. Send on the
+ * keyboard's action and on the button. The row is [ChatInputSpec.ROW_HEIGHT] tall whether or not the button is shown, so nothing jumps.
+ * The text and the open/closed state of the emote panel belong to [ChatComposer], which owns the pieces around this row.
  */
 @Composable
-fun ChatInputRow(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
-    var text by rememberSaveable { mutableStateOf("") }
-    val send: () -> Unit = {
-        ChatInputSpec.outgoing(text)?.let { message ->
-            onSend(message)
-            text = ""
-        }
-    }
-    val canSend = ChatInputSpec.canSend(text)
+fun ChatInputRow(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    onSend: () -> Unit,
+    emotesOpen: Boolean,
+    onToggleEmotes: () -> Unit,
+    interactionSource: MutableInteractionSource,
+    focusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
+) {
+    val canSend = ChatInputSpec.canSend(value.text)
     // The pill has no label of its own: while it is empty TalkBack reads this (the hint text inside is only drawn).
     val hint = stringResource(R.string.phone_player_chat_hint)
     Row(
@@ -173,35 +182,47 @@ fun ChatInputRow(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         BasicTextField(
-            value = text,
-            onValueChange = { text = ChatInputSpec.limit(it) },
-            modifier = Modifier.weight(1f).heightIn(min = ChatInputSpec.PILL_HEIGHT).semantics {
+            value = value,
+            onValueChange = { onValueChange(it.copy(text = ChatInputSpec.limit(it.text))) },
+            modifier = Modifier.weight(1f).heightIn(min = ChatInputSpec.PILL_HEIGHT).focusRequester(focusRequester).semantics {
                 // Named while empty; once something is typed, the typed text is what the screen reader reads (a description would replace it).
-                if (text.isEmpty()) contentDescription = hint
+                if (value.text.isEmpty()) contentDescription = hint
             },
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             maxLines = ChatInputSpec.MAX_LINES,
+            interactionSource = interactionSource,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send, capitalization = KeyboardCapitalization.Sentences),
-            keyboardActions = KeyboardActions(onSend = { send() }),
+            keyboardActions = KeyboardActions(onSend = { onSend() }),
             decorationBox = { field ->
-                Box(
+                Row(
                     Modifier.clip(RoundedCornerShape(ChatInputSpec.PILL_RADIUS))
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .heightIn(min = ChatInputSpec.PILL_HEIGHT)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.CenterStart,
+                        .padding(start = 16.dp, end = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (text.isEmpty()) {
-                        Text(hint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    Box(Modifier.weight(1f).padding(vertical = 10.dp), contentAlignment = Alignment.CenterStart) {
+                        if (value.text.isEmpty()) {
+                            Text(hint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        }
+                        field()
                     }
-                    field()
+                    // A 40 dp target inside the pill: the emote picker (or, while it is open, back to the keyboard).
+                    IconButton(onClick = onToggleEmotes, modifier = Modifier.size(ChatInputSpec.PILL_HEIGHT).testTag(EMOTE_BUTTON_TAG)) {
+                        Icon(
+                            if (emotesOpen) PhoneIcons.Keyboard else PhoneIcons.Emoji,
+                            contentDescription = stringResource(if (emotesOpen) R.string.phone_emote_keyboard else R.string.phone_emote_button),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
             },
         )
         if (canSend) {
             // A 48 dp touch target around a 36 dp circle.
-            IconButton(onClick = send, modifier = Modifier.size(ChatInputSpec.SEND_TARGET)) {
+            IconButton(onClick = onSend, modifier = Modifier.size(ChatInputSpec.SEND_TARGET)) {
                 Box(Modifier.size(ChatInputSpec.SEND_CIRCLE).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.AutoMirrored.Filled.Send,
@@ -214,6 +235,8 @@ fun ChatInputRow(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
         }
     }
 }
+
+const val EMOTE_BUTTON_TAG = "emote-button"
 
 /** Sizes and rules of the chat box; plain values so a JVM test pins them. */
 object ChatInputSpec {

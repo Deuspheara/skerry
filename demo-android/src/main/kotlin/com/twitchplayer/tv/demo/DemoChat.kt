@@ -15,6 +15,10 @@ import com.twitchplayer.tv.feature.player.data.chat.ChatMessage
 import com.twitchplayer.tv.feature.player.data.chat.ChatMessageContent
 import com.twitchplayer.tv.feature.player.data.chat.RoomState
 import com.twitchplayer.tv.feature.player.data.emotes.Emote
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteGroup
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteSection
+import com.twitchplayer.tv.feature.player.data.emotes.EmoteSource
+import com.twitchplayer.tv.feature.player.data.emotes.UserEmoteAccess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -149,6 +153,25 @@ internal object DemoChatAssets : ChatAssetsSource {
         aspect = DemoEmoteArt.specs.getValue(name).first,
     )
 
+    private val thirdParty = listOf(
+        still("heart", label = "heartPop"), still("gg", label = "gg"), still("smile", label = "peepoHey"),
+        still("bounce", animated = true, label = "catJam"), still("clap", animated = true, label = "clapClap"),
+        still("wave", animated = true, label = "dancePls"), still("spin", animated = true, label = "spinHype"),
+        still("rain", animated = true, zeroWidth = true, label = "rainOverlay"), still("sparkle", zeroWidth = true, label = "sparkleZW"),
+    )
+
+    /** The picker's lists in the demo: the same artwork under other names, so every tab, section and the locked list has something. */
+    private val groups = listOf(
+        EmoteGroup(EmoteSource.Twitch, EmoteSection.Channel, listOf(still("heart", label = "demoHeart"), still("clap", animated = true, label = "demoClap"), still("star", label = "demoStar"))),
+        EmoteGroup(EmoteSource.Twitch, EmoteSection.Locked, listOf(still("spin", animated = true, label = "demoTierThree"), still("wave", animated = true, label = "demoTierTwo"))),
+        EmoteGroup(EmoteSource.Twitch, EmoteSection.Global, listOf(still("smile", label = "Kappa"), still("star", label = "PogChamp"), still("heart", label = "<3"))),
+        EmoteGroup(EmoteSource.Twitch, EmoteSection.OtherChannels, listOf(still("gg", label = "otherSubGG"), still("bounce", animated = true, label = "otherSubJam"))),
+        EmoteGroup(EmoteSource.SevenTv, EmoteSection.Channel, thirdParty),
+        EmoteGroup(EmoteSource.SevenTv, EmoteSection.Global, listOf(still("smile", label = "EZ"), still("gg", label = "Clap"), still("star", label = "Pog"), still("heart", label = "peepoLove"), still("bounce", animated = true, label = "pepeJam"))),
+        EmoteGroup(EmoteSource.Bttv, EmoteSection.Global, listOf(still("smile", label = "OMEGALUL"), still("gg", label = "monkaS"), still("star", label = "Sadge"))),
+        EmoteGroup(EmoteSource.Ffz, EmoteSection.Global, listOf(still("heart", label = "ZrehplaR"), still("smile", label = "LilZ"))),
+    )
+
     private val assets = ChatAssets(
         badges = mapOf(
             "subscriber:1" to DemoEmoteArt.url("badge-sub", false),
@@ -156,12 +179,9 @@ internal object DemoChatAssets : ChatAssetsSource {
             "vip:1" to DemoEmoteArt.url("badge-vip", false),
             "broadcaster:1" to DemoEmoteArt.url("badge-bc", false),
         ),
-        emotes = listOf(
-            still("heart", label = "heartPop"), still("gg", label = "gg"), still("smile", label = "peepoHey"),
-            still("bounce", animated = true, label = "catJam"), still("clap", animated = true, label = "clapClap"),
-            still("wave", animated = true, label = "dancePls"), still("spin", animated = true, label = "spinHype"),
-            still("rain", animated = true, zeroWidth = true, label = "rainOverlay"), still("sparkle", zeroWidth = true, label = "sparkleZW"),
-        ).associateBy { it.name },
+        emotes = thirdParty.associateBy { it.name },
+        groups = groups,
+        access = UserEmoteAccess.Known,
     )
 
     override fun assets(broadcasterId: String): Flow<ChatAssets> = flowOf(assets)

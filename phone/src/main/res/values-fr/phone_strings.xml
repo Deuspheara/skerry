@@ -71,4 +71,26 @@
     <string name="phone_player_speed">Vitesse de lecture</string>
     <string name="phone_player_open_channel">Ouvrir la chaîne</string>
     <string name="phone_player_more_from">Autres vidéos de %1$s</string>
+
+    <!-- Emotes -->
+    <string name="phone_emote_button">Émotes</string>
+    <string name="phone_emote_keyboard">Clavier</string>
+    <string name="phone_emote_search_hint">Rechercher une émote</string>
+    <string name="phone_emote_search_clear">Effacer la recherche</string>
+    <string name="phone_emote_tab_recent">Récentes</string>
+    <string name="phone_emote_section_channel">Chaîne</string>
+    <string name="phone_emote_section_global">Globales</string>
+    <string name="phone_emote_section_other">Vos autres chaînes</string>
+    <string name="phone_emote_section_locked">Abonnez-vous pour les utiliser</string>
+    <string name="phone_emote_signin_again">Déconnectez-vous puis reconnectez-vous pour voir les émotes que vous pouvez utiliser</string>
+    <string name="phone_emote_empty">Aucune émote trouvée</string>
+    <string name="phone_emote_unavailable">Aucune émote disponible pour l’instant</string>
+    <string name="phone_emote_insert">Insérer</string>
+    <string name="phone_emote_preview_close">Fermer l’aperçu</string>
+    <string name="phone_emote_description">Émote %1$s</string>
+    <string name="phone_emote_locked_description">Émote %1$s, vous ne pouvez pas encore l’utiliser</string>
+    <string name="phone_emote_suggestions">Suggestions d’émotes</string>
+    <string name="phone_emote_animated">Animée</string>
+    <string name="phone_emote_origin">%1$s · %2$s</string>
+    <string name="phone_emote_source_other">Autres</string>
 </resources>
