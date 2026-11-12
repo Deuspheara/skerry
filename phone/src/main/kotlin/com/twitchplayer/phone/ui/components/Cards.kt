@@ -4,9 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,14 +80,18 @@ fun StreamCard(stream: LiveStream, onClick: () -> Unit, modifier: Modifier = Mod
     val description = stringResource(R.string.cd_stream, stream.name, viewers, stream.title)
     val rowModifier = modifier.clip(CardShape).clickableItem(onClick).semantics(mergeDescendants = true) { contentDescription = description }
     if (layout.compact) {
-        Row(rowModifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Thumbnail(stream, Modifier.width(COMPACT_THUMBNAIL_WIDTH))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // The row is as tall as the thumbnail whatever the title length (one or two lines): the title sits at the top, the channel and
+        // the category are pinned to the bottom, so the rows of a list are level. Taller only when a large system font needs it.
+        Row(rowModifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Thumbnail(stream, Modifier.width(CardSpec.COMPACT_THUMBNAIL_WIDTH))
+            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
                 Text(stream.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (showChannel) {
-                    Text(stream.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (showChannel) {
+                        Text(stream.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Text(stream.categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Text(stream.categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     } else {
@@ -129,7 +136,9 @@ fun CategoryCard(category: Category, onClick: () -> Unit, modifier: Modifier = M
         Text(
             text = category.name,
             style = MaterialTheme.typography.labelLarge,
-            maxLines = 2,
+            // A fixed two-line slot: "Just Chatting" and "World of Warcraft" give cards of the same height.
+            minLines = CardSpec.CATEGORY_NAME_LINES,
+            maxLines = CardSpec.CATEGORY_NAME_LINES,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
         )
@@ -164,7 +173,16 @@ fun ChannelListItem(channel: ChannelRef, onClick: () -> Unit, modifier: Modifier
 
 /** From this width the stream grid has two or more columns. */
 private const val MULTI_COLUMN_WIDTH_DP = 600
-private val COMPACT_THUMBNAIL_WIDTH = 168.dp
 
 const val THUMBNAIL_RATIO = 16f / 9f
 const val POSTER_RATIO = 3f / 4f
+
+/** Constants that keep cards level; a plain object so a JVM test can pin them. */
+object CardSpec {
+    /** Lines reserved for a category name, filled or not. */
+    const val CATEGORY_NAME_LINES = 2
+    val COMPACT_THUMBNAIL_WIDTH = 168.dp
+
+    /** Height of a compact stream row at the default font size: the thumbnail's. */
+    val compactRowHeight = COMPACT_THUMBNAIL_WIDTH / THUMBNAIL_RATIO
+}

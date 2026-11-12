@@ -43,7 +43,9 @@ class FullscreenPolicy(initial: OrientationLock = OrientationLock.None) {
         val upright = degrees <= UPRIGHT_MAX || degrees >= UPRIGHT_WRAP || degrees in UPSIDE_DOWN
         val released = when (lock) {
             OrientationLock.None -> false
+
             OrientationLock.Portrait -> upright
+
             OrientationLock.Landscape -> {
                 if (degrees in SIDEWAYS_LEFT || degrees in SIDEWAYS_RIGHT) seenSideways = true
                 seenSideways && upright
