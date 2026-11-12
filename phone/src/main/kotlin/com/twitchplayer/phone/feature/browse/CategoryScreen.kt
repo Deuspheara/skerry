@@ -3,6 +3,7 @@ package com.twitchplayer.phone.feature.browse
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,6 +45,7 @@ import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.home.CardSkeletonGrid
 import com.twitchplayer.phone.navigation.CategoryKey
 import com.twitchplayer.phone.ui.components.DetailHeader
+import com.twitchplayer.phone.ui.components.FilterPill
 import com.twitchplayer.phone.ui.components.GridSpacing
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
@@ -119,7 +121,8 @@ fun CategoryRoute(
             RefreshBox(onRefresh = { viewModel.presenter.onEvent(CategoryEvent.Retry) }) {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(StreamColumnMin),
-                    contentPadding = ScreenPadding,
+                    // No extra space under the title: the filter row starts right below it.
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
                     horizontalArrangement = GridSpacing,
                     verticalArrangement = streamRowSpacing(layout),
                     modifier = Modifier.fillMaxSize(),
@@ -133,15 +136,15 @@ fun CategoryRoute(
                         ) {
                             Text(stringResource(R.string.phone_language_filter), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             // Two clear choices, the viewer's own language and everything (a chip that is on tells nothing about what it filters).
-                            FilterChip(
+                            FilterPill(
+                                label = stringResource(R.string.filter_all_languages),
                                 selected = !state.languageOnly,
                                 onClick = { if (state.languageOnly) viewModel.presenter.onEvent(CategoryEvent.ToggleLanguage) },
-                                label = { Text(stringResource(R.string.filter_all_languages)) },
                             )
-                            FilterChip(
+                            FilterPill(
+                                label = languageLabel(state.language),
                                 selected = state.languageOnly,
                                 onClick = { if (!state.languageOnly) viewModel.presenter.onEvent(CategoryEvent.ToggleLanguage) },
-                                label = { Text(languageLabel(state.language)) },
                             )
                         }
                     }

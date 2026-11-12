@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ import com.twitchplayer.phone.feature.auth.SignInDialog
 import com.twitchplayer.phone.feature.browse.BrowseRoute
 import com.twitchplayer.phone.feature.browse.CategoryRoute
 import com.twitchplayer.phone.feature.channel.ChannelRoute
+import com.twitchplayer.phone.feature.following.FollowingRoute
 import com.twitchplayer.phone.feature.home.HomeRoute
 import com.twitchplayer.phone.feature.player.PlayerOverlay
 import com.twitchplayer.phone.feature.player.PlayerSessionController
@@ -61,7 +63,9 @@ import com.twitchplayer.phone.feature.settings.SettingsRoute
 import com.twitchplayer.phone.navigation.BrowseKey
 import com.twitchplayer.phone.navigation.CategoryKey
 import com.twitchplayer.phone.navigation.ChannelKey
+import com.twitchplayer.phone.navigation.FollowingKey
 import com.twitchplayer.phone.navigation.HomeKey
+import com.twitchplayer.phone.navigation.KIND_FADE
 import com.twitchplayer.phone.navigation.KIND_TAB
 import com.twitchplayer.phone.navigation.NAV_KIND
 import com.twitchplayer.phone.navigation.PhoneNavigator
@@ -148,14 +152,20 @@ private fun PhoneScaffold(
     val sessionOpen = session.state is PlayerSessionState.Open
     val openChannel = { login: String ->
         session.dispatch(PlayerSessionEvent.Minimise)
-        navigator.pushOnContentTab(ChannelKey(login))
+        navigator.push(ChannelKey(login))
     }
     val header = remember(navigator, account) {
-        HeaderActions(account, onSearch = { navigator.selectTab(PhoneTab.Search) }, onProfile = { navigator.selectTab(PhoneTab.Settings) })
+        HeaderActions(account, onSearch = { navigator.push(SearchKey) }, onProfile = { navigator.push(SettingsKey) })
     }
     val wide = isWideWindow()
     val chromeVisible = navigator.showsNavigation
     val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
+    // Following needs a viewer: signing out while on it goes back to Home, and the bar loses the tab.
+    val tabs = remember(account) { PhoneTab.visible(signedIn = account != null) }
+    DisposableEffect(tabs) {
+        if (navigator.selected !in tabs) navigator.selectTab(PhoneTab.Home)
+        onDispose { }
+    }
     Box(Modifier.fillMaxSize()) {
         // While the player is expanded it covers the page: TalkBack must not be able to reach what is behind it.
         val coveredByPlayer = (session.state as? PlayerSessionState.Open)?.sheet == SheetState.Expanded
@@ -163,7 +173,7 @@ private fun PhoneScaffold(
             Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
                 .then(if (coveredByPlayer) Modifier.clearAndSetSemantics { } else Modifier),
         ) {
-            if (chromeVisible && wide) PhoneRail(navigator.selected, selectTab)
+            if (chromeVisible && wide) PhoneRail(tabs, navigator.selected, selectTab)
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 // The bar's or the rail's insets are spent there: the page must not pad for them a second time.
                 val spent = when {
@@ -181,6 +191,8 @@ private fun PhoneScaffold(
                 ) {
                     BackHandler(enabled = navigator.canGoBack && navigator.currentStack.size == 1) { navigator.back() }
                     val tab = mapOf<String, Any>(NAV_KIND to KIND_TAB)
+                    // Search opens in place (the header's pill grows into it): a fade, no slide.
+                    val fade = mapOf<String, Any>(NAV_KIND to KIND_FADE)
                     Box(Modifier.fillMaxSize()) {
                         NavDisplay(
                             backStack = navigator.currentStack,
@@ -198,8 +210,15 @@ private fun PhoneScaffold(
                                 entry<HomeKey>(metadata = tab) {
                                     HomeRoute(
                                         onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
-                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
                                         onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                        onSignIn = onSignIn,
+                                        header = header,
+                                    )
+                                }
+                                entry<FollowingKey>(metadata = tab) {
+                                    FollowingRoute(
+                                        onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
+                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
                                         onSignIn = onSignIn,
                                         header = header,
                                     )
@@ -207,14 +226,15 @@ private fun PhoneScaffold(
                                 entry<BrowseKey>(metadata = tab) {
                                     BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = header)
                                 }
-                                entry<SearchKey>(metadata = tab) {
+                                entry<SearchKey>(metadata = fade) {
                                     SearchRoute(
+                                        onBack = navigator::pop,
                                         onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
                                         onChannel = { login -> navigator.push(ChannelKey(login)) },
                                         onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
                                     )
                                 }
-                                entry<SettingsKey>(metadata = tab) { SettingsRoute(onSignIn = onSignIn, onSignOut = onSignOut) }
+                                entry<SettingsKey> { SettingsRoute(onBack = navigator::pop, onSignIn = onSignIn, onSignOut = onSignOut) }
                                 entry<CategoryKey> { key ->
                                     CategoryRoute(key, onBack = navigator::pop, onWatch = { login -> session.open(PlaybackTarget.Live(login)) }, onSignIn = onSignIn)
                                 }
@@ -233,7 +253,7 @@ private fun PhoneScaffold(
                         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
                     }
                 }
-                if (chromeVisible && !wide) PhoneBottomBar(navigator.selected, selectTab)
+                if (chromeVisible && !wide) PhoneBottomBar(tabs, navigator.selected, selectTab)
             }
         }
         val bottomChrome by animateDpAsState(

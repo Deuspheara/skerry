@@ -56,49 +56,29 @@ import com.twitchplayer.tv.feature.home.presentation.HomeEvent
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Home: "For you" (followed channels that are live, recommendations, top categories) and "Following" (live and offline). */
+/** Home: followed channels that are live, recommendations and top categories ("Following" is its own tab). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeRoute(
     onWatch: (String) -> Unit,
-    onChannel: (String) -> Unit,
     onCategory: (Category) -> Unit,
     onSignIn: () -> Unit,
     header: HeaderActions,
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = koinViewModel(),
-    followsViewModel: FollowsViewModel = koinViewModel(),
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
     val home by homeViewModel.presenter.state.collectAsStateWithLifecycle()
-    val follows by followsViewModel.presenter.state.collectAsStateWithLifecycle()
     // Tells the system (and the startup benchmark's timeToFullDisplay) when Home shows its data, not just its skeleton.
     ReportDrawnWhen { home !is Load.Loading }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            Column {
-                HomeHeader(header, scrollBehavior)
-                SecondaryTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
-                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.sec_for_you)) })
-                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.sec_following)) })
-                }
-            }
-        },
+        topBar = { HomeHeader(header, scrollBehavior) },
     ) { padding ->
-        if (tab == 0) {
-            LoadHost(home, onRetry = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
-                RefreshBox(onRefresh = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }) {
-                    ForYou(content, onWatch, onCategory)
-                }
-            }
-        } else {
-            LoadHost(follows, onRetry = { followsViewModel.presenter.onEvent(FollowsEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
-                RefreshBox(onRefresh = { followsViewModel.presenter.onEvent(FollowsEvent.Retry) }) {
-                    Following(content.live, content.offline, onWatch, onChannel)
-                }
+        LoadHost(home, onRetry = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
+            RefreshBox(onRefresh = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }) {
+                ForYou(content, onWatch, onCategory)
             }
         }
     }
@@ -140,41 +120,6 @@ private fun ForYou(content: HomeContent, onWatch: (String) -> Unit, onCategory: 
                     items(content.categories, key = { it.id }) { category ->
                         CategoryCard(category, onClick = { onCategory(category) }, modifier = Modifier.width(CATEGORY_CARD_WIDTH))
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Following(live: List<com.twitchplayer.tv.core.data.model.LiveStream>, offline: List<com.twitchplayer.tv.core.data.model.ChannelRef>, onWatch: (String) -> Unit, onChannel: (String) -> Unit) {
-    if (live.isEmpty() && offline.isEmpty()) {
-        MessageState(title = stringResource(R.string.state_no_live), body = stringResource(R.string.phone_following_empty), modifier = Modifier.fillMaxSize())
-        return
-    }
-    val layout = streamLayout()
-    val nothingLive = stringResource(R.string.state_no_live)
-    val offlineTitle = stringResource(R.string.sec_offline)
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(StreamColumnMin),
-        contentPadding = ScreenPadding,
-        horizontalArrangement = GridSpacing,
-        verticalArrangement = streamRowSpacing(layout),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        if (live.isNotEmpty()) {
-            items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
-            }
-        } else {
-            fullSpanItem("nothing-live") { Text(nothingLive, style = MaterialTheme.typography.bodyLarge) }
-        }
-        if (offline.isNotEmpty()) {
-            sectionHeader("offline-header", offlineTitle)
-            items(offline, key = { "offline-${it.id}" }, span = { GridItemSpan(maxLineSpan) }, contentType = { "channel" }) { channel ->
-                Column {
-                    ChannelListItem(channel, onClick = { onChannel(channel.login) })
-                    HorizontalDivider(Modifier.padding(start = CHANNEL_DIVIDER_INSET, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }

@@ -23,8 +23,11 @@ import androidx.navigation3.scene.Scene
 /** Entry metadata: tab roots switch with a plain fade, detail pages slide. */
 internal const val NAV_KIND = "twitchplayer.phone.navKind"
 internal const val KIND_TAB = "tab"
+internal const val KIND_FADE = "fade"
 
 private fun Scene<NavKey>.isTab(): Boolean = entries.lastOrNull()?.metadata?.get(NAV_KIND) == KIND_TAB
+
+private fun Scene<NavKey>.isFade(): Boolean = entries.lastOrNull()?.metadata?.get(NAV_KIND) == KIND_FADE
 
 /**
  * Screen transitions of the NavDisplay: a detail page slides in a short way over a fade and back out the same way; switching
@@ -33,6 +36,8 @@ private fun Scene<NavKey>.isTab(): Boolean = entries.lastOrNull()?.metadata?.get
 internal fun phoneTransition(scope: AnimatedContentTransitionScope<Scene<NavKey>>, reducedMotion: Boolean, pop: Boolean): ContentTransform = with(scope) {
     when {
         reducedMotion -> ContentTransform(EnterTransition.None, ExitTransition.None)
+
+        initialState.isFade() || targetState.isFade() -> ContentTransform(fadeIn(tween(FADE_MS)), fadeOut(tween(FADE_MS)))
 
         initialState.isTab() && targetState.isTab() -> ContentTransform(fadeIn(tween(FADE_MS)), fadeOut(tween(FADE_MS)))
 

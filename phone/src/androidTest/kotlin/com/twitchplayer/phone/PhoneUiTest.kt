@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -97,6 +98,18 @@ class PhoneUiTest {
 
     private fun waitForText(text: String) = rule.waitUntil(WAIT_MS) { rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
+    /** The header's pill: Search is a page opened from there, not a tab. */
+    private fun openSearch() = rule.onNodeWithContentDescription(string(R.string.nav_search)).performClick()
+
+    /** The header's account button: Settings is a page opened from there, not a tab. */
+    private fun openSettings() = rule.onNodeWithContentDescription(string(R.string.tile_account)).performClick()
+
+    /** The settings page is a long list: its far rows are composed once scrolled to. */
+    private fun scrollSettingsTo(text: String) {
+        rule.onNode(hasScrollAction()).performScrollToNode(hasText(text))
+        waitForText(text)
+    }
+
     private fun openTab(labelRes: Int) = rule.onNode(isSelectable() and hasContentDescription(string(labelRes))).performClick()
 
     private fun pressBack() = scenario!!.onActivity { it.onBackPressedDispatcher.onBackPressed() }
@@ -119,12 +132,13 @@ class PhoneUiTest {
         rule.onNodeWithContentDescription("Lunaria", substring = true).assertIsDisplayed()
     }
 
-    @Test fun theForYouTabLabelsItsLiveFollowsSoTheyAreNotMistakenForTheFollowingTab() {
+    @Test fun homeLabelsItsLiveFollowsAndFollowingIsATabOfTheBar() {
         launch()
         waitForText(string(R.string.phone_home_live_following))
 
-        // "Following" is the name of the other tab only: exactly one node says it.
-        check(rule.onAllNodesWithText(string(R.string.sec_following)).fetchSemanticsNodes().size == 1) { "'Following' appears more than once on For you" }
+        // "Following" is the name of a tab only (icon-only bar): no text says it on Home, exactly one tab is called that.
+        check(rule.onAllNodesWithText(string(R.string.sec_following)).fetchSemanticsNodes().isEmpty()) { "'Following' is drawn as text on Home" }
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.sec_following))).assertIsDisplayed()
     }
 
     @Test fun aPhoneShowsSeveralStreamsAtOnce() {
@@ -136,32 +150,47 @@ class PhoneUiTest {
         check(live >= MIN_VISIBLE_STREAMS) { "only $live stream rows composed" }
     }
 
-    @Test fun theBarIsIconOnlyWithFourDescribedSelectableTabsInAFixedOrder() {
+    @Test fun theBarIsIconOnlyWithThreeDescribedSelectableTabsInAFixedOrder() {
         launch()
         waitForDescription("Lunaria")
 
-        val labels = listOf(R.string.nav_home, R.string.nav_browse, R.string.nav_search, R.string.phone_nav_settings).map(::string)
+        val labels = listOf(R.string.nav_home, R.string.sec_following, R.string.nav_browse).map(::string)
         // Drawn in this order, left to right (or top to bottom in a rail), each a selectable tab named for TalkBack.
         val xs = labels.map { rule.onNode(isSelectable() and hasContentDescription(it)).fetchSemanticsNode().boundsInRoot }
         check(xs.zipWithNext().all { (a, b) -> a.left < b.left || a.top < b.top }) { "tab order changed: $xs" }
         rule.onNode(isSelectable() and hasContentDescription(labels[0])).assertIsSelected()
         rule.onNode(isSelectable() and hasContentDescription(labels[1])).assertIsNotSelected()
         labels.forEach { assertTouchTarget(isSelectable() and hasContentDescription(it)) }
-        // Icon-only: no tab label is drawn as text.
+        // Icon-only: no tab label is drawn as text, and Search and Settings are not tabs.
         labels.forEach { rule.onNode(hasText(it) and isSelectable()).assertDoesNotExist() }
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_search))).assertDoesNotExist()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.phone_nav_settings))).assertDoesNotExist()
     }
 
-    @Test fun theFourTabsOpenTheirScreens() {
+    @Test fun signedOutTheBarOffersHomeAndBrowseOnly() {
+        launch(module { single<SessionRepository> { ControllableSession() } })
+        waitForText(string(R.string.state_signin_title))
+
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_home))).assertIsDisplayed()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_browse))).assertIsDisplayed()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.sec_following))).assertDoesNotExist()
+    }
+
+    @Test fun theTabsAndTheHeaderOpenTheirScreens() {
         launch()
         waitForDescription("Lunaria")
 
+        openTab(R.string.sec_following)
+        waitForDescription("Lunaria")
         openTab(R.string.nav_browse)
         waitForDescription("Valmoor")
-        openTab(R.string.nav_search)
-        waitForText(string(R.string.sec_trends))
-        openTab(R.string.phone_nav_settings)
-        waitForText(string(R.string.tile_account))
+        openSearch()
+        waitForText(string(R.string.phone_search_live_now))
+        pressBack()
+        openSettings()
+        waitForText(string(R.string.phone_settings_signed_in))
         rule.onNodeWithText("Camille").assertIsDisplayed()
+        pressBack()
         openTab(R.string.nav_home)
         waitForDescription("Lunaria")
     }
@@ -206,8 +235,8 @@ class PhoneUiTest {
 
     @Test fun searchFindsChannelsAsYouType() {
         launch()
-        openTab(R.string.nav_search)
-        waitForText(string(R.string.sec_trends))
+        openSearch()
+        waitForText(string(R.string.phone_search_live_now))
 
         rule.onNode(hasSetTextAction()).performTextInput("lun")
 
@@ -217,8 +246,8 @@ class PhoneUiTest {
 
     @Test fun theThemeChoiceIsOfferedAndApplied() {
         launch()
-        openTab(R.string.phone_nav_settings)
-        waitForText(string(R.string.phone_settings_theme))
+        openSettings()
+        scrollSettingsTo(string(R.string.phone_settings_theme))
 
         rule.onNodeWithText(string(R.string.phone_settings_theme)).performClick()
         waitForText(string(R.string.phone_theme_light))
@@ -231,9 +260,9 @@ class PhoneUiTest {
 
     @Test fun theLanguageChoiceListsEveryTranslatedLanguage() {
         launch()
-        openTab(R.string.phone_nav_settings)
-        // The Language group's one row names the language in use ("System language" until the viewer picks one).
-        waitForText(string(R.string.lang_system))
+        openSettings()
+        // The Language section's one row names the language in use ("System language" until the viewer picks one).
+        scrollSettingsTo(string(R.string.lang_system))
 
         rule.onNode(hasText(string(R.string.lang_system)) and hasClickAction()).performClick()
 
@@ -246,8 +275,8 @@ class PhoneUiTest {
 
     @Test fun settingsRowsAreAtLeast48DpTall() {
         launch()
-        openTab(R.string.phone_nav_settings)
-        waitForText(string(R.string.phone_settings_theme))
+        openSettings()
+        scrollSettingsTo(string(R.string.phone_settings_theme))
 
         assertTouchTarget(hasText(string(R.string.phone_settings_theme)) and hasClickAction())
         assertTouchTarget(hasText(string(R.string.tile_animations)) and hasClickAction())
@@ -273,7 +302,7 @@ class PhoneUiTest {
         launch(emptyModule)
 
         waitForText(string(R.string.state_no_live))
-        rule.onNode(hasText(string(R.string.sec_following)) and isSelectable()).performClick()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.sec_following))).performClick()
         waitForText(string(R.string.phone_following_empty))
     }
 

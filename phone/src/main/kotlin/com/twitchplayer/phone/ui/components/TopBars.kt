@@ -3,6 +3,7 @@
 package com.twitchplayer.phone.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.twitchplayer.phone.R
+import com.twitchplayer.phone.ui.theme.LocalReducedMotion
 import kotlin.math.roundToInt
 
 /** What the header of a tab root offers besides its title: the search entry and the account entry. */
@@ -189,14 +191,7 @@ fun DetailHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back)) }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() },
-            )
+            MarqueeTitle(title, Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() })
             actions()
         }
     }
@@ -206,3 +201,23 @@ fun DetailHeader(
         Box(modifier.background(MaterialTheme.colorScheme.background), content = row)
     }
 }
+
+/**
+ * A page title on one line. One that does not fit scrolls slowly past (and rests between rounds) so the whole name can be read; with
+ * reduced motion it is cut with an ellipsis instead, which never moves.
+ */
+@Composable
+fun MarqueeTitle(text: String, modifier: Modifier = Modifier) {
+    val still = LocalReducedMotion.current
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 1,
+        overflow = if (still) TextOverflow.Ellipsis else TextOverflow.Clip,
+        modifier = if (still) modifier else modifier.basicMarquee(iterations = Int.MAX_VALUE, repeatDelayMillis = MARQUEE_PAUSE_MS, velocity = MARQUEE_SPEED),
+    )
+}
+
+private const val MARQUEE_PAUSE_MS = 2_500
+private val MARQUEE_SPEED = 24.dp

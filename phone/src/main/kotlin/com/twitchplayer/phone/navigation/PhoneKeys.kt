@@ -4,8 +4,13 @@ import androidx.compose.runtime.Immutable
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-/** Typed destinations (Navigation 3). The four tab roots are the bottom bar / rail destinations. */
+/**
+ * Typed destinations (Navigation 3). The tab roots are the bottom bar / rail destinations; Search and Settings are pages opened from the
+ * header (the search pill and the account button), not tabs.
+ */
 @Serializable data object HomeKey : NavKey
+
+@Serializable data object FollowingKey : NavKey
 
 @Serializable data object BrowseKey : NavKey
 
@@ -17,17 +22,22 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class ChannelKey(val login: String) : NavKey
 
-/** The four tabs, in bar order; each keeps its own back stack. */
+/**
+ * The tabs, in bar order; each keeps its own back stack. Following needs a signed-in viewer (without one there is nothing to show),
+ * so the bar lists it only then: [visible].
+ */
 enum class PhoneTab(val root: NavKey) {
     Home(HomeKey),
+    Following(FollowingKey),
     Browse(BrowseKey),
-    Search(SearchKey),
-    Settings(SettingsKey),
     ;
 
     companion object {
         /** The tab a destination belongs to: category and channel pages belong to the tab they were opened from. */
         fun of(key: NavKey): PhoneTab? = entries.firstOrNull { it.root == key }
+
+        /** The tabs the bar shows: two when nobody is signed in, three otherwise. */
+        fun visible(signedIn: Boolean): List<PhoneTab> = if (signedIn) entries else entries - Following
     }
 }
 

@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class NavKeyCodecTest {
-    private val keys: List<NavKey> = listOf(HomeKey, BrowseKey, SearchKey, SettingsKey, CategoryKey("509658", "Just Chatting"), ChannelKey("camille"))
+    private val keys: List<NavKey> = listOf(HomeKey, FollowingKey, BrowseKey, SearchKey, SettingsKey, CategoryKey("509658", "Just Chatting"), ChannelKey("camille"))
 
     @Test fun everyPageSurvivesTheRoundTrip() {
         keys.forEach { assertEquals(it, NavKeyCodec.decode(NavKeyCodec.encode(it))) }

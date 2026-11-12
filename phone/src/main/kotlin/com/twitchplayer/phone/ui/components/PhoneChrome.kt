@@ -22,12 +22,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
@@ -60,6 +58,10 @@ object PhoneChrome {
     val IconIdle = 24.dp
     val Dot = 4.dp
     val Hairline = 0.5.dp
+    val FixedTabWidth = 112.dp
+
+    /** Up to this many tabs each keep [FixedTabWidth]; more share the whole width. */
+    const val MAX_FIXED_TABS = 3
 
     /** From this window width the tabs move from a bar under the page to a rail beside it. */
     const val WIDE_WIDTH_DP = 600
@@ -81,25 +83,29 @@ private fun Color.luminanceIsLow() = red + green + blue < 1.5f
 
 /** The tabs under the page: icons only, 56 dp plus the gesture-bar inset, a hairline above. */
 @Composable
-fun PhoneBottomBar(selected: PhoneTab, onSelect: (PhoneTab) -> Unit, modifier: Modifier = Modifier) {
+fun PhoneBottomBar(tabs: List<PhoneTab>, selected: PhoneTab, onSelect: (PhoneTab) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().background(chromeColor()).windowInsetsPadding(WindowInsets.navigationBars)) {
         Box(Modifier.fillMaxWidth().height(PhoneChrome.Hairline).background(MaterialTheme.colorScheme.outlineVariant))
-        Row(Modifier.fillMaxWidth().height(PhoneChrome.BarHeight)) {
-            PhoneTab.entries.forEach { tab -> TabItem(tab, tab == selected, { onSelect(tab) }, Modifier.weight(1f).fillMaxHeight()) }
+        // Two or three tabs keep a comfortable size and sit in the middle; a bar of four or more shares the width.
+        Row(Modifier.fillMaxWidth().height(PhoneChrome.BarHeight), horizontalArrangement = Arrangement.Center) {
+            tabs.forEach { tab ->
+                val width = if (tabs.size > PhoneChrome.MAX_FIXED_TABS) Modifier.weight(1f) else Modifier.width(PhoneChrome.FixedTabWidth)
+                TabItem(tab, tab == selected, { onSelect(tab) }, width.fillMaxHeight())
+            }
         }
     }
 }
 
 /** The same tabs in a column beside the page (wide windows). */
 @Composable
-fun PhoneRail(selected: PhoneTab, onSelect: (PhoneTab) -> Unit, modifier: Modifier = Modifier) {
+fun PhoneRail(tabs: List<PhoneTab>, selected: PhoneTab, onSelect: (PhoneTab) -> Unit, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxHeight().background(chromeColor())) {
         Column(
             Modifier.width(PhoneChrome.RailWidth).fillMaxHeight().windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical)).padding(top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            PhoneTab.entries.forEach { tab -> TabItem(tab, tab == selected, { onSelect(tab) }, Modifier.size(PhoneChrome.BarHeight)) }
+            tabs.forEach { tab -> TabItem(tab, tab == selected, { onSelect(tab) }, Modifier.size(PhoneChrome.BarHeight)) }
         }
         Box(Modifier.width(PhoneChrome.Hairline).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
     }
@@ -133,24 +139,21 @@ private fun TabItem(tab: PhoneTab, selected: Boolean, onClick: () -> Unit, modif
 
 private fun PhoneTab.filledIcon(): ImageVector = when (this) {
     PhoneTab.Home -> Icons.Filled.Home
+    PhoneTab.Following -> Icons.Filled.Favorite
     PhoneTab.Browse -> PhoneIcons.BrowseFilled
-    PhoneTab.Search -> Icons.Filled.Search
-    PhoneTab.Settings -> Icons.Filled.Settings
 }
 
 private fun PhoneTab.outlinedIcon(): ImageVector = when (this) {
     PhoneTab.Home -> Icons.Outlined.Home
+    PhoneTab.Following -> Icons.Outlined.FavoriteBorder
     PhoneTab.Browse -> PhoneIcons.Browse
-    PhoneTab.Search -> Icons.Outlined.Search
-    PhoneTab.Settings -> Icons.Outlined.Settings
 }
 
 /** The tab's name: spoken by TalkBack, no longer drawn. */
 private fun PhoneTab.label(): Int = when (this) {
     PhoneTab.Home -> R.string.nav_home
+    PhoneTab.Following -> R.string.sec_following
     PhoneTab.Browse -> R.string.nav_browse
-    PhoneTab.Search -> R.string.nav_search
-    PhoneTab.Settings -> R.string.phone_nav_settings
 }
 
 private const val BAR_ALPHA_DARK = 0.94f

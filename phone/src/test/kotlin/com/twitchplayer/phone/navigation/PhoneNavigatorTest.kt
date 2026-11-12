@@ -47,14 +47,14 @@ class PhoneNavigatorTest {
         val nav = navigator()
         nav.selectTab(PhoneTab.Browse)
         nav.push(CategoryKey("1", "Valmoor"))
-        nav.selectTab(PhoneTab.Search)
+        nav.selectTab(PhoneTab.Following)
         nav.push(ChannelKey("camille"))
 
         nav.selectTab(PhoneTab.Browse)
         assertEquals(CategoryKey("1", "Valmoor"), nav.top)
-        nav.selectTab(PhoneTab.Search)
+        nav.selectTab(PhoneTab.Following)
         assertEquals(ChannelKey("camille"), nav.top)
-        assertEquals(listOf(PhoneTab.Browse, PhoneTab.Search, PhoneTab.Browse, PhoneTab.Search), changes)
+        assertEquals(listOf(PhoneTab.Browse, PhoneTab.Following, PhoneTab.Browse, PhoneTab.Following), changes)
     }
 
     @Test fun selectingTheCurrentTabPopsItToItsRoot() {
@@ -69,11 +69,11 @@ class PhoneNavigatorTest {
     }
 
     @Test fun backPopsThenReturnsToHomeThenLeaves() {
-        val nav = navigator(PhoneTab.Settings)
+        val nav = navigator(PhoneTab.Browse)
         nav.push(ChannelKey("a"))
 
         assertTrue(nav.back())
-        assertEquals(SettingsKey, nav.top)
+        assertEquals(BrowseKey, nav.top)
         assertTrue(nav.canGoBack)
         assertTrue(nav.back())
         assertEquals(PhoneTab.Home, nav.selected)
@@ -95,29 +95,31 @@ class PhoneNavigatorTest {
 
     @Test fun aChannelOpenedFromThePlayerStacksOnTheTabTheViewerIsIn() {
         val nav = navigator(selected = PhoneTab.Browse)
-        nav.pushOnContentTab(ChannelKey("camille"))
+        nav.push(ChannelKey("camille"))
 
         assertEquals(PhoneTab.Browse, nav.selected)
         assertEquals(ChannelKey("camille"), nav.top)
         assertTrue(changes.isEmpty())
     }
 
-    @Test fun aChannelOpenedFromThePlayerWhileOnSettingsOpensOnHomeInsteadOfSettings() {
-        val nav = navigator(selected = PhoneTab.Settings)
-        nav.pushOnContentTab(ChannelKey("camille"))
-
+    @Test fun searchAndSettingsAreStackedPagesNotTabs() {
+        val nav = navigator()
+        nav.push(SearchKey)
+        assertFalse(nav.showsNavigation)
         assertEquals(PhoneTab.Home, nav.selected)
-        assertEquals(listOf(PhoneTab.Home), changes)
-        assertEquals(ChannelKey("camille"), nav.top)
-        // Settings itself was not touched: it is still its own root when the viewer goes back to it.
-        nav.selectTab(PhoneTab.Settings)
+        assertTrue(nav.back())
+        nav.push(SettingsKey)
         assertEquals(SettingsKey, nav.top)
+        assertTrue(nav.back())
+        assertEquals(HomeKey, nav.top)
+        assertEquals(null, PhoneTab.of(SearchKey))
+        assertEquals(null, PhoneTab.of(SettingsKey))
     }
 
     @Test fun openingTheChannelThatIsAlreadyOnTopDoesNotStackItAgain() {
         val nav = navigator()
-        nav.pushOnContentTab(ChannelKey("camille"))
-        nav.pushOnContentTab(ChannelKey("camille"))
+        nav.push(ChannelKey("camille"))
+        nav.push(ChannelKey("camille"))
 
         assertEquals(2, nav.currentStack.size)
         assertTrue(nav.back())
@@ -126,9 +128,14 @@ class PhoneNavigatorTest {
 
     @Test fun anotherChannelStacksOnTopOfTheFirstOne() {
         val nav = navigator()
-        nav.pushOnContentTab(ChannelKey("camille"))
-        nav.pushOnContentTab(ChannelKey("lunaria"))
+        nav.push(ChannelKey("camille"))
+        nav.push(ChannelKey("lunaria"))
 
         assertEquals(3, nav.currentStack.size)
+    }
+
+    @Test fun theBarListsFollowingOnlyForASignedInViewer() {
+        assertEquals(listOf(PhoneTab.Home, PhoneTab.Following, PhoneTab.Browse), PhoneTab.visible(signedIn = true))
+        assertEquals(listOf(PhoneTab.Home, PhoneTab.Browse), PhoneTab.visible(signedIn = false))
     }
 }

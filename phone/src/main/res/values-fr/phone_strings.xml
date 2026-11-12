@@ -22,6 +22,11 @@
     <string name="phone_settings_language">Langue</string>
 
     <string name="phone_search_recent">Recherches récentes</string>
+    <string name="phone_search_filter_all">Tout</string>
+    <string name="phone_search_clear_recents">Tout effacer</string>
+    <string name="phone_search_remove_recent">Retirer %1$s des recherches récentes</string>
+    <string name="phone_search_live_now">En direct maintenant</string>
+    <string name="phone_search_clear_field">Effacer la recherche</string>
     <string name="phone_search_mic_denied">Autorisez le micro pour rechercher à la voix.</string>
 
     <string name="phone_signin_step_open">1. Ouvrez la page d\'activation Twitch et connectez-vous.</string>

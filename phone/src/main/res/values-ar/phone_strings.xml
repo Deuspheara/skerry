@@ -19,6 +19,11 @@
     <string name="phone_search_hint">ابحث عن قناة أو فئة</string>
     <string name="phone_settings_language">اللغة</string>
     <string name="phone_search_recent">عمليات البحث الأخيرة</string>
+    <string name="phone_search_filter_all">الكل</string>
+    <string name="phone_search_clear_recents">مسح الكل</string>
+    <string name="phone_search_remove_recent">إزالة %1$s من عمليات البحث الأخيرة</string>
+    <string name="phone_search_live_now">مباشر الآن</string>
+    <string name="phone_search_clear_field">مسح البحث</string>
     <string name="phone_search_mic_denied">اسمح باستخدام الميكروفون للبحث الصوتي.</string>
     <string name="phone_signin_step_open">1. افتح صفحة تفعيل Twitch وسجّل الدخول.</string>
     <string name="phone_signin_open">افتح twitch.tv/activate</string>
