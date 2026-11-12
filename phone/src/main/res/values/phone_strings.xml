@@ -100,4 +100,9 @@
     <string name="phone_emote_animated">Animated</string>
     <string name="phone_emote_origin">%1$s · %2$s</string>
     <string name="phone_emote_source_other">Other</string>
+    <string name="phone_chat_reply">Reply</string>
+    <string name="phone_chat_replying_to">Replying to %1$s</string>
+    <string name="phone_chat_cancel_reply">Cancel reply</string>
+    <string name="phone_chat_reply_context">In reply to %1$s: %2$s</string>
+    <string name="phone_chat_mention_suggestions">Chatters</string>
 </resources>

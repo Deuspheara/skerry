@@ -1,6 +1,7 @@
 package com.twitchplayer.phone.feature.player
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -59,6 +60,11 @@ private const val SHADOW_BLUR = 8f
  */
 @Composable
 fun PhoneChatLine(line: ChatLine, style: PhoneChatStyle, animated: () -> Int, overVideo: Boolean, modifier: Modifier = Modifier) {
+    // A subscription, gift, raid or announcement is a card, not a line.
+    if (line.kind == ChatLineKind.System && line.notice != null) {
+        ChatNoticeCard(line, style, overVideo, modifier)
+        return
+    }
     val context = LocalContext.current
     val density = LocalDensity.current
     val secondary = if (overVideo) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
@@ -141,11 +147,8 @@ fun PhoneChatLine(line: ChatLine, style: PhoneChatStyle, animated: () -> Int, ov
         color = if (overVideo) Color.White else MaterialTheme.colorScheme.onSurface,
         textDirection = TextDirection.Content,
     )
-    Text(
-        text = built.first,
-        inlineContent = built.second,
-        style = if (overVideo) base.copy(shadow = Shadow(PhoneColors.Shadow, Offset(0f, SHADOW_OFFSET_Y), SHADOW_BLUR)) else base,
-        modifier = modifier
+    Column(
+        modifier
             .fillMaxWidth()
             .then(
                 if (tint == null) {
@@ -158,5 +161,12 @@ fun PhoneChatLine(line: ChatLine, style: PhoneChatStyle, animated: () -> Int, ov
                 },
             )
             .padding(horizontal = 8.dp, vertical = 1.dp),
-    )
+    ) {
+        line.reply?.let { ReplyContext(it, style, overVideo) }
+        Text(
+            text = built.first,
+            inlineContent = built.second,
+            style = if (overVideo) base.copy(shadow = Shadow(PhoneColors.Shadow, Offset(0f, SHADOW_OFFSET_Y), SHADOW_BLUR)) else base,
+        )
+    }
 }

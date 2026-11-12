@@ -93,4 +93,9 @@
     <string name="phone_emote_animated">Animée</string>
     <string name="phone_emote_origin">%1$s · %2$s</string>
     <string name="phone_emote_source_other">Autres</string>
+    <string name="phone_chat_reply">Répondre</string>
+    <string name="phone_chat_replying_to">Réponse à %1$s</string>
+    <string name="phone_chat_cancel_reply">Annuler la réponse</string>
+    <string name="phone_chat_reply_context">En réponse à %1$s : %2$s</string>
+    <string name="phone_chat_mention_suggestions">Spectateurs du chat</string>
 </resources>

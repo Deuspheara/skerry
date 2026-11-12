@@ -171,6 +171,13 @@ fun LivePlayerRoute(
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     val failed = status is NativeStatus.Failed
     val signedIn = sessionState is SessionState.SignedIn
+    val selfLogin = (sessionState as? SessionState.SignedIn)?.account?.login
+    // The line being answered; a different channel or leaving the page drops it with the page's state.
+    var replyTo by remember(login) { mutableStateOf<com.twitchplayer.tv.feature.player.presentation.ChatLine?>(null) }
+    val send: (String) -> Unit = { text ->
+        presenter.onEvent(PlayerEvent.SendChat(text, replyTo?.id))
+        replyTo = null
+    }
     val style = remember(chatSettings) { chatSettings.toPhoneStyle() }
     val animateEmotes = style.animatedEmotes && !LocalReducedMotion.current
     val current = state.current
@@ -253,9 +260,9 @@ fun LivePlayerRoute(
             landscapeSide = { chrome ->
                 if (layoutChatMode(state.chatMode, true) == ChatMode.Compact) {
                     Column(Modifier.width(SIDE_PANEL).fillMaxHeight().background(MaterialTheme.colorScheme.surface).safeDrawingPadding()) {
-                        ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f))
+                        ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f), onReply = { replyTo = it })
                         if (signedIn) {
-                            ChatComposer({ presenter.onEvent(PlayerEvent.SendChat(it)) }, picker, animateEmotes, { presenter.onEvent(PlayerEvent.PickedEmote(it)) }, handleInsets = false)
+                            ChatComposer(send, picker, animateEmotes, { presenter.onEvent(PlayerEvent.PickedEmote(it)) }, handleInsets = false, replyTo = replyTo, onClearReply = { replyTo = null }, lines = chat, selfLogin = selfLogin)
                         }
                     }
                 }
@@ -280,9 +287,9 @@ fun LivePlayerRoute(
                             onAction = { setChatMode(ChatMode.Compact) },
                         )
                     } else {
-                        ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f))
+                        ChatArea(chat, style, signedIn, onSignIn, Modifier.weight(1f), onReply = { replyTo = it })
                         if (signedIn) {
-                            ChatComposer({ presenter.onEvent(PlayerEvent.SendChat(it)) }, picker, animateEmotes, { presenter.onEvent(PlayerEvent.PickedEmote(it)) })
+                            ChatComposer(send, picker, animateEmotes, { presenter.onEvent(PlayerEvent.PickedEmote(it)) }, replyTo = replyTo, onClearReply = { replyTo = null }, lines = chat, selfLogin = selfLogin)
                         }
                     }
                 }
@@ -310,9 +317,10 @@ private fun ChatArea(
     signedIn: Boolean,
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
+    onReply: ((com.twitchplayer.tv.feature.player.presentation.ChatLine) -> Unit)? = null,
 ) {
     if (signedIn) {
-        PhoneChatList(chat, style, overVideo = false, modifier = modifier)
+        PhoneChatList(chat, style, overVideo = false, modifier = modifier, onReply = onReply)
     } else {
         ChatSignInPrompt(onSignIn, modifier)
     }

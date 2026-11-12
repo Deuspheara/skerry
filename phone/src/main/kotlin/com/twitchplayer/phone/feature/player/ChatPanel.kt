@@ -87,6 +87,8 @@ fun PhoneChatList(
     modifier: Modifier = Modifier,
     animationsAllowed: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(vertical = 4.dp),
+    /** Answers a line (swipe, long press or TalkBack action); null where the viewer cannot write (over the picture, signed out). */
+    onReply: ((ChatLine) -> Unit)? = null,
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -132,7 +134,12 @@ fun PhoneChatList(
         ) {
             items(newestFirst, key = { it.id }) { line ->
                 val animated = remember(line.id) { derivedStateOf { allowance[line.id] ?: 0 } }
-                PhoneChatLine(line, style, remember(animated) { { animated.value } }, overVideo)
+                val read = remember(animated) { { animated.value } }
+                if (onReply != null) {
+                    SwipeToReply(line, onReply, overVideo) { PhoneChatLine(line, style, read, overVideo) }
+                } else {
+                    PhoneChatLine(line, style, read, overVideo)
+                }
             }
         }
         val unseen = ChatScrollPolicy.unseen(lines.map { it.id }, anchorId)

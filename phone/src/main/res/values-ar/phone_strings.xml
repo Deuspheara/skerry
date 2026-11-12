@@ -88,4 +88,9 @@
     <string name="phone_emote_animated">متحرك</string>
     <string name="phone_emote_origin">%1$s · %2$s</string>
     <string name="phone_emote_source_other">أخرى</string>
+    <string name="phone_chat_reply">رد</string>
+    <string name="phone_chat_replying_to">رد على %1$s</string>
+    <string name="phone_chat_cancel_reply">إلغاء الرد</string>
+    <string name="phone_chat_reply_context">رداً على %1$s: %2$s</string>
+    <string name="phone_chat_mention_suggestions">المشاركون في الدردشة</string>
 </resources>
