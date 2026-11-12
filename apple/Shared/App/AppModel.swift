@@ -172,6 +172,10 @@ final class AppModel {
         #else
         let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         #endif
+        #if DEBUG
+        // Headless screenshot runs have no display link, so animations never advance: `-no-animations` turns them off.
+        if ProcessInfo.processInfo.arguments.contains("-no-animations") { return nil }
+        #endif
         return animationsEnabled && !reduce ? .smooth(duration: 0.3) : nil
     }
 

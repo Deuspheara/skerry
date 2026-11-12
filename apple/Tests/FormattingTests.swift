@@ -1,5 +1,11 @@
 import XCTest
+#if canImport(TwitchIOS)
 @testable import TwitchIOS
+#elseif canImport(TwitchMac)
+@testable import TwitchMac
+#elseif canImport(TwitchTV)
+@testable import TwitchTV
+#endif
 
 final class FormattingTests: XCTestCase {
     func testViewerCountsUseTheSameBreaksAsAndroid() {

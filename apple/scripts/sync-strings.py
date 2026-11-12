@@ -18,6 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "apple" / "Resources" / "Localizable.xcstrings"
+APPLE_ONLY = ROOT / "apple" / "Resources" / "apple-strings.json"
 
 SOURCES = [
     (ROOT / "app/src/main/res", "strings.xml"),
@@ -80,6 +81,11 @@ def build():
                     item["localizations"][locale] = {"variations": {"plural": {q: {"stringUnit": {"state": "translated", "value": v}} for q, v in value.items()}}}
                 else:
                     item["localizations"][locale] = {"stringUnit": {"state": "translated", "value": value}}
+    # Strings only the Mac and Apple TV apps use (menus, sidebar, remote hints): apple/Resources/apple-strings.json, English plus French and Arabic.
+    for key, by_locale in json.loads(APPLE_ONLY.read_text()).items():
+        item = catalog.setdefault(key, {"extractionState": "manual", "localizations": {}})
+        for locale, value in by_locale.items():
+            item["localizations"][locale] = {"stringUnit": {"state": "translated", "value": value}}
     return {"sourceLanguage": "en", "version": "1.0", "strings": dict(sorted(catalog.items()))}
 
 

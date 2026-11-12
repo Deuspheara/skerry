@@ -1,5 +1,11 @@
 import XCTest
+#if canImport(TwitchIOS)
 @testable import TwitchIOS
+#elseif canImport(TwitchMac)
+@testable import TwitchMac
+#elseif canImport(TwitchTV)
+@testable import TwitchTV
+#endif
 
 /// The shell's navigation rules, on the offline demo data (no network, no account). The Kotlin bridge itself is exercised too: the presenters
 /// really run and the states really arrive in Swift.

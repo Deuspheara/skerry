@@ -1,0 +1,77 @@
+{
+  "mac_menu_playback": {
+    "en": "Playback",
+    "fr": "Lecture",
+    "ar": "التشغيل"
+  },
+  "mac_skip_back": {
+    "en": "Skip Back 15 Seconds",
+    "fr": "Reculer de 15 secondes",
+    "ar": "الرجوع 15 ثانية"
+  },
+  "mac_skip_forward": {
+    "en": "Skip Forward 15 Seconds",
+    "fr": "Avancer de 15 secondes",
+    "ar": "التقدم 15 ثانية"
+  },
+  "mac_unmute": {
+    "en": "Unmute",
+    "fr": "Réactiver le son",
+    "ar": "تشغيل الصوت"
+  },
+  "mac_expand_player": {
+    "en": "Expand Player",
+    "fr": "Agrandir le lecteur",
+    "ar": "تكبير المشغل"
+  },
+  "mac_close_player": {
+    "en": "Close Player",
+    "fr": "Fermer le lecteur",
+    "ar": "إغلاق المشغل"
+  },
+  "mac_go_back": {
+    "en": "Back",
+    "fr": "Retour",
+    "ar": "رجوع"
+  },
+  "mac_find": {
+    "en": "Find",
+    "fr": "Rechercher",
+    "ar": "بحث"
+  },
+  "mac_open_stream": {
+    "en": "Watch Stream",
+    "fr": "Regarder le stream",
+    "ar": "مشاهدة البث"
+  },
+  "mac_open_channel": {
+    "en": "Open Channel",
+    "fr": "Ouvrir la chaîne",
+    "ar": "فتح القناة"
+  },
+  "mac_open_twitch": {
+    "en": "Open on twitch.tv",
+    "fr": "Ouvrir sur twitch.tv",
+    "ar": "فتح على twitch.tv"
+  },
+  "mac_copy_link": {
+    "en": "Copy Link",
+    "fr": "Copier le lien",
+    "ar": "نسخ الرابط"
+  },
+  "mac_settings_general": {
+    "en": "General",
+    "fr": "Général",
+    "ar": "عام"
+  },
+  "mac_settings_account": {
+    "en": "Account",
+    "fr": "Compte",
+    "ar": "الحساب"
+  },
+  "mac_open_language_settings": {
+    "en": "Open System Settings…",
+    "fr": "Ouvrir les Réglages Système…",
+    "ar": "فتح إعدادات النظام…"
+  }
+}

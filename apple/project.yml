@@ -69,6 +69,7 @@ targets:
       - path: iOS
       - path: Shared
       - path: Resources
+        excludes: ["*.json"]
     dependencies:
       - framework: Frameworks/TwitchShared.xcframework
         embed: false
@@ -117,6 +118,111 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.ios.tests
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TwitchIOS.app/TwitchIOS"
         BUNDLE_LOADER: "$(TEST_HOST)"
+  TwitchMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: Mac
+      - path: Shared
+      - path: Resources
+        excludes: ["*.json"]
+    dependencies:
+      - framework: Frameworks/TwitchShared.xcframework
+        embed: false
+        link: true
+    info:
+      path: Mac/Info.plist
+      properties:
+        CFBundleDisplayName: TwitchPlayer
+        LSApplicationCategoryType: public.app-category.entertainment
+        LSMinimumSystemVersion: "15.0"
+        TwitchClientId: "$(TWITCH_CLIENT_ID)"
+        CFBundleLocalizations: [en, fr, ar, de, es, it, pt, ja, ko, zh-Hans, zh-Hant, ru, tr, pl, nl, sv, da, fi, nb, cs, sk, hu, ro, bg, el, hr, uk, vi, th, id, ms, he, hi, ca, fil, pt-PT]
+    entitlements:
+      path: Mac/TwitchMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.mac
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SWIFT_STRICT_CONCURRENCY: minimal
+        ENABLE_HARDENED_RUNTIME: YES
+        COMBINE_HIDPI_IMAGES: YES
+    postCompileScripts:
+      - name: Copy demo clip (Debug only)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Debug" ]; then
+            mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+            cp "$SRCROOT/../demo-android/src/main/assets/demo_stream.mp4" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/demo_stream.mp4"
+          fi
+  TwitchMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: TwitchMac
+      - framework: Frameworks/TwitchShared.xcframework
+        embed: false
+        link: true
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.mac.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TwitchMac.app/Contents/MacOS/TwitchMac"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  TwitchTV:
+    type: application
+    platform: tvOS
+    sources:
+      - path: TV
+      - path: Shared
+      - path: Resources
+        excludes: ["*.json"]
+    dependencies:
+      - framework: Frameworks/TwitchShared.xcframework
+        embed: false
+        link: true
+    info:
+      path: TV/Info.plist
+      properties:
+        CFBundleDisplayName: TwitchPlayer
+        TwitchClientId: "$(TWITCH_CLIENT_ID)"
+        UILaunchScreen: {}
+        CFBundleLocalizations: [en, fr, ar, de, es, it, pt, ja, ko, zh-Hans, zh-Hant, ru, tr, pl, nl, sv, da, fi, nb, cs, sk, hu, ro, bg, el, hr, uk, vi, th, id, ms, he, hi, ca, fil, pt-PT]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.tv
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SWIFT_STRICT_CONCURRENCY: minimal
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+    postCompileScripts:
+      - name: Copy demo clip (Debug only)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Debug" ]; then
+            mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+            cp "$SRCROOT/../demo-android/src/main/assets/demo_stream.mp4" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/demo_stream.mp4"
+          fi
+  TwitchTVTests:
+    type: bundle.unit-test
+    platform: tvOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: TwitchTV
+      - framework: Frameworks/TwitchShared.xcframework
+        embed: false
+        link: true
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.tv.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TwitchTV.app/TwitchTV"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   TwitchIOS:
     build:
@@ -146,3 +252,29 @@ schemes:
     build:
       targets:
         SmokeTV: all
+  TwitchMac:
+    build:
+      targets:
+        TwitchMac: all
+    test:
+      config: Debug
+      targets: [TwitchMacTests]
+      commandLineArguments:
+        "-demo": true
+    run:
+      config: Debug
+    archive:
+      config: Release
+  TwitchTV:
+    build:
+      targets:
+        TwitchTV: all
+    test:
+      config: Debug
+      targets: [TwitchTVTests]
+      commandLineArguments:
+        "-demo": true
+    run:
+      config: Debug
+    archive:
+      config: Release
