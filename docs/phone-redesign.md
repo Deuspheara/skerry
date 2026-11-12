@@ -324,3 +324,28 @@ Independent reviewer pass (fresh agent, score target 9) after steps 3, 5, 9 and 
 - Wireless-adb Samsung validation is the first real-device run of the phone app; expect device-only issues (cutout, gesture
   navigation conflicts with the bottom drag, OEM PiP).
 - Removing the page keys changes the saved state format: a one-time reset of saved back stacks is acceptable (not released).
+
+## 5. As built (2026-11-12)
+
+What shipped differs from sections 2 to 4 in these ways (the sections above stay as the plan and the research):
+
+**Player sheet.** `PlayerSessionController` (state machine + saver, `feature/player/PlayerSession.kt`) is saved with the activity; `PlayerOverlay` hosts the page above the tab
+`Row` with an `AnchoredDraggableState` (Expanded 0, Collapsed above the bar, Dismissed below the screen). Dismissed is an anchor only while the sheet rests as the strip, and a slow
+downward flick of the strip counts as no fling (`DismissPolicy`: a drag past 65 % of the way off the screen, or a flick over 2,000 dp/s, closes it; X always does).
+`PlayerSheetLayout` places the one picture child in every mode with relative placement, so right-to-left mirrors it (picture at the right edge, strip text to its left, rail on the right).
+The strip grows with the font (56 dp up to 1.6x that) so a two-line title and subtitle are never cut.
+Each target owns a `ViewModelStore` (cleared when another target replaces it or the session closes); the doc's "`PlayerSession` owning the player" became "the page stays composed".
+**Back** never closes the player: fullscreen -> upright (the page's handler, or the sheet's own lock to portrait before a replay or clip has loaded), expanded -> minimise, strip -> the navigation.
+**Restoration**: the saved session (target + where the sheet rests) comes back with `autoplay = false`, so a replay or clip opens paused; a back stack that cannot be read resets the tab to
+its root (`NavKeyCodec`, `rememberGuardedBackStack`) instead of crashing. **Accessibility**: the page behind the expanded sheet is removed from the semantics tree, the chat box has a label, the
+bar's animation honours reduced motion.
+
+**Bar and header (round 2).** The bar shows Home, Following (only for a signed-in viewer: it needs one) and Browse, icon-only; two tabs when signed out, never Search or Settings.
+Search is a page opened from the header's pill (the pill is the field, grown) and Settings a page opened from the account button; both hide the bar like any detail page and Back returns to where
+they were opened. Home lost its "For you / Following" tab row (Following moved to the bar). The rail takes the same tab list.
+**Search** (`feature/search`): custom pill field with the back arrow at its start, recent searches (persisted, removable one by one or all, `SearchEvent.RemoveRecent` / `ClearRecents`), the
+channels live now, an All / Channels / Categories filter row (`FilterPill`), result rows with avatar, LIVE mark and viewers, loading / no result / failed (with Retry) states
+(`SearchUiState.searching` / `failed`). **Settings**: a profile card (initial, name, sign in / out pill), then rounded sections whose rows lead with an icon tile, show their value and end
+with a chevron that mirrors. **Category**: one-line title that scrolls slowly when it does not fit (ellipsis with reduced motion) and no gap above the language filter.
+
+**Not done from the plan:** the home "hero" stream, a floating mini player, blurred bar translucency, and a hint of the Kick / TikTok layouts beyond what the press describes.

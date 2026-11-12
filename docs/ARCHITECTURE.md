@@ -17,7 +17,7 @@ platform-android   Android library, no UI of its own: Android implementations of
                    holder ViewModels, speech recognizer, AppLocales, KeepScreenOn, the Media3 player + surface, embed player config
 demo-android       fictional demo data (no network, no account) + its video asset; debug, benchmark and nonMinified variants only
 app                Compose TV UI, WebView + clip/VOD players, StreamPreview, design system, `BuildConfig` -> `PlatformConfig`
-phone              Compose Material 3 phone UI (Home, Browse, Category, Search, Channel, Settings, sign-in); `PhoneRoot` wires theme, the player sheet (`PlayerOverlay`, above the tabs),
+phone              Compose phone UI (tabs Home, Following, Browse; pages Category, Channel, Search, Settings; sign-in; the player sheet); `PhoneRoot` wires theme, the player sheet (`PlayerOverlay`, above the tabs),
                    sign-in and an adaptive tab scaffold; its Koin graph is `phoneModules()` = `productionModules(...)` + `phoneModule`
 benchmark          TV Macrobenchmark + Baseline Profile generation (targets :app)
 benchmark-phone    phone Macrobenchmark + Baseline Profile generation (targets :phone; touch journeys; startup, frame timing)
@@ -184,3 +184,10 @@ Use Compose for TV-compatible focus APIs/components available at implementation 
 
 Unit tests cover DTO parsing, paging, auth state transitions, EventSub parsing/deduplication, chat fragments, and repository errors. Integration tests use controlled HTTP/WebSocket fixtures. Player validation requires a physical Android TV device and Twitch confirmation; emulator or desktop results are not sufficient. Do not add tests before the project foundation exists.
 
+
+## Phone navigation and the player sheet (as built)
+
+- **Tabs and pages.** The bar lists Home, Following (signed-in viewers only) and Browse; each tab has its own back stack (`PhoneNavigator`, saved through `NavKeyCodec`, which resets an unreadable stack to its root).
+  Search and Settings are pages pushed from the header (the pill, the account button); Category and Channel pages belong to the tab they were opened from. The bar shows on tab roots only.
+- **Player.** `PlayerSessionController` (target, where the sheet rests, saved with the activity) drives `PlayerOverlay`, which hosts the page above the tabs. Back minimises the expanded sheet and never closes it.
+  Each target has its own `ViewModelStore`, cleared when another target replaces it or the session closes (the chat disconnects with it). A restored session comes back paused. Details: [phone-redesign.md](phone-redesign.md#5-as-built-2026-11-12).
