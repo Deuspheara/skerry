@@ -13,7 +13,7 @@ import org.junit.runner.RunWith
 
 /**
  * Frame timing (frameDurationCpuMs / frameOverrunMs percentiles) per journey: Home scroll, chat scroll in the live player and the
- * fullscreen toggle. Run with `./gradlew :benchmark-phone:connectedBenchmarkAndroidTest`; each journey runs with no AOT compilation
+ * fullscreen toggle. Run with `benchmark-phone/tools/run-benchmarks.sh <label>`; each journey runs with no AOT compilation
  * and with the Baseline Profile.
  */
 @RunWith(AndroidJUnit4::class)
@@ -33,19 +33,15 @@ class FrameTimingBenchmarks {
         measureBlock = { journey(this) },
     )
 
-    /** The live player is opened in setup (and left again after each iteration), so only the journey is measured. */
+    /** The live player is opened in setup (kept open between iterations: the first one starts from Home), so only the journey is measured. */
     private fun player(mode: CompilationMode, journey: (MacrobenchmarkScope) -> Unit) = rule.measureRepeated(
         packageName = TARGET_PACKAGE,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = mode,
-        // Cold: a warm start would come back on the player page, and every iteration begins on Home.
-        startupMode = StartupMode.COLD,
+        startupMode = StartupMode.WARM,
         iterations = ITERATIONS,
-        setupBlock = {
-            pressHome()
-            HomeScenarios.launch(this)
-            PlayerScenarios.openLivePlayer(this)
-        },
+        // No pressHome(): a playing live page would enter Picture-in-Picture (as it should) and leave a window behind.
+        setupBlock = { PlayerScenarios.ensureLivePlayer(this) },
         measureBlock = { journey(this) },
     )
 

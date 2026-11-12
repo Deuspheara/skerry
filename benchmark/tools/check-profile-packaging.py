@@ -9,6 +9,7 @@ For the release APK and AAB of <module> (assembleRelease and bundleRelease must 
   3. the startup profile's classes (mapped through R8's mapping.txt) sit in classes.dex, the first dex file, and how many fell elsewhere;
 Exit code 1 on a failed hard check (at least 95 % of the surviving startup classes must be in classes.dex). R8 settings and the
 absence of -keep rules are checked by CI's build-release job and by `grep` in docs/perf-phone.md, not here."""
+import os
 import re
 import subprocess
 import sys
@@ -44,7 +45,8 @@ for label, path in (("baseline", baseline), ("startup", startup)):
           f"{sum('com/twitchplayer/tv' in l for l in lines):,} for the shared com/twitchplayer/tv code")
 
 # profileinstaller: its classes are in some dex, its receiver is declared in the merged manifest.
-sdk = Path.home() / "Library/Android/sdk/build-tools"
+sdk_home = Path(os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or Path.home() / "Library/Android/sdk")
+sdk = sdk_home / "build-tools"
 bt = sorted(sdk.iterdir(), key=lambda p: [int(x) for x in re.findall(r"\d+", p.name)])[-1]
 dexdump = bt / "dexdump"
 
