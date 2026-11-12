@@ -38,6 +38,15 @@ enum class PhoneTab(val root: NavKey) {
 
         /** The tabs the bar shows: two when nobody is signed in, three otherwise. */
         fun visible(signedIn: Boolean): List<PhoneTab> = if (signedIn) entries else entries - Following
+
+        /**
+         * The tabs while the session may still be loading: until it has been read the bar shows what it showed the last time ([hintSignedIn]),
+         * so a signed-in viewer does not see two tabs and then three at every cold start.
+         */
+        fun bar(signedIn: Boolean, sessionLoading: Boolean, hintSignedIn: Boolean): List<PhoneTab> = visible(if (sessionLoading) hintSignedIn else signedIn)
+
+        /** A selected tab the bar no longer offers is left, but only once the session is known (a restored Following is kept while it loads). */
+        fun mustLeave(selected: PhoneTab, tabs: List<PhoneTab>, sessionLoading: Boolean): Boolean = !sessionLoading && selected !in tabs
     }
 }
 

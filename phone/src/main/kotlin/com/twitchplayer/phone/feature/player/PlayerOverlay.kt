@@ -208,7 +208,7 @@ private class SheetMetrics {
 private fun PlayerPage(target: PlaybackTarget, session: PlayerSessionController, onOpenChannel: (String) -> Unit, onSignIn: () -> Unit) {
     val minimise = { session.dispatch(PlayerSessionEvent.Minimise) }
     when (target) {
-        is PlaybackTarget.Live -> LivePlayerRoute(target.login, onBack = minimise, onOpenChannel = onOpenChannel, onSignIn = onSignIn)
+        is PlaybackTarget.Live -> LivePlayerRoute(target.login, onBack = minimise, onOpenChannel = onOpenChannel, onSignIn = onSignIn, autoplay = session.autoplay)
 
         is PlaybackTarget.Replay -> ReplayRoute(
             info = target.toInfo(),

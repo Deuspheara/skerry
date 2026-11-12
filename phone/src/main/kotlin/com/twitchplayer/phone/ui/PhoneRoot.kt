@@ -73,6 +73,7 @@ import com.twitchplayer.phone.navigation.PhoneTab
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
+import com.twitchplayer.phone.navigation.SignedInHint
 import com.twitchplayer.phone.navigation.phoneTransition
 import com.twitchplayer.phone.navigation.rememberGuardedBackStack
 import com.twitchplayer.phone.navigation.rememberScreenFill
@@ -125,6 +126,7 @@ fun PhoneRoot(
                 reducedMotion = reducedMotion,
                 snackbar = snackbar,
                 account = settings.account,
+                sessionLoading = settings.sessionLoading,
                 onSignIn = { authViewModel.presenter.onEvent(AuthEvent.SignIn) },
                 onSignOut = { authViewModel.presenter.onEvent(AuthEvent.SignOut) },
             )
@@ -138,6 +140,7 @@ private fun PhoneScaffold(
     reducedMotion: Boolean,
     snackbar: SnackbarHostState,
     account: String?,
+    sessionLoading: Boolean,
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
 ) {
@@ -160,10 +163,21 @@ private fun PhoneScaffold(
     val wide = isWideWindow()
     val chromeVisible = navigator.showsNavigation
     val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
-    // Following needs a viewer: signing out while on it goes back to Home, and the bar loses the tab.
-    val tabs = remember(account) { PhoneTab.visible(signedIn = account != null) }
-    DisposableEffect(tabs) {
-        if (navigator.selected !in tabs) navigator.selectTab(PhoneTab.Home)
+    // Following needs a viewer. While the session is being read the bar keeps the shape it had last time (no two-then-three tabs at every
+    // start) and a restored Following selection is left alone; once it is known, signing out drops Following's pages and returns to Home.
+    val context = LocalContext.current
+    val hint = remember { SignedInHint(context) }
+    val signedIn = account != null
+    val tabs = remember(signedIn, sessionLoading) { PhoneTab.bar(signedIn, sessionLoading, hint.signedIn) }
+    DisposableEffect(signedIn, sessionLoading) {
+        if (!sessionLoading) {
+            hint.signedIn = signedIn
+            if (!signedIn) navigator.onSignedOut()
+        }
+        onDispose { }
+    }
+    DisposableEffect(tabs, sessionLoading) {
+        if (PhoneTab.mustLeave(navigator.selected, tabs, sessionLoading)) navigator.selectTab(PhoneTab.Home)
         onDispose { }
     }
     Box(Modifier.fillMaxSize()) {

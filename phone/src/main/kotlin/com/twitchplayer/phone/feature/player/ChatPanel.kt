@@ -165,7 +165,7 @@ fun ChatInputRow(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
         }
     }
     val canSend = ChatInputSpec.canSend(text)
-    // The pill has no label of its own: TalkBack reads this (the hint text inside is only drawn).
+    // The pill has no label of its own: while it is empty TalkBack reads this (the hint text inside is only drawn).
     val hint = stringResource(R.string.phone_player_chat_hint)
     Row(
         modifier.fillMaxWidth().heightIn(min = ChatInputSpec.ROW_HEIGHT).padding(horizontal = 8.dp),
@@ -175,7 +175,10 @@ fun ChatInputRow(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
         BasicTextField(
             value = text,
             onValueChange = { text = ChatInputSpec.limit(it) },
-            modifier = Modifier.weight(1f).heightIn(min = ChatInputSpec.PILL_HEIGHT).semantics { contentDescription = hint },
+            modifier = Modifier.weight(1f).heightIn(min = ChatInputSpec.PILL_HEIGHT).semantics {
+                // Named while empty; once something is typed, the typed text is what the screen reader reads (a description would replace it).
+                if (text.isEmpty()) contentDescription = hint
+            },
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             maxLines = ChatInputSpec.MAX_LINES,

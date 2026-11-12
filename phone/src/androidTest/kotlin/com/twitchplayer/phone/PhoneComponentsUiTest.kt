@@ -66,6 +66,17 @@ class PhoneComponentsUiTest {
         assertTrue(layout.isLineEllipsized(0))
     }
 
+    @Test fun aScrollingTitleNeverKeepsTheTestFromGoingIdle() {
+        rule.setContent { PhoneTheme(ThemeMode.Dark, reducedMotion = false) { MarqueeTitle(longName, Modifier.width(160.dp)) } }
+
+        // Idling would time out if the marquee's endless animation counted as work; time moves on without the test waiting for it.
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(6_000)
+        rule.waitForIdle()
+
+        rule.onNodeWithText(longName).assertIsDisplayed()
+    }
+
     @Test fun aShortTitleIsJustText() {
         rule.setContent { PhoneTheme(ThemeMode.Dark, reducedMotion = false) { MarqueeTitle("Valmoor", Modifier.width(160.dp)) } }
 

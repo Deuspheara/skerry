@@ -3,6 +3,7 @@ package com.twitchplayer.phone
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
@@ -266,6 +268,33 @@ class PhoneSheetUiTest {
             requested == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
         assertTrue("the session is still open", described(string(R.string.player_back)))
+    }
+
+    @Test fun aLiveStreamComesBackPausedAfterTheActivityWasRecreatedFromSavedState() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        waitForDescription(string(R.string.player_pause))
+
+        scenario!!.recreate()
+
+        waitForText(string(R.string.phone_player_chat_hint))
+        waitForDescription(string(R.string.player_play))
+        Thread.sleep(SETTLE_WAIT_MS * 2)
+        assertTrue("it did not start by itself", !described(string(R.string.player_pause)))
+    }
+
+    @Test fun theChatBoxIsNamedWhileEmptyAndReadsWhatWasTypedOnceItHasText() {
+        launch()
+        rule.openFirstStreamPlayer(context)
+        val field = rule.onNode(androidx.compose.ui.test.hasSetTextAction())
+
+        assertEquals(string(R.string.phone_player_chat_hint), field.fetchSemanticsNode().config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.ContentDescription)?.firstOrNull())
+        field.performTextInput("hello")
+        rule.waitForIdle()
+
+        val config = field.fetchSemanticsNode().config
+        assertEquals("hello", config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.EditableText)?.text)
+        assertTrue("a description would hide the typed text from TalkBack", config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.ContentDescription) == null)
     }
 
     @Test fun aReplayComesBackPausedAfterTheActivityWasRecreatedFromSavedState() {

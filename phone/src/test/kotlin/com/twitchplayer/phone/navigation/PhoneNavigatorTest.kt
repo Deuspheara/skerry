@@ -138,4 +138,82 @@ class PhoneNavigatorTest {
         assertEquals(listOf(PhoneTab.Home, PhoneTab.Following, PhoneTab.Browse), PhoneTab.visible(signedIn = true))
         assertEquals(listOf(PhoneTab.Home, PhoneTab.Browse), PhoneTab.visible(signedIn = false))
     }
+
+    @Test fun openingAPageThatIsAlreadyFurtherDownTheStackReturnsToItInsteadOfStackingItAgain() {
+        val nav = navigator()
+        nav.push(ChannelKey("a"))
+        nav.push(CategoryKey("1", "Valmoor"))
+        nav.push(ChannelKey("b"))
+
+        nav.push(ChannelKey("a"))
+
+        assertEquals(listOf(HomeKey, ChannelKey("a")), nav.currentStack.toList())
+        assertTrue(nav.back())
+        assertEquals(HomeKey, nav.top)
+    }
+
+    @Test fun aChannelThatIsOnAnotherTabStacksOnTheCurrentOneAsUsual() {
+        val nav = navigator()
+        nav.selectTab(PhoneTab.Browse)
+        nav.push(ChannelKey("a"))
+        nav.selectTab(PhoneTab.Home)
+
+        nav.push(ChannelKey("a"))
+
+        assertEquals(listOf(HomeKey, ChannelKey("a")), nav.currentStack.toList())
+    }
+
+    @Test fun signingOutDropsFollowingsPagesAndLeavesItForHome() {
+        val nav = navigator()
+        nav.selectTab(PhoneTab.Following)
+        nav.push(ChannelKey("a"))
+        nav.push(SettingsKey)
+
+        nav.onSignedOut()
+
+        assertEquals(PhoneTab.Home, nav.selected)
+        assertEquals(HomeKey, nav.top)
+        // A later sign-in finds Following at its root, not on a page from before.
+        nav.selectTab(PhoneTab.Following)
+        assertEquals(listOf<NavKey>(FollowingKey), nav.currentStack.toList())
+    }
+
+    @Test fun signingOutFromAnotherTabClearsFollowingAndStaysWhereTheViewerIs() {
+        val nav = navigator()
+        nav.selectTab(PhoneTab.Following)
+        nav.push(ChannelKey("a"))
+        nav.selectTab(PhoneTab.Browse)
+        nav.push(CategoryKey("1", "Valmoor"))
+
+        nav.onSignedOut()
+
+        assertEquals(PhoneTab.Browse, nav.selected)
+        assertEquals(CategoryKey("1", "Valmoor"), nav.top)
+        nav.selectTab(PhoneTab.Following)
+        assertEquals(FollowingKey, nav.top)
+        assertEquals(1, nav.currentStack.size)
+    }
+
+    @Test fun signingOutTwiceChangesNothingMore() {
+        val nav = navigator()
+        nav.onSignedOut()
+        nav.onSignedOut()
+
+        assertEquals(PhoneTab.Home, nav.selected)
+        assertTrue(changes.isEmpty())
+    }
+
+    @Test fun whileTheSessionLoadsTheBarKeepsLastTimesShapeAndAFollowingSelectionIsKept() {
+        val two = listOf(PhoneTab.Home, PhoneTab.Browse)
+        val three = PhoneTab.entries.toList()
+        assertEquals(three, PhoneTab.bar(signedIn = false, sessionLoading = true, hintSignedIn = true))
+        assertEquals(two, PhoneTab.bar(signedIn = false, sessionLoading = true, hintSignedIn = false))
+        assertEquals(two, PhoneTab.bar(signedIn = false, sessionLoading = false, hintSignedIn = true))
+        assertEquals(three, PhoneTab.bar(signedIn = true, sessionLoading = false, hintSignedIn = false))
+
+        assertFalse("a restored Following is not forced to Home while the session loads", PhoneTab.mustLeave(PhoneTab.Following, two, sessionLoading = true))
+        assertTrue("once signed out is known it must go", PhoneTab.mustLeave(PhoneTab.Following, two, sessionLoading = false))
+        assertFalse(PhoneTab.mustLeave(PhoneTab.Following, three, sessionLoading = false))
+        assertFalse(PhoneTab.mustLeave(PhoneTab.Home, two, sessionLoading = false))
+    }
 }

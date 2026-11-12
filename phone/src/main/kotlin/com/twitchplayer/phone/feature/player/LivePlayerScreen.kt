@@ -82,6 +82,8 @@ fun LivePlayerRoute(
     onOpenChannel: (String) -> Unit,
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
+    /** False when the session was brought back after the process was killed: the stream is ready but paused. */
+    autoplay: Boolean = true,
     viewModel: PlayerViewModel = koinViewModel(key = "live-$login", parameters = { parametersOf(login) }),
     resolver: TwitchPlaybackResolver = koinInject(),
     session: SessionRepository = koinInject(),
@@ -109,8 +111,13 @@ fun LivePlayerRoute(
         presenter.onEvent(PlayerEvent.Attach(login))
         onDispose { }
     }
+    val startPlaying = remember(login) { autoplay }
     DisposableEffect(state.login) {
-        if (state.login.isNotEmpty()) player.load(state.login)
+        if (state.login.isNotEmpty()) {
+            player.load(state.login)
+            // A paused start is the player's own "paused by the viewer" (set after load, which clears it): the stream resolves and waits for the play button.
+            if (!startPlaying) player.pause()
+        }
         onDispose { }
     }
     LaunchedEffect(presenter, player) {

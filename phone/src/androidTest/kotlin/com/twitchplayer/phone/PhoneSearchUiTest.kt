@@ -1,6 +1,8 @@
 package com.twitchplayer.phone
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsSelected
@@ -22,6 +24,7 @@ import com.twitchplayer.phone.di.phoneModules
 import com.twitchplayer.phone.ui.theme.SharedPreferencesThemePreference
 import com.twitchplayer.tv.demo.demoModule
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -138,6 +141,20 @@ class PhoneSearchUiTest {
         rule.onNode(isSelectable() and hasText(string(R.string.sec_channels))).performClick()
         rule.onNode(isSelectable() and hasText(string(R.string.sec_channels))).assertIsSelected()
         rule.onNode(hasContentDescription("Lunaria", substring = true)).assertIsDisplayed()
+    }
+
+    @Test fun theSearchFieldIsNamedWhileEmptyAndReadsWhatWasTypedOnceItHasText() {
+        launch()
+        openSearch()
+        val field = rule.onNode(hasSetTextAction())
+        assertEquals(string(R.string.phone_search_hint), field.fetchSemanticsNode().config.getOrNull(SemanticsProperties.ContentDescription)?.firstOrNull())
+
+        field.performTextInput("lun")
+        rule.waitForIdle()
+
+        val config = field.fetchSemanticsNode().config
+        assertEquals("lun", config.getOrNull(SemanticsProperties.EditableText)?.text)
+        assertTrue(config.getOrNull(SemanticsProperties.ContentDescription) == null)
     }
 
     @Test fun aSearchWithNoAnswerSaysSo() {

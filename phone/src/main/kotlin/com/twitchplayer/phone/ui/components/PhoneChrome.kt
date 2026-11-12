@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -57,6 +58,7 @@ object PhoneChrome {
     val IconSelected = 26.dp
     val IconIdle = 24.dp
     val Dot = 4.dp
+    val IndicatorWidth = 48.dp
     val Hairline = 0.5.dp
     val FixedTabWidth = 112.dp
 
@@ -129,7 +131,9 @@ private fun TabItem(tab: PhoneTab, selected: Boolean, onClick: () -> Unit, modif
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
             val size = if (selected) PhoneChrome.IconSelected else PhoneChrome.IconIdle
-            Box(Modifier.size(PhoneChrome.IconSelected), contentAlignment = Alignment.Center) {
+            // The selected tab is told by more than a dot: a soft pill behind its filled icon.
+            val pill = if (selected) Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(percent = 50)) else Modifier
+            Box(Modifier.size(width = PhoneChrome.IndicatorWidth, height = PhoneChrome.IconSelected + 6.dp).then(pill), contentAlignment = Alignment.Center) {
                 Icon(if (selected) tab.filledIcon() else tab.outlinedIcon(), contentDescription = null, tint = tint, modifier = Modifier.size(size))
             }
             Box(Modifier.size(PhoneChrome.Dot).clip(CircleShape).background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent))

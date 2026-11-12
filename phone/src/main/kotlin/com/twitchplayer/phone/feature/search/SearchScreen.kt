@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -168,7 +169,8 @@ fun SearchRoute(
                 onMic = startVoice,
                 onClear = { text.setTextAndPlaceCursorAtEnd("") },
             )
-            if (searching && state.results is ResultsUi.Found) {
+            val answered = !state.searching && state.query == text.text.toString()
+            if (searching && answered && state.results is ResultsUi.Found) {
                 FilterRow(filter) { filter = it }
             }
             LazyColumn(Modifier.fillMaxSize().imePadding(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -203,6 +205,7 @@ private fun SearchField(
     onMic: () -> Unit,
     onClear: () -> Unit,
 ) {
+    val hint = stringResource(R.string.phone_search_hint)
     Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back)) }
         BasicTextField(
@@ -212,7 +215,10 @@ private fun SearchField(
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             onKeyboardAction = { onSearch() },
-            modifier = Modifier.weight(1f).height(PillHeight).focusRequester(focus).semantics { contentDescription = "" },
+            modifier = Modifier.weight(1f).height(PillHeight).focusRequester(focus).semantics {
+                // Named while empty; once something is typed, the typed text is what the screen reader reads (a description would replace it).
+                if (text.text.isEmpty()) contentDescription = hint
+            },
             decorator = { inner ->
                 Row(
                     Modifier.fillMaxSize().clip(RoundedCornerShape(PillHeight / 2)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(start = 12.dp),
@@ -308,7 +314,8 @@ private fun LazyListScope.results(
             )
         }
 
-        found == null && (state.searching || !noResult) -> {
+        // A query that has not been answered yet never shows what answered the one before it.
+        state.searching || (found == null && !noResult) -> {
             item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) }
             items(SKELETON_ROWS, key = { "skeleton-$it" }) { SkeletonRow() }
         }
@@ -375,7 +382,10 @@ private fun RecentRow(query: String, onPick: () -> Unit, onRemove: () -> Unit) {
     }
 }
 
-/** A channel: its picture with a LIVE mark over it, the name, and the viewers (or that it is offline). */
+/**
+ * A channel: its picture (ringed in the live colour while it streams, nothing drawn over the face), the name, and under it the LIVE mark
+ * with the viewers, or that it is offline.
+ */
 @Composable
 private fun ChannelResultRow(channel: ChannelRef, onClick: () -> Unit) {
     val viewers = remember(channel.viewers) { formatViewers(channel.viewers) }
@@ -385,16 +395,14 @@ private fun ChannelResultRow(channel: ChannelRef, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(contentAlignment = Alignment.BottomCenter) {
-            Avatar(channel.avatarUrl, channel.name, 52.dp)
-            // The mark stays small at any font size (a large font would hide the picture it sits on).
-            if (channel.isLive) CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1f)) { LiveBadge(Modifier.padding(top = 40.dp)) }
-        }
+        val ring = if (channel.isLive) Modifier.border(2.dp, PhoneColors.Live, CircleShape).padding(3.dp) else Modifier
+        Box(ring) { Avatar(channel.avatarUrl, channel.name, 48.dp) }
         Column(Modifier.weight(1f)) {
             Text(channel.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (channel.isLive) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(PhoneColors.Live))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // The mark keeps its size at any font size: it is a label, not reading text.
+                    CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1f)) { LiveBadge() }
                     Text(stringResource(R.string.phone_channel_live_viewers, viewers), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {

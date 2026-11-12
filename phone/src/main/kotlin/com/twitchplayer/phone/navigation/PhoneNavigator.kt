@@ -37,8 +37,31 @@ class PhoneNavigator(
         }
     }
 
+    /**
+     * Opens [key] on the current tab. A page that is already in the stack is not opened a second time: the stack returns to it (opening a
+     * channel that is already the page on top does nothing; one further down pops what was opened after it).
+     */
     fun push(key: NavKey) {
-        if (top != key) currentStack.add(key)
+        val stack = currentStack
+        val at = stack.lastIndexOf(key)
+        if (at < 0) {
+            stack.add(key)
+        } else {
+            while (stack.lastIndex > at) stack.removeAt(stack.lastIndex)
+        }
+    }
+
+    /**
+     * The viewer signed out: Following has nothing to show without one, so its pages are dropped (a later sign-in finds it at its root, not
+     * on a channel or Settings page from before) and, if it was the tab being looked at, Home takes over.
+     */
+    fun onSignedOut() {
+        val following = stacks.getValue(PhoneTab.Following)
+        while (following.size > 1) following.removeAt(following.lastIndex)
+        if (selected == PhoneTab.Following) {
+            selected = PhoneTab.Home
+            onSelectedChanged(PhoneTab.Home)
+        }
     }
 
     fun pop() {
