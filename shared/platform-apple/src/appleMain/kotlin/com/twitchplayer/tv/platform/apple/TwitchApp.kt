@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
+import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 
 /**
@@ -59,12 +60,9 @@ object TwitchApp {
         graph = it
     }
 
-    /**
-     * Starts the app on the offline fictional data (launch argument `-demo`): screenshots, UI tests, no account and no network. [signedIn] false
-     * shows the sign-in flow. Never called from a release build.
-     */
-    fun startDemo(signedIn: Boolean): TwitchGraph = graph ?: TwitchGraph(
-        startKoin { modules(appleModules(AppleConfig("demo-client-id")) + appleDemoModule(signedIn)) }.koin,
+    /** Starts Koin with the production graph plus [extra] modules loaded after it (they override its bindings); used by the demo, which is not in release builds. */
+    internal fun startWith(clientId: String, extra: List<Module>): TwitchGraph = graph ?: TwitchGraph(
+        startKoin { modules(appleModules(AppleConfig(clientId)) + extra) }.koin,
     ).also {
         it.startSession()
         graph = it

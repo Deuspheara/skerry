@@ -9,14 +9,15 @@ set -euo pipefail
 
 configuration="${1:-debug}"
 case "$configuration" in
-  debug) task="assembleTwitchSharedDebugXCFramework"; dir="debug" ;;
-  release) task="assembleTwitchSharedReleaseXCFramework"; dir="release" ;;
+  debug) task="assembleTwitchSharedDebugXCFramework"; dir="debug"; flags="" ;;
+  # The release framework leaves the offline demo (fictional data for screenshots and tests) out.
+  release) task="assembleTwitchSharedReleaseXCFramework"; dir="release"; flags="-PappleDemo=false" ;;
   *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$root"
-./gradlew ":shared:platform-apple:${task}"
+./gradlew ":shared:platform-apple:${task}" ${flags}
 
 source_framework="shared/platform-apple/build/XCFrameworks/${dir}/TwitchShared.xcframework"
 target_framework="apple/Frameworks/TwitchShared.xcframework"
@@ -24,4 +25,13 @@ test -d "$source_framework" || { echo "missing $source_framework" >&2; exit 1; }
 mkdir -p apple/Frameworks
 rm -rf "$target_framework"
 cp -R "$source_framework" "$target_framework"
+if [ "$configuration" = "release" ]; then
+  # Automated check: no demo symbol may be in any slice of the release framework.
+  for binary in $(find "$target_framework" -type f -name TwitchShared -not -path "*/Headers/*"); do
+    if strings "$binary" | grep -qE "appleDemoModule|AppleDemoData|TwitchDemoKt|demo-client-id"; then
+      echo "demo code found in the release framework: $binary" >&2; exit 1
+    fi
+  done
+  echo "release framework contains no demo code"
+fi
 echo "TwitchShared ($configuration) -> $target_framework"
