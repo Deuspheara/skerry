@@ -97,8 +97,7 @@ their own baselines for their own lint runs.
 ## Step B: the phone app (2026-11-11)
 
 `:phone` (`com.twitchplayer.phone`, minSdk 24 like everything else, targetSdk 37) on `:platform-android` and the shared modules. Playback
-is the next step: a tap on Watch, a replay or a clip goes through `PlayerLauncher` (`navigation/PhoneKeys.kt`), which today answers with a
-short message ("The player is coming in the next update"). That stub is the only unfinished integration point.
+came in the following step (see "Step C"), and the redesign below moved it out of the back stack.
 
 Screenshots (Pixel 8 emulator, Android 36, demo data and debug fixtures): [docs/screenshots/phone/](screenshots/phone/), retaken after the review follow-up.
 
@@ -367,3 +366,25 @@ The real phone (screen locked, not used); TalkBack output (semantics checked, no
 The rule "any stop pauses a replay or clip" (step C follow-up) was found and checked **on one emulator only: Pixel 8, API 36, Google Play image**. By driving the real PiP window there, the activity is still reported as in Picture-in-Picture while `onStop` runs after the X, so asking for the PiP state at stop did not work, and entering PiP only pauses (never stops) the activity. **It has never been run on a real phone or on an OEM build** (Samsung, Xiaomi and others change the PiP window and its lifecycle).
 
 Residual risk: if a device delivers a transient `ON_STOP` while auto-entering Picture-in-Picture (some OEM builds stop and restart the activity during the transition), the replay would be paused by `PauseInBackground` and stay paused in the window until `ON_START` brings the activity back, because the policy resumes only on `ON_START`. The live page is not affected (it keeps its own foreground logic). What to check on a real device: start a replay and a clip, press Home (auto-enter on Android 12+; the PiP button before): the picture must keep playing in the window; tap the X: playback must stop; tap the window to expand: it must resume where it was; lock the screen: it must pause and resume on unlock. If the picture freezes in the window on some device, the fix is to ignore a stop that arrives while a PiP entry is in progress (and the test seam is `PlaybackLifecycleTest`).
+
+## Redesign: the player is a sheet above the tabs (2026-11-12)
+
+Plan and research: [phone-redesign.md](phone-redesign.md). What changed in code:
+
+- `LiveKey`, `ReplayKey`, `ClipKey` and `PlayerLauncher` are gone. `PlaybackTarget` (Live, Replay, Clip) is the player session's target.
+  `PlayerSessionController` (`feature/player/PlayerSession.kt`: `PlayerSessionState`, `PlayerSessionReducer`, `BackPolicy`, a saver for the process
+  being killed) is saved with the activity; `PhoneScaffold` hosts `PlayerOverlay` above the tab `Row`.
+- `PlayerOverlay` is an `AnchoredDraggableState` with anchors Expanded (0), Collapsed (above the tab bar) and Dismissed (below the screen);
+  Dismissed exists only while the sheet rests as the strip, so a hard fling of the expanded sheet ends on the strip and never closes it.
+  The page (`LivePlayerRoute` / `ReplayRoute` / `ClipRoute`) stays composed and `PlayerSheetLayout` places the one picture child in every
+  mode (portrait with progress, landscape with a side panel, Picture-in-Picture), so the picture's `PlayerView` is never given a new parent.
+  A test (`turningThePhoneKeepsTheSamePictureViewAndNeverShowsAnotherParent`) asserts the same view instance across rotation and the strip.
+- Each target has its own `ViewModelStore` (cleared when another target replaces it or the session closes), so a closed player disconnects its chat.
+- Cards on Home, Category, Search (live channels) and the channel page's live card open the player with its chat; the streamer row under the player
+  (picture and name) minimises the sheet and opens the channel page, which then shows the strip above the system bar.
+- The page under an open session ends above the strip (a reserved 56 dp at the bottom), and the tab bar stays on tab roots.
+- Back: fullscreen -> upright (the page's own handler), expanded -> minimise, strip -> the navigation (pages, tabs, leave); Back never closes the player.
+- Fullscreen lock (`FullscreenPolicy`): the landscape lock is kept until the phone has been held sideways and is turned upright again; the old
+  release as soon as the sensor read about 60 degrees let the system rotate to portrait for a moment first.
+
+Screenshots: `docs/screenshots/phone/redesign-07-*` (expanded), `-08-*` (channel page with the strip), `-09-*` (drag and strip).

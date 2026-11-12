@@ -17,7 +17,7 @@ platform-android   Android library, no UI of its own: Android implementations of
                    holder ViewModels, speech recognizer, AppLocales, KeepScreenOn, the Media3 player + surface, embed player config
 demo-android       fictional demo data (no network, no account) + its video asset; debug, benchmark and nonMinified variants only
 app                Compose TV UI, WebView + clip/VOD players, StreamPreview, design system, `BuildConfig` -> `PlatformConfig`
-phone              Compose Material 3 phone UI (Home, Browse, Category, Search, Channel, Settings, sign-in); `PhoneRoot` wires theme,
+phone              Compose Material 3 phone UI (Home, Browse, Category, Search, Channel, Settings, sign-in); `PhoneRoot` wires theme, the player sheet (`PlayerOverlay`, above the tabs),
                    sign-in and an adaptive tab scaffold; its Koin graph is `phoneModules()` = `productionModules(...)` + `phoneModule`
 benchmark          TV Macrobenchmark + Baseline Profile generation (targets :app)
 benchmark-phone    phone Macrobenchmark + Baseline Profile generation (targets :phone; touch journeys; startup, frame timing)
