@@ -152,7 +152,7 @@ placeholders). Everything else (labels, errors, chat options, `cd_*` description
 |---|---|
 | `./gradlew check` (whole repo, with the phone) | green |
 | Phone unit tests | **29**, 0 failures: `ThemeModeTest` 4, `PhoneNavigatorTest` 8, `SignInOutcomeTest` 5, `ChannelLogicTest` 5, `PhoneStringsTest` 4, `PhoneGraphTest` 3 (`verify` of `phoneModules()`, the list is production + phone module, and every screen ViewModel resolves from it) |
-| Phone UI tests on the Pixel 8 emulator (`connectedDebugAndroidTest`) | **6 of 6** (home lists followed streams, the four tabs, a category and Back, channel + Watch stub message, search as you type, theme dialog; **as first built**: the suite now has 100+ tests, see the redesign section) |
+| Phone UI tests on the Pixel 8 emulator (`connectedDebugAndroidTest`) | **6 of 6 at that step** (home lists followed streams, the four tabs, a category and Back, channel + Watch stub message, search as you type, theme dialog). The suite has grown with the phone; the current count is in the closing report of the redesign work and in `docs/phone-redesign.md` section 5 |
 | Lint / detekt on `:phone` | no baseline, no findings (debug and release; detekt plain, debug, release) |
 | Compose compiler report | **41 composables, 41 skippable, 0 unstable parameters** |
 | Release APK / AAB | **2,500,311 B / 5,870,013 B** (R8 full mode, shrink resources, unsigned); `classes.dex` 3,814,516 B; 0 demo classes in the mapping, no `demo_stream`; `-keep` rules in our files: 0 |
@@ -198,7 +198,7 @@ completed), keyboard search, font scale 1.8, a 600 dp and a 1000 dp window, rota
 - **Sign-in dialog**: the code is centred between two 48 dp slots (empty / copy button); copy swaps the icon for a check, says "Code copied" (live region) and gives haptic feedback. *Not changed*: the space under "Expires in" is the dialog's own 24 dp before its button row; moving Cancel into the content only left an empty button row below it (tried, looked at, reverted).
 - **Channel**: the follow state is a button, tonal with a check when following, outlined "Follow" when not, with state semantics ("Following" / "Not following") and a click label. Twitch's API no longer lets a third-party app follow or unfollow, so it opens the channel on twitch.tv (the trailing arrow says so); it cannot be a toggle that toggles. The live card no longer repeats the avatar and channel name of the header.
 - **Category**: "Language: All languages | English" (two choices in a selectable group that wraps with large text; at 1.8x the second chip used to be squeezed into a narrow column, found by looking, fixed with `FlowRow`); the heart has a tooltip, a content description and a state description.
-- **Search**: dividers under the rows (inset on both sides), a hint line, the supporting text is one tone (on-surface-variant, AA in both themes) with a red dot for live instead of a second accent colour. The empty area under four trending channels is left: there is no further data to show.
+- **Search**: dividers under the rows (inset on both sides), a hint line, the supporting text is one tone (on-surface-variant, AA in both themes) with a red dot for live instead of a second accent colour. (As first built; the search page was redesigned later: recent searches, the channels live now and filters, see the redesign section.)
 - **Settings**: labelled groups on rounded surfaces: Account, Appearance (theme, animations), Language (the row says the current language), Chat, Playback, About.
 - **Error and empty states** are seen with debug-only fixtures (`files/demo-offline`, `files/demo-empty`, `phone/src/debug/.../StateFixtures.kt`; the cache is replaced too, because a `SnapshotCache` singleton keeps the storage it was built with and showed a cached Home instead of the error). The empty "For you" tab now explains itself.
 
@@ -268,7 +268,7 @@ Live streams, replays and clips, with chat, Picture-in-Picture and fullscreen, p
 | Medium-width channel page void | Content is a centred column of at most 640 dp (the older 560 dp card cap that left-aligned it inside was removed) |
 | Sign-in dialog | The code is `headlineLarge`, full-contrast `onSurface` |
 | Home header gap | App bar height 52 dp instead of 64 dp |
-| Search hint spacing | The hint only shows on an empty screen (it repeated the field with trending channels listed); the "Trending" header has top spacing |
+| Search hint spacing | (First build.) The hint only shows on an empty screen (it repeated the field with trending channels listed); the "Trending" header has top spacing. Replaced by the redesigned search page |
 
 ## Looked at (final build, Pixel 8 emulator API 36, demo data)
 
