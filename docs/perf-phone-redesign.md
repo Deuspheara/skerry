@@ -138,3 +138,48 @@ python3 benchmark/tools/check-profile-packaging.py phone phone    # after :phone
 If `generate-profiles.sh` reports `ClassNotFoundException: ...BaselineProfileGenerator` right after a build, the Gradle build cache restored a test APK without
 the module's own classes: run `./gradlew :benchmark-phone:clean` and `./gradlew --no-build-cache :benchmark-phone:assembleNonMinified` once, then the script again
 (seen once during this step).
+
+## Motion pass (search morph, press scale, load cross-fade, list placement, strip close)
+
+Commits `c25016e` (before: Picture-in-Picture and scrim fixes, no new motion) and `b37d870` (after). Same emulator, same commands
+(`benchmark-phone/tools/run-benchmarks.sh`), interleaved **before1, after1, before2, after2** (about 20 minutes each, Gradle daemons stopped), both builds use
+the profile files regenerated earlier in this document (they were **not** regenerated for the motion code, so the new composables run uncompiled-ish in the
+"with profile" rows; that biases against the after build). Raw JSON: `docs/perf-data/phone-motion-{before,after}{1,2}.json`, host load samples
+`docs/perf-data/hostload-{before,after}{1,2}.txt`.
+
+What was added: the header search pill grows into the Search field (`sharedBounds`, 300 ms, none with reduced motion); a pressed card or row shrinks to 97 %
+(`graphicsLayer`, read in the draw phase); skeleton, message and content cross-fade in `LoadHost` (200 ms, only between kinds of state); `animateItem()` on keyed
+list items (Home, Following, Category, Search); the strip slides off the bottom when its X is pressed. **Tried and removed:** a rise-and-fade of the sheet when a
+stream opens: the picture is a `SurfaceView`, which ignores `graphicsLayer` alpha and translation, so the video appeared in its final place while the page
+faded in. **Not done on purpose:** an animated chat (high-frequency list, no gain), a shared element from a stream card's thumbnail to the player picture (the
+picture is that same `SurfaceView`).
+
+### Cold start (ms, min / median / max)
+
+| Test | before 1 | after 1 | before 2 | after 2 |
+|---|---|---|---|---|
+| with profile, first frame | 193 / 253 / 303 | 167 / 191 / 204 | 179 / 206 / 345 | 167 / 191 / 208 |
+| with profile, full display | 243 / 333 / 447 | 206 / 237 / 250 | 222 / 256 / 455 | 217 / 233 / 249 |
+| no compilation, first frame | 220 / 236 / 284 | 213 / 228 / 253 | 206 / 219 / 252 | 207 / 228 / 262 |
+| no compilation, full display | 303 / 335 / 406 | 299 / 328 / 379 | 283 / 304 / 343 | 286 / 320 / 367 |
+
+No cold-start regression: the after build is equal or faster in the profile rows (the before runs carry the wide maxima), and within noise without a profile.
+
+### Frame timing (`frameDurationCpuMs`, P50 / P90 / P99)
+
+| Journey | before 1 | after 1 | before 2 | after 2 |
+|---|---|---|---|---|
+| Home scroll, with profile | 3.29 / 4.34 / 8.18 | 3.35 / 4.62 / 7.32 | 3.24 / 4.26 / 5.77 | 3.02 / 4.39 / 6.61 |
+| Home scroll, no profile | 3.38 / 4.63 / 8.45 | 3.50 / 5.31 / 18.48 | 3.53 / 4.60 / 6.44 | 3.18 / 4.83 / 33.53 |
+| Chat scroll, with profile | 3.36 / 5.68 / 33.20 | 3.52 / 18.76 / 21.68 | 3.29 / 5.09 / 8.33 | 3.40 / 4.85 / 19.39 |
+| Chat scroll, no profile | 3.43 / 5.00 / 8.55 | 3.66 / 18.96 / 24.18 | 3.64 / 18.71 / 21.40 | 3.38 / 18.68 / 21.04 |
+| Sheet drag, with profile | 4.61 / 8.85 / 35.28 | 4.79 / 9.55 / 72.92 | 4.22 / 7.04 / 11.66 | 4.34 / 6.50 / 10.28 |
+| Sheet drag, no profile | 4.70 / 9.24 / 19.80 | 5.26 / 18.67 / 21.79 | 4.72 / 9.27 / 19.62 | 4.78 / 18.75 / 25.64 |
+| Fullscreen toggle, with profile | 9.76 / 28.05 / 36.64 | 18.28 / 31.30 / 57.77 | 18.50 / 33.32 / 53.27 | 15.97 / 26.95 / 44.35 |
+| Fullscreen toggle, no profile | 15.27 / 33.44 / 119.59 | 11.09 / 24.28 / 59.40 | 7.23 / 31.95 / 77.55 | 9.36 / 21.63 / 52.34 |
+
+Reading it honestly: the **medians do not move** (Home 3.0-3.5 ms, chat 3.3-3.7 ms, sheet drag 4.2-5.3 ms, in both builds); the p90 / p99 columns jump between
+about 5 and 19 ms in **both** builds from run to run (the same journey shows both values in the before runs too), so they carry the emulator's pinned-vsync
+spikes, not a measurable effect of the motion. The fullscreen toggle (a rotation, with a media surface) is the noisiest journey in every run of every build and
+shows no direction. Nothing here shows a regression, and nothing here proves the motion is free on a real phone: **the benchmarks were not run on a device**,
+the animations themselves (the pill morph, the press) are not exercised by any benchmark journey beyond the search open in the profile generator.
