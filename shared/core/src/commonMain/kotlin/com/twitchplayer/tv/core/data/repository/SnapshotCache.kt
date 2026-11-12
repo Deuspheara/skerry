@@ -2,8 +2,8 @@ package com.twitchplayer.tv.core.data.repository
 
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.platform.WallClock
+import com.twitchplayer.tv.core.platform.ioDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -17,7 +17,7 @@ import kotlinx.serialization.json.Json
 class SnapshotCache(
     private val storage: SnapshotStorage,
     private val clock: WallClock = WallClock.System,
-    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val io: CoroutineDispatcher = ioDispatcher,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
