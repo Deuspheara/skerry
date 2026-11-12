@@ -25,6 +25,12 @@ internal val firstReplay: BySelector = By.pkg(TARGET_PACKAGE).desc("Session du m
 /** Only the live player (signed in, portrait) shows the message box. */
 internal val livePlayerMarker: BySelector = By.pkg(TARGET_PACKAGE).textStartsWith("Send a message")
 
+/** The streamer (picture and name) under the live picture: its name is the channel's display name. */
+internal val streamerRow: BySelector = By.pkg(TARGET_PACKAGE).text("Lunaria")
+
+/** The strip's close button; it exists only while the player rests as the strip. */
+internal val stripClose: BySelector = By.pkg(TARGET_PACKAGE).desc("Close the player")
+
 /** "Full screen" in portrait, "Exit full screen" in landscape. */
 internal val fullscreenButton: BySelector = By.pkg(TARGET_PACKAGE).desc(Pattern.compile("(?i)(exit )?full screen"))
 
@@ -58,22 +64,31 @@ internal fun MacrobenchmarkScope.tap(selector: BySelector, what: String) {
     device.waitForIdle()
 }
 
-/** Opens the first live stream's channel page from Home; a stale handle after the click is not clicked again (the page is already open). */
+/** The first live stream's channel page, reached the way a viewer does: play the stream, then tap the streamer row under the picture. */
 internal fun MacrobenchmarkScope.openChannel() {
     val watch = By.pkg(TARGET_PACKAGE).text("Watch")
+    if (device.hasObject(watch)) return
+    PlayerScenarios.openLivePlayer(this)
+    // The row's text is not itself clickable (the row is): tap its centre and look again if the page did not open.
     repeat(TAP_ATTEMPTS) {
-        if (device.hasObject(watch)) return
-        try {
-            await(firstStream, "the first live stream on Home").click()
-        } catch (_: StaleObjectException) {
-            // The click happened or the list recomposed: the check above decides on the next pass.
-        }
+        val row = device.findObject(streamerRow) ?: return@repeat
+        val bounds = row.visibleBounds
+        device.click(bounds.centerX(), bounds.centerY())
+        device.waitForIdle()
         if (device.wait(Until.hasObject(watch), CHANNEL_OPEN_MS)) return
     }
     await(watch, "the channel page")
 }
 
-internal fun MacrobenchmarkScope.tab(label: String) = tap(By.pkg(TARGET_PACKAGE).text(label), "the $label tab")
+/** The bottom bar's tabs have no text, only a description (Home, Following, Browse). */
+internal fun MacrobenchmarkScope.tab(label: String) = tap(By.pkg(TARGET_PACKAGE).desc(label), "the $label tab")
+
+/** The header's search pill and account circle open the Search and Settings pages. */
+internal fun MacrobenchmarkScope.openSearch() = tap(By.pkg(TARGET_PACKAGE).desc("Search"), "the search pill")
+
+internal fun MacrobenchmarkScope.openSettings() = tap(By.pkg(TARGET_PACKAGE).desc("Account"), "the account button")
+
+internal fun MacrobenchmarkScope.back() = tap(By.pkg(TARGET_PACKAGE).desc("Back"), "the back arrow")
 
 internal fun MacrobenchmarkScope.scrollable(): UiObject2 = await(By.pkg(TARGET_PACKAGE).scrollable(true), "a scrollable list")
 

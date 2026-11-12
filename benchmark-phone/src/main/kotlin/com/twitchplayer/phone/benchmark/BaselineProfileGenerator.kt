@@ -32,10 +32,13 @@ class BaselineProfileGenerator {
         HomeScenarios.channel(this)
         HomeScenarios.settings(this)
         PlayerScenarios.replay(this)
-        // Live player: portrait with chat, scroll the chat, fullscreen both ways, leave.
+        // Live player: opened from Home with its chat, scroll the chat, fullscreen both ways, minimise and expand the sheet both
+        // ways (drag, then Back and a tap), leave.
         PlayerScenarios.openLivePlayer(this)
         PlayerScenarios.chatScroll(this)
         PlayerScenarios.fullscreenToggle(this)
+        PlayerScenarios.sheetDrag(this)
+        PlayerScenarios.sheetBackAndTap(this)
         PlayerScenarios.leavePlayer(this)
     }
 }

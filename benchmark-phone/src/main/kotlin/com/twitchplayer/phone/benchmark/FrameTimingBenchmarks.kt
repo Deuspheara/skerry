@@ -12,8 +12,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Frame timing (frameDurationCpuMs / frameOverrunMs percentiles) per journey: Home scroll, chat scroll in the live player and the
- * fullscreen toggle. Run with `benchmark-phone/tools/run-benchmarks.sh <label>`; each journey runs with no AOT compilation
+ * Frame timing (frameDurationCpuMs / frameOverrunMs percentiles) per journey: Home scroll, chat scroll in the live player, the
+ * fullscreen toggle and the sheet drag (minimise to the strip and back). Run with `benchmark-phone/tools/run-benchmarks.sh <label>`; each journey runs with no AOT compilation
  * and with the Baseline Profile.
  */
 @RunWith(AndroidJUnit4::class)
@@ -58,6 +58,10 @@ class FrameTimingBenchmarks {
     @Test fun fullscreenToggleNoProfile() = player(CompilationMode.None(), PlayerScenarios::fullscreenToggle)
 
     @Test fun fullscreenToggleBaselineProfile() = player(profile, PlayerScenarios::fullscreenToggle)
+
+    @Test fun sheetDragNoProfile() = player(CompilationMode.None(), PlayerScenarios::sheetDrag)
+
+    @Test fun sheetDragBaselineProfile() = player(profile, PlayerScenarios::sheetDrag)
 
     private companion object {
         const val ITERATIONS = 5

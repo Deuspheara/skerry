@@ -6,25 +6,27 @@ import androidx.test.uiautomator.Until
 
 /** The player journeys: the live player (portrait with chat, chat scroll, fullscreen) and a replay. Same rules as [HomeScenarios]. */
 internal object PlayerScenarios {
-    /** Opens the first live stream from Home (channel page -> Watch) and lets playback start. */
+    /** Taps the first live stream on Home: it plays at once, with its chat under the picture. */
     fun openLivePlayer(scope: MacrobenchmarkScope) = with(scope) {
-        openChannel()
-        tap(By.pkg(TARGET_PACKAGE).text("Watch"), "the Watch button")
+        tap(firstStream, "the first live stream on Home")
         await(livePlayerMarker, "the live player")
         device.waitForIdle()
         Thread.sleep(PLAYBACK_START_MS)
     }
 
     /**
-     * Setup for the player frame benchmarks: launches the app and makes sure the live player is open, whatever the previous iteration (or
-     * test) left: the player itself, Home or one of its tabs, a channel page, a category. Anything else is backed out of.
+     * Setup for the player frame benchmarks: launches the app and makes sure the live player is open and expanded, whatever the previous
+     * iteration (or test) left: the player itself, the strip over a tab or a channel page, Home, a category. Anything else is backed out of.
      */
     fun ensureLivePlayer(scope: MacrobenchmarkScope) = with(scope) {
         startActivityAndWait()
         repeat(ENSURE_ATTEMPTS) {
-            // Either the player (message box) or a screen listing the stream; only when neither shows up is the page something else.
-            val seen = device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE).textStartsWith("Send a message")), PLAYER_PROBE_MS)
-            if (seen) return@with device.waitForIdle()
+            // Either the player (message box), the strip (to expand), or a screen listing the stream; anything else is backed out of.
+            if (device.wait(Until.hasObject(livePlayerMarker), PLAYER_PROBE_MS)) return@with device.waitForIdle()
+            if (device.hasObject(stripClose)) {
+                expandStrip(scope)
+                return@repeat
+            }
             if (device.wait(Until.hasObject(firstStream), WAIT_FOR_HOME_MS)) {
                 openLivePlayer(scope)
                 return@with
@@ -34,6 +36,38 @@ internal object PlayerScenarios {
             startActivityAndWait()
         }
         error("could not reach the live player; on screen: ${visibleLabels()}${screenshotNote()}")
+    }
+
+    /** A tap on the strip's picture brings the player back. */
+    fun expandStrip(scope: MacrobenchmarkScope) = with(scope) {
+        val close = await(stripClose, "the strip")
+        device.click(device.displayWidth / EXPAND_TAP_DIVISOR, close.visibleBounds.centerY())
+        await(livePlayerMarker, "the expanded player")
+        device.waitForIdle()
+    }
+
+    /** The strip's X: closes the player (and its chat). A no-op when no strip is showing. */
+    fun closeStrip(scope: MacrobenchmarkScope) = with(scope) {
+        if (device.wait(Until.hasObject(stripClose), PLAYER_PROBE_MS)) tap(stripClose, "the strip's close button")
+    }
+
+    /** The sheet gesture: drag the picture down until the player rests as the strip, drag the strip up until it is expanded again. */
+    fun sheetDrag(scope: MacrobenchmarkScope) = with(scope) {
+        val x = device.displayWidth / 2
+        device.swipe(x, device.displayHeight * DRAG_FROM_Y / 100, x, device.displayHeight * DRAG_TO_Y / 100, DRAG_STEPS)
+        val close = await(stripClose, "the strip after the drag down")
+        device.waitForIdle()
+        device.swipe(x / 2, close.visibleBounds.centerY(), x / 2, device.displayHeight / 4, DRAG_STEPS)
+        await(livePlayerMarker, "the expanded player after the drag up")
+        device.waitForIdle()
+    }
+
+    /** Back minimises the player to the strip, a tap on the strip expands it: the other way to the same states. */
+    fun sheetBackAndTap(scope: MacrobenchmarkScope) = with(scope) {
+        device.pressBack()
+        await(stripClose, "the strip after Back")
+        device.waitForIdle()
+        expandStrip(scope)
     }
 
     /** Live player: chat scroll in portrait, back to the end of the list. */
@@ -71,35 +105,50 @@ internal object PlayerScenarios {
         error("$what not found; on screen: ${visibleLabels()}")
     }
 
-    /** Leaves the live player back to Home. */
+    /** Leaves the live player: Back minimises it, the strip's X closes it. Home is left showing its streams. */
     fun leavePlayer(scope: MacrobenchmarkScope) = with(scope) {
-        repeat(2) {
-            device.pressBack()
-            Thread.sleep(BACK_SETTLE_MS)
-        }
+        device.pressBack()
+        await(stripClose, "the strip after Back")
+        closeStrip(this)
         device.waitForIdle()
+        await(firstStream, "Home after closing the player")
     }
 
-    /** A replay: open the first replay of the first channel, let it play, seek/speed untouched, leave. */
+    /** A replay: channel page -> the first replay, let it play, back to the page, close the strip, back to Home. */
     fun replay(scope: MacrobenchmarkScope) = with(scope) {
         openChannel()
         swipe(down = false)
-        tap(firstReplay, "the first replay")
-        await(By.pkg(TARGET_PACKAGE).text("Playback speed"), "the replay page")
+        // A fling still running when the tap lands only stops the list: let it settle, and tap again if the replay did not open.
+        val speed = By.pkg(TARGET_PACKAGE).text("Playback speed")
+        repeat(REPLAY_TAP_ATTEMPTS) {
+            if (device.hasObject(speed)) return@repeat
+            Thread.sleep(FLING_SETTLE_MS)
+            tap(firstReplay, "the first replay")
+            device.wait(Until.hasObject(speed), REPLAY_OPEN_MS)
+        }
+        await(speed, "the replay page")
         Thread.sleep(PLAYBACK_START_MS)
-        device.pressBack()
+        device.pressBack() // minimises
+        await(stripClose, "the strip after the replay")
+        closeStrip(this)
+        device.pressBack() // the channel page
         device.waitForIdle()
-        device.pressBack()
-        device.waitForIdle()
+        closeStrip(this)
         await(firstStream, "Home after the replay")
     }
 
     private const val PLAYBACK_START_MS = 2_500L
+    private const val FLING_SETTLE_MS = 700L
+    private const val REPLAY_OPEN_MS = 4_000L
+    private const val REPLAY_TAP_ATTEMPTS = 3
     private const val PLAYER_PROBE_MS = 3_000L
     private const val ENSURE_ATTEMPTS = 4
     private const val WAIT_FOR_HOME_MS = 25_000L
     private const val CHAT_SWIPES = 3
     private const val ROTATION_SETTLE_MS = 700L
-    private const val BACK_SETTLE_MS = 400L
     private const val SHOW_CONTROLS_DIVISOR = 6
+    private const val EXPAND_TAP_DIVISOR = 4
+    private const val DRAG_FROM_Y = 18
+    private const val DRAG_TO_Y = 75
+    private const val DRAG_STEPS = 30
 }
