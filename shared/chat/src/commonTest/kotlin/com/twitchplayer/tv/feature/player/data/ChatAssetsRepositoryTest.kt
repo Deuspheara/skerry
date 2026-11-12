@@ -55,7 +55,7 @@ private const val CHANNEL = """{"data":[
   {"id":"c2","name":"chanFollow","emote_type":"follower","owner_id":"42","format":["static"]},
   {"id":"c3","name":"chanT3","emote_type":"subscriptions","tier":"3000","owner_id":"42","format":["static"]}]}"""
 private const val USER_PAGE_1 = """{"data":[{"id":"25","name":"Kappa","emote_type":"globals","owner_id":"0"},{"id":"c1","name":"chanHi","emote_type":"subscriptions","owner_id":"42"},{"id":"o1","name":"otherSub","emote_type":"subscriptions","owner_id":"77"}],"pagination":{"cursor":"p2"}}"""
-private const val USER_PAGE_2 = """{"data":[{"id":"c2","name":"chanFollow","emote_type":"follower","owner_id":"42"},{"id":"o2","name":"otherBits","emote_type":"bitstier","owner_id":"77"}],"pagination":{}}"""
+private const val USER_PAGE_2 = """{"data":[{"id":"o2","name":"otherBits","emote_type":"bitstier","owner_id":"77"}],"pagination":{}}"""
 
 class ChatAssetsRepositoryTest {
     private val urls = mutableListOf<String>()
@@ -107,11 +107,12 @@ class ChatAssetsRepositoryTest {
         val assets = repository(FakeSession(Account("9", "me"), setOf(SCOPE_READ_EMOTES)), api()).loaded()
         assertEquals(UserEmoteAccess.Known, assets.access)
         fun names(section: EmoteSection) = assets.groups.single { it.section == section }.emotes.map { it.name }
-        assertEquals(listOf("chanHi", "chanFollow"), names(EmoteSection.Channel), "owned: found on page 1 and 2 of the viewer's emotes")
+        assertEquals(listOf("chanHi", "chanFollow"), names(EmoteSection.Channel), "chanHi is in the viewer's emotes; a follower emote is never called locked")
         assertEquals(listOf("chanT3"), names(EmoteSection.Locked))
         assertEquals(listOf("Kappa", ":)"), names(EmoteSection.Global))
         assertEquals(listOf("otherSub", "otherBits"), names(EmoteSection.OtherChannels), "global and this channel's emotes are not repeated")
         assertEquals(2, urls.count { "chat/emotes/user" in it }, "both pages were read")
+        assertTrue(urls.none { "broadcaster_id" in it && "chat/emotes/user" in it }, "the parameter Twitch removed is not sent")
     }
 
     @Test fun aFailingUserEmotesCallFallsBackToTheUnfilteredChannelList() = runTest {

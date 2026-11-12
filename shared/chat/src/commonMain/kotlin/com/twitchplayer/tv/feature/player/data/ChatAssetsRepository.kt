@@ -74,20 +74,20 @@ class ChatAssetsRepository(
             !session.hasScope(SCOPE_READ_EMOTES) -> UserEmoteAccess.NeedsSignIn
             else -> UserEmoteAccess.Known
         }
-        val user = if (access == UserEmoteAccess.Known && account != null) async { loadUserEmotes(account.userId, broadcasterId) } else null
+        val user = if (access == UserEmoteAccess.Known && account != null) async { loadUserEmotes(account.userId) } else null
         val own = user?.await()
         buildTwitchLists(global.await().orEmpty(), channel.await().orEmpty(), own, broadcasterId, if (access == UserEmoteAccess.Known && own == null) UserEmoteAccess.Unavailable else access)
     }
 
     /** All pages of the viewer's emotes (a long-time subscriber has thousands); null when the call failed. Kept [USER_TTL_MS] per account. */
-    private suspend fun loadUserEmotes(userId: String, broadcasterId: String): List<TwitchEmote>? {
+    private suspend fun loadUserEmotes(userId: String): List<TwitchEmote>? {
         userEmotes?.takeIf { it.userId == userId && now() - it.at < USER_TTL_MS }?.let { return it.emotes }
         val all = guarded {
             val out = ArrayList<TwitchEmote>()
             var cursor: String? = null
             var pages = 0
             do {
-                val page = api.userEmotes(userId, broadcasterId, cursor)
+                val page = api.userEmotes(userId, cursor)
                 out += page.data
                 cursor = page.pagination.cursor
             } while (cursor != null && ++pages < MAX_USER_PAGES)
@@ -128,7 +128,8 @@ private val SUBSCRIBER_TYPES = setOf("subscriptions", "bitstier", "follower")
 /**
  * Twitch's lists for the picker. With [user] (the viewer's own emotes) the channel's emotes are split into those the viewer may use
  * and [EmoteSection.Locked] ones, and the subscriber emotes of other channels are listed; without it every channel emote is
- * listed as usable (sending a name the viewer may not use just posts the word).
+ * listed as usable (sending a name the viewer may not use just posts the word). Follower emotes are never called locked: the viewer's list may
+ * not hold them.
  */
 fun buildTwitchLists(
     global: List<TwitchEmote>,
@@ -145,8 +146,11 @@ fun buildTwitchLists(
         add(EmoteSection.Channel, channel)
     } else {
         val mine = user.mapTo(HashSet()) { it.id }
-        add(EmoteSection.Channel, channel.filter { it.id in mine })
-        add(EmoteSection.Locked, channel.filter { it.id !in mine })
+
+        // Follower emotes may be missing from the viewer's list (the endpoint does not promise every type): they are not called locked.
+        fun usable(emote: TwitchEmote) = emote.id in mine || emote.emoteType == "follower"
+        add(EmoteSection.Channel, channel.filter(::usable))
+        add(EmoteSection.Locked, channel.filterNot(::usable))
     }
     add(EmoteSection.Global, global)
     if (user != null) {

@@ -155,10 +155,12 @@ class TwitchApi(
     /** The channel's own emotes: subscriber tiers, follower and bits emotes. No scope; says nothing about what the viewer may use. */
     suspend fun channelEmotes(broadcasterId: String): HelixPage<TwitchEmote> = request("chat/emotes") { parameter("broadcaster_id", broadcasterId) }
 
-    /** Every emote [userId] may use (own subscriptions, follower emotes of [broadcasterId]...). Needs `user:read:emotes`; paged by [after]. */
-    suspend fun userEmotes(userId: String, broadcasterId: String? = null, after: String? = null): HelixPage<TwitchEmote> = request("chat/emotes/user") {
+    /**
+     * The emotes [userId] may use across channels (own subscriptions, bits tiers...). Needs `user:read:emotes`; paged by [after]. Twitch removed
+     * the `broadcaster_id` parameter in July 2024 and the list may not hold every emote type (follower emotes in particular).
+     */
+    suspend fun userEmotes(userId: String, after: String? = null): HelixPage<TwitchEmote> = request("chat/emotes/user") {
         parameter("user_id", userId)
-        broadcasterId?.let { parameter("broadcaster_id", it) }
         after?.let { parameter("after", it) }
     }
 
