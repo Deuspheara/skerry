@@ -180,6 +180,8 @@ targets:
     sources:
       - path: TV
       - path: Shared
+        # Typing, the pasteboard and the emote panel do not exist on the Apple TV (chat is read-only there, sign-in is a QR code).
+        excludes: ["Views/SignInSheet.swift", "Views/ChatComposer.swift"]
       - path: Resources
         excludes: ["*.json"]
     dependencies:

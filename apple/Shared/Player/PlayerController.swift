@@ -86,6 +86,16 @@ final class PlayerController: NSObject {
         guard let url = Self.playableURL(urlString) else { failed = true; return }
         let item = AVPlayerItem(url: url)
         item.preferredForwardBufferDuration = 0
+        #if !os(macOS)
+        // The system player (the Apple TV's) names the playback from this metadata (the Mac's own Now Playing comes from `updateNowPlaying`).
+        item.externalMetadata = [(AVMetadataIdentifier.commonIdentifierTitle, title), (AVMetadataIdentifier.iTunesMetadataTrackSubTitle, subtitle)].map { identifier, value in
+            let metadata = AVMutableMetadataItem()
+            metadata.identifier = identifier
+            metadata.value = value as NSString
+            metadata.extendedLanguageTag = "und"
+            return metadata
+        }
+        #endif
         observe(item: item)
         player.replaceCurrentItem(with: item)
         if startAt > 0 { player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) }

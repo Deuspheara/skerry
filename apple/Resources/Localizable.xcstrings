@@ -34018,6 +34018,75 @@
         }
       }
     },
+    "tv_signin_code": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or go to this address on any device and enter the code:"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ou ouvrez cette adresse sur n'importe quel appareil et saisissez le code :"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أو افتح هذا العنوان على أي جهاز وأدخل الرمز:"
+          }
+        }
+      }
+    },
+    "tv_signin_qr": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code to sign in"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR code de connexion"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رمز QR لتسجيل الدخول"
+          }
+        }
+      }
+    },
+    "tv_signin_scan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan the code with your phone to sign in with Twitch."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannez le code avec votre téléphone pour vous connecter avec Twitch."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "امسح الرمز بهاتفك لتسجيل الدخول عبر Twitch."
+          }
+        }
+      }
+    },
     "unit_minutes_short": {
       "extractionState": "manual",
       "localizations": {

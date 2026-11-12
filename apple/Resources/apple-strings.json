@@ -73,5 +73,20 @@
     "en": "Open System Settings…",
     "fr": "Ouvrir les Réglages Système…",
     "ar": "فتح إعدادات النظام…"
+  },
+  "tv_signin_scan": {
+    "en": "Scan the code with your phone to sign in with Twitch.",
+    "fr": "Scannez le code avec votre téléphone pour vous connecter avec Twitch.",
+    "ar": "امسح الرمز بهاتفك لتسجيل الدخول عبر Twitch."
+  },
+  "tv_signin_qr": {
+    "en": "QR code to sign in",
+    "fr": "QR code de connexion",
+    "ar": "رمز QR لتسجيل الدخول"
+  },
+  "tv_signin_code": {
+    "en": "Or go to this address on any device and enter the code:",
+    "fr": "Ou ouvrez cette adresse sur n'importe quel appareil et saisissez le code :",
+    "ar": "أو افتح هذا العنوان على أي جهاز وأدخل الرمز:"
   }
 }
