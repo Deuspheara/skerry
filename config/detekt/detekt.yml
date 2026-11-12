@@ -36,6 +36,8 @@ complexity:
     ignoreAnnotatedFunctions: ['Composable']
     allowedFunctionsPerFile: 20
     allowedFunctionsPerClass: 20
+    # The repository interface is the one seam presenters read data through; each platform fakes it with defaults for what it lacks.
+    allowedFunctionsPerInterface: 16
 
 coroutines:
   InjectDispatcher:

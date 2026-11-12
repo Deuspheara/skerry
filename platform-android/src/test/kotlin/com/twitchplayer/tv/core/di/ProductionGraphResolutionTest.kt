@@ -6,6 +6,7 @@ import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.browse.presentation.BrowseViewModel
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
+import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsViewModel
 import com.twitchplayer.tv.feature.home.presentation.HomeViewModel
 import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
@@ -60,6 +61,7 @@ class ProductionGraphResolutionTest {
         assertNotNull(koin.get<AuthViewModel>().presenter)
         assertNotNull(koin.get<HomeViewModel>().presenter)
         assertNotNull(koin.get<FollowsViewModel>().presenter)
+        assertNotNull(koin.get<ContinueWatchingViewModel>().presenter)
         assertNotNull(koin.get<BrowseViewModel>().presenter)
         assertNotNull(koin.get<SearchViewModel>().presenter)
         assertNotNull(koin.get<SettingsViewModel>().presenter)

@@ -43,6 +43,8 @@ data class ChannelRef(
     val avatarUrl: String?,
     val isLive: Boolean,
     val viewers: Int = 0,
+    /** When this app last saw the channel live (epoch ms, 0 = never seen): only set on the offline entries of the follows. */
+    val lastSeenLiveMs: Long = 0L,
 )
 
 data class Follows(val live: List<LiveStream>, val offline: List<ChannelRef>)
@@ -58,6 +60,9 @@ data class Replay(
     val durationSeconds: Int = 0,
     val views: Int = 0,
 )
+
+/** A past broadcast with the channel it belongs to: what "continue watching" lists. */
+data class WatchedReplay(val replay: Replay, val channelId: String, val channelLogin: String, val channelName: String, val channelAvatarUrl: String?)
 
 /** One page of past broadcasts; [cursor] is null on the last page. */
 data class ReplayPage(val replays: List<Replay>, val cursor: String? = null)

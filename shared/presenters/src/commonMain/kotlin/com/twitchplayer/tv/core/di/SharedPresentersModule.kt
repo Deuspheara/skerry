@@ -6,6 +6,7 @@ import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
+import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
 import com.twitchplayer.tv.feature.home.presentation.HomePresenter
 import com.twitchplayer.tv.feature.player.presentation.PlayerPresenter
@@ -36,6 +37,7 @@ fun sharedPresentersModule(): Module = module {
     factory { params -> AuthPresenter(get(), params.get<CoroutineScope>()) }
     factory { params -> HomePresenter(get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
     factory { params -> FollowsPresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
+    factory { params -> ContinueWatchingPresenter(get(), get(), params.get<CoroutineScope>()) }
     factory { params -> BrowsePresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
     factory { params -> CategoryPresenter(params.get<String>(), get(), get(), get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
     factory { params -> ChannelPresenter(params.get<String>(), get(), get(), get(), params.get<CoroutineScope>()) }

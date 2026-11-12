@@ -10,6 +10,7 @@ import com.twitchplayer.tv.core.data.model.Replay
 import com.twitchplayer.tv.core.data.model.ReplayPage
 import com.twitchplayer.tv.core.data.model.ScheduledStream
 import com.twitchplayer.tv.core.data.model.SearchResults
+import com.twitchplayer.tv.core.data.model.WatchedReplay
 import com.twitchplayer.tv.core.network.api.HelixPage
 import com.twitchplayer.tv.core.network.api.TwitchApi
 import com.twitchplayer.tv.core.network.api.TwitchApiException
@@ -41,6 +42,9 @@ interface TwitchRepository {
     /** The channel's chat modes, or null when they cannot be read. */
     suspend fun roomState(channelId: String): RoomState? = null
 
+    /** The broadcasts with these ids, each with its channel; ids that were deleted are missing. Empty when they cannot be read. */
+    suspend fun replaysByIds(ids: List<String>): List<WatchedReplay> = emptyList()
+
     /** Sends [text] to the channel's chat as the signed-in viewer. */
     suspend fun sendChat(channelId: String, text: String): SendResult = SendResult.Failed
 
@@ -69,6 +73,9 @@ class TwitchRepositoryImpl(
     /** Profile pictures by channel id: in memory and, through [snapshots], on disk for a week. */
     private val avatarStore = AvatarStore(snapshots)
 
+    /** When each followed channel was last seen live by this app, kept on disk. */
+    private val lastSeen = LastSeenStore(snapshots)
+
     // Two screens asking for the follows at the same moment (Home and Following refreshing together) share one request.
     private val followsCache = TtlCache<Follows>(60_000, forceCoalesceMs = FORCE_COALESCE_MS)
     private val categoriesCache = TtlCache<List<Category>>(10 * 60_000)
@@ -93,9 +100,11 @@ class TwitchRepositoryImpl(
             val offlineRaw = followed.filter { it.broadcasterId !in liveIds }.take(40)
             loadAvatars(live.map { it.userId } + offlineRaw.map { it.broadcasterId })
             val avatars = avatarStore.urls()
+            // Who was live right now is the only "last seen" Twitch lets us know for every followed channel without one call each.
+            val seen = lastSeen.record(me, liveIds)
             Follows(
                 live = live.sortedByDescending { it.viewerCount }.map { it.toLive(avatars) },
-                offline = offlineRaw.map { ChannelRef(it.broadcasterId, it.login, it.name, avatars[it.broadcasterId], isLive = false) },
+                offline = offlineRaw.map { ChannelRef(it.broadcasterId, it.login, it.name, avatars[it.broadcasterId], isLive = false, lastSeenLiveMs = seen[it.broadcasterId] ?: 0L) },
             )
         }
     }
@@ -166,6 +175,13 @@ class TwitchRepositoryImpl(
         } catch (e: Exception) {
             SendResult.Failed
         }
+    }
+
+    override suspend fun replaysByIds(ids: List<String>): List<WatchedReplay> {
+        val videos = api.videosByIds(ids).filter { it.userId.isNotEmpty() }
+        runCatching { loadAvatars(videos.map { it.userId }) }
+        val avatars = avatarStore.urls()
+        return videos.map { WatchedReplay(it.toReplay(), it.userId, it.userLogin, it.userName.ifBlank { it.userLogin }, avatars[it.userId]) }
     }
 
     override suspend fun replays(channelId: String, cursor: String): ReplayPage = api.videos(channelId, after = cursor).let { page -> ReplayPage(page.data.map { it.toReplay() }, page.pagination.cursor) }

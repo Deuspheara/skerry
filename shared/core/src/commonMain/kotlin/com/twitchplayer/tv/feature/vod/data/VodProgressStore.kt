@@ -10,7 +10,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /** Where the viewer stopped in one replay. */
-data class VodProgress(val positionMs: Long, val durationMs: Long) {
+data class VodProgress(
+    val positionMs: Long,
+    val durationMs: Long,
+    /** When it was saved (epoch ms, 0 = unknown). */
+    val savedAtMs: Long = 0L,
+) {
     /** 0..1 of the replay already watched; 0 when the length is unknown. */
     val fraction: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
 
@@ -38,7 +43,7 @@ class DataStoreVodProgressStore(
     private val clock: WallClock = WallClock.System,
 ) : VodProgressStore {
     override val progress: Flow<Map<String, VodProgress>> = store.data.map { prefs ->
-        buildMap { prefs.asMap().forEach { (key, value) -> decode(key.name, value as? String)?.let { put(it.first, it.second.first) } } }
+        buildMap { prefs.asMap().forEach { (key, value) -> decode(key.name, value as? String)?.let { put(it.first, it.second.first.copy(savedAtMs = it.second.second)) } } }
     }
 
     override suspend fun save(vodId: String, positionMs: Long, durationMs: Long) {

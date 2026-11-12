@@ -125,6 +125,9 @@ class TwitchApi(
         after?.let { parameter("after", it) }
     }
 
+    /** The videos with these ids (Helix takes up to 100); an id that no longer exists is simply missing from the answer. */
+    suspend fun videosByIds(ids: List<String>): List<TwitchVideo> = if (ids.isEmpty()) emptyList() else request<HelixPage<TwitchVideo>>("videos") { ids.take(MAX_VIDEO_IDS).forEach { parameter("id", it) } }.data
+
     /** The channel's most viewed clips (Helix default order). No scope needed. */
     suspend fun clips(broadcasterId: String, first: Int = 8): List<TwitchClip> = request<HelixPage<TwitchClip>>("clips") {
         parameter("broadcaster_id", broadcasterId)
@@ -165,6 +168,7 @@ class TwitchApi(
     }
 
     private companion object {
+        const val MAX_VIDEO_IDS = 100
         const val BASE = "https://api.twitch.tv/helix"
     }
 }

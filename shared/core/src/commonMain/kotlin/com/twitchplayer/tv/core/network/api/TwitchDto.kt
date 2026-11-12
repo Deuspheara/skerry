@@ -60,6 +60,9 @@ data class TwitchChannelSearch(
 @Serializable
 data class TwitchVideo(
     val id: String,
+    @SerialName("user_id") val userId: String = "",
+    @SerialName("user_login") val userLogin: String = "",
+    @SerialName("user_name") val userName: String = "",
     val title: String = "",
     val duration: String = "",
     @SerialName("thumbnail_url") val thumbnailUrl: String = "",

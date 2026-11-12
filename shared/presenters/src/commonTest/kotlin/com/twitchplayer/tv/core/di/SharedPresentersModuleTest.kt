@@ -14,6 +14,7 @@ import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
+import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
 import com.twitchplayer.tv.feature.home.presentation.HomePresenter
 import com.twitchplayer.tv.feature.player.data.ChatAssets
@@ -93,6 +94,7 @@ class SharedPresentersModuleTest {
             koin.get<AuthPresenter> { parametersOf(scope) }
             koin.get<HomePresenter> { parametersOf(scope) }
             koin.get<FollowsPresenter> { parametersOf(scope) }
+            koin.get<ContinueWatchingPresenter> { parametersOf(scope) }
             koin.get<BrowsePresenter> { parametersOf(scope) }
             koin.get<CategoryPresenter> { parametersOf("cat", scope) }
             koin.get<ChannelPresenter> { parametersOf("camille", scope) }
