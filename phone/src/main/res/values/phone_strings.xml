@@ -133,4 +133,9 @@
     <string name="phone_feed_tap_to_play">Tap to play</string>
     <string name="phone_feed_page_description">%1$s, %2$s, %3$s viewers, %4$d of %5$d</string>
     <string name="phone_feed_empty">No live streams right now.</string>
+    <string name="phone_feed_mode_live">Live</string>
+    <string name="phone_feed_mode_clips">Clips</string>
+    <string name="phone_feed_clip_description">%1$s, %2$s, %3$s views, %4$d of %5$d</string>
+    <string name="phone_feed_clip_open">Open the clip</string>
+    <string name="phone_feed_clips_empty">No clips to show right now.</string>
 </resources>

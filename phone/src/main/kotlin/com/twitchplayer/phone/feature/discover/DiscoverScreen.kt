@@ -15,13 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,6 +63,7 @@ import com.twitchplayer.phone.ui.components.ViewersBadge
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.ui.formatViewers
 import com.twitchplayer.tv.feature.feed.presentation.FeedEvent
+import com.twitchplayer.tv.feature.feed.presentation.FeedUiState
 import com.twitchplayer.tv.feature.feed.presentation.FeedViewModel
 import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
 import com.twitchplayer.tv.feature.player.playback.NativeStatus
@@ -83,6 +88,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun DiscoverRoute(
     onOpen: (String) -> Unit,
+    onOpenClip: (slug: String, title: String) -> Unit,
     onChannel: (String) -> Unit,
     onSignIn: () -> Unit,
     playerOpen: Boolean,
@@ -91,10 +97,58 @@ fun DiscoverRoute(
     resolver: TwitchPlaybackResolver = koinInject(),
 ) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
+    var clips by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        if (clips) {
+            ClipsRoute(onOpenClip, onChannel, onSignIn, playerOpen)
+        } else {
+            LiveFeed(state, resolver, playerOpen, onOpen, onChannel, onSignIn, onRetry = { viewModel.presenter.onEvent(FeedEvent.Retry) }, onSettle = { viewModel.presenter.onEvent(FeedEvent.Settled(it)) })
+        }
+        ModeSwitch(clips, onChange = { clips = it }, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp))
+    }
+}
+
+/** Live | Clips: two words over the picture, the chosen one underlined. */
+@Composable
+private fun ModeSwitch(clips: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+        ModeWord(stringResource(R.string.phone_feed_mode_live), selected = !clips) { onChange(false) }
+        ModeWord(stringResource(R.string.phone_feed_mode_clips), selected = clips) { onChange(true) }
+    }
+}
+
+@Composable
+private fun ModeWord(text: String, selected: Boolean, onClick: () -> Unit) {
+    Column(
+        Modifier.minimumInteractiveComponentSize().selectable(selected = selected, role = Role.Tab, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text,
+            color = Color.White.copy(alpha = if (selected) 1f else INFO_ALPHA),
+            style = MaterialTheme.typography.titleSmall,
+            // A shadow keeps the words readable on any picture.
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+        )
+        Box(Modifier.height(2.dp).width(24.dp).background(if (selected) Color.White else Color.Transparent))
+    }
+}
+
+@Composable
+private fun LiveFeed(
+    state: FeedUiState,
+    resolver: TwitchPlaybackResolver,
+    playerOpen: Boolean,
+    onOpen: (String) -> Unit,
+    onChannel: (String) -> Unit,
+    onSignIn: () -> Unit,
+    onRetry: () -> Unit,
+    onSettle: (String) -> Unit,
+) {
+    Box(Modifier.fillMaxSize()) {
         LoadHost(
             state.load,
-            onRetry = { viewModel.presenter.onEvent(FeedEvent.Retry) },
+            onRetry = onRetry,
             onSignIn = onSignIn,
             skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) },
         ) { content ->
@@ -106,7 +160,7 @@ fun DiscoverRoute(
                     autoplayAllowed = state.autoplayAllowed,
                     playerOpen = playerOpen,
                     resolver = resolver,
-                    onSettle = { viewModel.presenter.onEvent(FeedEvent.Settled(it)) },
+                    onSettle = onSettle,
                     onOpen = onOpen,
                     onChannel = onChannel,
                 )
@@ -277,7 +331,7 @@ private fun FeedPage(
 }
 
 @Composable
-private fun RailButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+internal fun RailButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.Black.copy(alpha = RAIL_ALPHA))) {
         Icon(icon, contentDescription = description, tint = Color.White)
     }

@@ -125,4 +125,9 @@
     <string name="phone_feed_tap_to_play">المس للتشغيل</string>
     <string name="phone_feed_page_description">%1$s، %2$s، %3$s مشاهد، %4$d من %5$d</string>
     <string name="phone_feed_empty">لا توجد بثوث مباشرة الآن.</string>
+    <string name="phone_feed_mode_live">مباشر</string>
+    <string name="phone_feed_mode_clips">مقاطع</string>
+    <string name="phone_feed_clip_description">%1$s، %2$s، %3$s مشاهدة، %4$d من %5$d</string>
+    <string name="phone_feed_clip_open">افتح المقطع</string>
+    <string name="phone_feed_clips_empty">لا توجد مقاطع لعرضها الآن.</string>
 </resources>

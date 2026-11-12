@@ -251,6 +251,7 @@ private fun PhoneScaffold(
                                         entry<DiscoverKey>(metadata = tab) {
                                             DiscoverRoute(
                                                 onOpen = { login -> session.open(PlaybackTarget.Live(login)) },
+                                                onOpenClip = { slug, title -> session.open(PlaybackTarget.Clip(slug, title)) },
                                                 onChannel = { login -> navigator.push(ChannelKey(login)) },
                                                 onSignIn = onSignIn,
                                                 playerOpen = sessionOpen,
