@@ -19,7 +19,8 @@ demo-android       fictional demo data (no network, no account) + its video asse
 app                Compose TV UI, WebView + clip/VOD players, StreamPreview, design system, `BuildConfig` -> `PlatformConfig`
 phone              Compose Material 3 phone UI (Home, Browse, Category, Search, Channel, Settings, sign-in); `PhoneRoot` wires theme,
                    sign-in and an adaptive tab scaffold; its Koin graph is `phoneModules()` = `productionModules(...)` + `phoneModule`
-benchmark          Macrobenchmark + Baseline Profile generation
+benchmark          TV Macrobenchmark + Baseline Profile generation (targets :app)
+benchmark-phone    phone Macrobenchmark + Baseline Profile generation (targets :phone; touch journeys; startup, frame timing)
 build-logic        convention plugins (kmp-library, android-library, android-application, detekt, spotless, compose, shared-strings)
 ```
 
@@ -29,7 +30,19 @@ Dependency direction (no cycles, nothing depends on `app`):
 presenters -> chat -> core          stream -> core          player-api (standalone)
 platform-android -> presenters, chat, stream, player-api, core
 demo-android -> platform-android (+ shared)      app -> platform-android, shared/*, and demo-android (debug/benchmark/nonMinified only)
-phone -> platform-android, and demo-android (debug only); reads the TV app's strings through the shared-strings plugin, never its code
+phone -> platform-android, and demo-android (debug, benchmark, nonMinified only); reads the TV app's strings through the shared-strings plugin, never its code
+benchmark -> (instruments) app          benchmark-phone -> (instruments) phone          neither is part of any app
+```
+
+Final module graph (Phase 3, `->` = depends on):
+
+```
+:app (TV)  -----+                                  :benchmark       -> instruments :app
+                +-> :platform-android -> :shared:presenters -> :shared:chat   -> :shared:core
+:phone ---------+          |                    |-----------> :shared:stream -> :shared:core
+                           +--------------------+-----------> :shared:player-api
+:demo-android -> :platform-android          (:app and :phone take it in debug, benchmark and nonMinified only)
+:benchmark-phone -> instruments :phone      :shared:testing = fakes for tests only        build-logic = convention plugins
 ```
 
 What each app supplies: its `PlatformConfig` (Twitch client id, default player engine, hosted embed page host/parent: a library has

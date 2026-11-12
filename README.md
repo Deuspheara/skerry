@@ -23,14 +23,17 @@ ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV
 | Module | What it is |
 |---|---|
 | `app` | Android TV UI (Jetpack Compose), Media3 and WebView players, Android implementations of the platform interfaces, Koin wiring, demo data |
-| `phone` | Android phone UI (Jetpack Compose, Material 3): Home, Browse, Category, Search, Channel, Settings, sign-in. Playback comes in the next step |
+| `phone` | Android phone UI (Jetpack Compose, Material 3): Home, Browse, Category, Search, Channel, Settings, sign-in, and native playback (live with chat, replays, clips, fullscreen, Picture-in-Picture) |
+| `platform-android` | Android library, no UI: Android implementations of the platform interfaces, the Koin wiring, holder ViewModels, the Media3 player |
+| `demo-android` | fictional demo data (no account, no network) and its video asset; debug, benchmark and nonMinified builds only |
 | `shared/core` | Kotlin Multiplatform: models, Twitch API and auth, repositories, settings, platform interfaces |
 | `shared/stream` | stream, VOD and clip resolvers (GQL token, usher, master playlist) |
 | `shared/chat` | EventSub chat client, emote providers, chat assets |
 | `shared/player-api` | `VideoPlayer` interface and playback models |
 | `shared/presenters` | one presenter per screen: `StateFlow<UiState>` plus `onEvent(...)` |
 | `shared/testing` | fakes shared by the tests |
-| `benchmark` | Macrobenchmark and Baseline Profile generation |
+| `benchmark` | TV Macrobenchmark and Baseline Profile generation |
+| `benchmark-phone` | the same for the phone (touch journeys, startup and frame timing, profile generator) |
 
 Dependency direction: `app` and `phone` -> `platform-android` -> `presenters` -> `chat`, `stream`, `player-api` -> `core`. Shared code has no Android or
 `java.*` APIs (`./gradlew verifyCommonMain` enforces it). See [architecture](docs/ARCHITECTURE.md), the
@@ -41,13 +44,26 @@ Dependency direction: `app` and `phone` -> `platform-android` -> `presenters` ->
 ### Phone app
 
 ```sh
-./gradlew :phone:assembleDebug
-./gradlew :phone:testDebugUnitTest                  # navigator, sign-in, channel helpers, strings parity, Koin graph
+./gradlew :phone:assembleDebug                      # debug build (applicationId com.twitchplayer.phone)
+./gradlew :phone:installDebug                       # install on the device in ANDROID_SERIAL (set it: Gradle installs on every adb device)
+./gradlew :phone:testDebugUnitTest                  # navigator, sign-in, player policies, strings parity, Koin graph
 ANDROID_SERIAL=emulator-5554 ./gradlew :phone:connectedDebugAndroidTest   # Compose UI tests on the demo data (emulator or phone)
+./gradlew :phone:assembleRelease :phone:bundleRelease   # R8 full mode, unsigned; sign it yourself to install
+ANDROID_SERIAL=emulator-5554 ./gradlew :benchmark-phone:connectedBenchmarkAndroidTest   # startup + frame timing, no profile vs Baseline Profile
+benchmark-phone/tools/generate-profiles.sh          # regenerate the Baseline + startup profiles into phone/src/main/baselineProfiles/
+python3 -I benchmark/tools/check-profile-packaging.py phone phone   # after assembleRelease + bundleRelease: profile packaged, startup classes in classes.dex
 adb -s <serial> shell run-as com.twitchplayer.phone touch files/demo      # demo data in a debug build (restart the app)
 ```
 
-The phone app reuses the TV app's 36 translations (generated at build time, nothing copied) and adds English and French for its own strings; see [the phone log](docs/phone-log.md).
+**Demo mode.** A debug build shows fictional channels, chat and a looping test-pattern clip (no account, no network) once the file
+`files/demo` exists in its data folder (the `touch` line above, then restart the app); the `benchmark` and `nonMinified` builds are
+always on the demo data and are never shipped. Debug-only fixtures `files/demo-offline`, `files/demo-empty` and `files/demo-stream-offline`
+show the error, empty and offline pages. A release build never contains the demo code (CI checks the R8 mapping and the APK).
+
+**Screenshots** (emulator, demo data): [docs/screenshots/phone/](docs/screenshots/phone/); what was built, decided and measured:
+[the phone log](docs/phone-log.md) and [phone performance](docs/perf-phone.md).
+
+The phone app reuses the TV app's 36 translations (generated at build time, nothing copied) and adds English and French for its own strings.
 
 ### Tests
 
