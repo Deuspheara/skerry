@@ -9,6 +9,8 @@ SwiftUI apps for iOS, macOS and tvOS on top of the shared Kotlin core. Plan and 
 | `scripts/build-shared.sh` | Builds the `TwitchShared` XCFramework with Gradle and copies it to `Frameworks/` (git-ignored). |
 | `project.yml` | XcodeGen spec. `xcodegen generate` writes `TwitchPlayerApple.xcodeproj` (git-ignored). |
 | `Config/Base.xcconfig` | Build settings; the public Twitch client id goes in `Config/Local.xcconfig` (git-ignored, see the `.example`). |
+| `iOS/`, `Shared/`, `Resources/`, `Tests/` | The iOS app (target `TwitchIOS`, tests `TwitchIOSTests`): see `docs/IOS_APP.md`. |
+| `scripts/ios-run.sh`, `scripts/sync-strings.py` | Build, install and launch the iOS app on a simulator; generate the string catalog from the Android resources. |
 | `SmokeApp/` | Smoke app (one SwiftUI source set, three targets: `SmokeIOS`, `SmokeMac`, `SmokeTV`) that proves the Kotlin bridge. |
 
 ## Build and run

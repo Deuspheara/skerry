@@ -47,3 +47,8 @@ jobs:
           xcodebuild -project apple/TwitchPlayerApple.xcodeproj -scheme SmokeIOS -destination 'generic/platform=iOS Simulator' build
           xcodebuild -project apple/TwitchPlayerApple.xcodeproj -scheme SmokeMac -destination 'platform=macOS' build
           xcodebuild -project apple/TwitchPlayerApple.xcodeproj -scheme SmokeTV -destination 'generic/platform=tvOS Simulator' build
+      - name: iOS app (strings, build, tests)
+        run: |
+          python3 apple/scripts/sync-strings.py --check
+          xcodebuild -project apple/TwitchPlayerApple.xcodeproj -scheme TwitchIOS -configuration Release -destination 'generic/platform=iOS Simulator' build
+          xcodebuild -project apple/TwitchPlayerApple.xcodeproj -scheme TwitchIOS -destination 'platform=iOS Simulator,name=iPhone 16' test

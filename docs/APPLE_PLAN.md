@@ -74,7 +74,11 @@ tvOS runtime (no simulator runtime installed), a physical device, the `Toggle an
 was not tapped), Linux CI for the Android jobs now that Apple targets exist (the Kotlin plugin disables them off a Mac, but the CI was not
 re-run), and Xcode stable releases (everything here ran on Xcode 27.0 beta 4).
 
-## Next: step B (iOS app)
+## Status (step B, iOS app)
+
+The iOS app exists: see `docs/IOS_APP.md` (architecture, parity table, what is verified). Steps C (macOS, tvOS) and D (polish) remain.
+
+## Next: step B (iOS app), original notes
 
 Needs from you: the Twitch client id in `apple/Config/Local.xcconfig`; a decision on the minimum OS versions (iOS 18 assumed); and, for a
 real device, a development team id. Work: replace the smoke app by the real app (tab bar with Home, Browse, Following, Search, Settings,

@@ -101,11 +101,33 @@ targets:
             mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
             cp "$SRCROOT/../demo-android/src/main/assets/demo_stream.mp4" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/demo_stream.mp4"
           fi
+  TwitchIOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: TwitchIOS
+      - framework: Frameworks/TwitchShared.xcframework
+        embed: false
+        link: true
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.ios.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TwitchIOS.app/TwitchIOS"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   TwitchIOS:
     build:
       targets:
         TwitchIOS: all
+    test:
+      config: Debug
+      targets: [TwitchIOSTests]
+      # The tests run inside the app: it must start on the offline demo data, not on the network.
+      commandLineArguments:
+        "-demo": true
     run:
       config: Debug
     archive:
