@@ -41,6 +41,7 @@ fun androidPlatformFakes(directory: File, scope: CoroutineScope): Module {
                 override suspend fun clear() = Unit
             }
         }
+        single<com.twitchplayer.tv.core.platform.NetworkStatus> { com.twitchplayer.tv.core.platform.NetworkStatus.Unmetered }
         single(DataStores.Settings) { dataStore("settings") }
         single(DataStores.VodProgress) { dataStore("vod") }
         single { SettingsDefaults(ChatSettings()) }

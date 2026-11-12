@@ -103,6 +103,10 @@ class NativeVideoPlayer(
     private var monitor: Job? = null
 
     private var channel: String? = null
+    private val mutableLoaded = MutableStateFlow<String?>(null)
+
+    /** The channel this player was last asked to play (null before any and after [stop]): a host sharing players between pages checks it before showing one. */
+    val loaded: StateFlow<String?> = mutableLoaded.asStateFlow()
     private var stream: ResolvedStream? = null
     private var selected: String = QualityPolicy.AUTO
     private var userPaused = false
@@ -154,6 +158,7 @@ class NativeVideoPlayer(
     fun load(login: String) {
         if (login.equals(channel, ignoreCase = true) && mutableStatus.value !is NativeStatus.Failed) return
         channel = login
+        mutableLoaded.value = login
         restarts = 0
         userPaused = false
         job?.cancel()
@@ -304,6 +309,7 @@ class NativeVideoPlayer(
     fun stop() {
         job?.cancel()
         channel = null
+        mutableLoaded.value = null
         exoPlayer.stop()
         exoPlayer.clearMediaItems()
         monitor?.cancel()

@@ -13,6 +13,7 @@ import com.twitchplayer.tv.core.data.model.ChatDensity
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.data.model.ChatTextSize
+import com.twitchplayer.tv.core.data.model.FeedAutoplay
 import com.twitchplayer.tv.core.data.model.PlayerEngine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -34,6 +35,8 @@ interface SettingsRepository : RecentEmotesRepository {
     suspend fun setPreferredQuality(id: String?)
     suspend fun setShowStats(enabled: Boolean)
     suspend fun setFollowRaids(enabled: Boolean)
+
+    suspend fun setFeedAutoplay(mode: FeedAutoplay)
     suspend fun addRecentSearch(query: String)
 
     suspend fun removeRecentSearch(query: String)
@@ -67,6 +70,7 @@ class DataStoreSettingsRepository(
         preferredQuality = this[PREFERRED_QUALITY]?.takeIf { it.isNotBlank() },
         showStats = this[SHOW_STATS] ?: false,
         followRaids = this[FOLLOW_RAIDS] ?: false,
+        feedAutoplay = this[FEED_AUTOPLAY].toEnum() ?: FeedAutoplay.WifiOnly,
     )
 
     override suspend fun setChatMode(mode: ChatMode) {
@@ -104,6 +108,10 @@ class DataStoreSettingsRepository(
 
     override suspend fun setFollowRaids(enabled: Boolean) {
         store.edit { it[FOLLOW_RAIDS] = enabled }
+    }
+
+    override suspend fun setFeedAutoplay(mode: FeedAutoplay) {
+        store.edit { it[FEED_AUTOPLAY] = mode.name }
     }
 
     override suspend fun addRecentSearch(query: String) {
@@ -176,6 +184,7 @@ class DataStoreSettingsRepository(
         val PREFERRED_QUALITY = stringPreferencesKey("preferred_quality")
         val SHOW_STATS = booleanPreferencesKey("show_stats")
         val FOLLOW_RAIDS = booleanPreferencesKey("follow_raids")
+        val FEED_AUTOPLAY = stringPreferencesKey("feed_autoplay")
         val RECENTS = stringPreferencesKey("recent_searches")
         val RECENT_EMOTES = stringPreferencesKey("recent_emotes")
         val CATEGORIES = stringSetPreferencesKey("followed_categories")

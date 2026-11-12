@@ -8,6 +8,8 @@ import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryViewModel
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelViewModel
+import com.twitchplayer.tv.feature.feed.presentation.FeedPresenter
+import com.twitchplayer.tv.feature.feed.presentation.FeedViewModel
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingViewModel
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
@@ -34,6 +36,7 @@ val viewModelModule = module {
     viewModel { AuthViewModel { scope -> get<AuthPresenter> { parametersOf(scope) } } }
     viewModel { HomeViewModel { scope -> get<HomePresenter> { parametersOf(scope) } } }
     viewModel { FollowsViewModel { scope -> get<FollowsPresenter> { parametersOf(scope) } } }
+    viewModel { FeedViewModel { scope -> get<FeedPresenter> { parametersOf(scope) } } }
     viewModel { ContinueWatchingViewModel { scope -> get<ContinueWatchingPresenter> { parametersOf(scope) } } }
     viewModel { BrowseViewModel { scope -> get<BrowsePresenter> { parametersOf(scope) } } }
     viewModel { params ->

@@ -8,12 +8,14 @@ import com.twitchplayer.tv.core.data.repository.TwitchRepository
 import com.twitchplayer.tv.core.platform.AppConfig
 import com.twitchplayer.tv.core.platform.DeviceProfile
 import com.twitchplayer.tv.core.platform.ForegroundSignal
+import com.twitchplayer.tv.core.platform.NetworkStatus
 import com.twitchplayer.tv.core.platform.SnapshotStorage
 import com.twitchplayer.tv.core.ui.ChannelKeyBus
 import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
+import com.twitchplayer.tv.feature.feed.presentation.FeedPresenter
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
 import com.twitchplayer.tv.feature.home.presentation.HomePresenter
@@ -70,6 +72,7 @@ private val fakePlatform = module {
     }
     single { ForegroundSignal() }
     single { AppConfig(clientId = "cid", defaultPlayerEngine = PlayerEngine.WebView) }
+    single<NetworkStatus> { NetworkStatus.Unmetered }
     single<DeviceProfile> {
         object : DeviceProfile {
             override val languageTag = "fr-FR"
@@ -95,6 +98,7 @@ class SharedPresentersModuleTest {
             koin.get<HomePresenter> { parametersOf(scope) }
             koin.get<FollowsPresenter> { parametersOf(scope) }
             koin.get<ContinueWatchingPresenter> { parametersOf(scope) }
+            koin.get<FeedPresenter> { parametersOf(scope) }
             koin.get<BrowsePresenter> { parametersOf(scope) }
             koin.get<CategoryPresenter> { parametersOf("cat", scope) }
             koin.get<ChannelPresenter> { parametersOf("camille", scope) }

@@ -128,6 +128,12 @@ enum class PlayerEngine {
     }
 }
 
+/**
+ * When the Discover feed may start playing streams by itself. Every preview is a live HLS session (data, battery, and Twitch's own ad rules
+ * for a stream that is opened), so the default stays off mobile data; [Off] shows pictures only and a tap starts the stream.
+ */
+enum class FeedAutoplay { WifiOnly, Always, Off }
+
 data class AppSettings(
     val chatMode: ChatMode = ChatMode.Compact,
     val chat: ChatSettings = ChatSettings(),
@@ -143,4 +149,5 @@ data class AppSettings(
     val showStats: Boolean = false,
     /** Follow the channel being watched when it raids another one. */
     val followRaids: Boolean = false,
+    val feedAutoplay: FeedAutoplay = FeedAutoplay.WifiOnly,
 )

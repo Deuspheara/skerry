@@ -53,6 +53,7 @@ class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
     override suspend fun setPreferredQuality(id: String?) = mutable.update { it.copy(preferredQuality = id) }
     override suspend fun setShowStats(enabled: Boolean) = mutable.update { it.copy(showStats = enabled) }
     override suspend fun setFollowRaids(enabled: Boolean) = mutable.update { it.copy(followRaids = enabled) }
+    override suspend fun setFeedAutoplay(mode: com.twitchplayer.tv.core.data.model.FeedAutoplay) = mutable.update { it.copy(feedAutoplay = mode) }
     override suspend fun addRecentSearch(query: String) = mutable.update { it.copy(recentSearches = (listOf(query) + it.recentSearches.filter { r -> r != query }).take(MAX_RECENTS)) }
     override suspend fun removeRecentSearch(query: String) = mutable.update { it.copy(recentSearches = it.recentSearches.filter { r -> r != query }) }
     override suspend fun clearRecentSearches() = mutable.update { it.copy(recentSearches = emptyList()) }

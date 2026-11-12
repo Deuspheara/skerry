@@ -6,6 +6,7 @@ import com.twitchplayer.tv.feature.auth.presentation.AuthPresenter
 import com.twitchplayer.tv.feature.browse.presentation.BrowsePresenter
 import com.twitchplayer.tv.feature.category.presentation.CategoryPresenter
 import com.twitchplayer.tv.feature.channel.presentation.ChannelPresenter
+import com.twitchplayer.tv.feature.feed.presentation.FeedPresenter
 import com.twitchplayer.tv.feature.follows.presentation.ContinueWatchingPresenter
 import com.twitchplayer.tv.feature.follows.presentation.FollowsPresenter
 import com.twitchplayer.tv.feature.home.presentation.HomePresenter
@@ -26,6 +27,7 @@ import org.koin.dsl.module
  * presenter against fakes of exactly this list):
  *
  * - `DeviceProfile` (the interface language)
+ * - `NetworkStatus` (is the connection metered: the Discover feed's autoplay)
  * - `VoiceInput` (speech recognition for search)
  *
  * The player presenter also needs `ChatSource` and `ChatAssetsSource` from `sharedChatModule()`, and `AppConfig` from the
@@ -37,6 +39,7 @@ fun sharedPresentersModule(): Module = module {
     factory { params -> AuthPresenter(get(), params.get<CoroutineScope>()) }
     factory { params -> HomePresenter(get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
     factory { params -> FollowsPresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
+    factory { params -> FeedPresenter(get(), get(), get(), get(), get(), params.get<CoroutineScope>(), foreground = get()) }
     factory { params -> ContinueWatchingPresenter(get(), get(), params.get<CoroutineScope>()) }
     factory { params -> BrowsePresenter(get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }
     factory { params -> CategoryPresenter(params.get<String>(), get(), get(), get(), get(), params.get<CoroutineScope>(), snapshots = get(), foreground = get()) }

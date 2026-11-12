@@ -11,6 +11,7 @@ import com.twitchplayer.tv.core.network.auth.TokenStore
 import com.twitchplayer.tv.core.platform.AppConfig
 import com.twitchplayer.tv.core.platform.DeviceProfile
 import com.twitchplayer.tv.core.platform.Logger
+import com.twitchplayer.tv.core.platform.NetworkStatus
 import com.twitchplayer.tv.core.platform.NumberFormatter
 import com.twitchplayer.tv.core.platform.SettingsDefaults
 import com.twitchplayer.tv.core.platform.SnapshotStorage
@@ -44,6 +45,7 @@ data class PlatformConfig(
 fun coreModule(config: PlatformConfig) = module {
     // Platform pieces the shared module needs (see sharedCoreModule()).
     single<DeviceProfile> { AndroidDeviceProfile() }
+    single<NetworkStatus> { AndroidNetworkStatus(androidContext()) }
     single<NumberFormatter> { AndroidNumberFormatter() }
     single { AppConfig(clientId = config.twitchClientId, defaultPlayerEngine = config.defaultPlayerEngine) }
     single<HttpClientEngineFactory<*>> { OkHttp }

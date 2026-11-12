@@ -2,6 +2,7 @@ package com.twitchplayer.tv.feature.settings.presentation
 
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
+import com.twitchplayer.tv.core.data.model.FeedAutoplay
 import com.twitchplayer.tv.core.data.model.PlayerEngine
 import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.data.repository.SessionState
@@ -20,6 +21,8 @@ data class SettingsUiState(
     val playerEngine: PlayerEngine = PlayerEngine.Fallback,
     val showStats: Boolean = false,
     val followRaids: Boolean = false,
+    /** When the Discover feed may start streams by itself. */
+    val feedAutoplay: FeedAutoplay = FeedAutoplay.WifiOnly,
     /** Account login, or null when signed out (or while the session is still loading: see [sessionLoading]). */
     val account: String? = null,
     /** The stored session has not been read yet: [account] being null does not mean signed out. */
@@ -34,6 +37,7 @@ sealed interface SettingsEvent {
     data object ToggleStats : SettingsEvent
     data object ToggleFollowRaids : SettingsEvent
     data object ToggleAnimations : SettingsEvent
+    data class SetFeedAutoplay(val mode: FeedAutoplay) : SettingsEvent
 }
 
 /** [defaultEngine] is the build's engine, what the screen shows until the stored settings arrive. */
@@ -44,7 +48,7 @@ class SettingsPresenter(
     defaultEngine: PlayerEngine = PlayerEngine.Fallback,
 ) {
     val state: StateFlow<SettingsUiState> = combine(settings.settings, session.state) { s, session ->
-        SettingsUiState(s.chatMode, s.chat, s.animationsEnabled, s.playerEngine, s.showStats, s.followRaids, (session as? SessionState.SignedIn)?.account?.login, sessionLoading = session is SessionState.Loading)
+        SettingsUiState(s.chatMode, s.chat, s.animationsEnabled, s.playerEngine, s.showStats, s.followRaids, s.feedAutoplay, (session as? SessionState.SignedIn)?.account?.login, sessionLoading = session is SessionState.Loading)
     }.stateIn(scope, SharingStarted.Lazily, SettingsUiState(playerEngine = defaultEngine))
 
     fun onEvent(event: SettingsEvent) {
@@ -65,6 +69,8 @@ class SettingsPresenter(
             SettingsEvent.ToggleFollowRaids -> scope.launch { settings.setFollowRaids(!state.value.followRaids) }
 
             SettingsEvent.ToggleAnimations -> scope.launch { settings.setAnimations(!state.value.animationsEnabled) }
+
+            is SettingsEvent.SetFeedAutoplay -> scope.launch { settings.setFeedAutoplay(event.mode) }
         }
     }
 
