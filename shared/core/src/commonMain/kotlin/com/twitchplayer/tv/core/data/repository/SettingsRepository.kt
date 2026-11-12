@@ -28,6 +28,10 @@ interface SettingsRepository {
     suspend fun setFollowRaids(enabled: Boolean)
     suspend fun addRecentSearch(query: String)
 
+    suspend fun removeRecentSearch(query: String)
+
+    suspend fun clearRecentSearches()
+
     /** Twitch has no category-follow API: this is a local favourite. */
     suspend fun toggleCategory(id: String)
 }
@@ -98,6 +102,17 @@ class DataStoreSettingsRepository(
             val current = prefs[RECENTS]?.split(SEPARATOR).orEmpty().filter { it.isNotBlank() && it != clean }
             prefs[RECENTS] = (listOf(clean) + current).take(MAX_RECENTS).joinToString(SEPARATOR)
         }
+    }
+
+    override suspend fun removeRecentSearch(query: String) {
+        store.edit { prefs ->
+            val kept = prefs[RECENTS]?.split(SEPARATOR).orEmpty().filter { it.isNotBlank() && it != query }
+            if (kept.isEmpty()) prefs.remove(RECENTS) else prefs[RECENTS] = kept.joinToString(SEPARATOR)
+        }
+    }
+
+    override suspend fun clearRecentSearches() {
+        store.edit { prefs -> prefs.remove(RECENTS) }
     }
 
     override suspend fun toggleCategory(id: String) {

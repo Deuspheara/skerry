@@ -53,6 +53,8 @@ class FakeSettings(initial: AppSettings = AppSettings()) : SettingsRepository {
     override suspend fun setShowStats(enabled: Boolean) = mutable.update { it.copy(showStats = enabled) }
     override suspend fun setFollowRaids(enabled: Boolean) = mutable.update { it.copy(followRaids = enabled) }
     override suspend fun addRecentSearch(query: String) = mutable.update { it.copy(recentSearches = (listOf(query) + it.recentSearches.filter { r -> r != query }).take(MAX_RECENTS)) }
+    override suspend fun removeRecentSearch(query: String) = mutable.update { it.copy(recentSearches = it.recentSearches.filter { r -> r != query }) }
+    override suspend fun clearRecentSearches() = mutable.update { it.copy(recentSearches = emptyList()) }
     override suspend fun toggleCategory(id: String) = mutable.update { it.copy(followedCategories = if (id in it.followedCategories) it.followedCategories - id else it.followedCategories + id) }
 }
 

@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.feature.search.presentation
 
+import com.twitchplayer.tv.core.data.model.AppSettings
 import com.twitchplayer.tv.core.data.model.ChannelRef
 import com.twitchplayer.tv.core.data.model.SearchResults
 import com.twitchplayer.tv.testing.FakeRepository
@@ -116,6 +117,75 @@ class SearchPresenterTest {
         assertEquals(VoiceState.Failed, vm.state.value.voice)
         vm.onEvent(SearchEvent.CancelVoice)
         assertEquals(VoiceState.Idle, vm.state.value.voice)
+    }
+
+    @Test fun aSearchThatCannotBeMadeIsReportedAsFailedNotAsNoResult() = runTest(dispatcher) {
+        val vm = presenter()
+        runCurrent()
+        repo.failNext = true
+
+        vm.onEvent(SearchEvent.SetQuery("zzz"))
+        advanceTimeBy(301)
+        runCurrent()
+
+        assertEquals(true, vm.state.value.failed)
+        assertEquals(false, vm.state.value.searching)
+    }
+
+    @Test fun aSearchThatWorksClearsTheFailureAndNoLongerSearches() = runTest(dispatcher) {
+        repo.searchResult = SearchResults(listOf(ChannelRef("1", "echecs", "Échecs", null, true, 5)), emptyList())
+        val vm = presenter()
+        runCurrent()
+        repo.failNext = true
+        vm.onEvent(SearchEvent.SetQuery("zzz"))
+        advanceTimeBy(301)
+        runCurrent()
+
+        vm.onEvent(SearchEvent.SetQuery("echecs"))
+        advanceTimeBy(301)
+        runCurrent()
+
+        assertEquals(false, vm.state.value.failed)
+        assertEquals(false, vm.state.value.searching)
+        assertTrue(vm.state.value.results is ResultsUi.Found)
+    }
+
+    @Test fun retryAsksAgainForTheSameQueryAfterAFailure() = runTest(dispatcher) {
+        repo.searchResult = SearchResults(listOf(ChannelRef("1", "echecs", "Échecs", null, true, 5)), emptyList())
+        val vm = presenter()
+        runCurrent()
+        repo.failNext = true
+        vm.onEvent(SearchEvent.SetQuery("echecs"))
+        advanceTimeBy(301)
+        runCurrent()
+        assertEquals(true, vm.state.value.failed)
+
+        vm.onEvent(SearchEvent.Retry)
+        advanceTimeBy(301)
+        runCurrent()
+
+        assertEquals(false, vm.state.value.failed)
+        assertTrue(vm.state.value.results is ResultsUi.Found)
+    }
+
+    @Test fun aRecentSearchCanBeRemovedOnItsOwn() = runTest(dispatcher) {
+        val vm = presenter(settings = FakeSettings(AppSettings(recentSearches = listOf("a", "b", "c"))))
+        runCurrent()
+
+        vm.onEvent(SearchEvent.RemoveRecent("b"))
+        runCurrent()
+
+        assertEquals(listOf("a", "c"), vm.state.value.recents)
+    }
+
+    @Test fun allRecentSearchesCanBeCleared() = runTest(dispatcher) {
+        val vm = presenter(settings = FakeSettings(AppSettings(recentSearches = listOf("a", "b", "c"))))
+        runCurrent()
+
+        vm.onEvent(SearchEvent.ClearRecents)
+        runCurrent()
+
+        assertEquals(emptyList<String>(), vm.state.value.recents)
     }
 
     @Test fun recentsAreDedupedAndCappedAtFour() = runTest(dispatcher) {
