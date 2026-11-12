@@ -92,7 +92,7 @@ Not Twitch APIs and not authenticated; each is public and provider-owned. Verifi
 
 These providers can change or disappear without notice (7TV is mid-migration to a newer API; v3 still answered on the date above). Every provider failure is isolated and silent: that provider's emotes render as plain text.
 
-Twitch's own emotes need no lookup: `channel.chat.message` fragments carry the emote id and formats, and the image URL is the documented template `https://static-cdn.jtvnw.net/emoticons/v2/{id}/{static|animated}/dark/2.0`. The Helix Get Global/Channel Chat Emotes calls are therefore no longer made. `channel.chat.notification` needs the same `user:read:chat` scope as the message subscription.
+Twitch's own emotes need no lookup to be drawn in a message: `channel.chat.message` fragments carry the emote id and formats, and the image URL is the documented template `https://static-cdn.jtvnw.net/emoticons/v2/{id}/{static|animated}/dark/2.0`. The emote picker of the phone app does list them, so it calls Helix Get Global / Channel Chat Emotes (no scope) and, with `user:read:emotes`, Get User Emotes: see [EMOTES.md](EMOTES.md). `channel.chat.notification` needs the same `user:read:chat` scope as the message subscription.
 
 
 ## Viewer experience features (2026-11-07)
@@ -101,7 +101,7 @@ Checked against the live documentation on that date (dev.twitch.tv: EventSub sub
 
 ### Scopes
 
-The device flow now asks for `user:read:follows`, `user:read:chat` and `user:write:chat`. A session created before `user:write:chat` existed keeps working for everything else; sending a message answers "sign out and in again" (`SessionRepository.hasScope`, and a 401/403 from Helix).
+The device flow now asks for `user:read:follows`, `user:read:chat`, `user:write:chat` and `user:read:emotes` (the last one only feeds the emote picker; a session without it works, see [EMOTES.md](EMOTES.md)). A session created before `user:write:chat` existed keeps working for everything else; sending a message answers "sign out and in again" (`SessionRepository.hasScope`, and a 401/403 from Helix).
 
 ### EventSub on the watched channel
 
