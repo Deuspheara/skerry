@@ -112,4 +112,19 @@
     <string name="phone_player_sleep_timer_hour_half">1 heure 30</string>
     <string name="phone_player_sleep_timer_cancel">Désactiver le minuteur</string>
     <string name="phone_player_sleep_timer_active">Minuteur de sommeil, %1$s restantes</string>
+    <string name="phone_nav_discover">Découvrir</string>
+    <string name="phone_settings_feed_autoplay">Aperçus Découvrir</string>
+    <string name="phone_feed_autoplay_wifi">En Wi-Fi uniquement</string>
+    <string name="phone_feed_autoplay_always">Toujours</string>
+    <string name="phone_feed_autoplay_off">Désactivés, toucher pour lire</string>
+    <string name="phone_settings_feed_help">Les aperçus lisent des directs au fil des glissements, ce qui consomme des données et de la batterie. Twitch peut afficher une publicité au démarrage d\'un direct : l\'application ne la saute ni ne la masque jamais.</string>
+    <string name="phone_feed_open">Regarder avec le chat</string>
+    <string name="phone_feed_channel">Ouvrir la chaîne</string>
+    <string name="phone_feed_mute">Activer le son</string>
+    <string name="phone_feed_unmute">Couper le son</string>
+    <string name="phone_feed_chat_show">Afficher le chat</string>
+    <string name="phone_feed_chat_hide">Masquer le chat</string>
+    <string name="phone_feed_tap_to_play">Toucher pour lire</string>
+    <string name="phone_feed_page_description">%1$s, %2$s, %3$s spectateurs, %4$d sur %5$d</string>
+    <string name="phone_feed_empty">Aucun direct pour le moment.</string>
 </resources>

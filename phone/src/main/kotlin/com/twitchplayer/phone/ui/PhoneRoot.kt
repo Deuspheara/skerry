@@ -54,6 +54,7 @@ import com.twitchplayer.phone.feature.auth.SignInDialog
 import com.twitchplayer.phone.feature.browse.BrowseRoute
 import com.twitchplayer.phone.feature.browse.CategoryRoute
 import com.twitchplayer.phone.feature.channel.ChannelRoute
+import com.twitchplayer.phone.feature.discover.DiscoverRoute
 import com.twitchplayer.phone.feature.following.FollowingRoute
 import com.twitchplayer.phone.feature.home.HomeRoute
 import com.twitchplayer.phone.feature.player.PlayerOverlay
@@ -67,6 +68,7 @@ import com.twitchplayer.phone.feature.settings.SettingsRoute
 import com.twitchplayer.phone.navigation.BrowseKey
 import com.twitchplayer.phone.navigation.CategoryKey
 import com.twitchplayer.phone.navigation.ChannelKey
+import com.twitchplayer.phone.navigation.DiscoverKey
 import com.twitchplayer.phone.navigation.FollowingKey
 import com.twitchplayer.phone.navigation.HomeKey
 import com.twitchplayer.phone.navigation.KIND_FADE
@@ -244,6 +246,14 @@ private fun PhoneScaffold(
                                                 onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
                                                 onSignIn = onSignIn,
                                                 header = headers.getValue(PhoneTab.Home),
+                                            )
+                                        }
+                                        entry<DiscoverKey>(metadata = tab) {
+                                            DiscoverRoute(
+                                                onOpen = { login -> session.open(PlaybackTarget.Live(login)) },
+                                                onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                                onSignIn = onSignIn,
+                                                playerOpen = sessionOpen,
                                             )
                                         }
                                         entry<FollowingKey>(metadata = tab) {

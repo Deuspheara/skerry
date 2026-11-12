@@ -135,8 +135,8 @@ class PhoneNavigatorTest {
     }
 
     @Test fun theBarListsFollowingOnlyForASignedInViewer() {
-        assertEquals(listOf(PhoneTab.Home, PhoneTab.Following, PhoneTab.Browse), PhoneTab.visible(signedIn = true))
-        assertEquals(listOf(PhoneTab.Home, PhoneTab.Browse), PhoneTab.visible(signedIn = false))
+        assertEquals(listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Following, PhoneTab.Browse), PhoneTab.visible(signedIn = true))
+        assertEquals(listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Browse), PhoneTab.visible(signedIn = false))
     }
 
     @Test fun openingAPageThatIsAlreadyFurtherDownTheStackReturnsToItInsteadOfStackingItAgain() {
@@ -204,7 +204,7 @@ class PhoneNavigatorTest {
     }
 
     @Test fun whileTheSessionLoadsTheBarKeepsLastTimesShapeAndAFollowingSelectionIsKept() {
-        val two = listOf(PhoneTab.Home, PhoneTab.Browse)
+        val two = listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Browse)
         val three = PhoneTab.entries.toList()
         assertEquals(three, PhoneTab.bar(signedIn = false, sessionLoading = true, hintSignedIn = true))
         assertEquals(two, PhoneTab.bar(signedIn = false, sessionLoading = true, hintSignedIn = false))

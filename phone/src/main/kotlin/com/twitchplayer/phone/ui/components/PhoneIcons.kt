@@ -84,6 +84,18 @@ object PhoneIcons {
         )
     }
 
+    /** The Discover tab: a play button in a circle, outlined and filled. */
+    val Discover: ImageVector by lazy {
+        icon(
+            "Discover",
+            "M10,16.5l6,-4.5 -6,-4.5v9zM12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8z",
+        )
+    }
+
+    val DiscoverFilled: ImageVector by lazy {
+        icon("DiscoverFilled", "M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM10,16.5v-9l6,4.5 -6,4.5z")
+    }
+
     val Pause: ImageVector by lazy { icon("Pause", "M6,19h4V5H6v14zM14,5v14h4V5h-4z") }
 
     val Fullscreen: ImageVector by lazy {

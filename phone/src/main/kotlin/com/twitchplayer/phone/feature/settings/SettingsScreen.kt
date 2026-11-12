@@ -76,6 +76,7 @@ import com.twitchplayer.tv.core.data.model.ChatDensity
 import com.twitchplayer.tv.core.data.model.ChatMode
 import com.twitchplayer.tv.core.data.model.ChatSettings
 import com.twitchplayer.tv.core.data.model.ChatTextSize
+import com.twitchplayer.tv.core.data.model.FeedAutoplay
 import com.twitchplayer.tv.core.ui.AppLocales
 import com.twitchplayer.tv.feature.settings.presentation.SettingsEvent
 import com.twitchplayer.tv.feature.settings.presentation.SettingsViewModel
@@ -122,6 +123,14 @@ fun SettingsRoute(
                     SwitchRow(Icons.Filled.PlayArrow, R.string.tile_stats, state.showStats) { onEvent(SettingsEvent.ToggleStats) }
                     Rule()
                     SwitchRow(null, R.string.tile_raids, state.followRaids) { onEvent(SettingsEvent.ToggleFollowRaids) }
+                    Rule()
+                    ValueRow(PhoneIcons.Discover, R.string.phone_settings_feed_autoplay, stringResource(state.feedAutoplay.label())) { dialog = SettingsDialog.FeedAutoplay }
+                    Text(
+                        stringResource(R.string.phone_settings_feed_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 64.dp, end = 16.dp, bottom = 12.dp),
+                    )
                 }
             }
             item(key = "chat") {
@@ -255,6 +264,14 @@ fun SettingsRoute(
             onDismiss = { dialog = null },
         )
 
+        SettingsDialog.FeedAutoplay -> ChoiceDialog(
+            title = R.string.phone_settings_feed_autoplay,
+            options = FeedAutoplay.entries.map { it to stringResource(it.label()) },
+            selected = state.feedAutoplay,
+            onSelect = { onEvent(SettingsEvent.SetFeedAutoplay(it)) },
+            onDismiss = { dialog = null },
+        )
+
         SettingsDialog.Licenses -> AlertDialog(
             onDismissRequest = { dialog = null },
             title = { Text(stringResource(R.string.phone_licenses)) },
@@ -270,7 +287,7 @@ fun SettingsRoute(
 const val CHOICE_LIST_TAG = "settings-choice-list"
 
 /** Which settings dialog is open (saved, so a rotation keeps it). */
-private enum class SettingsDialog { SignOut, Theme, Language, ChatMode, ChatTextSize, ChatDensity, ChatBackground, ChatLimit, Licenses }
+private enum class SettingsDialog { SignOut, Theme, Language, ChatMode, ChatTextSize, ChatDensity, ChatBackground, ChatLimit, FeedAutoplay, Licenses }
 
 /** The viewer: a round picture (the initial, or a person), who they are, and the button that signs in or out. */
 @Composable
@@ -405,6 +422,12 @@ private fun ThemeMode.label(): Int = when (this) {
     ThemeMode.Dark -> R.string.phone_theme_dark
     ThemeMode.Light -> R.string.phone_theme_light
     ThemeMode.System -> R.string.phone_theme_system
+}
+
+private fun FeedAutoplay.label(): Int = when (this) {
+    FeedAutoplay.WifiOnly -> R.string.phone_feed_autoplay_wifi
+    FeedAutoplay.Always -> R.string.phone_feed_autoplay_always
+    FeedAutoplay.Off -> R.string.phone_feed_autoplay_off
 }
 
 private fun ChatMode.label(): Int = when (this) {

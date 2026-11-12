@@ -1,0 +1,338 @@
+package com.twitchplayer.phone.feature.discover
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import com.twitchplayer.phone.R
+import com.twitchplayer.phone.feature.player.PhoneChatList
+import com.twitchplayer.phone.feature.player.overVideoPanelColor
+import com.twitchplayer.phone.feature.player.toPhoneStyle
+import com.twitchplayer.phone.ui.components.Avatar
+import com.twitchplayer.phone.ui.components.LiveBadge
+import com.twitchplayer.phone.ui.components.LoadHost
+import com.twitchplayer.phone.ui.components.MessageState
+import com.twitchplayer.phone.ui.components.PhoneIcons
+import com.twitchplayer.phone.ui.components.RemoteImage
+import com.twitchplayer.phone.ui.components.ViewersBadge
+import com.twitchplayer.tv.core.data.model.LiveStream
+import com.twitchplayer.tv.core.ui.formatViewers
+import com.twitchplayer.tv.feature.feed.presentation.FeedEvent
+import com.twitchplayer.tv.feature.feed.presentation.FeedViewModel
+import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
+import com.twitchplayer.tv.feature.player.playback.NativeStatus
+import com.twitchplayer.tv.feature.player.playback.NativeVideoPlayer
+import com.twitchplayer.tv.feature.player.playback.NativeVideoSurface
+import com.twitchplayer.tv.feature.player.playback.QualityLabels
+import com.twitchplayer.tv.feature.player.playback.rememberNativeVideoPlayer
+import com.twitchplayer.tv.feature.player.presentation.PlayerViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+
+/**
+ * The Discover tab: one live stream per screen, swiped vertically (see docs/discover-feed.md). The picture of the page the viewer rests on
+ * plays muted; the next page's player is already loading it, paused. Only these two players exist (parity of the page index picks one), so a
+ * long swipe session never holds more than two decoders. Chat connects only to the page the viewer stayed on for a moment and disconnects
+ * as they leave it. A tap opens the full player with chat; a long press pauses or resumes the preview.
+ */
+@Composable
+fun DiscoverRoute(
+    onOpen: (String) -> Unit,
+    onChannel: (String) -> Unit,
+    onSignIn: () -> Unit,
+    playerOpen: Boolean,
+    modifier: Modifier = Modifier,
+    viewModel: FeedViewModel = koinViewModel(),
+    resolver: TwitchPlaybackResolver = koinInject(),
+) {
+    val state by viewModel.presenter.state.collectAsStateWithLifecycle()
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        LoadHost(
+            state.load,
+            onRetry = { viewModel.presenter.onEvent(FeedEvent.Retry) },
+            onSignIn = onSignIn,
+            skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) },
+        ) { content ->
+            if (content.streams.isEmpty()) {
+                MessageState(title = stringResource(R.string.phone_feed_empty), modifier = Modifier.fillMaxSize())
+            } else {
+                FeedPager(
+                    streams = content.streams,
+                    autoplayAllowed = state.autoplayAllowed,
+                    playerOpen = playerOpen,
+                    resolver = resolver,
+                    onSettle = { viewModel.presenter.onEvent(FeedEvent.Settled(it)) },
+                    onOpen = onOpen,
+                    onChannel = onChannel,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedPager(
+    streams: ImmutableList<LiveStream>,
+    autoplayAllowed: Boolean,
+    playerOpen: Boolean,
+    resolver: TwitchPlaybackResolver,
+    onSettle: (String) -> Unit,
+    onOpen: (String) -> Unit,
+    onChannel: (String) -> Unit,
+) {
+    // Once the viewer has swiped, a refresh of the list must not move the streams under them: the list they started with stays.
+    var frozen by remember { mutableStateOf<ImmutableList<LiveStream>?>(null) }
+    val shown = frozen ?: streams
+    val pagerState = rememberPagerState { shown.size }
+    val settled = pagerState.settledPage
+    DisposableEffect(settled) {
+        if (settled > 0 && frozen == null) frozen = streams
+        onDispose { }
+    }
+
+    var muted by rememberSaveable { mutableStateOf(true) }
+    var chatOn by rememberSaveable { mutableStateOf(true) }
+    // Streams the viewer asked to play while autoplay is off.
+    var asked by remember { mutableStateOf(emptySet<String>()) }
+    var dwelled by remember { mutableStateOf<String?>(null) }
+
+    val labels = QualityLabels(stringResource(R.string.quality_auto), stringResource(R.string.quality_audio_only))
+    val currentLabels by rememberUpdatedState(labels)
+    val players = listOf(
+        rememberNativeVideoPlayer(resolver, preferredQuality = { PREVIEW_QUALITY }, onQualityPicked = {}, qualityLabels = { currentLabels }),
+        rememberNativeVideoPlayer(resolver, preferredQuality = { PREVIEW_QUALITY }, onQualityPicked = {}, qualityLabels = { currentLabels }),
+    )
+    val currentOnSettle by rememberUpdatedState(onSettle)
+    LaunchedEffect(settled, shown, autoplayAllowed, playerOpen, muted, asked) {
+        val stream = shown.getOrNull(settled) ?: return@LaunchedEffect
+        val current = players[settled % PLAYERS]
+        val next = players[(settled + 1) % PLAYERS]
+        current.exoPlayer.volume = if (muted) 0f else 1f
+        next.exoPlayer.volume = 0f
+        if (playerOpen) {
+            // The full player is on top: it plays, the previews stop (sound, data and a decoder less).
+            current.pause()
+            next.pause()
+            return@LaunchedEffect
+        }
+        current.load(stream.login)
+        if (autoplayAllowed || stream.login in asked) current.play() else current.pause()
+        val upcoming = shown.getOrNull(settled + 1)
+        if (upcoming != null && autoplayAllowed) {
+            next.load(upcoming.login)
+            next.pause()
+        } else {
+            next.pause()
+        }
+        delay(DWELL_MS)
+        dwelled = stream.login
+        currentOnSettle(stream.login)
+    }
+    // Leaving the page the chat belongs to disconnects it at once.
+    DisposableEffect(settled) {
+        dwelled = null
+        onDispose { }
+    }
+
+    VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize().background(Color.Black), beyondViewportPageCount = 0, key = { shown[it].channelId }) { page ->
+        val stream = shown[page]
+        FeedPage(
+            stream = stream,
+            index = page,
+            count = shown.size,
+            player = players[page % PLAYERS],
+            isSettled = page == settled,
+            view = FeedView(
+                muted = muted,
+                chatOn = chatOn,
+                showChatFor = if (dwelled == stream.login && !playerOpen && page == settled) stream.login else null,
+                tapToPlay = !autoplayAllowed && stream.login !in asked,
+            ),
+            actions = FeedActions(
+                onToggleMute = { muted = !muted },
+                onToggleChat = { chatOn = !chatOn },
+                onPlayHere = { asked = asked + stream.login },
+                onOpen = { onOpen(stream.login) },
+                onChannel = { onChannel(stream.login) },
+            ),
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FeedPage(
+    stream: LiveStream,
+    index: Int,
+    count: Int,
+    player: NativeVideoPlayer,
+    isSettled: Boolean,
+    view: FeedView,
+    actions: FeedActions,
+) {
+    val muted = view.muted
+    val chatOn = view.chatOn
+    val showChatFor = view.showChatFor
+    val tapToPlay = view.tapToPlay
+    val onToggleMute = actions.onToggleMute
+    val onToggleChat = actions.onToggleChat
+    val onPlayHere = actions.onPlayHere
+    val onOpen = actions.onOpen
+    val onChannel = actions.onChannel
+    val loaded by player.loaded.collectAsStateWithLifecycle()
+    val status by player.status.collectAsStateWithLifecycle()
+    val mine = loaded.equals(stream.login, ignoreCase = true)
+    val showVideo = mine && status is NativeStatus.Playing
+    val viewers = remember(stream.viewers) { formatViewers(stream.viewers) }
+    val description = stringResource(R.string.phone_feed_page_description, stream.name, stream.categoryName, viewers, index + 1, count)
+    val source = remember { MutableInteractionSource() }
+    Box(
+        Modifier.fillMaxSize().background(Color.Black)
+            .semantics(mergeDescendants = false) { contentDescription = description }
+            .combinedClickable(interactionSource = source, indication = null, onClick = onOpen, onLongClick = { if (player.exoPlayer.isPlaying) player.pause() else player.play() }),
+    ) {
+        if (mine) NativeVideoSurface(player, Modifier.fillMaxSize())
+        // The picture stands in until the stream really plays (and stays when autoplay is off or the channel went offline).
+        if (!showVideo) RemoteImage(stream.thumbnailUrl, Modifier.fillMaxSize())
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Transparent, SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = SCRIM_ALPHA))))
+
+        Column(Modifier.align(Alignment.TopStart).statusBarsPadding().padding(16.dp)) {
+            LiveBadge()
+        }
+        if (tapToPlay && isSettled) {
+            Text(
+                stringResource(R.string.phone_feed_tap_to_play),
+                modifier = Modifier.align(Alignment.Center).clip(CircleShape).background(Color.Black.copy(alpha = SCRIM_ALPHA)).clickable(onClick = onPlayHere).padding(horizontal = 20.dp, vertical = 12.dp),
+                color = Color.White,
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+        // Right-hand rail: sound, chat, the channel page, the full player.
+        Column(Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            RailButton(if (muted) PhoneIcons.VolumeOff else PhoneIcons.VolumeUp, stringResource(if (muted) R.string.phone_feed_mute else R.string.phone_feed_unmute), onToggleMute)
+            RailButton(PhoneIcons.Chat, stringResource(if (chatOn) R.string.phone_feed_chat_hide else R.string.phone_feed_chat_show), onToggleChat)
+            RailButton(PhoneIcons.OpenInNew, stringResource(R.string.phone_feed_channel), onChannel)
+            RailButton(PhoneIcons.Discover, stringResource(R.string.phone_feed_open), onOpen)
+        }
+        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(INFO_WIDTH).padding(start = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (chatOn && showChatFor != null) {
+                FeedChat(showChatFor, Modifier.fillMaxWidth().height(CHAT_HEIGHT))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Avatar(stream.avatarUrl, stream.name, AVATAR, Modifier.clickable(onClick = onChannel))
+                Column(Modifier.weight(1f)) {
+                    Text(stream.name, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(stream.categoryName, color = Color.White.copy(alpha = INFO_ALPHA), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                ViewersBadge(stream.viewers)
+            }
+            Text(stream.title, color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun RailButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.Black.copy(alpha = RAIL_ALPHA))) {
+        Icon(icon, contentDescription = description, tint = Color.White)
+    }
+}
+
+/**
+ * The last few chat lines of the page the viewer stayed on, over the picture. Its presenter (and so its chat connection) lives in a store
+ * of its own that is cleared when this leaves the screen: swiping on closes the connection, a feed never holds more than one.
+ */
+@Composable
+private fun FeedChat(login: String, modifier: Modifier = Modifier) {
+    val owner = remember(login) {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+    }
+    DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
+    androidx.compose.runtime.CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+        val viewModel: PlayerViewModel = koinViewModel(key = "feed-$login", parameters = { parametersOf(login) })
+        val chat by viewModel.presenter.chat.collectAsStateWithLifecycle()
+        val settings by viewModel.presenter.chatSettings.collectAsStateWithLifecycle()
+        val style = remember(settings) { settings.toPhoneStyle() }
+        val last = remember(chat) { chat.takeLast(CHAT_LINES).toImmutableList() }
+        if (last.isNotEmpty()) {
+            Box(modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).background(overVideoPanelColor(style))) {
+                PhoneChatList(last, style, overVideo = true, animationsAllowed = false)
+            }
+        }
+    }
+}
+
+/** What a page shows besides its stream: the sound, the chat and the play prompt. */
+@androidx.compose.runtime.Immutable
+private class FeedView(val muted: Boolean, val chatOn: Boolean, val showChatFor: String?, val tapToPlay: Boolean)
+
+/** What the viewer can do on a page. */
+@androidx.compose.runtime.Immutable
+private class FeedActions(
+    val onToggleMute: () -> Unit,
+    val onToggleChat: () -> Unit,
+    val onPlayHere: () -> Unit,
+    val onOpen: () -> Unit,
+    val onChannel: () -> Unit,
+)
+
+private const val PLAYERS = 2
+
+/** The rendition the previews ask for; a stream that does not offer it falls back to the player's default (see `QualityPolicy`). */
+private const val PREVIEW_QUALITY = "360p30"
+private const val DWELL_MS = 2_000L
+private const val CHAT_LINES = 4
+private const val SCRIM_START = 0.55f
+private const val SCRIM_ALPHA = 0.65f
+private const val RAIL_ALPHA = 0.4f
+private const val INFO_ALPHA = 0.8f
+private const val INFO_WIDTH = 0.78f
+private val CHAT_HEIGHT = 120.dp
+private val AVATAR = 40.dp

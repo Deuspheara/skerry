@@ -143,12 +143,14 @@ private fun TabItem(tab: PhoneTab, selected: Boolean, onClick: () -> Unit, modif
 
 private fun PhoneTab.filledIcon(): ImageVector = when (this) {
     PhoneTab.Home -> Icons.Filled.Home
+    PhoneTab.Discover -> PhoneIcons.DiscoverFilled
     PhoneTab.Following -> Icons.Filled.Favorite
     PhoneTab.Browse -> PhoneIcons.BrowseFilled
 }
 
 private fun PhoneTab.outlinedIcon(): ImageVector = when (this) {
     PhoneTab.Home -> Icons.Outlined.Home
+    PhoneTab.Discover -> PhoneIcons.Discover
     PhoneTab.Following -> Icons.Outlined.FavoriteBorder
     PhoneTab.Browse -> PhoneIcons.Browse
 }
@@ -156,6 +158,7 @@ private fun PhoneTab.outlinedIcon(): ImageVector = when (this) {
 /** The tab's name: spoken by TalkBack, no longer drawn. */
 private fun PhoneTab.label(): Int = when (this) {
     PhoneTab.Home -> R.string.nav_home
+    PhoneTab.Discover -> R.string.phone_nav_discover
     PhoneTab.Following -> R.string.sec_following
     PhoneTab.Browse -> R.string.nav_browse
 }

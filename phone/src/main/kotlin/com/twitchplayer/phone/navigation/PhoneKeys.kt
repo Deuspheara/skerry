@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable data object HomeKey : NavKey
 
+@Serializable data object DiscoverKey : NavKey
+
 @Serializable data object FollowingKey : NavKey
 
 @Serializable data object BrowseKey : NavKey
@@ -28,6 +30,7 @@ import kotlinx.serialization.Serializable
  */
 enum class PhoneTab(val root: NavKey) {
     Home(HomeKey),
+    Discover(DiscoverKey),
     Following(FollowingKey),
     Browse(BrowseKey),
     ;
@@ -36,7 +39,7 @@ enum class PhoneTab(val root: NavKey) {
         /** The tab a destination belongs to: category and channel pages belong to the tab they were opened from. */
         fun of(key: NavKey): PhoneTab? = entries.firstOrNull { it.root == key }
 
-        /** The tabs the bar shows: two when nobody is signed in, three otherwise. */
+        /** The tabs the bar shows: three when nobody is signed in (Home, Discover, Browse), four otherwise. */
         fun visible(signedIn: Boolean): List<PhoneTab> = if (signedIn) entries else entries - Following
 
         /**

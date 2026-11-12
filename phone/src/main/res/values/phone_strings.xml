@@ -118,4 +118,19 @@
     <string name="phone_player_sleep_timer_hour_half">1 hour 30 minutes</string>
     <string name="phone_player_sleep_timer_cancel">Turn off the timer</string>
     <string name="phone_player_sleep_timer_active">Sleep timer, %1$s left</string>
+    <string name="phone_nav_discover">Discover</string>
+    <string name="phone_settings_feed_autoplay">Discover previews</string>
+    <string name="phone_feed_autoplay_wifi">On Wi-Fi only</string>
+    <string name="phone_feed_autoplay_always">Always</string>
+    <string name="phone_feed_autoplay_off">Off, tap to play</string>
+    <string name="phone_settings_feed_help">Previews play live streams as you swipe, which uses data and battery. Twitch can show an ad when a stream starts: the app never skips or hides it.</string>
+    <string name="phone_feed_open">Watch with chat</string>
+    <string name="phone_feed_channel">Open the channel</string>
+    <string name="phone_feed_mute">Turn the sound on</string>
+    <string name="phone_feed_unmute">Mute</string>
+    <string name="phone_feed_chat_show">Show chat</string>
+    <string name="phone_feed_chat_hide">Hide chat</string>
+    <string name="phone_feed_tap_to_play">Tap to play</string>
+    <string name="phone_feed_page_description">%1$s, %2$s, %3$s viewers, %4$d of %5$d</string>
+    <string name="phone_feed_empty">No live streams right now.</string>
 </resources>

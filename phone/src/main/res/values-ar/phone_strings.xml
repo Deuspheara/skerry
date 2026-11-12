@@ -110,4 +110,19 @@
     <string name="phone_player_sleep_timer_hour_half">ساعة ونصف</string>
     <string name="phone_player_sleep_timer_cancel">إيقاف المؤقت</string>
     <string name="phone_player_sleep_timer_active">مؤقت النوم، متبقي %1$s</string>
+    <string name="phone_nav_discover">اكتشف</string>
+    <string name="phone_settings_feed_autoplay">معاينات اكتشف</string>
+    <string name="phone_feed_autoplay_wifi">عبر Wi-Fi فقط</string>
+    <string name="phone_feed_autoplay_always">دائماً</string>
+    <string name="phone_feed_autoplay_off">متوقفة، المس للتشغيل</string>
+    <string name="phone_settings_feed_help">تشغّل المعاينات البثوث المباشرة أثناء التمرير، مما يستهلك البيانات والبطارية. قد يعرض Twitch إعلاناً عند بدء البث: لا يتجاوزه التطبيق ولا يخفيه أبداً.</string>
+    <string name="phone_feed_open">شاهد مع الدردشة</string>
+    <string name="phone_feed_channel">افتح القناة</string>
+    <string name="phone_feed_mute">تشغيل الصوت</string>
+    <string name="phone_feed_unmute">كتم الصوت</string>
+    <string name="phone_feed_chat_show">إظهار الدردشة</string>
+    <string name="phone_feed_chat_hide">إخفاء الدردشة</string>
+    <string name="phone_feed_tap_to_play">المس للتشغيل</string>
+    <string name="phone_feed_page_description">%1$s، %2$s، %3$s مشاهد، %4$d من %5$d</string>
+    <string name="phone_feed_empty">لا توجد بثوث مباشرة الآن.</string>
 </resources>
