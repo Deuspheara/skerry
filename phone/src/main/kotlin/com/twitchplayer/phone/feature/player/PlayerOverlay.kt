@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -45,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.theme.LocalReducedMotion
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /** Where the sheet can rest: the whole screen, the strip above the tab bar, or off the bottom (closed). */
@@ -114,7 +116,8 @@ fun PlayerOverlay(
     val stripState = rememberUpdatedState(open.showsStrip)
     val bodyVisible = remember(anchored) { derivedStateOf { anchored.settledValue != Rest.Collapsed || anchored.targetValue != Rest.Collapsed } }
     val stripVisible = remember(anchored) { derivedStateOf { anchored.settledValue != Rest.Expanded || anchored.targetValue != Rest.Expanded } }
-    val sheet = remember(anchored, metrics) {
+    val scope = rememberCoroutineScope()
+    val sheet = remember(anchored, metrics, reducedMotion) {
         PlayerSheet(
             progress = { SheetGeometry.progress(anchored.offset.let { if (it.isNaN()) 0f else it }, metrics.collapsedPx) },
             stripState = stripState,
@@ -122,7 +125,14 @@ fun PlayerOverlay(
             stripVisibleState = stripVisible,
             minimise = { dispatch(PlayerSessionEvent.Minimise) },
             expand = { dispatch(PlayerSessionEvent.Expand) },
-            close = { dispatch(PlayerSessionEvent.Close) },
+            // The X lets the strip slide off the bottom (the session ends once it has settled there); at once with reduced motion.
+            close = {
+                if (reducedMotion || !anchored.anchors.hasPositionFor(Rest.Dismissed)) {
+                    dispatch(PlayerSessionEvent.Close)
+                } else {
+                    scope.launch { anchored.animateTo(Rest.Dismissed, tween(SETTLE_MS)) }
+                }
+            },
         )
     }
 

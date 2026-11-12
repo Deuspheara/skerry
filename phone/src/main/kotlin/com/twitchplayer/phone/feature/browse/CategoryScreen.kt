@@ -152,7 +152,7 @@ fun CategoryRoute(
                         fullSpanItem("empty") { MessageState(title = stringResource(R.string.state_no_live), modifier = Modifier.padding(top = 48.dp)) }
                     }
                     items(ui.streams, key = { it.channelId }, contentType = { "stream" }) { stream ->
-                        StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
+                        StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
                     }
                 }
             }

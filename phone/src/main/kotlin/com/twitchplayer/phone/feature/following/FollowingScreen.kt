@@ -102,7 +102,7 @@ private fun FollowingList(live: List<com.twitchplayer.tv.core.data.model.LiveStr
     ) {
         if (live.isNotEmpty()) {
             items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
             }
         } else {
             fullSpanItem("nothing-live") { Text(nothingLive, style = MaterialTheme.typography.bodyLarge) }

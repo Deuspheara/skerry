@@ -104,13 +104,13 @@ private fun ForYou(content: HomeContent, onWatch: (String) -> Unit, onCategory: 
         if (content.following.isNotEmpty()) {
             sectionHeader("following-header", followingTitle)
             items(content.following, key = { "following-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
             }
         }
         if (content.forYou.isNotEmpty()) {
             sectionHeader("for-you-header", forYouTitle)
             items(content.forYou, key = { "for-you-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout)
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.animateItem())
             }
         }
         if (content.categories.isNotEmpty()) {

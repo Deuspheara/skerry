@@ -1,10 +1,16 @@
 package com.twitchplayer.phone.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -98,28 +104,41 @@ fun <T> LoadHost(
     modifier: Modifier = Modifier,
     content: @Composable (T) -> Unit,
 ) {
-    Box(modifier.fillMaxSize()) {
-        when (load) {
-            Load.Loading -> skeleton()
+    // The skeleton, the message and the content cross-fade into each other; a refresh that only swaps the data of the content (same kind)
+    // is not animated. Not with reduced motion.
+    val reduced = LocalReducedMotion.current
+    AnimatedContent(
+        targetState = load,
+        modifier = modifier.fillMaxSize(),
+        contentKey = { it::class },
+        transitionSpec = { if (reduced) EnterTransition.None togetherWith ExitTransition.None else fadeIn(tween(LOAD_FADE_MS)) togetherWith fadeOut(tween(LOAD_FADE_MS)) },
+        label = "load-host",
+    ) { state ->
+        Box(Modifier.fillMaxSize()) {
+            when (state) {
+                Load.Loading -> skeleton()
 
-            Load.SignedOut -> MessageState(
-                title = stringResource(R.string.state_signin_title),
-                body = stringResource(R.string.phone_signin_body),
-                actionLabel = stringResource(R.string.state_signin),
-                onAction = onSignIn,
-            )
+                Load.SignedOut -> MessageState(
+                    title = stringResource(R.string.state_signin_title),
+                    body = stringResource(R.string.phone_signin_body),
+                    actionLabel = stringResource(R.string.state_signin),
+                    onAction = onSignIn,
+                )
 
-            Load.Failed -> MessageState(
-                title = stringResource(R.string.state_error),
-                body = stringResource(R.string.phone_error_body),
-                actionLabel = stringResource(R.string.state_retry),
-                onAction = onRetry,
-            )
+                Load.Failed -> MessageState(
+                    title = stringResource(R.string.state_error),
+                    body = stringResource(R.string.phone_error_body),
+                    actionLabel = stringResource(R.string.state_retry),
+                    onAction = onRetry,
+                )
 
-            is Load.Ready -> content(load.data)
+                is Load.Ready -> content(state.data)
+            }
         }
     }
 }
+
+private const val LOAD_FADE_MS = 200
 
 /** A neutral block that breathes slowly while content loads; still when motion is reduced. */
 @Composable

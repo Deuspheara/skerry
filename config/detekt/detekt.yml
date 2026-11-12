@@ -51,4 +51,6 @@ Compose:
     # no-op default for tests and previews): the alternative is threading it through every composable of the player layout.
     # LocalPlayerSheet hands a player page what the sheet hosting it knows (drag progress, strip state, minimise / expand / close); a page
     # drawn on its own (a test, a preview) has none and behaves as expanded.
-    allowedCompositionLocals: LocalReducedMotion, LocalPlayerHost, LocalPlayerSheet
+    # LocalSharedTransitionScope is the scope of the shared-element layout around the page display: the header's search pill and the
+    # Search page's field (two screens, far apart in the tree) mark themselves as one element through it; none in a test or preview.
+    allowedCompositionLocals: LocalReducedMotion, LocalPlayerHost, LocalPlayerSheet, LocalSharedTransitionScope

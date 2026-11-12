@@ -84,6 +84,7 @@ import com.twitchplayer.phone.ui.components.FilterPill
 import com.twitchplayer.phone.ui.components.LiveBadge
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.PhoneIcons
+import com.twitchplayer.phone.ui.components.searchMorph
 import com.twitchplayer.phone.ui.theme.PhoneColors
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.core.data.model.ChannelRef
@@ -108,6 +109,7 @@ private val PillHeight = 40.dp
  */
 @Composable
 fun SearchRoute(
+    morphKey: String,
     onBack: () -> Unit,
     onWatch: (String) -> Unit,
     onChannel: (String) -> Unit,
@@ -164,6 +166,7 @@ fun SearchRoute(
             SearchField(
                 text = text,
                 focus = focus,
+                morphKey = morphKey,
                 onBack = onBack,
                 onSearch = commit,
                 onMic = startVoice,
@@ -200,6 +203,7 @@ fun SearchRoute(
 private fun SearchField(
     text: androidx.compose.foundation.text.input.TextFieldState,
     focus: FocusRequester,
+    morphKey: String,
     onBack: () -> Unit,
     onSearch: () -> Unit,
     onMic: () -> Unit,
@@ -215,7 +219,7 @@ private fun SearchField(
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             onKeyboardAction = { onSearch() },
-            modifier = Modifier.weight(1f).height(PillHeight).focusRequester(focus).semantics {
+            modifier = Modifier.weight(1f).searchMorph(morphKey).height(PillHeight).focusRequester(focus).semantics {
                 // Named while empty; once something is typed, the typed text is what the screen reader reads (a description would replace it).
                 if (text.text.isEmpty()) contentDescription = hint
             },
@@ -273,12 +277,12 @@ private fun LazyListScope.suggestions(state: SearchUiState, onEvent: (SearchEven
                 TextButton(onClick = { onEvent(SearchEvent.ClearRecents) }) { Text(stringResource(R.string.phone_search_clear_recents)) }
             }
         }
-        items(state.recents, key = { "recent-$it" }) { recent -> RecentRow(recent, onPick = { onPickRecent(recent) }, onRemove = { onEvent(SearchEvent.RemoveRecent(recent)) }) }
+        items(state.recents, key = { "recent-$it" }) { recent -> RecentRow(recent, onPick = { onPickRecent(recent) }, onRemove = { onEvent(SearchEvent.RemoveRecent(recent)) }, modifier = Modifier.animateItem()) }
     }
     val live = (state.results as? ResultsUi.Trends)?.channels.orEmpty()
     if (live.isNotEmpty()) {
         item(key = "live-header") { SectionTitle(stringResource(R.string.phone_search_live_now)) }
-        items(live, key = { "live-${it.id}" }) { channel -> ChannelResultRow(channel, onClick = { onOpen(channel) }) }
+        items(live, key = { "live-${it.id}" }) { channel -> ChannelResultRow(channel, onClick = { onOpen(channel) }, modifier = Modifier.animateItem()) }
     }
     if (state.recents.isEmpty() && live.isEmpty()) {
         item(key = "hint") {
@@ -316,7 +320,6 @@ private fun LazyListScope.results(
 
         // A query that has not been answered yet never shows what answered the one before it.
         state.searching || (found == null && !noResult) -> {
-            item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) }
             items(SKELETON_ROWS, key = { "skeleton-$it" }) { SkeletonRow() }
         }
 
@@ -347,7 +350,7 @@ private fun LazyListScope.foundResults(
             ChannelResultRow(channel, onClick = {
                 onOpened()
                 if (channel.isLive) onWatch(channel.login) else onChannel(channel.login)
-            })
+            }, modifier = Modifier.animateItem())
         }
     }
     if (showCategories) {
@@ -373,9 +376,9 @@ private fun SectionTitle(text: String) {
 
 /** One recent search: the clock, the text (a tap searches it again), and an x that forgets only this one. */
 @Composable
-private fun RecentRow(query: String, onPick: () -> Unit, onRemove: () -> Unit) {
+private fun RecentRow(query: String, onPick: () -> Unit, onRemove: () -> Unit, modifier: Modifier = Modifier) {
     val remove = stringResource(R.string.phone_search_remove_recent, query)
-    Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onPick).padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onPick).padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(PhoneIcons.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         Text(query, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 14.dp))
         IconButton(onClick = onRemove) { Icon(Icons.Filled.Clear, contentDescription = remove, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) }
@@ -387,11 +390,11 @@ private fun RecentRow(query: String, onPick: () -> Unit, onRemove: () -> Unit) {
  * with the viewers, or that it is offline.
  */
 @Composable
-private fun ChannelResultRow(channel: ChannelRef, onClick: () -> Unit) {
+private fun ChannelResultRow(channel: ChannelRef, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewers = remember(channel.viewers) { formatViewers(channel.viewers) }
     val description = if (channel.isLive) stringResource(R.string.cd_live_channel, channel.name) else stringResource(R.string.cd_offline, channel.name)
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = description }.padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = description }.padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {

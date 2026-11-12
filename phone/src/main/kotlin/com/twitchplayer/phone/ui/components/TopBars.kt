@@ -60,7 +60,13 @@ import kotlin.math.roundToInt
 
 /** What the header of a tab root offers besides its title: the search entry and the account entry. */
 @Immutable
-class HeaderActions(val account: String?, val onSearch: () -> Unit, val onProfile: () -> Unit)
+class HeaderActions(
+    val account: String?,
+    val onSearch: () -> Unit,
+    val onProfile: () -> Unit,
+    /** Names the pill and the Search page's field as one element (one per tab). */
+    val morphKey: String = "search-field",
+)
 
 /** Heights of the top bars. */
 object TopBarSpec {
@@ -106,7 +112,7 @@ fun HomeHeader(actions: HeaderActions, behavior: TopAppBarScrollBehavior, modifi
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AppMark()
-            SearchPill(actions.onSearch, Modifier.weight(1f))
+            SearchPill(actions.onSearch, actions.morphKey, Modifier.weight(1f))
             ProfileButton(actions.account, actions.onProfile)
         }
     }
@@ -123,10 +129,11 @@ private fun AppMark() {
 }
 
 @Composable
-private fun SearchPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun SearchPill(onClick: () -> Unit, morphKey: String, modifier: Modifier = Modifier) {
     val label = stringResource(R.string.nav_search)
     Row(
         modifier
+            .searchMorph(morphKey)
             .height(TopBarSpec.SearchPill)
             .clip(RoundedCornerShape(TopBarSpec.SearchPill / 2))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)

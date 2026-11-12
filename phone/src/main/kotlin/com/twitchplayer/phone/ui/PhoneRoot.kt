@@ -1,6 +1,8 @@
 package com.twitchplayer.phone.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -25,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,6 +82,7 @@ import com.twitchplayer.phone.navigation.phoneTransition
 import com.twitchplayer.phone.navigation.rememberGuardedBackStack
 import com.twitchplayer.phone.navigation.rememberScreenFill
 import com.twitchplayer.phone.ui.components.HeaderActions
+import com.twitchplayer.phone.ui.components.LocalSharedTransitionScope
 import com.twitchplayer.phone.ui.components.PhoneBottomBar
 import com.twitchplayer.phone.ui.components.PhoneChrome
 import com.twitchplayer.phone.ui.components.PhoneRail
@@ -136,6 +140,9 @@ fun PhoneRoot(
     }
 }
 
+private fun searchMorphKey(tab: PhoneTab) = "search-field-${tab.name}"
+
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun PhoneScaffold(
     reducedMotion: Boolean,
@@ -158,8 +165,11 @@ private fun PhoneScaffold(
         session.dispatch(PlayerSessionEvent.Minimise)
         navigator.push(ChannelKey(login))
     }
-    val header = remember(navigator, account) {
-        HeaderActions(account, onSearch = { navigator.push(SearchKey) }, onProfile = { navigator.push(SettingsKey) })
+    // One header per tab: the search pill of each names its own morph into the Search page (see searchMorph).
+    val headers = remember(navigator, account) {
+        PhoneTab.entries.associateWith { tab ->
+            HeaderActions(account, onSearch = { navigator.push(SearchKey) }, onProfile = { navigator.push(SettingsKey) }, morphKey = searchMorphKey(tab))
+        }
     }
     val wide = isWideWindow()
     val chromeVisible = navigator.showsNavigation
@@ -213,61 +223,66 @@ private fun PhoneScaffold(
                     // Search opens in place (the header's pill grows into it): a fade, no slide.
                     val fade = mapOf<String, Any>(NAV_KIND to KIND_FADE)
                     Box(Modifier.fillMaxSize()) {
-                        NavDisplay(
-                            backStack = navigator.currentStack,
-                            modifier = Modifier.fillMaxSize(),
-                            onBack = { navigator.back() },
-                            entryDecorators = listOf(
-                                rememberScreenFill(),
-                                rememberSaveableStateHolderNavEntryDecorator(),
-                                rememberViewModelStoreNavEntryDecorator(),
-                            ),
-                            transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
-                            popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-                            predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
-                            entryProvider = entryProvider<NavKey> {
-                                entry<HomeKey>(metadata = tab) {
-                                    HomeRoute(
-                                        onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
-                                        onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                                        onSignIn = onSignIn,
-                                        header = header,
-                                    )
-                                }
-                                entry<FollowingKey>(metadata = tab) {
-                                    FollowingRoute(
-                                        onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
-                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                        onSignIn = onSignIn,
-                                        header = header,
-                                    )
-                                }
-                                entry<BrowseKey>(metadata = tab) {
-                                    BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = header)
-                                }
-                                entry<SearchKey>(metadata = fade) {
-                                    SearchRoute(
-                                        onBack = navigator::pop,
-                                        onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
-                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                        onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
-                                    )
-                                }
-                                entry<SettingsKey> { SettingsRoute(onBack = navigator::pop, onSignIn = onSignIn, onSignOut = onSignOut) }
-                                entry<CategoryKey> { key ->
-                                    CategoryRoute(key, onBack = navigator::pop, onWatch = { login -> session.open(PlaybackTarget.Live(login)) }, onSignIn = onSignIn)
-                                }
-                                entry<ChannelKey> { key ->
-                                    ChannelRoute(
-                                        login = key.login,
-                                        onBack = navigator::pop,
-                                        onPlay = session::open,
-                                        onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                        onSignIn = onSignIn,
-                                    )
-                                }
-                            },
-                        )
+                        SharedTransitionLayout(Modifier.fillMaxSize()) {
+                            CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                                NavDisplay(
+                                    backStack = navigator.currentStack,
+                                    modifier = Modifier.fillMaxSize(),
+                                    onBack = { navigator.back() },
+                                    entryDecorators = listOf(
+                                        rememberScreenFill(),
+                                        rememberSaveableStateHolderNavEntryDecorator(),
+                                        rememberViewModelStoreNavEntryDecorator(),
+                                    ),
+                                    transitionSpec = { phoneTransition(this, reducedMotion, pop = false) },
+                                    popTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                                    predictivePopTransitionSpec = { phoneTransition(this, reducedMotion, pop = true) },
+                                    entryProvider = entryProvider<NavKey> {
+                                        entry<HomeKey>(metadata = tab) {
+                                            HomeRoute(
+                                                onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
+                                                onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                                onSignIn = onSignIn,
+                                                header = headers.getValue(PhoneTab.Home),
+                                            )
+                                        }
+                                        entry<FollowingKey>(metadata = tab) {
+                                            FollowingRoute(
+                                                onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
+                                                onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                                onSignIn = onSignIn,
+                                                header = headers.getValue(PhoneTab.Following),
+                                            )
+                                        }
+                                        entry<BrowseKey>(metadata = tab) {
+                                            BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = headers.getValue(PhoneTab.Browse))
+                                        }
+                                        entry<SearchKey>(metadata = fade) {
+                                            SearchRoute(
+                                                morphKey = searchMorphKey(navigator.selected),
+                                                onBack = navigator::pop,
+                                                onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
+                                                onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                                onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                            )
+                                        }
+                                        entry<SettingsKey> { SettingsRoute(onBack = navigator::pop, onSignIn = onSignIn, onSignOut = onSignOut) }
+                                        entry<CategoryKey> { key ->
+                                            CategoryRoute(key, onBack = navigator::pop, onWatch = { login -> session.open(PlaybackTarget.Live(login)) }, onSignIn = onSignIn)
+                                        }
+                                        entry<ChannelKey> { key ->
+                                            ChannelRoute(
+                                                login = key.login,
+                                                onBack = navigator::pop,
+                                                onPlay = session::open,
+                                                onChannel = { login -> navigator.push(ChannelKey(login)) },
+                                                onSignIn = onSignIn,
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                        }
                         // Inside the scaffold's content area: above the bar, beside the rail, above the keyboard and the gesture bar, whatever the text size.
                         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
                     }
