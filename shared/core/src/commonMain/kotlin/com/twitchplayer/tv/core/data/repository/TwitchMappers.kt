@@ -69,3 +69,23 @@ internal fun parseTwitchTime(value: String): Long = if (HelixTimestamp.matches(v
 } else {
     0L
 }
+
+/** [millis] since the epoch as the UTC timestamp Helix filters take ("2026-11-12T08:30:00Z"); no platform calendar, so it works in common code. */
+@Suppress("MagicNumber") // the constants of the civil-calendar algorithm, named in its source, not worth a name each
+internal fun isoUtc(millis: Long): String {
+    val totalSeconds = millis.floorDiv(1000L)
+    val days = totalSeconds.floorDiv(86_400L)
+    val secondOfDay = (totalSeconds - days * 86_400L).toInt()
+    // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm).
+    val z = days + 719_468L
+    val era = z.floorDiv(146_097L)
+    val dayOfEra = (z - era * 146_097L).toInt()
+    val yearOfEra = (dayOfEra - dayOfEra / 1_460 + dayOfEra / 36_524 - dayOfEra / 146_096) / 365
+    val dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
+    val monthPart = (5 * dayOfYear + 2) / 153
+    val day = dayOfYear - (153 * monthPart + 2) / 5 + 1
+    val month = if (monthPart < 10) monthPart + 3 else monthPart - 9
+    val year = (yearOfEra + era * 400 + if (month <= 2) 1 else 0).toInt()
+    fun two(n: Int) = n.toString().padStart(2, '0')
+    return "${year.toString().padStart(4, '0')}-${two(month)}-${two(day)}T${two(secondOfDay / 3_600)}:${two(secondOfDay % 3_600 / 60)}:${two(secondOfDay % 60)}Z"
+}

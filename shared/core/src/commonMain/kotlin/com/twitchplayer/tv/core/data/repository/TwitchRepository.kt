@@ -4,6 +4,7 @@ import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.core.data.model.ChannelClip
 import com.twitchplayer.tv.core.data.model.ChannelDetails
 import com.twitchplayer.tv.core.data.model.ChannelRef
+import com.twitchplayer.tv.core.data.model.FeedClip
 import com.twitchplayer.tv.core.data.model.Follows
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.data.model.Replay
@@ -41,6 +42,9 @@ interface TwitchRepository {
 
     /** The channel's chat modes, or null when they cannot be read. */
     suspend fun roomState(channelId: String): RoomState? = null
+
+    /** The most viewed clips of the week in the busiest categories, for the Discover feed; empty when they cannot be read. */
+    suspend fun feedClips(): List<FeedClip> = emptyList()
 
     /** The broadcasts with these ids, each with its channel; ids that were deleted are missing. Empty when they cannot be read. */
     suspend fun replaysByIds(ids: List<String>): List<WatchedReplay> = emptyList()
@@ -177,6 +181,22 @@ class TwitchRepositoryImpl(
         }
     }
 
+    override suspend fun feedClips(): List<FeedClip> = coroutineScope {
+        val since = isoUtc(WallClock.System.nowMillis() - FEED_CLIP_DAYS * DAY_MS)
+        val games = categoriesCache.get { api.topCategories(first = 100).data.map { it.toCategory() } }.take(FEED_CLIP_GAMES)
+        val clips = games.map { game -> async { runCatching { api.clipsByGame(game.id, since, FEED_CLIPS_PER_GAME) }.getOrDefault(emptyList()) } }
+            .flatMap { it.await() }
+            .filter { it.broadcasterId.isNotEmpty() }
+            .distinctBy { it.id }
+            .sortedByDescending { it.viewCount }
+            .take(FEED_CLIP_LIMIT)
+        val users = clips.map { it.broadcasterId }.distinct().chunked(AVATAR_BATCH).flatMap { runCatching { api.usersByIds(it) }.getOrDefault(emptyList()) }.associateBy { it.id }
+        clips.mapNotNull { clip ->
+            val user = users[clip.broadcasterId] ?: return@mapNotNull null
+            FeedClip(clip.id, clip.title, sizedImage(clip.thumbnailUrl, FEED_CLIP_WIDTH, FEED_CLIP_HEIGHT), clip.duration.toInt(), clip.viewCount, user.id, user.login, user.displayName, user.avatarUrl.ifEmpty { null }, parseTwitchTime(clip.createdAt))
+        }
+    }
+
     override suspend fun replaysByIds(ids: List<String>): List<WatchedReplay> {
         val videos = api.videosByIds(ids).filter { it.userId.isNotEmpty() }
         runCatching { loadAvatars(videos.map { it.userId }) }
@@ -216,6 +236,13 @@ class TwitchRepositoryImpl(
 }
 
 private const val FORCE_COALESCE_MS = 3_000L
+private const val FEED_CLIP_DAYS = 7
+private const val FEED_CLIP_GAMES = 4
+private const val FEED_CLIPS_PER_GAME = 15
+private const val FEED_CLIP_LIMIT = 40
+private const val DAY_MS = 24 * 60 * 60_000L
+private const val FEED_CLIP_WIDTH = 640
+private const val FEED_CLIP_HEIGHT = 360
 private const val AVATAR_BATCH = 100
 
 internal fun TwitchVideo.toReplay() = Replay(

@@ -46,6 +46,14 @@ a third-party client to autoplay several streams is **not confirmed** (the text 
 text says so, autoplay is off mobile data by default, and "Off" is one tap away. The question should go to Twitch developer support before this is released
 widely.
 
+## Clips
+
+A **Live | Clips** switch at the top of the page changes the pager's content. `TwitchRepository.feedClips()` takes the four busiest categories, asks
+Helix for their most viewed clips of the last seven days (`GET /clips?game_id=&started_at=`), merges them (at most 40, each clip once) and resolves
+the channels' logins and pictures in one batched users call. The clip's file is resolved page by page with the same `GqlClipResolver` as the clip
+player (unofficial, see docs/TWITCH_INTEGRATION.md). Same rules as the live pager: two players, the next clip prepared paused, nothing fetched ahead
+when autoplay is not allowed, looping and muted until the sound is turned on, a tap opens the clip in the full player.
+
 ## Not done
 
 * Handing the preview's player to the full player sheet (it loads the stream again, at the viewer's own quality).

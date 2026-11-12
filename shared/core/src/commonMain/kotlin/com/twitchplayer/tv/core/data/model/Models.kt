@@ -69,6 +69,20 @@ data class ReplayPage(val replays: List<Replay>, val cursor: String? = null)
 
 data class ScheduledStream(val title: String, val category: String, val startMs: Long, val endMs: Long = 0L)
 
+/** A clip in the Discover feed: the clip and the channel it comes from. */
+data class FeedClip(
+    val slug: String,
+    val title: String,
+    val thumbnailUrl: String,
+    val durationSeconds: Int,
+    val views: Int,
+    val channelId: String,
+    val channelLogin: String,
+    val channelName: String,
+    val channelAvatarUrl: String?,
+    val createdAtMs: Long = 0L,
+)
+
 data class ChannelClip(val slug: String, val title: String, val thumbnailUrl: String, val durationSeconds: Int, val views: Int, val createdAtMs: Long = 0L)
 
 data class ChannelDetails(

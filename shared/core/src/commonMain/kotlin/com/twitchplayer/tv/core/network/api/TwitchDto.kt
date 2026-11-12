@@ -105,6 +105,8 @@ data class TwitchEmote(
 @Serializable
 data class TwitchClip(
     val id: String,
+    @SerialName("broadcaster_id") val broadcasterId: String = "",
+    @SerialName("broadcaster_name") val broadcasterName: String = "",
     val title: String = "",
     @SerialName("thumbnail_url") val thumbnailUrl: String = "",
     @SerialName("view_count") val viewCount: Int = 0,

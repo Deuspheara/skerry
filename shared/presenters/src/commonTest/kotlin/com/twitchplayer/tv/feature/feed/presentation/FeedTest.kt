@@ -144,3 +144,52 @@ class FeedPresenterTest {
         assertIs<Load.Ready<FeedContent>>(presenter.state.value.load)
     }
 }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ClipsFeedPresenterTest {
+    private val dispatcher = UnconfinedTestDispatcher()
+
+    private fun clip(slug: String) = com.twitchplayer.tv.core.data.model.FeedClip(slug, "title $slug", "", 20, 100, "c", "chan", "Chan", null)
+
+    private class Repo(val clips: List<com.twitchplayer.tv.core.data.model.FeedClip>, base: FakeRepository = FakeRepository()) : TwitchRepository by base {
+        var fail = false
+        override suspend fun feedClips(): List<com.twitchplayer.tv.core.data.model.FeedClip> {
+            if (fail) {
+                fail = false
+                error("boom")
+            }
+            return clips
+        }
+    }
+
+    private class Net(initial: Boolean) : NetworkStatus {
+        val flow = MutableStateFlow(initial)
+        override val metered: StateFlow<Boolean> = flow
+    }
+
+    @Test fun theClipsLoadInTheOrderTheRepositoryGivesThem() = runTest(dispatcher) {
+        val presenter = ClipsFeedPresenter(Repo(listOf(clip("a"), clip("b"))), FakeSession(), FakeSettings(), Net(false), backgroundScope, dispatcher)
+        presenter.state.onEach { }.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertEquals(listOf("a", "b"), presenter.state.value.clips.map { it.slug })
+        assertTrue(presenter.state.value.autoplayAllowed)
+    }
+
+    @Test fun autoplayIsOffOnMobileDataByDefault() = runTest(dispatcher) {
+        val presenter = ClipsFeedPresenter(Repo(listOf(clip("a"))), FakeSession(), FakeSettings(), Net(true), backgroundScope, dispatcher)
+        presenter.state.onEach { }.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertFalse(presenter.state.value.autoplayAllowed)
+    }
+
+    @Test fun aFailureThenRetryRecovers() = runTest(dispatcher) {
+        val repo = Repo(listOf(clip("a"))).apply { fail = true }
+        val presenter = ClipsFeedPresenter(repo, FakeSession(), FakeSettings(), Net(false), backgroundScope, dispatcher)
+        presenter.state.onEach { }.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertEquals(Load.Failed, presenter.state.value.load)
+        presenter.retry()
+        advanceUntilIdle()
+        assertIs<Load.Ready<ClipsContent>>(presenter.state.value.load)
+    }
+}

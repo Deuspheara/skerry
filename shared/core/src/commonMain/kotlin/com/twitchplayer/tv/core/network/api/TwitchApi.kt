@@ -134,6 +134,13 @@ class TwitchApi(
         parameter("first", first.coerceIn(1, 100))
     }.data
 
+    /** The most viewed clips of a game since [startedAt] (RFC 3339). No scope needed. */
+    suspend fun clipsByGame(gameId: String, startedAt: String, first: Int = 20): List<TwitchClip> = request<HelixPage<TwitchClip>>("clips") {
+        parameter("game_id", gameId)
+        parameter("started_at", startedAt)
+        parameter("first", first.coerceIn(1, 100))
+    }.data
+
     suspend fun chatSettings(broadcasterId: String): TwitchChatSettings? = request<HelixPage<TwitchChatSettings>>("chat/settings") { parameter("broadcaster_id", broadcasterId) }.data.firstOrNull()
 
     /** Needs `user:write:chat`. The caller must read `is_sent` / `drop_reason`: a 200 does not mean the message went out. */
