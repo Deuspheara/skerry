@@ -51,6 +51,14 @@ class FrameTimingBenchmarks {
 
     @Test fun homeScrollBaselineProfile() = home(profile, HomeScenarios::homeScroll)
 
+    @Test fun chipSwitchNoProfile() = home(CompilationMode.None(), HomeScenarios::chipSwitch)
+
+    @Test fun chipSwitchBaselineProfile() = home(profile, HomeScenarios::chipSwitch)
+
+    @Test fun discoverSwipeNoProfile() = home(CompilationMode.None(), HomeScenarios::discoverSwipe)
+
+    @Test fun discoverSwipeBaselineProfile() = home(profile, HomeScenarios::discoverSwipe)
+
     @Test fun chatScrollNoProfile() = player(CompilationMode.None(), PlayerScenarios::chatScroll)
 
     @Test fun chatScrollBaselineProfile() = player(profile, PlayerScenarios::chatScroll)

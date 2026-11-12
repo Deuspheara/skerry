@@ -28,6 +28,8 @@ class BaselineProfileGenerator {
         HomeScenarios.homeScroll(this)
         HomeScenarios.homeTabs(this)
         HomeScenarios.browseAndCategory(this)
+        HomeScenarios.chipSwitch(this)
+        HomeScenarios.discoverSwipe(this)
         HomeScenarios.search(this)
         HomeScenarios.channel(this)
         HomeScenarios.settings(this)
@@ -36,6 +38,7 @@ class BaselineProfileGenerator {
         // ways (drag, then Back and a tap), leave.
         PlayerScenarios.openLivePlayer(this)
         PlayerScenarios.chatScroll(this)
+        ChatScenarios.emotePicker(this)
         PlayerScenarios.fullscreenToggle(this)
         PlayerScenarios.sheetDrag(this)
         PlayerScenarios.sheetBackAndTap(this)

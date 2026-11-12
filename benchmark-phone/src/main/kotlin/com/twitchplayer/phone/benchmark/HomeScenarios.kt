@@ -41,6 +41,32 @@ internal object HomeScenarios {
         tab("Home")
     }
 
+    /** Browse: the filter chips (cards animate to their new places), back to "All" so the journey ends where it started. */
+    fun chipSwitch(scope: MacrobenchmarkScope) = with(scope) {
+        tab("Browse")
+        listOf("Games", "IRL", "Music", "All").forEach { chip ->
+            tap(By.pkg(TARGET_PACKAGE).text(chip), "the $chip chip")
+            Thread.sleep(CHIP_SETTLE_MS)
+        }
+        tab("Home")
+    }
+
+    /** Discover: swipe through a few streams (previews start and stop), switch to Clips and back, return to Home. */
+    fun discoverSwipe(scope: MacrobenchmarkScope) = with(scope) {
+        tab("Discover")
+        Thread.sleep(PREVIEW_START_MS)
+        repeat(DISCOVER_SWIPES) {
+            swipe(down = false, fromY = device.displayHeight / 4, toY = device.displayHeight * 3 / 4)
+            Thread.sleep(PREVIEW_START_MS)
+        }
+        repeat(DISCOVER_SWIPES) { swipe(down = true, fromY = device.displayHeight / 4, toY = device.displayHeight * 3 / 4) }
+        tap(By.pkg(TARGET_PACKAGE).text("Clips"), "the Clips mode")
+        Thread.sleep(PREVIEW_START_MS)
+        tap(By.pkg(TARGET_PACKAGE).text("Live"), "the Live mode")
+        tab("Home")
+        await(firstStream, "Home after Discover")
+    }
+
     /** The search pill opens the Search page: type a query, let the results update, back to Home. */
     fun search(scope: MacrobenchmarkScope) = with(scope) {
         openSearch()
@@ -72,4 +98,7 @@ internal object HomeScenarios {
     }
 
     private const val SEARCH_SETTLE_MS = 800L
+    private const val CHIP_SETTLE_MS = 600L
+    private const val PREVIEW_START_MS = 1_200L
+    private const val DISCOVER_SWIPES = 3
 }

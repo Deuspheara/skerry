@@ -6,10 +6,15 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class NavKeyCodecTest {
-    private val keys: List<NavKey> = listOf(HomeKey, FollowingKey, BrowseKey, SearchKey, SettingsKey, CategoryKey("509658", "Just Chatting"), ChannelKey("camille"))
+    private val keys: List<NavKey> = listOf(HomeKey, DiscoverKey, FollowingKey, BrowseKey, SearchKey, SettingsKey, CategoryKey("509658", "Just Chatting"), ChannelKey("camille"))
 
     @Test fun everyPageSurvivesTheRoundTrip() {
         keys.forEach { assertEquals(it, NavKeyCodec.decode(NavKeyCodec.encode(it))) }
+    }
+
+    /** The saved form is written whenever the app goes to the background: a tab root the codec does not know crashed the app there. */
+    @Test fun everyTabRootCanBeSaved() {
+        PhoneTab.entries.forEach { tab -> assertEquals(tab.root, NavKeyCodec.decode(NavKeyCodec.encode(tab.root))) }
     }
 
     @Test fun aSavedStackComesBackAsItWas() {

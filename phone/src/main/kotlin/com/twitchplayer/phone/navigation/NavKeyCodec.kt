@@ -16,6 +16,7 @@ internal object NavKeyCodec {
         serializersModule = SerializersModule {
             polymorphic(NavKey::class) {
                 subclass(HomeKey::class)
+                subclass(DiscoverKey::class)
                 subclass(FollowingKey::class)
                 subclass(BrowseKey::class)
                 subclass(SearchKey::class)
