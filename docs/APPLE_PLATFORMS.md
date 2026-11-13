@@ -53,8 +53,18 @@ The Apple TV target excludes `Views/SignInSheet.swift` and `Views/ChatComposer.s
   (`channelId`, category id) so a refresh keeps the focus where it is. Type is `callout` and up; cards are 400 pt wide; rows start at the 80 pt title-safe edge.
 - **Player.** Full-screen `AVPlayerViewController`: the Siri Remote's select, play or pause and swipe to scrub work as on any Apple TV app. The player is a `fullScreenCover`: the Menu button dismisses it (the system's behaviour for a full-screen cover, relied on and **not covered by an automated
   test**: that needs a focus-engine driver this project does not have), and the dismissal closes the player session (binding setter), which stops the stream and
-  disconnects the chat. The app adds transport-bar menu items: chat, quality, audio only, sleep timer. The chat is a read-only panel over the right of the picture (toggled
-  from the transport bar); the Apple TV has no chat input.
+  disconnects the chat. The app adds transport-bar menu items: chat, quality, audio only, sleep timer. The chat is built like the Android TV's (`ChatPanel`, `ChatLayer`, `ChatLineView`), with the dp doubled for the Apple TV's 1920 pt:
+  - **Compact**: a column at the trailing edge, full height: a text area of 24 % of the screen plus 8 and 24 dp insets (at most a third of the screen, the picture keeps two thirds, resized once),
+    on the page colour (`0E0E10`) with the chat background opacity (default 80 %) of `18181B` over it; a 36 dp header (the "Chat" label, the room's mode chips for slow, followers,
+    subscribers, emotes and unique, and the options glyph); the newest line rests above the safe bottom margin; the column slides in from the edge.
+  - **Overlay**: 340 dp wide and two thirds of the screen high at the bottom trailing corner, no panel, a wide dense shadow, the lines fading out towards the top with Android's stops.
+  - **Lines**: text 14 / 15 / 17 sp doubled (28 / 30 / 34 pt), emotes 1.75 times the text, badges 30-32 pt, line gaps 1 / 3 / 6 dp doubled, semi-bold nick colours already made readable on dark
+    by the shared mapper, a mention on a 30 % Twitch-purple tint with a purple rule at its start, a highlighted line on 16 % with a light-purple rule, a Twitch sentence (sub, raid) in
+    quiet italic, bits as a bold `N` after a diamond.
+  - **Remote**: the system player owns the Siri Remote, so the messages are read-only (no list scrolling, no "back to live" pill). The mode (hidden, compact, overlay) and
+    the options (text size, spacing, background, badges, time, animated emotes) are items of the transport bar's menu, the counterparts of the Android chat button and options panel.
+  - Not done: the options as a focusable in-chat panel, the "back to live" pill with history scrolling, the fade-in of new lines.
+  The Apple TV has no chat input.
 - **Sign-in.** A large device code, the twitch.tv/activate address and a QR code that opens the activation page with the code filled in (`?device-code=`),
   so nothing has to be typed.
 - **Not done.** Top Shelf extension (needs an app group and a data feed), voice search beyond the system dictation key of the search keyboard, the Discover feed.
