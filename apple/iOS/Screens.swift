@@ -24,7 +24,7 @@ struct HomeScreen: View {
     @ViewBuilder private var content: some View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
-        case .signedOut: SignedOutState()
+        case .signedOut: SignedOutState(context: .home)
         case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
         case .ready(let home, let loadedAtMs, let refreshFailed):
             let following = home.following as? [LiveStream] ?? []
@@ -85,11 +85,68 @@ struct SkeletonList: View {
     }
 }
 
+/// Why a screen is empty without a session, what signing in gives, and the way to do it (instead of a bare "not connected").
 struct SignedOutState: View {
+    enum Context {
+        case home, following, browse, category, channel
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .home: "signedout_home_title"
+            case .following: "signedout_following_title"
+            case .browse: "signedout_browse_title"
+            case .category: "signedout_category_title"
+            case .channel: "signedout_channel_title"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .home: "play.tv.fill"
+            case .following: "heart.fill"
+            case .browse: "square.grid.2x2.fill"
+            case .category: "gamecontroller.fill"
+            case .channel: "person.crop.circle.fill"
+            }
+        }
+    }
+
     @Environment(AppModel.self) private var app
+    var context: Context = .home
 
     var body: some View {
-        MessageState(title: "state_signin_title", message: "phone_signin_body", action: (title: "state_signin", run: { app.showSignIn = true }))
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: context.icon).font(.system(size: 30)).foregroundStyle(.white)
+                    .frame(width: 72, height: 72).background(Theme.accentDeep.gradient, in: Circle())
+                    .accessibilityHidden(true)
+                Text(context.title).font(.title3.weight(.bold)).multilineTextAlignment(.center)
+                Text("signedout_why").font(.subheadline).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
+                VStack(alignment: .leading, spacing: 12) {
+                    perk("dot.radiowaves.left.and.right", "signedout_perk_live")
+                    perk("bubble.left.and.bubble.right.fill", "signedout_perk_chat")
+                    perk("heart.fill", "signedout_perk_follow")
+                }
+                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Button { app.showSignIn = true } label: {
+                    Text("signedout_button").font(.body.weight(.semibold)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 14)
+                        .background(Theme.accentDeep, in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 24).padding(.top, 36).padding(.bottom, 120)
+            .frame(maxWidth: 460)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func perk(_ symbol: String, _ key: LocalizedStringKey) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol).foregroundStyle(Theme.accent).frame(width: 24)
+            Text(key).font(.subheadline)
+        }
     }
 }
 
@@ -110,7 +167,7 @@ struct FollowingScreen: View {
     @ViewBuilder private var content: some View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
-        case .signedOut: SignedOutState()
+        case .signedOut: SignedOutState(context: .following)
         case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
         case .ready(let follows, let loadedAtMs, let refreshFailed):
             let live = follows.live as? [LiveStream] ?? []
@@ -163,7 +220,7 @@ struct BrowseScreen: View {
     @ViewBuilder private var content: some View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
-        case .signedOut: SignedOutState()
+        case .signedOut: SignedOutState(context: .browse)
         case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
         case .ready(let browse, let loadedAtMs, let refreshFailed):
             let categories = browse.categories as? [TwitchShared.Category] ?? []
@@ -218,7 +275,7 @@ struct CategoryScreen: View {
     @ViewBuilder private var content: some View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
-        case .signedOut: SignedOutState()
+        case .signedOut: SignedOutState(context: .category)
         case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
         case .ready(let category, let loadedAtMs, let refreshFailed):
             let streams = category.streams as? [LiveStream] ?? []

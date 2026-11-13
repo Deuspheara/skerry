@@ -88,5 +88,55 @@
     "en": "Or go to this address on any device and enter the code:",
     "fr": "Ou ouvrez cette adresse sur n'importe quel appareil et saisissez le code :",
     "ar": "أو افتح هذا العنوان على أي جهاز وأدخل الرمز:"
+  },
+  "signedout_home_title": {
+    "en": "Your live channels, in one place",
+    "fr": "Vos chaînes en direct, au même endroit",
+    "ar": "قنواتك المباشرة في مكان واحد"
+  },
+  "signedout_following_title": {
+    "en": "The channels you follow",
+    "fr": "Les chaînes que vous suivez",
+    "ar": "القنوات التي تتابعها"
+  },
+  "signedout_browse_title": {
+    "en": "Browse every category",
+    "fr": "Parcourez toutes les catégories",
+    "ar": "تصفح كل الفئات"
+  },
+  "signedout_category_title": {
+    "en": "Who is live in this category",
+    "fr": "Qui est en direct dans cette catégorie",
+    "ar": "من يبث في هذه الفئة"
+  },
+  "signedout_channel_title": {
+    "en": "Watch this channel",
+    "fr": "Regardez cette chaîne",
+    "ar": "شاهد هذه القناة"
+  },
+  "signedout_why": {
+    "en": "Twitch only shares its listings with a signed-in viewer. Signing in takes a minute and your password never goes through this app.",
+    "fr": "Twitch ne partage ses listes qu'avec un spectateur connecté. La connexion prend une minute et votre mot de passe ne passe jamais par cette app.",
+    "ar": "لا تشارك Twitch قوائمها إلا مع مشاهد مسجّل الدخول. يستغرق الأمر دقيقة ولا تمر كلمة مرورك عبر هذا التطبيق."
+  },
+  "signedout_perk_live": {
+    "en": "See who is live right now",
+    "fr": "Voyez qui est en direct maintenant",
+    "ar": "شاهد من يبث الآن"
+  },
+  "signedout_perk_chat": {
+    "en": "Read and write in chat, with your emotes",
+    "fr": "Lisez et écrivez dans le chat, avec vos emotes",
+    "ar": "اقرأ واكتب في الدردشة مع إيموجياتك"
+  },
+  "signedout_perk_follow": {
+    "en": "Keep your followed channels at hand",
+    "fr": "Gardez vos chaînes suivies à portée de main",
+    "ar": "أبقِ قنواتك المتابَعة في متناول يدك"
+  },
+  "signedout_button": {
+    "en": "Sign in with Twitch",
+    "fr": "Se connecter avec Twitch",
+    "ar": "تسجيل الدخول عبر Twitch"
   }
 }
