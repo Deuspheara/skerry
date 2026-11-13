@@ -33,7 +33,7 @@ private struct TabStack: View {
     var body: some View {
         NavigationStack(path: app.path(for: tab)) {
             root.toolbar(.hidden, for: .navigationBar)
-                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 64) }
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: SheetGeometry.tabBarHeight + (app.session.target != nil && app.session.position == .collapsed ? 66 : 0)) }
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .channel(let login): ChannelScreen(login: login)
