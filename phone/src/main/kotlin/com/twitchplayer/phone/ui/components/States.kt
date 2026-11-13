@@ -312,8 +312,7 @@ private fun rememberIsOnline(): Boolean {
     val context = androidx.compose.ui.platform.LocalContext.current
     return androidx.compose.runtime.remember {
         val manager = context.getSystemService(android.net.ConnectivityManager::class.java)
-        val capabilities = manager?.getNetworkCapabilities(manager.activeNetwork)
-        capabilities?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-            capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        // A connection (Wi-Fi or data) that has not proved it reaches the internet still counts: "offline" is only said when there is none.
+        manager?.activeNetwork != null
     }
 }

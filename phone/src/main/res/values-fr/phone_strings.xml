@@ -159,7 +159,7 @@
     <string name="phone_signout_body">Vous pourrez vous reconnecter à tout moment. Vos réglages restent sur ce téléphone.</string>
     <string name="phone_clips_go_live">Voir les directs</string>
     <string name="phone_offline_title">Vous êtes hors ligne</string>
-    <string name="phone_offline_body">Connectez-vous à Internet et réessayez. Ce que vous avez vu en dernier reste ici quand il a été enregistré.</string>
+    <string name="phone_offline_body">Connectez-vous à Internet et réessayez.</string>
     <string name="phone_player_twitch">Twitch</string>
     <string name="phone_settings_stats_help">Affiche le débit, la résolution et les images perdues sur l\'image.</string>
     <string name="phone_settings_raids_help">Quand la chaîne que vous regardez fait un raid, l\'app propose de suivre le raid.</string>

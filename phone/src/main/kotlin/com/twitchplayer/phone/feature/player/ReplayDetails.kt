@@ -114,7 +114,8 @@ private fun Replay.toTarget(channel: ReplayInfo) = PlaybackTarget.Replay(id, tit
 /** "3:12:40 · 3.6K views · Yesterday": what is known of the replay, skipping what is not. */
 @Composable
 private fun replayMeta(info: ReplayInfo, durationMs: Long, now: Long): String {
-    val seconds = if (durationMs > 0) (durationMs / MILLIS).toInt() else info.durationSeconds
+    // The replay's own length (from the channel page) first: the player's figure is the length of what it holds, which is what it says only once known.
+    val seconds = if (info.durationSeconds > 0) info.durationSeconds else (durationMs / MILLIS).toInt()
     val views = if (info.views > 0) stringResource(R.string.replay_views, formatViewers(info.views)) else ""
     val published = if (info.publishedAtMs > 0L) DateUtils.getRelativeTimeSpanString(info.publishedAtMs, now, DateUtils.MINUTE_IN_MILLIS).toString() else ""
     return listOf(if (seconds > 0) durationLabel(seconds) else "", views, published).filter { it.isNotBlank() }.joinToString(" · ")

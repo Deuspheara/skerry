@@ -207,7 +207,8 @@ fun ChatNoticeCard(line: ChatLine, style: PhoneChatStyle, overVideo: Boolean, mo
         Text(
             sentence,
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = style.textSp.sp, fontWeight = FontWeight.Medium),
+            // The sentence is Twitch's, in the language of the chat: it takes its direction from its own text (a French notice in an Arabic layout ends with its "!").
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = style.textSp.sp, fontWeight = FontWeight.Medium, textDirection = androidx.compose.ui.text.style.TextDirection.Content),
             color = if (overVideo) Color.White else MaterialTheme.colorScheme.onSurface,
         )
     }

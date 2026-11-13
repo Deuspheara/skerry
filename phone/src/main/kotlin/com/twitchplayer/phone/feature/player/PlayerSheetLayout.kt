@@ -17,6 +17,9 @@ private const val VIDEO_WIDTH_BY_HEIGHT = 16f / 9f
 /** Share of the width the picture takes in the two-pane layout. */
 private const val TWO_PANE_PICTURE_SHARE = 0.62f
 
+/** Share of the drag over which the band above the picture closes. */
+private const val STATUS_BAND_COLLAPSE = 0.1f
+
 /**
  * The one layout of every player mode. The picture ([stage]) is always the same child in the same place of the composition, so
  * turning the phone or entering the Picture-in-Picture window changes where it is placed and how big it is, and never gives the
@@ -89,7 +92,8 @@ internal fun PlayerSheetLayout(
                 val expandedTop = if (twoPane) ((height - expandedPicture) / 2).coerceAtLeast(statusBarPx) else statusBarPx
                 val pictureWidth = SheetGeometry.lerp(expandedWidth, stripPictureWidthPx, p)
                 val pictureHeight = SheetGeometry.lerp(expandedPicture, stripHeightPx, p)
-                val top = SheetGeometry.lerp(expandedTop, 0, p)
+                // The black band that colours the status bar is not carried down with the picture: it closes within the first moments of a drag.
+                val top = SheetGeometry.lerp(expandedTop, 0, (p / STATUS_BAND_COLLAPSE).coerceAtMost(1f))
                 val fillHeight = if (twoPane) SheetGeometry.lerp(height, top + pictureHeight, p) else top + pictureHeight
                 val background = fillItem?.measure(Constraints.fixed(pictureWidth, fillHeight))
                 val picture = stageItem?.measure(Constraints.fixed(pictureWidth, pictureHeight))

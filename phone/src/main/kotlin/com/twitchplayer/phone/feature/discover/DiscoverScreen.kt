@@ -114,6 +114,12 @@ fun DiscoverRoute(
 ) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
     var clips by rememberSaveable { mutableStateOf(false) }
+    // The page is black whatever the theme: its status bar icons are light (like the player's), or the clock vanishes in the light theme.
+    val systemBars = com.twitchplayer.phone.feature.player.LocalPlayerHost.current
+    DisposableEffect(playerOpen) {
+        if (!playerOpen) systemBars.setVideoSystemBars(true)
+        onDispose { if (!playerOpen) systemBars.setVideoSystemBars(false) }
+    }
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (clips) {
             ClipsRoute(onOpenClip, onChannel, onSignIn, playerOpen, onGoLive = { clips = false })

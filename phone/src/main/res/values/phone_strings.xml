@@ -165,7 +165,7 @@
     <string name="phone_signout_body">You can sign in again at any time. Your settings stay on this phone.</string>
     <string name="phone_clips_go_live">Go to live streams</string>
     <string name="phone_offline_title">You\'re offline</string>
-    <string name="phone_offline_body">Connect to the internet and try again. What you saw last stays here when it was saved.</string>
+    <string name="phone_offline_body">Connect to the internet and try again.</string>
     <string name="phone_player_twitch">Twitch</string>
     <string name="phone_settings_stats_help">Shows bitrate, resolution and dropped frames over the picture.</string>
     <string name="phone_settings_raids_help">When the channel you watch raids another one, the app offers to follow the raid.</string>

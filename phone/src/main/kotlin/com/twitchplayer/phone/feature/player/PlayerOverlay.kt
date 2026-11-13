@@ -96,9 +96,14 @@ fun PlayerOverlay(
 
     // The session decides where the sheet rests (a tap, Back, the chevron, a new stream); the drag decides too, and tells the session.
     val wanted = if (open.sheet == SheetState.Collapsed) Rest.Collapsed else Rest.Expanded
-    LaunchedEffect(wanted) {
+    // A new stream replacing the one in the strip opens at once, not by growing out of the strip: a picture view created at strip size and
+    // grown while it shows a still frame (a clip that has ended) kept the strip's size on some devices.
+    var lastTarget by remember { mutableStateOf(open.target) }
+    LaunchedEffect(wanted, open.target) {
+        val replaced = lastTarget != open.target
+        lastTarget = open.target
         if (anchored.settledValue != wanted || anchored.targetValue != wanted) {
-            if (reducedMotion || anchored.offset.isNaN()) anchored.snapTo(wanted) else anchored.animateTo(wanted, tween(SETTLE_MS))
+            if (reducedMotion || anchored.offset.isNaN() || replaced) anchored.snapTo(wanted) else anchored.animateTo(wanted, tween(SETTLE_MS))
         }
     }
     LaunchedEffect(anchored) {

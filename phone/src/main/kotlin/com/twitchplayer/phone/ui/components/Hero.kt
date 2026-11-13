@@ -59,8 +59,11 @@ fun HeroStreamCard(stream: LiveStream, onClick: () -> Unit, modifier: Modifier =
         // The cues that this is a live stream you can open: its viewers (with the live dot), its category and a play mark.
         ViewersBadge(stream.viewers, Modifier.align(Alignment.TopEnd).padding(10.dp))
         ThumbnailLabel(stream.categoryName, Modifier.align(Alignment.TopStart).padding(10.dp))
-        Box(Modifier.align(Alignment.Center).size(HERO_PLAY).clip(CircleShape).background(Color.Black.copy(alpha = HERO_PLAY_ALPHA)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(HERO_PLAY_ICON))
+        // The play mark is dropped when the system text is large: the title then takes the room it sat in.
+        if (LocalDensity.current.fontScale <= LARGE_TEXT) {
+            Box(Modifier.align(Alignment.Center).size(HERO_PLAY).clip(CircleShape).background(Color.Black.copy(alpha = HERO_PLAY_ALPHA)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(HERO_PLAY_ICON))
+            }
         }
         Row(Modifier.align(Alignment.BottomStart).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(stream.avatarUrl, stream.name, HERO_AVATAR)
@@ -82,7 +85,7 @@ fun LiveNowRow(streams: List<LiveStream>, onClick: (LiveStream) -> Unit, modifie
         items(streams, key = { "live-now-${it.channelId}" }, contentType = { "live-now" }) { stream ->
             val description = stringResource(R.string.cd_live_channel, stream.name)
             Column(
-                Modifier.width(LIVE_NOW_WIDTH).clip(RoundedCornerShape(12.dp)).clickableItem { onClick(stream) }.padding(vertical = 4.dp).semantics(mergeDescendants = true) { contentDescription = description },
+                Modifier.width(LIVE_NOW_WIDTH * LocalDensity.current.fontScale.coerceIn(1f, LIVE_NOW_MAX_SCALE)).clip(RoundedCornerShape(12.dp)).clickableItem { onClick(stream) }.padding(vertical = 4.dp).semantics(mergeDescendants = true) { contentDescription = description },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -93,8 +96,8 @@ fun LiveNowRow(streams: List<LiveStream>, onClick: (LiveStream) -> Unit, modifie
                     }
                     Box(Modifier.align(Alignment.BottomEnd).size(DOT_SIZE).background(MaterialTheme.colorScheme.background, CircleShape).padding(DOT_RING).background(PhoneColors.Live, CircleShape))
                 }
-                // Two lines when the system text is large: the names are not cut to "Luna...".
-                Text(stream.name, style = MaterialTheme.typography.labelMedium, maxLines = if (LocalDensity.current.fontScale > LARGE_TEXT) 2 else 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                // The column grows with the text size (a name is never broken across two lines mid-word).
+                Text(stream.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             }
         }
     }
@@ -115,4 +118,5 @@ private val RING_WIDTH = 2.dp
 private val DOT_SIZE = 18.dp
 private val DOT_RING = 3.dp
 private const val LARGE_TEXT = 1.3f
+private const val LIVE_NOW_MAX_SCALE = 1.8f
 private val RING_GAP = 3.dp

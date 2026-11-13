@@ -127,29 +127,6 @@ fun CategoryRoute(
             DetailHeader(
                 onBack = onBack,
                 behavior = scrollBehavior,
-                actions = {
-                    if (state.load is Load.Ready) {
-                        val label = stringResource(R.string.favorite)
-                        val stateText = stringResource(if (favorite) R.string.phone_favorite_on else R.string.phone_favorite_off)
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
-                            tooltip = { PlainTooltip { Text(label) } },
-                            state = rememberTooltipState(),
-                        ) {
-                            IconToggleButton(
-                                checked = favorite,
-                                onCheckedChange = { viewModel.presenter.onEvent(CategoryEvent.ToggleFavorite) },
-                                modifier = Modifier.semantics { stateDescription = stateText },
-                            ) {
-                                Icon(
-                                    if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                    contentDescription = label,
-                                    tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                },
             )
         },
     ) { padding ->

@@ -87,7 +87,8 @@ fun StreamCard(stream: LiveStream, onClick: () -> Unit, modifier: Modifier = Mod
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)) {
                 Text(stream.title, style = MaterialTheme.typography.titleSmall.copy(textDirection = TextDirection.Content), maxLines = CardSpec.COMPACT_TITLE_LINES, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (showChannel) Avatar(stream.avatarUrl, stream.name, CardSpec.COMPACT_AVATAR)
+                    // With large system text the streamer's picture makes way for the words.
+                    if (showChannel && LocalDensity.current.fontScale <= LARGE_TEXT) Avatar(stream.avatarUrl, stream.name, CardSpec.COMPACT_AVATAR)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         if (showChannel) {
                             Text(stream.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -182,6 +183,7 @@ fun ChannelListItem(channel: ChannelRef, onClick: () -> Unit, modifier: Modifier
 }
 
 private const val OFFLINE_AVATAR_ALPHA = 0.6f
+private const val LARGE_TEXT = 1.3f
 
 /** From this width the stream grid has two or more columns. */
 private const val MULTI_COLUMN_WIDTH_DP = 600

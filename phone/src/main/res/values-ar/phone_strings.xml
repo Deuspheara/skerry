@@ -157,7 +157,7 @@
     <string name="phone_signout_body">يمكنك تسجيل الدخول مجدداً في أي وقت. تبقى إعداداتك على هذا الهاتف.</string>
     <string name="phone_clips_go_live">الانتقال إلى البثوث المباشرة</string>
     <string name="phone_offline_title">أنت غير متصل بالإنترنت</string>
-    <string name="phone_offline_body">اتصل بالإنترنت وحاول مرة أخرى. يبقى هنا آخر ما شاهدته إذا كان محفوظاً.</string>
+    <string name="phone_offline_body">اتصل بالإنترنت وحاول مرة أخرى.</string>
     <string name="phone_player_twitch">Twitch</string>
     <string name="phone_settings_stats_help">يعرض معدل البتات والدقة والإطارات المفقودة فوق الصورة.</string>
     <string name="phone_settings_raids_help">عندما تقوم القناة التي تشاهدها بغارة على قناة أخرى، يعرض التطبيق متابعة الغارة.</string>
