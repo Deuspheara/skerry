@@ -9,13 +9,16 @@ import platform.Foundation.NSLog
 import platform.Foundation.NSNumber
 import platform.Foundation.NSNumberFormatter
 import platform.Foundation.NSNumberFormatterDecimalStyle
+import platform.Foundation.NSString
+import platform.Foundation.create
 import platform.Foundation.currentLocale
 import platform.Foundation.preferredLanguages
 
 /** Warnings go to the unified log (`NSLog`), visible in Console.app and in Xcode's debug area. */
 class AppleLogger : Logger {
     override fun warn(tag: String, message: String) {
-        NSLog("%@", "[$tag] $message")
+        // An Objective-C string for the `%@` (a Kotlin string passed to a C variadic is not one, and crashed in optimised builds: found measuring a release-optimised build).
+        NSLog("%@", NSString.create(string = "[$tag] $message"))
     }
 }
 

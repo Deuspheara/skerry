@@ -256,7 +256,7 @@ private object DemoEmoteArt {
 }
 
 /** Fictional chat with third-party style emotes, replies, mentions and notices: about one message a second. */
-private class AppleDemoChat : ChatSource {
+private class AppleDemoChat(private val heavy: Boolean = false) : ChatSource {
     private val users = listOf(
         "mireille_88" to "#BF94FF",
         "Tom_Lefebvre" to "#EFEFF1",
@@ -280,7 +280,8 @@ private class AppleDemoChat : ChatSource {
         var n = 0
         repeat(14) { send(event(n++)) }
         while (true) {
-            delay(1_000)
+            // Heavy: what a busy channel looks like (about 16 messages a second, most with emotes), to measure the chat's cost.
+            delay(if (heavy) 60 else 1_000)
             send(event(n++))
         }
     }
@@ -383,4 +384,15 @@ fun appleDemoModule(signedIn: Boolean = true) = module {
     single<ChatAssetsSource> { AppleDemoChatAssets }
     single<LiteChatAssets> { AppleDemoChatAssets }
     single<TwitchPlaybackResolver> { AppleDemoResolver() }
+}
+
+/**
+ * For measuring: the real network (real channels, real playback) with the demo's signed-in session and a fast fictional chat, so a real stream plays beside a chat
+ * as busy as a big channel's. Debug launch argument `-real-fast-chat`.
+ */
+fun appleRealWithFastChatModule() = module {
+    single<SessionRepository> { AppleDemoSession() }
+    single<ChatSource> { AppleDemoChat(heavy = true) }
+    single<ChatAssetsSource> { AppleDemoChatAssets }
+    single<LiteChatAssets> { AppleDemoChatAssets }
 }

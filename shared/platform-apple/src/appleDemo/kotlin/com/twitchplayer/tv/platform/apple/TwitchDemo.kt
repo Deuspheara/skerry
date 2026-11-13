@@ -8,3 +8,6 @@ package com.twitchplayer.tv.platform.apple
  * From Swift: `TwitchDemoKt.startDemo(TwitchApp.shared, signedIn: true)`.
  */
 fun startDemo(app: TwitchApp, signedIn: Boolean): TwitchGraph = app.startWith("demo-client-id", listOf(appleDemoModule(signedIn)))
+
+/** Real playback and data with a fast fictional chat (see [appleRealWithFastChatModule]): for measuring the player sheet under real video and a busy chat. */
+fun startRealWithFastChat(app: TwitchApp, clientId: String): TwitchGraph = app.startWith(clientId, listOf(appleRealWithFastChatModule()))

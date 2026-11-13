@@ -8,10 +8,20 @@ options:
     iOS: "18.0"
     macOS: "15.0"
     tvOS: "18.0"
+# `Profile` is Release's optimisation with the debug-only hooks (the demo, the launch arguments, the frame monitor) so the player sheet can be measured the way users
+# run it. It is never shipped: it needs a framework built with `-PappleDemo=true` (see docs/IOS_APP.md).
+configs:
+  Debug: debug
+  Release: release
+  Profile: release
 configFiles:
   Debug: Config/Base.xcconfig
   Release: Config/Base.xcconfig
+  Profile: Config/Base.xcconfig
 settings:
+  configs:
+    Profile:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
   base:
     SWIFT_VERSION: "5.0"
     # arm64 only (AGENTS.md): the XCFramework has no x86_64 slice, and without this the simulator builds an x86_64 variant too.
@@ -98,7 +108,7 @@ targets:
       - name: Copy demo clip (Debug only)
         basedOnDependencyAnalysis: false
         script: |
-          if [ "$CONFIGURATION" = "Debug" ]; then
+          if [ "$CONFIGURATION" = "Debug" ] || [ "$CONFIGURATION" = "Profile" ]; then
             mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
             cp "$SRCROOT/../demo-android/src/main/assets/demo_stream.mp4" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/demo_stream.mp4"
           fi
@@ -154,7 +164,7 @@ targets:
       - name: Copy demo clip (Debug only)
         basedOnDependencyAnalysis: false
         script: |
-          if [ "$CONFIGURATION" = "Debug" ]; then
+          if [ "$CONFIGURATION" = "Debug" ] || [ "$CONFIGURATION" = "Profile" ]; then
             mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
             cp "$SRCROOT/../demo-android/src/main/assets/demo_stream.mp4" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/demo_stream.mp4"
           fi
@@ -205,7 +215,7 @@ targets:
       - name: Copy demo clip (Debug only)
         basedOnDependencyAnalysis: false
         script: |
-          if [ "$CONFIGURATION" = "Debug" ]; then
+          if [ "$CONFIGURATION" = "Debug" ] || [ "$CONFIGURATION" = "Profile" ]; then
             mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
             cp "$SRCROOT/../demo-android/src/main/assets/demo_stream.mp4" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/demo_stream.mp4"
           fi
@@ -225,7 +235,27 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.tv.tests
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TwitchTV.app/TwitchTV"
         BUNDLE_LOADER: "$(TEST_HOST)"
+  TwitchIOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: TwitchIOS
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.ios.uitests
+        TEST_TARGET_NAME: TwitchIOS
 schemes:
+  TwitchIOSPerf:
+    build:
+      targets:
+        TwitchIOS: all
+        TwitchIOSUITests: [test]
+    test:
+      config: Debug
+      targets: [TwitchIOSUITests]
   TwitchIOS:
     build:
       targets:
