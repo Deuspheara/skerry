@@ -46,9 +46,32 @@ struct SheetGeometry: Equatable {
     var sheetY: CGFloat { progress < 0 ? 0 : lerp(0, collapsedY, progress) }
     var sheetHeight: CGFloat { lerp(expandedHeight, Self.miniHeight, q) }
 
-    var expandedVideoHeight: CGFloat { fullscreen ? container.height : container.width * 9 / 16 + safeTop }
+    /// The picture's own size, fixed whatever the progress: the full container in landscape (fullscreen), 16:9 across the container in portrait. The picture view is laid out
+    /// once at this size and only scaled and moved by transforms while the sheet moves, so the video layer is never resized during a drag.
+    var pictureBase: CGSize { landscape ? container : CGSize(width: container.width, height: container.width * 9 / 16) }
+
+    /// What sits above the picture when expanded: the status bar area in portrait (black), nothing in fullscreen.
+    var pictureTopInset: CGFloat { landscape ? 0 : safeTop }
+
+    var expandedVideoHeight: CGFloat { pictureBase.height + pictureTopInset }
+
+    /// The box that holds the picture: it shrinks from the expanded picture (with its black status bar area) to the strip's 112 x 64 thumbnail.
     var videoWidth: CGFloat { lerp(container.width, Self.miniVideoWidth, q) }
     var videoHeight: CGFloat { lerp(expandedVideoHeight, Self.miniHeight, q) }
+
+    /// One scale for both axes (the picture is never stretched): from 1 to the factor that fits the thumbnail.
+    var pictureScale: CGFloat {
+        let fit = min(Self.miniVideoWidth / pictureBase.width, Self.miniHeight / pictureBase.height)
+        return lerp(1, fit, q)
+    }
+
+    /// Where the scaled picture's top-left corner sits in its box: under the status bar area when expanded, centred in the thumbnail when docked.
+    var pictureOffset: CGSize {
+        let fit = min(Self.miniVideoWidth / pictureBase.width, Self.miniHeight / pictureBase.height)
+        let dockedX = (Self.miniVideoWidth - pictureBase.width * fit) / 2
+        let dockedY = (Self.miniHeight - pictureBase.height * fit) / 2
+        return CGSize(width: lerp(0, dockedX, q), height: lerp(pictureTopInset, dockedY, q))
+    }
 
     /// Bottom edge of the strip at rest, in screen coordinates.
     var collapsedBottom: CGFloat { collapsedY + Self.miniHeight }

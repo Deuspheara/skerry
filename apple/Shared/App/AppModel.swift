@@ -94,7 +94,14 @@ final class AppModel {
         let id = (Bundle.main.object(forInfoDictionaryKey: "TwitchClientId") as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
         #if DEBUG
         // The demo code only exists in debug XCFrameworks (see apple/scripts/build-shared.sh): a release build never references it.
-        graph = launch.demo ? TwitchDemoKt.startDemo(app: TwitchApp.shared, signedIn: !launch.signedOut) : TwitchApp.shared.start(clientId: id)
+        if launch.demo {
+            graph = TwitchDemoKt.startDemo(app: TwitchApp.shared, signedIn: !launch.signedOut)
+        } else if ProcessInfo.processInfo.arguments.contains("-real-fast-chat") {
+            // Measuring: real network and playback with a fast fictional chat.
+            graph = TwitchDemoKt.startRealWithFastChat(app: TwitchApp.shared, clientId: id)
+        } else {
+            graph = TwitchApp.shared.start(clientId: id)
+        }
         #else
         graph = TwitchApp.shared.start(clientId: id)
         #endif

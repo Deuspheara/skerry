@@ -12,6 +12,17 @@ final class PlaybackModel {
 
     private(set) var ui: PlayerUiState?
     private(set) var chat: [ChatLine] = []
+    /// While a finger drags the player sheet the chat is held: incoming batches are kept aside (only the latest matters, it is the whole list) and published when
+    /// the finger lifts, so no view that shows the chat is invalidated per message during the gesture.
+    var holdChat = false {
+        didSet {
+            if !holdChat, let held = heldChat {
+                heldChat = nil
+                chat = held
+            }
+        }
+    }
+    @ObservationIgnored private var heldChat: [ChatLine]?
     private(set) var picker: EmotePickerState?
     private(set) var room: RoomState?
     private(set) var chatSettings: ChatSettings?
@@ -57,7 +68,10 @@ final class PlaybackModel {
         let presenter = graph.player(login: login, scope: lifetime.scope)
         self.presenter = presenter
         lifetime.keep(observe(presenter.state as SkieSwiftStateFlow<PlayerUiState>) { [weak self] in self?.ui = $0 })
-        lifetime.keep(observe(presenter.chat as SkieSwiftStateFlow<[ChatLine]>) { [weak self] in self?.chat = $0 })
+        lifetime.keep(observe(presenter.chat as SkieSwiftStateFlow<[ChatLine]>) { [weak self] lines in
+            guard let self else { return }
+            if self.holdChat { self.heldChat = lines } else { self.chat = lines }
+        })
         lifetime.keep(observe(presenter.emotePicker as SkieSwiftStateFlow<EmotePickerState>) { [weak self] in self?.picker = $0 })
         lifetime.keep(observe(presenter.room as SkieSwiftStateFlow<RoomState>) { [weak self] in self?.room = $0 })
         lifetime.keep(observe(presenter.chatSettings as SkieSwiftStateFlow<ChatSettings>) { [weak self] in self?.chatSettings = $0 })

@@ -112,46 +112,44 @@ final class SheetDragMathTests: XCTestCase {
         XCTAssertEqual(base.at(1.2).videoWidth, SheetGeometry.miniVideoWidth)
     }
 
-    func testTheSpringLandsOnItsTargetFromRestAndFromAFling() {
-        let spring = SpringMath()
-        for (start, velocity, target) in [(0.3, 0.0, 1.0), (0.4, 4.0, 1.0), (0.8, -6.0, 0.0), (1.1, 0.0, 1.0)] as [(CGFloat, CGFloat, CGFloat)] {
-            var state = SpringMath.State(value: start, velocity: velocity)
-            var frames = 0
-            while !spring.isSettled(state, target: target), frames < 600 { state = spring.advance(state, target: target, dt: 1.0 / 60); frames += 1 }
-            XCTAssertLessThan(frames, 60, "settles within a second: \(start) \(velocity) -> \(target)")
-            XCTAssertEqual(state.value, target, accuracy: 0.001)
+    func testThePictureIsLaidOutOnceAtItsOwnSizeAndOnlyScaledAndMoved() {
+        let portrait = SheetGeometry(container: CGSize(width: 402, height: 874), safeTop: 62, safeBottom: 34)
+        for q in stride(from: CGFloat(0), through: 1, by: 0.25) {
+            XCTAssertEqual(portrait.at(q).pictureBase.width, 402, "the picture view's own size never changes with the progress")
+            XCTAssertEqual(portrait.at(q).pictureBase.height, 402.0 * 9.0 / 16.0, accuracy: 0.0001)
+        }
+        XCTAssertEqual(portrait.at(0).pictureScale, 1)
+        XCTAssertEqual(portrait.at(0).pictureOffset, CGSize(width: 0, height: 62), "expanded: below the black status bar area")
+        XCTAssertEqual(portrait.at(0).videoHeight, 402 * 9 / 16 + 62)
+    }
+
+    func testDockedThePictureFitsTheThumbnailWithoutStretching() {
+        let portrait = SheetGeometry(container: CGSize(width: 402, height: 874), safeTop: 62, safeBottom: 34, progress: 1)
+        let scale = portrait.pictureScale
+        XCTAssertEqual(scale, SheetGeometry.miniVideoWidth / 402, accuracy: 1e-9)
+        XCTAssertEqual(portrait.pictureBase.width * scale, SheetGeometry.miniVideoWidth, accuracy: 0.001)
+        XCTAssertLessThanOrEqual(portrait.pictureBase.height * scale, SheetGeometry.miniHeight + 0.001)
+        XCTAssertEqual(portrait.videoWidth, SheetGeometry.miniVideoWidth)
+        XCTAssertEqual(portrait.videoHeight, SheetGeometry.miniHeight)
+    }
+
+    func testTheScaleAndTheOffsetMoveContinuouslyBetweenTheTwoPositions() {
+        let g = SheetGeometry(container: CGSize(width: 402, height: 874), safeTop: 62, safeBottom: 34)
+        var previous = g.at(0)
+        for q in stride(from: CGFloat(0.05), through: 1, by: 0.05) {
+            let current = g.at(q)
+            XCTAssertLessThanOrEqual(current.pictureScale, previous.pictureScale + 1e-9)
+            XCTAssertLessThan(abs(current.pictureScale - previous.pictureScale), 0.06, "no jump")
+            XCTAssertLessThan(abs(current.pictureOffset.height - previous.pictureOffset.height), 8, "no jump")
+            previous = current
         }
     }
 
-    func testAFlingContinuesInItsDirectionAndOvershootsLittle() {
-        let spring = SpringMath()
-        var state = SpringMath.State(value: 0.5, velocity: 3)
-        var peak: CGFloat = 0
-        for _ in 0..<120 { state = spring.advance(state, target: 1, dt: 1.0 / 60); peak = max(peak, state.value) }
-        XCTAssertGreaterThan(peak, 0.5)
-        XCTAssertLessThan(peak, 1.03, "a hint of overshoot at most")
-    }
-
-    func testTheSettleDoesNotDependOnTheFrameRate() {
-        let spring = SpringMath()
-        func run(dt: CGFloat) -> CGFloat {
-            var state = SpringMath.State(value: 0, velocity: 2)
-            var t: CGFloat = 0
-            while t < 0.3 { state = spring.advance(state, target: 1, dt: dt); t += dt }
-            return state.value
-        }
-        XCTAssertEqual(run(dt: 1.0 / 60), run(dt: 1.0 / 120), accuracy: 0.01)
-    }
-
-    func testAnInterruptedSettleContinuesFromWhereItWas() {
-        let spring = SpringMath()
-        var state = SpringMath.State(value: 0, velocity: 0)
-        for _ in 0..<8 { state = spring.advance(state, target: 1, dt: 1.0 / 60) }
-        let mid = state.value
-        XCTAssertGreaterThan(mid, 0)
-        XCTAssertLessThan(mid, 1)
-        // A new target from the in-flight value and velocity: no jump.
-        let next = spring.advance(state, target: 0, dt: 1.0 / 240)
-        XCTAssertEqual(next.value, mid, accuracy: 0.01)
+    func testLandscapeFullscreenPictureScalesUniformlyIntoTheThumbnail() {
+        let land = SheetGeometry(container: CGSize(width: 874, height: 402), safeTop: 0, safeBottom: 21, progress: 1)
+        XCTAssertEqual(land.pictureBase, CGSize(width: 874, height: 402))
+        XCTAssertEqual(land.pictureScale, min(SheetGeometry.miniVideoWidth / 874, SheetGeometry.miniHeight / 402), accuracy: 1e-9)
+        XCTAssertLessThanOrEqual(land.pictureBase.width * land.pictureScale, SheetGeometry.miniVideoWidth + 0.001)
+        XCTAssertLessThanOrEqual(land.pictureBase.height * land.pictureScale, SheetGeometry.miniHeight + 0.001)
     }
 }

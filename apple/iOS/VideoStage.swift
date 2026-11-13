@@ -13,7 +13,6 @@ struct VideoStage: View {
     @Binding var controlsVisible: Bool
     let insets: EdgeInsets
     let size: CGSize
-    let expandedHeight: CGFloat
     @Binding var replyTo: ChatLine?
     var onTap: () -> Void
 
@@ -21,6 +20,7 @@ struct VideoStage: View {
 
     var body: some View {
         let controller = playback.controller
+        let dragging = progress.isDragging
         let chatMode = playback.ui?.chatMode ?? .compact
         ZStack {
             VideoSurface(controller: controller)
@@ -45,12 +45,17 @@ struct VideoStage: View {
                     .opacity(controlsVisible || !controller.isPlaying ? 1 : 0)
                     .allowsHitTesting(controlsVisible || !controller.isPlaying)
                 }
-                .sheetFade(progress, .out)
+                // Gone the moment a finger moves the sheet (a short fade, once), not faded with the progress: an opacity group over live video is repainted every frame.
+                .opacity(dragging ? 0 : 1)
+                .animation(.easeOut(duration: 0.12), value: dragging)
+                .allowsHitTesting(!dragging)
             }
         }
         .contentShape(Rectangle())
         .onTapGesture { if !docked { onTap() } }
         .clipped()
+        // While the sheet is dragged, glass over the live picture is replaced by a flat fill (glass would re-sample the video every frame).
+        .environment(\.flatChrome, dragging)
     }
 
     private var chatOverlay: some View {

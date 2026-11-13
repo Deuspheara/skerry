@@ -36,6 +36,7 @@ struct TabBar: View {
         .padding(.bottom, 4)
         // Docked to the bottom safe area whatever the keyboard does: a focused field (or a hardware-keyboard accessory) must never lift the bar.
         .ignoresSafeArea(.keyboard)
+        .environment(\.flatChrome, app.session.isDragging)
         .offset(y: hidden ? 140 : 0)
         .opacity(hidden ? 0 : 1)
         .animation(reduceMotion ? nil : .snappy, value: hidden)

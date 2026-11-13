@@ -1,4 +1,3 @@
-import QuartzCore
 import SwiftUI
 
 /// Where the player sheet is between expanded (0) and docked as the strip (1), as one value. **No view body reads it**: only the small modifiers below do, so a
@@ -7,88 +6,76 @@ import SwiftUI
 @Observable
 final class SheetProgress {
     var value: CGFloat = 0
-    /// A finger is on the sheet (the chat is frozen meanwhile). Changes twice per gesture, never per frame.
+    /// A finger is on the sheet (the chat is frozen and the glass is flat meanwhile). Changes twice per gesture, never per frame.
     var isDragging = false
+    /// The value SwiftUI is showing right now, which differs from `value` while a spring is running (`value` already holds the target). A new touch starts from this.
+    @ObservationIgnored var presented: CGFloat = 0
     @ObservationIgnored var dragBase: CGFloat = 0
+    /// Identifies the latest settle: a replaced spring still reports completion, and must not land.
+    @ObservationIgnored var settleID = 0
 }
 
-/// Settles the sheet from where the finger let go, with its velocity, on a display link: the value is real at every frame (not a model value that a view
-/// animation interpolates), so a new touch can catch the sheet in flight and carry on from exactly there.
-@MainActor
-final class SpringDriver: NSObject {
-    private(set) var target: CGFloat = 0
-    private var state = SpringMath.State(value: 0, velocity: 0)
-    private var link: CADisplayLink?
-    private var progress: SheetProgress?
-    private var completion: (() -> Void)?
-    private let math = SpringMath()
+/// Reports the animated value back, frame by frame, without involving any view body: `animatableData` is set by SwiftUI's animation system as the spring runs,
+/// so the sheet can be caught in flight and carried on from where it really is.
+struct PresentedProbe: ViewModifier, Animatable {
+    var value: CGFloat
+    let sink: SheetProgress
 
-    var isRunning: Bool { link != nil }
-
-    func animate(_ progress: SheetProgress, to target: CGFloat, velocity: CGFloat, reduceMotion: Bool, completion: (() -> Void)? = nil) {
-        stop()
-        self.progress = progress
-        self.target = target
-        self.completion = completion
-        if reduceMotion {
-            progress.value = target
-            completion?()
-            return
-        }
-        state = SpringMath.State(value: progress.value, velocity: velocity)
-        let link = CADisplayLink(target: self, selector: #selector(tick(_:)))
-        link.add(to: .main, forMode: .common)
-        self.link = link
-    }
-
-    func stop() {
-        link?.invalidate()
-        link = nil
-        completion = nil
-    }
-
-    @objc private func tick(_ link: CADisplayLink) {
-        guard let progress else { return stop() }
-        let dt = CGFloat(min(1.0 / 20, max(1.0 / 240, link.targetTimestamp - link.timestamp)))
-        state = math.advance(state, target: target, dt: dt)
-        progress.value = state.value
-        if math.isSettled(state, target: target) {
-            progress.value = target
-            let done = completion
-            stop()
-            done?()
+    var animatableData: CGFloat {
+        get { value }
+        set {
+            value = newValue
+            sink.presented = newValue
         }
     }
+
+    func body(content: Content) -> some View { content }
 }
 
-/// The sheet's frame, position, corners and shadow from the progress. The shadow belongs to a plain shape behind the content, not to the video.
+/// The sheet's frame, position and corners from the progress. The shadow belongs to a plain shape behind the content, not to the video.
 struct SheetFrame: ViewModifier {
     let progress: SheetProgress
     let base: SheetGeometry
 
     func body(content: Content) -> some View {
         let g = base.at(progress.value)
-        let corner = 14 * g.q
+        // Rounded corners clip the whole sheet (video and chat included) through a mask, and a blurred shadow of a big shape is a big blur: both are repainted every frame
+        // while the sheet is large, which halved the frame rate on the way down. They appear only when the sheet is nearly the strip.
+        let corner = 14 * min(1, max(0, (g.q - 0.7) / 0.3))
         content
             .frame(width: g.container.width - 16 * g.q, height: g.sheetHeight, alignment: .topLeading)
             .background { ZStack { Theme.background; Theme.surface.opacity(g.q) } }
+            #if DEBUG
+            // Measuring only (`-frame-monitor`): a magenta bar on the sheet's leading edge, so `analyze-recording.py` can follow the sheet's top edge exactly in a screen recording.
+            .overlay(alignment: .leading) { if FrameMonitor.enabled { Rectangle().fill(Color(red: 1, green: 0, blue: 1)).frame(width: 5) } }
+            #endif
             .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
             .background {
                 RoundedRectangle(cornerRadius: corner, style: .continuous).fill(Theme.surface)
-                    .shadow(color: .black.opacity(0.25 * g.q), radius: 12, y: 2).opacity(g.q > 0.01 ? 1 : 0)
+                    .shadow(color: .black.opacity(0.25 * g.q), radius: 12, y: 2).opacity(g.q > 0.7 ? 1 : 0)
             }
             .offset(x: 8 * g.q, y: g.sheetY)
+            .modifier(PresentedProbe(value: progress.value, sink: progress))
     }
 }
 
-/// The picture's size follows the progress; the view itself is never re-created or re-parented.
-struct VideoFrame: ViewModifier {
+/// The picture: a view laid out ONCE at its own size and only scaled and moved while the sheet moves (never resized, so the video layer is never re-composited
+/// at a new size mid-drag). Its box shrinks around it and clips it.
+struct PictureTransform<Picture: View>: View {
     let progress: SheetProgress
     let base: SheetGeometry
+    @ViewBuilder let picture: () -> Picture
 
-    func body(content: Content) -> some View {
+    var body: some View {
         let g = base.at(progress.value)
-        content.frame(width: g.videoWidth, height: g.videoHeight)
+        let size = g.pictureBase
+        picture()
+            .frame(width: size.width, height: size.height)
+            .scaleEffect(g.pictureScale, anchor: .topLeading)
+            .offset(x: g.pictureOffset.width, y: g.pictureOffset.height)
+            .frame(width: g.videoWidth, height: g.videoHeight, alignment: .topLeading)
+            .background(Color.black)
+            .clipped()
     }
 }
 
@@ -108,6 +95,22 @@ struct SheetFade: ViewModifier {
     }
 }
 
+/// The details under the picture "fade out" with a flat cover of their own background colour that fades in over them, not an opacity on the subtree: an opacity below 1
+/// makes the whole subtree (chat lines, emotes, the input and its glass) render offscreen each frame, which on a full-screen sheet is what dropped frames.
+struct SheetCover: ViewModifier {
+    let progress: SheetProgress
+    let color: Color
+
+    func body(content: Content) -> some View {
+        let q = min(1, max(0, progress.value))
+        content
+            .overlay { color.opacity(Double(min(1, q * 3))).allowsHitTesting(false) }
+            .allowsHitTesting(q < 0.2)
+    }
+}
+
 extension View {
+    func sheetCover(_ progress: SheetProgress, color: Color) -> some View { modifier(SheetCover(progress: progress, color: color)) }
+
     func sheetFade(_ progress: SheetProgress, _ direction: SheetFade.Direction) -> some View { modifier(SheetFade(progress: progress, direction: direction)) }
 }

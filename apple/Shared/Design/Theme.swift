@@ -28,29 +28,52 @@ extension Color {
 /// Liquid Glass on iOS/macOS/tvOS 26.2 and later, a material below. The gate is 26.2, not 26.0: an app built with the Xcode 27 beta
 /// toolchain crashed at launch on the iOS 26.0 simulator runtime inside `swift_getOpaqueTypeMetadata` (called from `glassEffect`),
 /// while 26.2 and 26.5 run. 26.1 was not tested. Revisit with the stable Xcode release. Every other file asks for `glass(...)`, never for `#available`.
-extension View {
-    @ViewBuilder
-    func glass<S: Shape>(in shape: S, interactive: Bool = false, tint: Color? = nil) -> some View {
-        if #available(iOS 26.2, macOS 26.2, tvOS 26.2, *) {
-            self.glassEffect(Self.glass(interactive: interactive, tint: tint), in: shape)
+/// While something moves over live video (the player sheet being dragged), glass and blur are replaced by a flat translucent fill: a glass element samples what is
+/// behind it every frame, and behind the player sheet that is a playing video and a scrolling list.
+private struct FlatChromeKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    var flatChrome: Bool {
+        get { self[FlatChromeKey.self] }
+        set { self[FlatChromeKey.self] = newValue }
+    }
+}
+
+private struct GlassBackground<S: Shape>: ViewModifier {
+    @Environment(\.flatChrome) private var flat
+    let shape: S
+    let interactive: Bool
+    let tint: Color?
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if flat {
+            content.background((tint ?? Color.black).opacity(0.45), in: shape).overlay(shape.stroke(Theme.hairline, lineWidth: 0.5))
+        } else if #available(iOS 26.2, macOS 26.2, tvOS 26.2, *) {
+            content.glassEffect(glassStyle(interactive: interactive, tint: tint), in: shape)
         } else {
-            self.background(.ultraThinMaterial, in: shape)
+            content.background(.ultraThinMaterial, in: shape)
                 .overlay(shape.stroke(Theme.hairline, lineWidth: 0.5))
         }
+    }
+}
+
+extension View {
+    func glass<S: Shape>(in shape: S, interactive: Bool = false, tint: Color? = nil) -> some View {
+        modifier(GlassBackground(shape: shape, interactive: interactive, tint: tint))
     }
 
     @ViewBuilder
     func glassCapsule(interactive: Bool = false, tint: Color? = nil) -> some View {
         glass(in: Capsule(), interactive: interactive, tint: tint)
     }
+}
 
-    @available(iOS 26.2, macOS 26.2, tvOS 26.2, *)
-    private static func glass(interactive: Bool, tint: Color?) -> Glass {
-        var glass = Glass.regular
-        if let tint { glass = glass.tint(tint) }
-        if interactive { glass = glass.interactive() }
-        return glass
-    }
+@available(iOS 26.2, macOS 26.2, tvOS 26.2, *)
+fileprivate func glassStyle(interactive: Bool, tint: Color?) -> Glass {
+    var glass = Glass.regular
+    if let tint { glass = glass.tint(tint) }
+    if interactive { glass = glass.interactive() }
+    return glass
 }
 
 /// Groups glass elements so they blend and morph together on 26; a plain container before.

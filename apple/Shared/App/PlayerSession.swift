@@ -45,6 +45,8 @@ final class PlayerSession {
     let playback: PlaybackModel
     private(set) var target: PlaybackTarget?
     var position: SheetPosition = .expanded
+    /// A finger is dragging the sheet: the tab bar's glass goes flat meanwhile (it sits over the moving sheet and the playing video).
+    var isDragging = false
     /// Bumped each time a target is opened, so the player view starts a fresh load even for the same channel.
     private(set) var generation = 0
 
