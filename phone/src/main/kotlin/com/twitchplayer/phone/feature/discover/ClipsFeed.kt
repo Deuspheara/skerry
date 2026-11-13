@@ -9,15 +9,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -54,6 +58,8 @@ import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.phone.ui.components.RemoteImage
+import com.twitchplayer.phone.ui.components.SignedOutCopy
+import com.twitchplayer.phone.ui.components.THUMBNAIL_RATIO
 import com.twitchplayer.tv.core.data.model.FeedClip
 import com.twitchplayer.tv.core.ui.formatViewers
 import com.twitchplayer.tv.feature.feed.presentation.ClipsFeedViewModel
@@ -81,9 +87,16 @@ fun ClipsRoute(
 ) {
     val state by viewModel.presenter.state.collectAsStateWithLifecycle()
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        LoadHost(state.load, onRetry = viewModel.presenter::retry, onSignIn = onSignIn, skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) }, staleMarker = false) { content ->
+        LoadHost(state.load, onRetry = viewModel.presenter::retry, onSignIn = onSignIn, skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) }, staleMarker = false, signedOut = SignedOutCopy(stringResource(R.string.phone_signedout_discover_title), stringResource(R.string.phone_signedout_discover_body))) { content ->
             if (content.clips.isEmpty()) {
-                MessageState(title = stringResource(R.string.phone_feed_clips_empty), modifier = Modifier.fillMaxSize())
+                MessageState(
+                    title = stringResource(R.string.phone_feed_clips_empty),
+                    body = stringResource(R.string.phone_clips_empty_body),
+                    actionLabel = stringResource(R.string.state_retry),
+                    onAction = viewModel.presenter::retry,
+                    icon = PhoneIcons.Discover,
+                    modifier = Modifier.fillMaxSize(),
+                )
             } else {
                 ClipsPager(content.clips, state.autoplayAllowed, playerOpen, onOpenClip, onChannel)
             }
@@ -237,32 +250,48 @@ private fun ClipPage(
                 onLongClick = togglePlay,
             ),
     ) {
-        // The surface is only built for the page the viewer rests on, never while it slides in (see the live pager).
-        if (mine && settledPage) ExoVideoSurface(player.exo, Modifier.fillMaxSize())
-        if (!showVideo) RemoteImage(clip.thumbnailUrl, Modifier.fillMaxSize())
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Transparent, SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = SCRIM_ALPHA))))
-        if (tapToPlay && settledPage) {
-            Text(
-                stringResource(R.string.phone_feed_tap_to_play),
-                modifier = Modifier.align(Alignment.Center).clip(CircleShape).background(Color.Black.copy(alpha = SCRIM_ALPHA)).clickable(onClick = onPlayHere).padding(horizontal = 20.dp, vertical = 12.dp),
-                color = Color.White,
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
-        Column(Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            RailButton(if (muted) PhoneIcons.VolumeOff else PhoneIcons.VolumeUp, stringResource(if (muted) R.string.phone_feed_mute else R.string.phone_feed_unmute), onToggleMute)
-            RailButton(PhoneIcons.OpenInNew, stringResource(R.string.phone_feed_channel), onChannel)
-            RailButton(PhoneIcons.Discover, stringResource(R.string.phone_feed_clip_open), onOpen)
-        }
-        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(INFO_WIDTH).padding(start = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Avatar(clip.channelAvatarUrl, clip.channelName, AVATAR_SIZE, Modifier.clickable(onClick = onChannel))
-                Column(Modifier.weight(1f)) {
-                    Text(clip.channelName, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(views, color = Color.White.copy(alpha = INFO_ALPHA), style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        // Same card as the live pages: the clip's picture fills the page behind it, the clip is a rounded 16:9 card, the facts and the labelled actions
+        // follow (see the live pager). The surface is only built for the page the viewer rests on, never while it slides in.
+        RemoteImage(clip.thumbnailUrl, Modifier.fillMaxSize().alpha(BACKDROP_ALPHA))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), BACKDROP_FADE to Color.Black)))
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = MODE_SWITCH_SPACE)) {
+            Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
+                if (mine && settledPage) ExoVideoSurface(player.exo, Modifier.fillMaxSize())
+                if (!showVideo) RemoteImage(clip.thumbnailUrl, Modifier.fillMaxSize())
+                if (tapToPlay && settledPage) {
+                    Text(
+                        stringResource(R.string.phone_feed_tap_to_play),
+                        modifier = Modifier.align(Alignment.Center).clip(CircleShape).background(Color.Black.copy(alpha = SCRIM_ALPHA)).clickable(onClick = onPlayHere).padding(horizontal = 20.dp, vertical = 12.dp),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                 }
             }
-            Text(clip.title, color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.padding(horizontal = 16.dp).padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Avatar(clip.channelAvatarUrl, clip.channelName, AVATAR_SIZE, Modifier.clickable(onClick = onChannel))
+                    Column(Modifier.weight(1f)) {
+                        Text(clip.channelName, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(views, color = Color.White.copy(alpha = INFO_ALPHA), style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                    }
+                }
+                Text(clip.title, color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    FeedAction(
+                        if (muted) PhoneIcons.VolumeOff else PhoneIcons.VolumeUp,
+                        stringResource(if (muted) R.string.phone_feed_label_sound_off else R.string.phone_feed_label_sound_on),
+                        stringResource(if (muted) R.string.phone_feed_mute else R.string.phone_feed_unmute),
+                        onToggleMute,
+                        Modifier.weight(1f),
+                    )
+                    FeedAction(PhoneIcons.Info, stringResource(R.string.phone_feed_label_channel), stringResource(R.string.phone_feed_channel), onChannel, Modifier.weight(1f))
+                    FeedAction(PhoneIcons.Discover, stringResource(R.string.phone_feed_label_watch), stringResource(R.string.phone_feed_clip_open), onOpen, Modifier.weight(1f))
+                }
+            }
+            Box(Modifier.weight(1f))
+            if (index < count - 1) {
+                PagerHint(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp))
+            }
         }
     }
 }
@@ -275,8 +304,6 @@ private class ClipView(val mine: Boolean, val settledPage: Boolean, val muted: B
 private class ClipActions(val onToggleMute: () -> Unit, val onPlayHere: () -> Unit, val onOpen: () -> Unit, val onChannel: () -> Unit)
 
 private const val PLAYERS = 2
-private const val SCRIM_START = 0.55f
 private const val SCRIM_ALPHA = 0.65f
 private const val INFO_ALPHA = 0.8f
-private const val INFO_WIDTH = 0.78f
 private val AVATAR_SIZE = 40.dp

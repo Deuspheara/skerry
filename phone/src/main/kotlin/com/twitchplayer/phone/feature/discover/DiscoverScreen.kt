@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,7 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,12 +40,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -59,11 +64,12 @@ import com.twitchplayer.phone.feature.player.overVideoPanelColor
 import com.twitchplayer.phone.feature.player.rememberPlayerSnapshot
 import com.twitchplayer.phone.feature.player.toPhoneStyle
 import com.twitchplayer.phone.ui.components.Avatar
-import com.twitchplayer.phone.ui.components.LiveBadge
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.PhoneIcons
 import com.twitchplayer.phone.ui.components.RemoteImage
+import com.twitchplayer.phone.ui.components.SignedOutCopy
+import com.twitchplayer.phone.ui.components.THUMBNAIL_RATIO
 import com.twitchplayer.phone.ui.components.ViewersBadge
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.ui.formatViewers
@@ -158,9 +164,16 @@ private fun LiveFeed(
             onSignIn = onSignIn,
             skeleton = { Box(Modifier.fillMaxSize().background(Color.Black)) },
             staleMarker = false,
+            signedOut = SignedOutCopy(stringResource(R.string.phone_signedout_discover_title), stringResource(R.string.phone_signedout_discover_body)),
         ) { content ->
             if (content.streams.isEmpty()) {
-                MessageState(title = stringResource(R.string.phone_feed_empty), modifier = Modifier.fillMaxSize())
+                MessageState(
+                    title = stringResource(R.string.phone_feed_empty),
+                    actionLabel = stringResource(R.string.state_retry),
+                    onAction = onRetry,
+                    icon = PhoneIcons.Discover,
+                    modifier = Modifier.fillMaxSize(),
+                )
             } else {
                 FeedPager(
                     streams = content.streams,
@@ -319,45 +332,82 @@ private fun FeedPage(
             }
             .combinedClickable(interactionSource = source, indication = null, onClickLabel = openLabel, onClick = onOpen, onLongClickLabel = togglePlayLabel, onLongClick = togglePlay),
     ) {
-        // The surface (a PlayerView, expensive to create) is only built for the page the viewer rests on, never while it slides in: the swipe
-        // itself draws a picture and text, and the video appears as soon as the page settles (its player has been prepared since the last page).
-        if (mine && isSettled) NativeVideoSurface(player, Modifier.fillMaxSize())
-        // The picture stands in until the stream really plays (and stays when autoplay is off or the channel went offline).
-        if (!showVideo) RemoteImage(stream.thumbnailUrl, Modifier.fillMaxSize())
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Transparent, SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = SCRIM_ALPHA))))
-
-        Column(Modifier.align(Alignment.TopStart).statusBarsPadding().padding(16.dp)) {
-            LiveBadge()
-        }
-        if (tapToPlay && isSettled) {
-            Text(
-                stringResource(R.string.phone_feed_tap_to_play),
-                modifier = Modifier.align(Alignment.Center).clip(CircleShape).background(Color.Black.copy(alpha = SCRIM_ALPHA)).clickable(onClick = onPlayHere).padding(horizontal = 20.dp, vertical = 12.dp),
-                color = Color.White,
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
-        // Right-hand rail: sound, chat, the channel page, the full player.
-        Column(Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            RailButton(if (muted) PhoneIcons.VolumeOff else PhoneIcons.VolumeUp, stringResource(if (muted) R.string.phone_feed_mute else R.string.phone_feed_unmute), onToggleMute)
-            RailButton(PhoneIcons.Chat, stringResource(if (chatOn) R.string.phone_feed_chat_hide else R.string.phone_feed_chat_show), onToggleChat)
-            RailButton(PhoneIcons.OpenInNew, stringResource(R.string.phone_feed_channel), onChannel)
-            RailButton(PhoneIcons.Discover, stringResource(R.string.phone_feed_open), onOpen)
-        }
-        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(INFO_WIDTH).padding(start = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (chatOn && showChatFor != null) {
-                FeedChat(showChatFor, Modifier.fillMaxWidth().height(CHAT_HEIGHT))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Avatar(stream.avatarUrl, stream.name, AVATAR, Modifier.clickable(onClick = onChannel))
-                Column(Modifier.weight(1f)) {
-                    Text(stream.name, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(stream.categoryName, color = Color.White.copy(alpha = INFO_ALPHA), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // The stream's own picture, darkened, fills the page behind the card so there is never an empty black screen around a 16:9 video.
+        RemoteImage(stream.thumbnailUrl, Modifier.fillMaxSize().alpha(BACKDROP_ALPHA))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), BACKDROP_FADE to Color.Black)))
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = MODE_SWITCH_SPACE)) {
+            // The card: the video (its surface, a PlayerView, is only built for the page the viewer rests on, never while it slides in: the swipe
+            // itself draws a picture and text, and the video appears as soon as the page settles, its player prepared since the last page).
+            Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
+                if (mine && isSettled) NativeVideoSurface(player, Modifier.fillMaxSize())
+                // The picture stands in until the stream really plays (and stays when autoplay is off or the channel went offline).
+                if (!showVideo) RemoteImage(stream.thumbnailUrl, Modifier.fillMaxSize())
+                if (tapToPlay && isSettled) {
+                    Text(
+                        stringResource(R.string.phone_feed_tap_to_play),
+                        modifier = Modifier.align(Alignment.Center).clip(CircleShape).background(Color.Black.copy(alpha = SCRIM_ALPHA)).clickable(onClick = onPlayHere).padding(horizontal = 20.dp, vertical = 12.dp),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                 }
-                ViewersBadge(stream.viewers)
             }
-            Text(stream.title, color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.padding(horizontal = 16.dp).padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Avatar(stream.avatarUrl, stream.name, AVATAR, Modifier.clickable(onClick = onChannel))
+                    Column(Modifier.weight(1f)) {
+                        Text(stream.name, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stream.categoryName, color = Color.White.copy(alpha = INFO_ALPHA), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    ViewersBadge(stream.viewers)
+                }
+                Text(stream.title, color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // The actions, each with its word under the icon: a rail of bare icons did not say what a button does.
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    FeedAction(
+                        if (muted) PhoneIcons.VolumeOff else PhoneIcons.VolumeUp,
+                        stringResource(if (muted) R.string.phone_feed_label_sound_off else R.string.phone_feed_label_sound_on),
+                        stringResource(if (muted) R.string.phone_feed_mute else R.string.phone_feed_unmute),
+                        onToggleMute,
+                        Modifier.weight(1f),
+                    )
+                    FeedAction(PhoneIcons.Chat, stringResource(R.string.phone_feed_label_chat), stringResource(if (chatOn) R.string.phone_feed_chat_hide else R.string.phone_feed_chat_show), onToggleChat, Modifier.weight(1f))
+                    FeedAction(PhoneIcons.Info, stringResource(R.string.phone_feed_label_channel), stringResource(R.string.phone_feed_channel), onChannel, Modifier.weight(1f))
+                    FeedAction(PhoneIcons.Discover, stringResource(R.string.phone_feed_label_watch), stringResource(R.string.phone_feed_open), onOpen, Modifier.weight(1f))
+                }
+            }
+            // The chat fills what is left under the card; nothing when it is off or the viewer has not stayed on the page yet.
+            Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp).padding(top = 8.dp, bottom = 8.dp)) {
+                if (chatOn && showChatFor != null) FeedChat(showChatFor, Modifier.fillMaxSize())
+            }
+            if (index < count - 1) {
+                PagerHint(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp))
+            }
         }
+    }
+}
+
+/** An action under the card: a 40 dp disc with the icon and a 12 sp word below, one 48 dp-wide-and-tall target. */
+@Composable
+internal fun FeedAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.minimumInteractiveComponentSize().clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = description, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = description }.padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(Modifier.size(40.dp).clip(CircleShape).background(Color.White.copy(alpha = ACTION_DISC_ALPHA)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+        }
+        Text(label, color = Color.White, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** "Swipe up for the next stream": a chevron and four words that say the page is a pager. Hidden from screen readers (the page description says "n of m"). */
+@Composable
+internal fun PagerHint(modifier: Modifier = Modifier) {
+    Row(modifier.clearAndSetSemantics { }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(PhoneIcons.ChevronDown, contentDescription = null, tint = Color.White.copy(alpha = INFO_ALPHA), modifier = Modifier.size(16.dp).rotate(HALF_TURN))
+        Text(stringResource(R.string.phone_feed_swipe_hint), color = Color.White.copy(alpha = INFO_ALPHA), style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -413,11 +463,13 @@ private const val PLAYERS = 2
 /** The rendition the previews ask for; a stream that does not offer it falls back to the player's default (see `QualityPolicy`). */
 private const val PREVIEW_QUALITY = "360p30"
 private const val DWELL_MS = 2_000L
-private const val CHAT_LINES = 4
-private const val SCRIM_START = 0.55f
+private const val CHAT_LINES = 8
+internal const val BACKDROP_ALPHA = 0.5f
+internal const val BACKDROP_FADE = 0.45f
+private const val ACTION_DISC_ALPHA = 0.16f
+internal val MODE_SWITCH_SPACE = 52.dp
 private const val SCRIM_ALPHA = 0.65f
 private const val RAIL_ALPHA = 0.4f
 private const val INFO_ALPHA = 0.8f
-private const val INFO_WIDTH = 0.78f
-private val CHAT_HEIGHT = 120.dp
+private const val HALF_TURN = 180f
 private val AVATAR = 40.dp
