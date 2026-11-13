@@ -103,6 +103,8 @@ final class PlaybackModel {
 
     func pickedEmote(_ name: String) { presenter?.onEvent(event: PlayerEventPickedEmote(name: name)) }
 
+    func updateChat(_ transform: @escaping (ChatSettings) -> ChatSettings) { presenter?.onEvent(event: PlayerEventUpdateChatSettings(transform: transform)) }
+
     func setChatMode(_ mode: ChatMode) { presenter?.onEvent(event: PlayerEventSetChatMode(mode: mode)) }
 
     func setPreferredQuality(_ id: String) {
