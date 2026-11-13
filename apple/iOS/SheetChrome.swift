@@ -89,9 +89,9 @@ struct SheetFade: ViewModifier {
         let q = min(1, max(0, progress.value))
         let opacity: Double = switch direction {
         case .out: Double(max(0, 1 - q * 3))
-        case .in: Double(min(1, q * 1.4))
+        case .in: Double(min(1, max(0, (q - 0.55) / 0.35)))
         }
-        content.opacity(opacity).allowsHitTesting(direction == .out ? q < 0.2 : q > 0.5)
+        content.opacity(opacity).allowsHitTesting(direction == .out ? q < 0.2 : q > 0.8)
     }
 }
 
