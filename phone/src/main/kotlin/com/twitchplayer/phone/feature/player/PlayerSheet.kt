@@ -38,8 +38,8 @@ val LocalPlayerSheet = staticCompositionLocalOf<PlayerSheet?> { null }
 object SheetGeometry {
     val STRIP_HEIGHT = 56.dp
 
-    /** The strip grows with the system font (a 2-line title and subtitle must not be cut) up to this multiple of [STRIP_HEIGHT]. */
-    private const val MAX_STRIP_FONT_SCALE = 1.6f
+    /** The strip grows a little with the system font, up to this multiple of [STRIP_HEIGHT] (about 64 dp): above it the subtitle is dropped instead of the bar growing over the list. */
+    private const val MAX_STRIP_FONT_SCALE = 1.15f
     private const val PICTURE_ASPECT = 16f / 9f
 
     /** The text and the picture under the stage are gone once the sheet is this far down. */

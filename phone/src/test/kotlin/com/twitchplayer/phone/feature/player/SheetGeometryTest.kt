@@ -65,9 +65,9 @@ class SheetGeometryTest {
     @Test fun theStripGrowsWithTheFontUpToAPointAndNeverShrinks() {
         assertEquals(56f, SheetGeometry.stripHeight(0.85f).value, 0.01f)
         assertEquals(56f, SheetGeometry.stripHeight(1f).value, 0.01f)
-        assertEquals(84f, SheetGeometry.stripHeight(1.5f).value, 0.01f)
-        assertEquals(89.6f, SheetGeometry.stripHeight(2f).value, 0.01f)
-        assertEquals(89.6f, SheetGeometry.stripHeight(3f).value, 0.01f)
+        assertEquals(64.4f, SheetGeometry.stripHeight(1.5f).value, 0.01f)
+        assertEquals(64.4f, SheetGeometry.stripHeight(2f).value, 0.01f)
+        assertEquals(64.4f, SheetGeometry.stripHeight(3f).value, 0.01f)
     }
 
     @Test fun theStripPictureIsSixteenByNine() {

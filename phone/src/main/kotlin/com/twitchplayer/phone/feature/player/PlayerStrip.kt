@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,6 +31,7 @@ import com.twitchplayer.phone.ui.components.PhoneIcons
 
 private const val SUBTITLE_MAX_LINES = 1
 private const val HAIRLINE_DP = 1
+private const val SUBTITLE_MAX_FONT_SCALE = 1.15f
 private val BUTTON_GAP = 12.dp
 
 /** What sits beside the small picture while the sheet is minimised: what plays, a play / pause button and the close button. A tap anywhere else expands. */
@@ -55,7 +57,8 @@ fun PlayerStrip(
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (subtitle != null) {
+            // The strip stays a thin bar at large text sizes: it keeps the title (one line) and drops the subtitle, rather than growing over the list.
+            if (subtitle != null && LocalDensity.current.fontScale <= SUBTITLE_MAX_FONT_SCALE) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = SUBTITLE_MAX_LINES, overflow = TextOverflow.Ellipsis)
             }
         }

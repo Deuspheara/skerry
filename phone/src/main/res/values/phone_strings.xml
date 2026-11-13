@@ -163,4 +163,5 @@
     <string name="phone_category_watching">%1$s watching now</string>
     <string name="phone_player_settings">Playback settings</string>
     <string name="phone_player_settings_off">Off</string>
+    <string name="phone_signout_body">You can sign in again at any time. Your settings stay on this phone.</string>
 </resources>

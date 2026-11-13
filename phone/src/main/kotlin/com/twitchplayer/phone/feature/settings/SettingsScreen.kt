@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -119,59 +120,58 @@ fun SettingsRoute(
                 ProfileCard(state.account, onSignIn = onSignIn, onSignOut = { dialog = SettingsDialog.SignOut })
             }
             item(key = "playback") {
-                Section(R.string.phone_settings_playback) {
-                    SwitchRow(Icons.Filled.PlayArrow, R.string.tile_stats, state.showStats) { onEvent(SettingsEvent.ToggleStats) }
+                Section(R.string.phone_settings_playback, Icons.Filled.PlayArrow) {
+                    SwitchRow(R.string.tile_stats, state.showStats) { onEvent(SettingsEvent.ToggleStats) }
                     Rule()
-                    SwitchRow(null, R.string.tile_raids, state.followRaids) { onEvent(SettingsEvent.ToggleFollowRaids) }
+                    SwitchRow(R.string.tile_raids, state.followRaids) { onEvent(SettingsEvent.ToggleFollowRaids) }
                     Rule()
-                    ValueRow(PhoneIcons.Discover, R.string.phone_settings_feed_autoplay, stringResource(state.feedAutoplay.label())) { dialog = SettingsDialog.FeedAutoplay }
+                    ValueRow(R.string.phone_settings_feed_autoplay, stringResource(state.feedAutoplay.label())) { dialog = SettingsDialog.FeedAutoplay }
                     Text(
                         stringResource(R.string.phone_settings_feed_help),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 64.dp, end = 16.dp, bottom = 12.dp),
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                     )
                 }
             }
             item(key = "chat") {
-                Section(R.string.tile_chat) {
-                    ValueRow(PhoneIcons.Chat, R.string.phone_settings_chat_mode, stringResource(state.chatMode.label())) { dialog = SettingsDialog.ChatMode }
+                Section(R.string.tile_chat, PhoneIcons.Chat) {
+                    ValueRow(R.string.phone_settings_chat_mode, stringResource(state.chatMode.label())) { dialog = SettingsDialog.ChatMode }
                     Rule()
-                    ValueRow(null, R.string.chat_opt_text, stringResource(state.chat.textSize.label())) { dialog = SettingsDialog.ChatTextSize }
+                    ValueRow(R.string.chat_opt_text, stringResource(state.chat.textSize.label())) { dialog = SettingsDialog.ChatTextSize }
                     Rule()
-                    ValueRow(null, R.string.chat_opt_spacing, stringResource(state.chat.density.label())) { dialog = SettingsDialog.ChatDensity }
+                    ValueRow(R.string.chat_opt_spacing, stringResource(state.chat.density.label())) { dialog = SettingsDialog.ChatDensity }
                     Rule()
-                    ValueRow(null, R.string.chat_opt_background, stringResource(R.string.phone_percent, state.chat.backgroundOpacity)) { dialog = SettingsDialog.ChatBackground }
+                    ValueRow(R.string.chat_opt_background, stringResource(R.string.phone_percent, state.chat.backgroundOpacity)) { dialog = SettingsDialog.ChatBackground }
                     Rule()
-                    SwitchRow(null, R.string.chat_opt_badges, state.chat.showBadges) { onEvent(SettingsEvent.UpdateChat { it.copy(showBadges = !it.showBadges) }) }
+                    SwitchRow(R.string.chat_opt_badges, state.chat.showBadges) { onEvent(SettingsEvent.UpdateChat { it.copy(showBadges = !it.showBadges) }) }
                     Rule()
-                    SwitchRow(null, R.string.chat_opt_time, state.chat.showTimestamps) { onEvent(SettingsEvent.UpdateChat { it.copy(showTimestamps = !it.showTimestamps) }) }
+                    SwitchRow(R.string.chat_opt_time, state.chat.showTimestamps) { onEvent(SettingsEvent.UpdateChat { it.copy(showTimestamps = !it.showTimestamps) }) }
                     Rule()
-                    SwitchRow(null, R.string.chat_opt_animated, state.chat.animatedEmotes) { onEvent(SettingsEvent.UpdateChat { it.copy(animatedEmotes = !it.animatedEmotes) }) }
+                    SwitchRow(R.string.chat_opt_animated, state.chat.animatedEmotes) { onEvent(SettingsEvent.UpdateChat { it.copy(animatedEmotes = !it.animatedEmotes) }) }
                     if (state.chat.animatedEmotes) {
                         Rule()
-                        ValueRow(null, R.string.chat_opt_limit, state.chat.animatedLimit.count.toString()) { dialog = SettingsDialog.ChatLimit }
+                        ValueRow(R.string.chat_opt_limit, state.chat.animatedLimit.count.toString()) { dialog = SettingsDialog.ChatLimit }
                     }
                 }
             }
             item(key = "appearance") {
-                Section(R.string.phone_settings_appearance) {
-                    ValueRow(PhoneIcons.Palette, R.string.phone_settings_theme, stringResource(themeMode.label())) { dialog = SettingsDialog.Theme }
+                Section(R.string.phone_settings_appearance, PhoneIcons.Palette) {
+                    ValueRow(R.string.phone_settings_theme, stringResource(themeMode.label())) { dialog = SettingsDialog.Theme }
                     Rule()
-                    SwitchRow(null, R.string.tile_animations, state.animationsEnabled) { onEvent(SettingsEvent.ToggleAnimations) }
+                    SwitchRow(R.string.tile_animations, state.animationsEnabled) { onEvent(SettingsEvent.ToggleAnimations) }
                 }
             }
             item(key = "language") {
-                Section(R.string.phone_settings_language) {
+                Section(R.string.phone_settings_language, PhoneIcons.Language) {
                     // The section is called Language: the row says which one.
                     val tag = switcher?.current()
-                    ValueRow(PhoneIcons.Language, R.string.tile_language, if (tag == null) stringResource(R.string.lang_system) else AppLocales.nativeName(tag)) { dialog = SettingsDialog.Language }
+                    ValueRow(R.string.tile_language, if (tag == null) stringResource(R.string.lang_system) else AppLocales.nativeName(tag)) { dialog = SettingsDialog.Language }
                 }
             }
             item(key = "about") {
-                Section(R.string.phone_settings_about) {
+                Section(R.string.phone_settings_about, Icons.Filled.Info) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        IconTile(Icons.Filled.Info)
                         Column {
                             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.bodyLarge)
                             Text(stringResource(R.string.phone_about_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -185,7 +185,7 @@ fun SettingsRoute(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     )
                     Rule()
-                    ValueRow(null, R.string.phone_licenses, null) { dialog = SettingsDialog.Licenses }
+                    ValueRow(R.string.phone_licenses, null) { dialog = SettingsDialog.Licenses }
                 }
             }
         }
@@ -196,11 +196,15 @@ fun SettingsRoute(
         SettingsDialog.SignOut -> AlertDialog(
             onDismissRequest = { dialog = null },
             title = { Text(stringResource(R.string.dialog_signout_title, state.account.orEmpty())) },
+            text = { Text(stringResource(R.string.phone_signout_body)) },
             confirmButton = {
-                TextButton(onClick = {
-                    dialog = null
-                    onSignOut()
-                }) { Text(stringResource(R.string.dialog_signout)) }
+                TextButton(
+                    onClick = {
+                        dialog = null
+                        onSignOut()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.dialog_signout)) }
             },
             dismissButton = { TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.dialog_cancel)) } },
         )
@@ -332,14 +336,13 @@ private fun PillButton(label: String, filled: Boolean, onClick: () -> Unit) {
 
 /** A labelled section: a heading above a rounded surface holding its rows. */
 @Composable
-private fun Section(title: Int, content: @Composable ColumnScope.() -> Unit) {
+private fun Section(title: Int, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            stringResource(title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp).semantics { heading() },
-        )
+        // The section's icon is in its heading; the rows below are text and values only, so every row starts at the same edge.
+        Row(Modifier.padding(horizontal = 16.dp).semantics(mergeDescendants = true) { heading() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            Text(stringResource(title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
             Column(content = content)
         }
@@ -347,25 +350,16 @@ private fun Section(title: Int, content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun Rule() = HorizontalDivider(Modifier.padding(start = 64.dp, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
-
-/** The icon of a row: a 36 dp rounded square in the app's tint. Rows without one keep its space so the texts line up. */
-@Composable
-private fun IconTile(icon: ImageVector?) {
-    Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).then(if (icon != null) Modifier.background(MaterialTheme.colorScheme.primaryContainer) else Modifier), contentAlignment = Alignment.Center) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
-    }
-}
+private fun Rule() = HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
 /** A row that opens a choice: icon, title, the current value under it, and a chevron that mirrors in right-to-left languages. */
 @Composable
-private fun ValueRow(icon: ImageVector?, title: Int, value: String?, onClick: () -> Unit) {
+private fun ValueRow(title: Int, value: String?, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickableItem(onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        IconTile(icon)
         Column(Modifier.weight(1f)) {
             Text(stringResource(title), style = MaterialTheme.typography.bodyLarge)
             if (value != null) Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -375,13 +369,12 @@ private fun ValueRow(icon: ImageVector?, title: Int, value: String?, onClick: ()
 }
 
 @Composable
-private fun SwitchRow(icon: ImageVector?, title: Int, checked: Boolean, onToggle: () -> Unit) {
+private fun SwitchRow(title: Int, checked: Boolean, onToggle: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().minimumInteractiveComponentSize().selectable(selected = checked, role = Role.Switch, onClick = onToggle).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        IconTile(icon)
         Text(stringResource(title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = null)
     }

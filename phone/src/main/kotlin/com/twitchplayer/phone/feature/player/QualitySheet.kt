@@ -31,13 +31,15 @@ import com.twitchplayer.tv.feature.player.playback.VideoQualities
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QualitySheet(qualities: VideoQualities, onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
-            Text(
-                stringResource(R.string.player_quality_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-            )
+            // The quality in use is said under the title (a ticked row far down a long list is easy to miss).
+            Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Text(stringResource(R.string.player_quality_title), style = MaterialTheme.typography.titleMedium)
+                qualities.options.firstOrNull { it.id == qualities.selected }?.let {
+                    Text(it.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             if (qualities.options.isEmpty()) {
                 Text(
                     stringResource(R.string.player_quality_unavailable),
@@ -50,7 +52,7 @@ fun QualitySheet(qualities: VideoQualities, onPick: (String) -> Unit, onDismiss:
                     qualities.options.forEach { option ->
                         val selected = option.id == qualities.selected
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            Modifier.fillMaxWidth().heightIn(min = 56.dp)
                                 .selectable(selected = selected, role = Role.RadioButton, onClick = { onPick(option.id) })
                                 .padding(horizontal = 24.dp),
                             verticalAlignment = Alignment.CenterVertically,

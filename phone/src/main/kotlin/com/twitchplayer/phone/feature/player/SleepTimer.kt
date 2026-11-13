@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -128,9 +129,12 @@ fun SleepTimerChip(state: SleepTimerState, onClick: () -> Unit, modifier: Modifi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SleepTimerSheet(state: SleepTimerState, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
-            Text(stringResource(R.string.phone_player_sleep_timer_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+    // Opens fully (every preset and "turn off" in view, no half-open sheet with the list cut at the bottom) and scrolls if the screen is small.
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp).verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+            val title = stringResource(R.string.phone_player_sleep_timer_title)
+            // While a timer runs, its countdown is in the title.
+            Text(if (state.active) "$title · ${SleepTimerPolicy.format(state.remainingMs)}" else title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             SleepTimerPolicy.PRESETS_MINUTES.forEach { minutes ->
                 val label = when (minutes) {
                     60 -> stringResource(R.string.phone_player_sleep_timer_hour)
@@ -138,7 +142,7 @@ fun SleepTimerSheet(state: SleepTimerState, onDismiss: () -> Unit) {
                     else -> pluralStringResource(R.plurals.phone_player_sleep_timer_minutes, minutes, minutes)
                 }
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = false, role = Role.Button, onClick = {
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp).selectable(selected = false, role = Role.Button, onClick = {
                         state.start(minutes)
                         onDismiss()
                     }).padding(horizontal = 24.dp),
@@ -147,7 +151,7 @@ fun SleepTimerSheet(state: SleepTimerState, onDismiss: () -> Unit) {
             }
             if (state.active) {
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = false, role = Role.Button, onClick = {
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp).selectable(selected = false, role = Role.Button, onClick = {
                         state.cancel()
                         onDismiss()
                     }).padding(horizontal = 24.dp),

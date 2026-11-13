@@ -2,6 +2,7 @@ package com.twitchplayer.phone.feature.player
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -222,8 +223,9 @@ private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modi
         modifier = modifier.fillMaxWidth().heightIn(min = EmotePanelSpec.SEARCH_HEIGHT).semantics { if (query.isEmpty()) contentDescription = hint }.testTag(EMOTE_SEARCH_TAG),
         decorationBox = { field ->
             Row(
-                Modifier.fillMaxWidth().heightIn(min = EmotePanelSpec.SEARCH_HEIGHT).clip(RoundedCornerShape(EmotePanelSpec.SEARCH_HEIGHT / 2))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(start = 12.dp, end = 4.dp),
+                Modifier.fillMaxWidth().heightIn(min = EmotePanelSpec.SEARCH_HEIGHT).clip(SEARCH_SHAPE)
+                    // A rounded rectangle with an outline, not a pill: the message field above is a pill, and the two must not be mistaken for one another.
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow).border(1.dp, MaterialTheme.colorScheme.outlineVariant, SEARCH_SHAPE).padding(start = 12.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -420,6 +422,8 @@ private fun originsOf(picker: EmotePickerState): Map<String, Origin> {
 const val EMOTE_PANEL_TAG = "emote-panel"
 const val EMOTE_GRID_TAG = "emote-grid"
 const val EMOTE_SEARCH_TAG = "emote-search"
+
+private val SEARCH_SHAPE = RoundedCornerShape(10.dp)
 const val EMOTE_SUGGESTIONS_TAG = "emote-suggestions"
 private const val MAX_QUERY = 40
 private const val LOCKED_ALPHA = 0.35f

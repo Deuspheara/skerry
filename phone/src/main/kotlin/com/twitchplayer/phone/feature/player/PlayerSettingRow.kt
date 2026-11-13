@@ -34,7 +34,7 @@ class PlayerSettingRow(val icon: ImageVector, val label: String, val value: Stri
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerSettingsSheet(rows: List<PlayerSettingRow>, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
             Text(stringResource(R.string.phone_player_settings), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             rows.forEach { row ->

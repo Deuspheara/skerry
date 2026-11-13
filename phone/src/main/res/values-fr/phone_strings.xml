@@ -157,4 +157,5 @@
     <string name="phone_category_watching">%1$s spectateurs en ce moment</string>
     <string name="phone_player_settings">Réglages de lecture</string>
     <string name="phone_player_settings_off">Désactivé</string>
+    <string name="phone_signout_body">Vous pourrez vous reconnecter à tout moment. Vos réglages restent sur ce téléphone.</string>
 </resources>
