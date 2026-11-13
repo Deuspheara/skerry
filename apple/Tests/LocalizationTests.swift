@@ -56,3 +56,21 @@ final class LocalizationTests: XCTestCase {
         }
     }
 }
+
+/// No string the user can read may be its own key (a key that was not found shows as itself, as `phone_about_version` once did).
+final class RenderedKeyTests: XCTestCase {
+    func testNoCatalogValueIsItsOwnKey() throws {
+        let path = try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))
+        let english = try XCTUnwrap(Bundle(path: path))
+        let url = try XCTUnwrap(english.url(forResource: "Localizable", withExtension: "strings"))
+        let table = try XCTUnwrap(NSDictionary(contentsOf: url) as? [String: String])
+        XCTAssertGreaterThan(table.count, 100)
+        let same = table.filter { $0.key == $0.value }.keys.sorted()
+        XCTAssertEqual(same, [], "values equal to their key")
+    }
+
+    func testFormattedStringsResolve() {
+        XCTAssertFalse(String(format: String(localized: "phone_about_version"), "1.0").contains("phone_about"))
+        XCTAssertFalse(String(format: String(localized: "media_more_from"), "x").contains("media_more"))
+    }
+}

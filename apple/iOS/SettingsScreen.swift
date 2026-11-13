@@ -25,12 +25,6 @@ struct SettingsScreen: View {
                         section("phone_settings_playback") {
                             ToggleRow(icon: "chart.bar", title: "tile_stats", isOn: state.showStats) { app.onSettingsEvent(SettingsEventToggleStats.shared) }
                             ToggleRow(icon: "arrow.uturn.right", title: "tile_raids", isOn: state.followRaids) { app.onSettingsEvent(SettingsEventToggleFollowRaids.shared) }
-                            MenuRow(icon: "rectangle.stack.badge.play", title: "phone_settings_feed_autoplay", value: feedLabel(state.feedAutoplay)) {
-                                Button("Wi-Fi") { app.onSettingsEvent(SettingsEventSetFeedAutoplay(mode: .wifiOnly)) }
-                                Button("opt_on") { app.onSettingsEvent(SettingsEventSetFeedAutoplay(mode: .always)) }
-                                Button("opt_off") { app.onSettingsEvent(SettingsEventSetFeedAutoplay(mode: .off)) }
-                            }
-                            Text("phone_settings_feed_help").font(.footnote).foregroundStyle(Theme.textSecondary).padding(.horizontal, 16).padding(.bottom, 12)
                         }
                         section("tile_chat") {
                             MenuRow(icon: "bubble.left.and.bubble.right", title: "phone_settings_chat_mode", value: chatModeLabel(state.chatMode)) {
@@ -68,7 +62,12 @@ struct SettingsScreen: View {
                         .buttonStyle(.plain)
                     }
                     section("phone_settings_about") {
-                        RowLabel(icon: "info.circle", title: LocalizedStringKey("phone_about_version \(version)"), value: "", chevron: false)
+                        HStack(spacing: 12) {
+                            Image(systemName: "info.circle").font(.body).foregroundStyle(Theme.accent).frame(width: 28)
+                            Text(String(format: String(localized: "phone_about_version"), version)).font(.body)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 13)
                         Text("phone_about_disclaimer").font(.footnote).foregroundStyle(Theme.textSecondary).padding(.horizontal, 16).padding(.bottom, 12)
                         NavigationLink { LicensesScreen() } label: { RowLabel(icon: "doc.text", title: "phone_licenses", value: "", chevron: true) }.buttonStyle(.plain)
                     }
