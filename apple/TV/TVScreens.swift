@@ -133,9 +133,9 @@ struct TVBrowseScreen: View {
                                 HStack(spacing: 20) {
                                     ForEach(Self.filters, id: \.0) { filter, key in TVChip(title: LocalizedStringKey(key), selected: browse.filter == filter) { model.select(filter) } }
                                     Button { model.toggleSort() } label: {
-                                        Label(browse.sort == .popularity ? "sort_popularity" : "sort_alpha", systemImage: "arrow.up.arrow.down").font(.callout.weight(.semibold))
+                                        Label(browse.sort == .popularity ? "sort_popularity" : "sort_alpha", systemImage: "arrow.up.arrow.down").font(.callout.weight(.semibold)).foregroundStyle(.primary)
                                     }
-                                    .buttonStyle(.bordered)
+                                    .buttonStyle(.bordered).tint(.gray)
                                 }
                                 .padding(.vertical, 12)
                             }
