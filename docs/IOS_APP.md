@@ -111,8 +111,8 @@ edge vs replay resume, quality and audio-only, sleep timer, rate, no stacked rem
 the signed app, localisation (every key used in Swift exists; plurals; fr and ar), and the real Kotlin presenters running on the demo data through the bridge.
 Tests run in random order (`randomExecutionOrder`): they share one Kotlin graph per process (DataStore allows one instance per file, so it cannot be reset
 between tests) and none may depend on another. Kotlin: the shared tests run on macOS, the iOS simulator and, with `-PtvosSimulatorTests=true`, the tvOS simulator
-(storage in Caches, DataStore and snapshot files written and read back there). The Release configuration builds and contains neither the demo clip nor the launch
-arguments.
+(storage in Caches, DataStore and snapshot files written and read back there). The release XCFramework (`build-shared.sh release`, 214 MB against 383 MB for the debug one) was built and checked to contain no demo symbol, and the iOS Release
+configuration builds against it and contains neither the demo clip nor the launch arguments.
 
 Strict concurrency: the projects build with `SWIFT_STRICT_CONCURRENCY=targeted`. With `complete` the iOS target reports 99 warning lines (about 50 distinct):
 redundant casts of SKIE-typed arrays, `nonisolated(unsafe)` notes in `PlayerController`, and "sending `graph.playback` / `self` risks data races" where Kotlin
