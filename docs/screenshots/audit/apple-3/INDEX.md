@@ -48,7 +48,7 @@ Whether a real device decodes the same stream is untested. An earlier capture of
 | iOS Emote picker / pill / long-press | 7.8 (7.8) | `*-emote-picker`, `*-chat-pill`, `*-chat-row-longpress` | Three emotes per section in the demo; long-press frame not frozen, overlap not disproved |
 | iOS Landscape | 7.5 (6.5) | `*-player-landscape-*` (now upright) | Overlay chat dense over bright video; no scrim under the title |
 | iOS Replay / clip | 5.8 (4.5) | `*-player-replay-portrait`, `-clip-` | No description or chapters; empty lower half; "vod demo" placeholders |
-| iOS Offline channel page | 7.0 (5.5) | `*-player-offline-channel` | Demo plays a test pattern for hibou in some runs |
+| iOS Offline channel page | 7.0 (5.5) | `*-player-offline-channel` | Still no last-seen or next-stream line |
 | iOS Drag mid-state | 5.8 (3.5) | `*-player-drag-mid`, `drag-frames-light-contact-sheet` | Still a large grey slab under the picture; title clipped when the picture is wide; not smooth-proven (no frame metrics this round) |
 | iOS Mini strip | 7.0 (7.0) | `*-strip-over-*` | Thumbnail corner not rounded; strip over the new Home |
 | iOS Signed-out screens | 7.0 (7.0) | `*-signed-out`, `light-real-*` | No browsing without a session |
