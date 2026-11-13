@@ -69,7 +69,7 @@ struct ChatComposer: View {
             if let problem = playback.sendProblem { Text(problem).font(.footnote).foregroundStyle(.red) }
             #if !os(macOS)
             if pickerOpen, let picker = playback.picker {
-                EmotePanel(picker: picker, onPick: { insert($0) }).frame(height: 280).transition(.move(edge: .bottom))
+                EmotePanel(picker: picker, onPick: { insert($0) }).frame(height: 300).transition(.move(edge: .bottom))
             }
             #endif
         }
@@ -160,18 +160,30 @@ struct EmotePanel: View {
             .padding(.horizontal, 12).frame(height: 36).background(Theme.surface, in: Capsule()).padding(.horizontal, 10)
             tabs
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 40), spacing: 8)], spacing: 8) {
-                    ForEach(visible, id: \.0.name) { emote, locked in
-                        Button { if !locked { onPick(emote.name) } } label: {
-                            EmoteImage(url: emote.url, animatedUrl: emote.animatedUrl, animate: false, height: 34, aspect: CGFloat(emote.aspect == 0 ? 1 : emote.aspect))
-                                .frame(width: 40, height: 40).opacity(locked ? 0.35 : 1)
+                LazyVStack(alignment: .leading, spacing: 6, pinnedViews: [.sectionHeaders]) {
+                    ForEach(sections, id: \.id) { section in
+                        Section {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 40), spacing: 8)], spacing: 8) {
+                                ForEach(section.emotes, id: \.name) { emote in
+                                    Button { if !section.locked { onPick(emote.name) } } label: {
+                                        EmoteImage(url: emote.url, animatedUrl: emote.animatedUrl, animate: false, height: 34, aspect: CGFloat(emote.aspect == 0 ? 1 : emote.aspect))
+                                            .frame(width: 40, height: 40).opacity(section.locked ? 0.35 : 1)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(Text(emote.name))
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                        } header: {
+                            if let title = section.title {
+                                Text(title).font(.caption.weight(.bold)).foregroundStyle(Theme.textSecondary).textCase(.uppercase)
+                                    .padding(.horizontal, 14).padding(.vertical, 4).frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Theme.background)
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(emote.name))
                     }
                 }
-                .padding(.horizontal, 10)
-                if visible.isEmpty { Text("phone_emote_empty").font(.footnote).foregroundStyle(Theme.textSecondary).padding(24) }
+                if sections.isEmpty { emptyState }
             }
             .scrollIndicators(.hidden)
         }
@@ -196,11 +208,29 @@ struct EmotePanel: View {
         switch source { case .twitch: "Twitch"; case .sevenTv: "7TV"; case .bttv: "BTTV"; case .ffz: "FFZ"; default: "…" }
     }
 
-    /// The emotes to show with whether each is locked: search results across lists, the recents, or the chosen source's lists.
-    private var visible: [(Emote, Bool)] {
-        if !query.trimmingCharacters(in: .whitespaces).isEmpty { return (picker.search(query: query, limit: 120) as? [Emote] ?? []).map { ($0, false) } }
-        guard let source else { return recent.map { ($0, false) } }
+    struct EmoteBlock { let id: String; let title: LocalizedStringKey?; let emotes: [Emote]; let locked: Bool }
+
+    /// What the panel shows, in blocks with a header each: search results, the recents (with an empty message), or the chosen source's sections (channel, global, other
+    /// channels, locked).
+    private var sections: [EmoteBlock] {
+        if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+            let found = picker.search(query: query, limit: 120) as? [Emote] ?? []
+            return found.isEmpty ? [] : [EmoteBlock(id: "search", title: nil, emotes: found, locked: false)]
+        }
+        guard let source else { return recent.isEmpty ? [] : [EmoteBlock(id: "recent", title: "emote_section_recent", emotes: recent, locked: false)] }
         let groups = (picker.groupsOf(source: source) as? [EmoteGroup]) ?? []
-        return groups.flatMap { group in (group.emotes as? [Emote] ?? []).map { ($0, group.section == .locked) } }
+        let order: [(EmoteSection, LocalizedStringKey)] = [(.channel, "emote_section_channel"), (.global, "emote_section_global"), (.otherChannels, "emote_section_other"), (.locked, "emote_section_locked")]
+        return order.compactMap { section, title in
+            let emotes = groups.filter { $0.section == section }.flatMap { $0.emotes as? [Emote] ?? [] }
+            return emotes.isEmpty ? nil : EmoteBlock(id: "\(source)-\(section)", title: title, emotes: emotes, locked: section == .locked)
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: query.isEmpty ? "clock.arrow.circlepath" : "magnifyingglass").font(.title2).foregroundStyle(Theme.textSecondary).accessibilityHidden(true)
+            Text("phone_emote_empty").font(.footnote).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity).padding(32)
     }
 }

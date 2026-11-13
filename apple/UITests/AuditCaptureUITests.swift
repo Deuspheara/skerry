@@ -121,9 +121,7 @@ final class AuditCaptureUITests: XCTestCase {
         swipeUp(times: 1); shot("settings-3")
         swipeUp(times: 2); shot("settings-bottom")
         swipeDown(times: 5)
-        if app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Langue'")).firstMatch.exists {
-            app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Langue'")).firstMatch.tap(); Thread.sleep(forTimeInterval: 1.5); shot("settings-language-picker")
-        }
+        // The Language row hands off to the system Settings app, which leaves a back chip in the status bar of every later capture: not captured.
     }
 
     func testDemoPlayerLive() {
@@ -150,6 +148,17 @@ final class AuditCaptureUITests: XCTestCase {
         app.buttons["Réduire le lecteur"].firstMatch.tap(); Thread.sleep(forTimeInterval: 2); shot("strip-over-home")
         tabBar("tab-browse"); shot("strip-over-browse")
         tabBar("tab-following"); shot("strip-over-following")
+    }
+
+    /// The "new messages" pill with the emote panel open (a short chat list): it must sit below the last line, not on the text.
+    func testDemoChatPill() {
+        launch(["-demo", "-open", "lunaria"], wait: 7)
+        app.buttons["Émotes"].firstMatch.tap(); Thread.sleep(forTimeInterval: 1.5)
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52))
+        from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.2)
+        Thread.sleep(forTimeInterval: 4)
+        shot("player-chat-pill")
     }
 
     func testDemoReplayClipAndErrors() {

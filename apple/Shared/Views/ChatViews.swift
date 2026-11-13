@@ -293,7 +293,7 @@ struct ChatList: View, Equatable {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         let animated = Set(lines.suffix(8).map(\.id))
@@ -319,7 +319,7 @@ struct ChatList: View, Equatable {
                     } label: {
                         Label(unread > 0 ? plural("chat_new_messages", unread) : String(localized: "chat_back_to_live"), systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                     }
-                    .glassCapsule(interactive: true).buttonStyle(.plain).padding(.bottom, 8)
+                    .glassCapsule(interactive: true).buttonStyle(.plain).padding(.vertical, 6)
                 }
                 #endif
             }

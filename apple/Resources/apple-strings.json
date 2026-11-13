@@ -173,5 +173,30 @@
     "en": "Clear search",
     "fr": "Effacer la recherche",
     "ar": "مسح البحث"
+  },
+  "emote_section_recent": {
+    "en": "Recently used",
+    "fr": "Utilisés récemment",
+    "ar": "المستخدمة مؤخرًا"
+  },
+  "emote_section_channel": {
+    "en": "This channel",
+    "fr": "Cette chaîne",
+    "ar": "هذه القناة"
+  },
+  "emote_section_global": {
+    "en": "Everyone's emotes",
+    "fr": "Émotes globales",
+    "ar": "إيموجي عامة"
+  },
+  "emote_section_other": {
+    "en": "Other channels",
+    "fr": "Autres chaînes",
+    "ar": "قنوات أخرى"
+  },
+  "emote_section_locked": {
+    "en": "Locked",
+    "fr": "Verrouillées",
+    "ar": "مقفلة"
   }
 }
