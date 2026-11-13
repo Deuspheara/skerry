@@ -63,7 +63,7 @@ struct SettingsScreen: View {
                     }
                     section("phone_settings_about") {
                         HStack(spacing: 12) {
-                            Image(systemName: "info.circle").font(.body).foregroundStyle(Theme.accent).frame(width: 28)
+                            Image(systemName: "info.circle").font(.body).foregroundStyle(Theme.accentText).frame(width: 28)
                             Text(String(format: String(localized: "phone_about_version"), version)).font(.body)
                             Spacer(minLength: 0)
                         }
@@ -158,7 +158,7 @@ private struct RowLabel: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.body).foregroundStyle(Theme.accent).frame(width: 28)
+            Image(systemName: icon).font(.body).foregroundStyle(Theme.accentText).frame(width: 28)
             Text(title).font(.body).lineLimit(1)
             Spacer(minLength: 8)
             Text(value).font(.subheadline).foregroundStyle(Theme.textSecondary).lineLimit(1)
@@ -177,7 +177,7 @@ private struct ToggleRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.body).foregroundStyle(Theme.accent).frame(width: 28)
+            Image(systemName: icon).font(.body).foregroundStyle(Theme.accentText).frame(width: 28)
             Toggle(isOn: Binding(get: { isOn }, set: { _ in toggle() })) { Text(title).font(.body) }
         }
         .padding(.horizontal, 16).padding(.vertical, 8)

@@ -60,7 +60,7 @@ struct SignInSheet: View {
                 } label: {
                     Label("phone_signin_open", systemImage: "safari").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent).controlSize(.large)
+                .buttonStyle(.borderedProminent).controlSize(.large).tint(Theme.accentDeep)
                 if openFailed { Text("phone_signin_open_failed").font(.footnote).foregroundStyle(.red) }
                 Text("phone_signin_step_code").font(.body).fixedSize(horizontal: false, vertical: true)
                 Text(code.userCode)
@@ -68,14 +68,19 @@ struct SignInSheet: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .glass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .textSelection(.enabled)
+                    .onTapGesture { copy(code.userCode, expiresIn: TimeInterval(code.expiresIn)) }
                     .accessibilityLabel(Text(code.userCode.map(String.init).joined(separator: " ")))
                 HStack {
                     Button { copy(code.userCode, expiresIn: TimeInterval(code.expiresIn)) } label: {
                         Label(copied ? "phone_signin_copied" : "phone_signin_copy", systemImage: copied ? "checkmark" : "doc.on.doc")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.bordered).tint(Theme.accentText)
                     Spacer()
                     if let expiresAt = model.expiresAt { Countdown(until: expiresAt) }
+                }
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("signin_waiting").font(.footnote).foregroundStyle(Theme.textSecondary)
                 }
             } else {
                 ProgressView().frame(maxWidth: .infinity)

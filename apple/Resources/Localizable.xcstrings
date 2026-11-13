@@ -29694,6 +29694,29 @@
         }
       }
     },
+    "signin_waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for you to confirm on twitch.tv…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente de votre validation sur twitch.tv…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في انتظار تأكيدك على twitch.tv…"
+          }
+        }
+      }
+    },
     "sort_alpha": {
       "extractionState": "manual",
       "localizations": {

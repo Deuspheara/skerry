@@ -164,7 +164,7 @@ struct ChatLineView: View {
                 Text(String(word)).font(.system(size: textSize)).foregroundStyle(ink)
             }
         case .strong(let strong):
-            Text(strong.text).font(.system(size: textSize, weight: .bold)).foregroundStyle(Theme.accent)
+            Text(strong.text).font(.system(size: textSize, weight: .bold)).foregroundStyle(Theme.accentText)
         case .emote(let emote):
             let layers = emote.layers as? [Emote] ?? []
             if let first = layers.first {

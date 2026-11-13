@@ -9,7 +9,7 @@ struct HeaderBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "play.tv.fill").font(.title3).foregroundStyle(Theme.accent).accessibilityHidden(true)
+            Image(systemName: "play.tv.fill").font(.title3).foregroundStyle(Theme.accentText).accessibilityHidden(true)
             Button { app.push(.search) } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass").font(.subheadline.weight(.semibold))

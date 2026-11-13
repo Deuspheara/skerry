@@ -2,6 +2,16 @@ import SwiftUI
 
 /// The app's palette (the same purple and near-black as the Android phone app) and the one place that knows about Liquid Glass.
 enum Theme {
+    /// The palette as 0xRRGGBB, so the contrast of every text and ground pairing is tested (`ContrastTests`).
+    enum Hex {
+        static let accent = 0xA970FF, accentDeep = 0x772CE8
+        static let lightBackground = 0xFAF9FC, darkBackground = 0x0E0E10
+        static let lightSurface = 0xEEECF3, darkSurface = 0x1F1F23
+        static let lightTextSecondary = 0x4A4A53, darkTextSecondary = 0xC8C8D0
+    }
+
+    /// Purple for text and glyphs: the lighter brand purple on dark grounds, the deeper one on light (4.5:1 or more on both).
+    static let accentText = Color(light: Color(hex: Hex.accentDeep), dark: Color(hex: Hex.accent))
     static let accent = Color(red: 0xA9 / 255, green: 0x70 / 255, blue: 0xFF / 255)
     static let accentDeep = Color(red: 0x77 / 255, green: 0x2C / 255, blue: 0xE8 / 255)
     static let live = Color(red: 0xEB / 255, green: 0x04 / 255, blue: 0x00 / 255)
@@ -15,6 +25,8 @@ enum Theme {
 }
 
 extension Color {
+    init(hex: Int) { self.init(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255) }
+
     /// A colour that follows the interface style (the app supports system, light and dark).
     init(light: Color, dark: Color) {
         #if canImport(UIKit)

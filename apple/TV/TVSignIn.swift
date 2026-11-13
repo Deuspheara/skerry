@@ -47,7 +47,7 @@ struct TVSignInScreen: View {
                         Text("tv_signin_code").font(.callout).foregroundStyle(.secondary)
                         Text(code.userCode).font(.system(.largeTitle, design: .monospaced).weight(.bold)).kerning(8).minimumScaleFactor(0.5).lineLimit(1)
                             .accessibilityLabel(Text(code.userCode.map(String.init).joined(separator: " ")))
-                        Text(code.verificationUri.replacingOccurrences(of: "https://", with: "")).font(.title3.weight(.semibold)).foregroundStyle(Theme.accent)
+                        Text(code.verificationUri.replacingOccurrences(of: "https://", with: "")).font(.title3.weight(.semibold)).foregroundStyle(Theme.accentText)
                         if let expiresAt = model.expiresAt { Countdown(until: expiresAt) }
                     }
                     .frame(maxWidth: 760, alignment: .leading)

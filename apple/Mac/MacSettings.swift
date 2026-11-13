@@ -118,7 +118,7 @@ private struct AccountTab: View {
                         Text(app.account ?? String(localized: "state_signin_title")).font(.headline)
                         if app.isSignedIn { Text("phone_settings_signed_in").font(.footnote).foregroundStyle(Theme.textSecondary) }
                     }
-                } icon: { Image(systemName: "person.crop.circle.fill").font(.title).foregroundStyle(Theme.accent) }
+                } icon: { Image(systemName: "person.crop.circle.fill").font(.title).foregroundStyle(Theme.accentText) }
             }
         }
         .formStyle(.grouped)

@@ -110,7 +110,7 @@ struct SearchScreen: View {
         if !state.recents.isEmpty {
             HStack {
                 SectionTitle(key: "phone_search_recent")
-                Button("phone_search_clear_recents") { model.clearRecents() }.font(.footnote.weight(.semibold)).foregroundStyle(Theme.accent)
+                Button("phone_search_clear_recents") { model.clearRecents() }.font(.footnote.weight(.semibold)).foregroundStyle(Theme.accentText)
             }
             ForEach(state.recents, id: \.self) { recent in
                 HStack {

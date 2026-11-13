@@ -158,5 +158,10 @@
     "en": "Clip",
     "fr": "Clip",
     "ar": "مقطع"
+  },
+  "signin_waiting": {
+    "en": "Waiting for you to confirm on twitch.tv…",
+    "fr": "En attente de votre validation sur twitch.tv…",
+    "ar": "في انتظار تأكيدك على twitch.tv…"
   }
 }

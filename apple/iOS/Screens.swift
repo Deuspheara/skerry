@@ -144,7 +144,7 @@ struct SignedOutState: View {
 
     private func perk(_ symbol: String, _ key: LocalizedStringKey) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: symbol).foregroundStyle(Theme.accent).frame(width: 24)
+            Image(systemName: symbol).foregroundStyle(Theme.accentText).frame(width: 24)
             Text(key).font(.subheadline)
         }
     }
@@ -232,7 +232,7 @@ struct BrowseScreen: View {
                         Button { model?.toggleSort() } label: {
                             Label(browse.sort == .popularity ? "sort_popularity" : "sort_alpha", systemImage: "arrow.up.arrow.down").font(.footnote.weight(.semibold))
                         }
-                        .buttonStyle(.plain).foregroundStyle(Theme.accent)
+                        .buttonStyle(.plain).foregroundStyle(Theme.accentText)
                     }
                     ScrollView(.horizontal) {
                         HStack(spacing: 8) {
