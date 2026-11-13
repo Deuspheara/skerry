@@ -9,6 +9,8 @@ enum Theme {
     static let surface = Color(light: Color(red: 0xEE / 255, green: 0xEC / 255, blue: 0xF3 / 255), dark: Color(red: 0x1F / 255, green: 0x1F / 255, blue: 0x23 / 255))
     static let surfaceHigh = Color(light: Color(red: 0xE2 / 255, green: 0xE0 / 255, blue: 0xE9 / 255), dark: Color(red: 0x30 / 255, green: 0x30 / 255, blue: 0x32 / 255))
     static let textSecondary = Color(light: Color(red: 0x4A / 255, green: 0x4A / 255, blue: 0x53 / 255), dark: Color(red: 0xC8 / 255, green: 0xC8 / 255, blue: 0xD0 / 255))
+    /// The flat stand-in for glass while the sheet moves: dark smoke in the dark appearance, milk in the light one.
+    static let flatGlass = Color(light: Color.white.opacity(0.78), dark: Color.black.opacity(0.45))
     static let hairline = Color(light: Color.black.opacity(0.08), dark: Color.white.opacity(0.10))
 }
 
@@ -47,7 +49,7 @@ private struct GlassBackground<S: Shape>: ViewModifier {
 
     @ViewBuilder func body(content: Content) -> some View {
         if flat {
-            content.background((tint ?? Color.black).opacity(0.45), in: shape).overlay(shape.stroke(Theme.hairline, lineWidth: 0.5))
+            content.background((tint ?? Theme.flatGlass).opacity(tint == nil ? 1 : 0.45), in: shape).overlay(shape.stroke(Theme.hairline, lineWidth: 0.5))
         } else if #available(iOS 26.2, macOS 26.2, tvOS 26.2, *) {
             content.glassEffect(glassStyle(interactive: interactive, tint: tint), in: shape)
         } else {

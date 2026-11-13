@@ -64,6 +64,12 @@ struct ChatLineView: View {
     /// Over the picture without any backing (the Apple TV overlay, like the Android TV one): a wide, dense shadow only.
     var shadowed = false
     var onReply: ((ChatLine) -> Void)?
+    @Environment(\.colorScheme) private var scheme
+    /// Text colours: white over the video (it has its own backing and shadow), otherwise the interface's (the Mac and TV columns are dark, so they stay white).
+    private var onVideo: Bool { overVideo || shadowed }
+    private var ink: Color { onVideo ? .white : .primary }
+    private var quiet: Color { onVideo ? .white.opacity(0.6) : Theme.textSecondary }
+    private func nickColor(_ argb: Int64) -> Color { onVideo ? Color(argb: argb) : NickContrast.nick(argb, light: scheme == .light) }
 
     /// The in-app text size, scaled with the system's Dynamic Type setting like any other text.
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
@@ -128,15 +134,15 @@ struct ChatLineView: View {
         VStack(alignment: .leading, spacing: 2) {
             if let reply = line.reply {
                 Label { Text("\(reply.name): \(reply.body)").lineLimit(1) } icon: { Image(systemName: "arrowshape.turn.up.left.fill") }
-                    .font(.system(size: textSize - 3 * scale)).foregroundStyle(.white.opacity(0.65))
+                    .font(.system(size: textSize - 3 * scale)).foregroundStyle(quiet)
             }
             FlowLayout(spacing: 3, lineSpacing: 1) {
-                if settings?.showTimestamps == true { Text(line.time).font(.system(size: textSize - 3)).foregroundStyle(.white.opacity(0.5)) }
+                if settings?.showTimestamps == true { Text(line.time).font(.system(size: textSize - 3)).foregroundStyle(quiet) }
                 if settings?.showBadges != false {
                     ForEach(Array(line.badgeUrls.enumerated()), id: \.offset) { _, url in EmoteImage(url: url, height: badgeHeight) }
                 }
-                Text(line.nick).font(.system(size: textSize, weight: .semibold)).foregroundStyle(Color(argb: line.color)) + Text(":").font(.system(size: textSize)).foregroundColor(.white)
-                if line.bits > 0 { Text("◆\(line.bits)").font(.system(size: textSize, weight: .bold)).foregroundStyle(Color(red: 0xD9 / 255, green: 0xC7 / 255, blue: 0xFF / 255)) }
+                Text(line.nick).font(.system(size: textSize, weight: .semibold)).foregroundStyle(nickColor(line.color)) + Text(":").font(.system(size: textSize)).foregroundColor(ink)
+                if line.bits > 0 { Text("◆\(line.bits)").font(.system(size: textSize, weight: .bold)).foregroundStyle(onVideo ? Color(red: 0xD9 / 255, green: 0xC7 / 255, blue: 0xFF / 255) : Theme.accentDeep) }
                 ForEach(Array(line.pieces.enumerated()), id: \.offset) { _, piece in pieceView(piece) }
             }
         }
@@ -155,7 +161,7 @@ struct ChatLineView: View {
         switch onEnum(of: piece) {
         case .text(let text):
             ForEach(Array(text.text.split(separator: " ", omittingEmptySubsequences: true).enumerated()), id: \.offset) { _, word in
-                Text(String(word)).font(.system(size: textSize)).foregroundStyle(.white)
+                Text(String(word)).font(.system(size: textSize)).foregroundStyle(ink)
             }
         case .strong(let strong):
             Text(strong.text).font(.system(size: textSize, weight: .bold)).foregroundStyle(Theme.accent)
@@ -228,7 +234,7 @@ struct ChatLineView: View {
             Text(line.pieces.compactMap { piece -> String? in
                 if case .text(let text) = onEnum(of: piece) { return text.text }
                 return nil
-            }.joined()).font(.system(size: textSize - 1)).foregroundStyle(.white)
+            }.joined()).font(.system(size: textSize - 1)).foregroundStyle(ink)
         }
         .padding(8).frame(maxWidth: .infinity, alignment: .leading)
         .background(noticeColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 10, style: .continuous))

@@ -62,10 +62,11 @@ struct PlayerSheet: View {
             if !fullscreen {
                 details(playback, session, top: base.expandedVideoHeight, bottom: insets.bottom, base: base)
                     .frame(width: size.width, height: base.expandedHeight, alignment: .topLeading)
-                    .sheetCover(progress, color: Color(red: 0.055, green: 0.055, blue: 0.063))
+                    .sheetCover(progress, color: Theme.surface)
             }
             PictureTransform(progress: progress, base: base) {
                 VideoStage(playback: playback, fullscreen: fullscreen, docked: docked, progress: progress, controlsVisible: $controlsVisible, insets: controlInsets, size: base.pictureBase, replyTo: $replyTo, onTap: toggleControls)
+                    .environment(\.colorScheme, .dark)
             }
             .gesture(dragGesture(travel: base.collapsedY), including: fullscreen ? .subviews : .all)
             strip(playback, session, travel: base.collapsedY)
@@ -77,6 +78,11 @@ struct PlayerSheet: View {
         .environment(\.flatChrome, progress.isDragging)
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .position(x: size.width / 2 - insets.leading, y: size.height / 2 - insets.top)
+        .onAppear {
+            // The sheet may be mounted after the position changed (the first measurement of the screen comes a frame later): show where the position says, without animating.
+            let target: CGFloat = session.position == .collapsed ? 1 : 0
+            if abs(progress.value - target) > 0.001 { immediately { progress.value = target }; progress.presented = target }
+        }
         .onChange(of: session.position) { _, position in
             if position == .collapsed { Keyboard.dismiss() }
             // A position changed by something other than the drag (the chevron, a new stream, the strip's tap): settle there. The drag already did.
@@ -101,8 +107,7 @@ struct PlayerSheet: View {
             }
         }
         .padding(.bottom, bottom)
-        .background(Color(red: 0.055, green: 0.055, blue: 0.063))
-        .environment(\.colorScheme, .dark)
+        .background(Theme.background)
         .padding(.top, top)
     }
 
