@@ -198,7 +198,7 @@ struct FollowingScreen: View {
                         if !live.isEmpty {
                             LiveAvatarRail(streams: live) { app.open($0) }
                             SectionTitle(key: "sec_following")
-                            StreamGrid(streams: live) { app.open($0) }
+                            ForEach(live, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
                         }
                         if !offline.isEmpty {
                             SectionTitle(key: "sec_offline")
@@ -304,7 +304,7 @@ struct CategoryScreen: View {
                     if streams.isEmpty {
                         MessageState(title: "state_no_live")
                     }
-                    StreamGrid(streams: streams) { app.open($0) }
+                    ForEach(streams, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
                 .animation(app.motion, value: ids(streams))

@@ -251,14 +251,22 @@ struct ChannelHeader: View {
     }
 }
 
-/// Streams as a grid of cards, two across on a phone (more on wider screens).
+/// Streams as a grid of cards: two across (one at accessibility sizes), built from plain rows so the page stays one lazy list.
 struct StreamGrid: View {
     let streams: [LiveStream]
     var onTap: (LiveStream) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12, alignment: .top)], alignment: .leading, spacing: 16) {
-            ForEach(streams, id: \.channelId) { stream in StreamTile(stream: stream, width: nil) { onTap(stream) } }
+        let columns = typeSize.isAccessibilitySize ? 1 : 2
+        let rows = stride(from: 0, to: streams.count, by: columns).map { Array(streams[$0..<min($0 + columns, streams.count)]) }
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(row, id: \.channelId) { stream in StreamTile(stream: stream, width: nil) { onTap(stream) } }
+                    if row.count < columns { Color.clear.frame(maxWidth: .infinity) }
+                }
+            }
         }
     }
 }

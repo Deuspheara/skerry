@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// Screen audit helper (docs/screenshots/audit/apple): drives the iOS app through its screens and writes PNGs to `AUDIT_OUT`
@@ -25,7 +26,20 @@ final class AuditCaptureUITests: XCTestCase {
     }
 
     func shot(_ name: String) {
-        let png = XCUIScreen.main.screenshot().pngRepresentation
+        var png = XCUIScreen.main.screenshot().pngRepresentation
+        // XCUIScreen returns the portrait pixels whatever the device orientation: turn a landscape capture upright.
+        let orientation = XCUIDevice.shared.orientation
+        if orientation == .landscapeLeft || orientation == .landscapeRight, let image = UIImage(data: png) {
+            let size = CGSize(width: image.size.height, height: image.size.width)
+            let format = UIGraphicsImageRendererFormat(); format.scale = image.scale
+            let turned = UIGraphicsImageRenderer(size: size, format: format).image { context in
+                let cg = context.cgContext
+                cg.translateBy(x: size.width / 2, y: size.height / 2)
+                cg.rotate(by: orientation == .landscapeLeft ? .pi / 2 : -.pi / 2)
+                image.draw(in: CGRect(x: -image.size.width / 2, y: -image.size.height / 2, width: image.size.width, height: image.size.height))
+            }
+            png = turned.pngData() ?? png
+        }
         try? png.write(to: URL(fileURLWithPath: "\(out)/\(tag)-\(name).png"))
     }
 
