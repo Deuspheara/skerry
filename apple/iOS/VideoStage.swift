@@ -7,8 +7,10 @@ struct VideoStage: View {
     @Environment(AppModel.self) private var app
     let playback: PlaybackModel
     let fullscreen: Bool
+    /// Docked as the strip (the position, not the drag: it flips once, when the sheet lands).
+    let docked: Bool
+    let progress: SheetProgress
     @Binding var controlsVisible: Bool
-    let p: CGFloat
     let insets: EdgeInsets
     let size: CGSize
     let expandedHeight: CGFloat
@@ -26,11 +28,12 @@ struct VideoStage: View {
             // the black picture; in the docked strip a spinner or a warning says which.
             if !controller.hasPicture, !controller.audioOnly {
                 if let thumbnail = app.session.target?.thumbnailUrl, !thumbnail.isEmpty { RemoteImage(url: URL(string: thumbnail)).opacity(0.55) }
-                if p >= 0.05 {
+                if docked {
                     if controller.failed || playback.offline { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.white.opacity(0.9)) } else { ProgressView().tint(.white) }
                 }
             }
-            if p < 0.05 {
+            if !docked {
+                Group {
                 if fullscreen, chatMode == .overlay, playback.isLive {
                     HStack { Spacer(minLength: 0); chatOverlay.frame(width: size.width * 0.34).padding(.trailing, insets.trailing).padding(.vertical, 24) }
                 }
@@ -41,15 +44,18 @@ struct VideoStage: View {
                 controls(controller, chatMode: chatMode)
                     .opacity(controlsVisible || !controller.isPlaying ? 1 : 0)
                     .allowsHitTesting(controlsVisible || !controller.isPlaying)
+                }
+                .sheetFade(progress, .out)
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { if p < 0.05 { onTap() } }
+        .onTapGesture { if !docked { onTap() } }
         .clipped()
     }
 
     private var chatOverlay: some View {
         ChatList(lines: playback.chat, settings: playback.chatSettings, overVideo: true) { replyTo = $0 }
+            .equatable()
             .mask(LinearGradient(colors: [.clear, .black, .black], startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.18)))
             .allowsHitTesting(false)
     }

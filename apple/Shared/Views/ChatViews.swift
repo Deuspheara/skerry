@@ -59,33 +59,55 @@ struct ChatLineView: View {
     let line: ChatLine
     let settings: ChatSettings?
     var animate: Bool
-    /// Over the picture (the Apple TV overlay, the fullscreen chat): every line gets its own dark backing and a shadow so it stays readable on any frame.
+    /// Over the picture (the fullscreen chat): every line gets its own dark backing and a shadow so it stays readable on any frame.
     var overVideo = false
+    /// Over the picture without any backing (the Apple TV overlay, like the Android TV one): a wide, dense shadow only.
+    var shadowed = false
     var onReply: ((ChatLine) -> Void)?
 
     /// The in-app text size, scaled with the system's Dynamic Type setting like any other text.
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
 
     private var textSize: CGFloat {
+        #if os(tvOS)
+        // The Android TV's sizes (14, 15 and 17 sp, drawn on a 960 dp wide screen) at the Apple TV's 1920 pt: twice the numbers.
+        return CGFloat(settings?.textSize.sp ?? 15) * 2 * scale
+        #else
         let base: CGFloat = switch settings?.textSize {
         case .small: 13
         case .large: 17
         default: 15
         }
-        #if os(tvOS)
-        // Read from the couch: the same in-app size setting, drawn about twice as large.
-        return base * scale * 1.9
-        #else
         return base * scale
         #endif
     }
 
+    private var emoteHeight: CGFloat {
+        #if os(tvOS)
+        (textSize * 1.75).rounded()
+        #else
+        textSize + 9
+        #endif
+    }
+
+    private var badgeHeight: CGFloat {
+        #if os(tvOS)
+        min(32, max(30, textSize + 2))
+        #else
+        textSize + 2
+        #endif
+    }
+
     private var gap: CGFloat {
+        #if os(tvOS)
+        CGFloat(settings?.density.gapDp ?? 3) * 2
+        #else
         switch settings?.density {
         case .compact: 1
         case .relaxed: 6
         default: 3
         }
+        #endif
     }
 
     var body: some View {
@@ -111,15 +133,22 @@ struct ChatLineView: View {
             FlowLayout(spacing: 3, lineSpacing: 1) {
                 if settings?.showTimestamps == true { Text(line.time).font(.system(size: textSize - 3)).foregroundStyle(.white.opacity(0.5)) }
                 if settings?.showBadges != false {
-                    ForEach(Array(line.badgeUrls.enumerated()), id: \.offset) { _, url in EmoteImage(url: url, height: textSize + 2) }
+                    ForEach(Array(line.badgeUrls.enumerated()), id: \.offset) { _, url in EmoteImage(url: url, height: badgeHeight) }
                 }
-                Text(line.nick).font(.system(size: textSize, weight: .bold)).foregroundStyle(Color(argb: line.color)) + Text(":").font(.system(size: textSize)).foregroundColor(.white)
+                Text(line.nick).font(.system(size: textSize, weight: .semibold)).foregroundStyle(Color(argb: line.color)) + Text(":").font(.system(size: textSize)).foregroundColor(.white)
+                if line.bits > 0 { Text("◆\(line.bits)").font(.system(size: textSize, weight: .bold)).foregroundStyle(Color(red: 0xD9 / 255, green: 0xC7 / 255, blue: 0xFF / 255)) }
                 ForEach(Array(line.pieces.enumerated()), id: \.offset) { _, piece in pieceView(piece) }
             }
         }
-        .padding(.horizontal, 6).padding(.vertical, line.kind == .normal && !overVideo ? 0 : 3)
+        .padding(.horizontal, rowInset).padding(.vertical, line.kind == .normal && !overVideo ? 0 : 3)
+        #if os(tvOS)
+        .background(background)
+        .overlay(alignment: .leading) { if let rule { Rectangle().fill(rule).frame(width: 4) } }
+        #else
         .background(background, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .shadow(color: .black.opacity(overVideo ? 0.9 : 0), radius: overVideo ? 1.5 : 0)
+        #endif
+        .shadow(color: .black.opacity(overVideo ? 0.9 : (shadowed ? 0.95 : 0)), radius: overVideo ? 1.5 : (shadowed ? 5 : 0))
+        .shadow(color: .black.opacity(shadowed ? 0.8 : 0), radius: shadowed ? 1.5 : 0, y: shadowed ? 1 : 0)
     }
 
     @ViewBuilder private func pieceView(_ piece: ChatPiece) -> some View {
@@ -135,22 +164,65 @@ struct ChatLineView: View {
             if let first = layers.first {
                 ZStack {
                     ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
-                        EmoteImage(url: layer.url, animatedUrl: layer.animatedUrl, animate: animate && (settings?.animatedEmotes ?? true), height: textSize + 9, aspect: CGFloat(first.aspect == 0 ? 1 : first.aspect))
+                        EmoteImage(url: layer.url, animatedUrl: layer.animatedUrl, animate: animate && (settings?.animatedEmotes ?? true), height: emoteHeight, aspect: CGFloat(first.aspect == 0 ? 1 : first.aspect))
                     }
                 }
             }
         }
     }
 
+    private var rowInset: CGFloat {
+        #if os(tvOS)
+        12
+        #else
+        6
+        #endif
+    }
+
+    #if os(tvOS)
+    private static let twitchPurple = Color(red: 0x91 / 255, green: 0x46 / 255, blue: 0xFF / 255)
+    /// The Android TV's rule at the start of a mention (purple) or a highlighted line (light purple).
+    private var rule: Color? {
+        switch line.kind {
+        case .mention: Self.twitchPurple
+        case .highlight: Color(red: 0xBF / 255, green: 0x94 / 255, blue: 0xFF / 255)
+        default: nil
+        }
+    }
+    #endif
+
     private var background: Color {
+        #if os(tvOS)
+        switch line.kind {
+        case .mention: Self.twitchPurple.opacity(0.30)
+        case .highlight: Self.twitchPurple.opacity(0.16)
+        default: overVideo ? Color.black.opacity(0.5) : .clear
+        }
+        #else
         switch line.kind {
         case .mention: overVideo ? Theme.accent.opacity(0.55) : Theme.accent.opacity(0.28)
         case .highlight: overVideo ? Color.yellow.opacity(0.35) : Color.yellow.opacity(0.18)
         default: overVideo ? Color.black.opacity(0.5) : .clear
         }
+        #endif
     }
 
-    private var notice: some View {
+    @ViewBuilder private var notice: some View {
+        #if os(tvOS)
+        // Twitch's own sentence (sub, raid...): quieter than a chatter's line, like on the Android TV.
+        Text(line.pieces.compactMap { piece -> String? in
+            if case .text(let text) = onEnum(of: piece) { return text.text }
+            return nil
+        }.joined())
+        .font(.system(size: textSize).italic()).foregroundStyle(Color(red: 0xC8 / 255, green: 0xC8 / 255, blue: 0xD0 / 255))
+        .padding(.horizontal, rowInset).frame(maxWidth: .infinity, alignment: .leading)
+        .shadow(color: .black.opacity(shadowed ? 0.95 : 0), radius: shadowed ? 5 : 0)
+        #else
+        noticeCard
+        #endif
+    }
+
+    private var noticeCard: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: noticeIcon).foregroundStyle(noticeColor)
             Text(line.pieces.compactMap { piece -> String? in
@@ -192,11 +264,23 @@ extension Color {
 }
 
 /// The messages of the channel: newest at the bottom, auto-scrolling while the viewer is at the bottom, with a pill to jump back down.
-struct ChatList: View {
+struct ChatList: View, Equatable {
     let lines: [ChatLine]
     let settings: ChatSettings?
     var overVideo = false
+    /// See `ChatLineView.shadowed`.
+    var shadowed = false
+    /// While the sheet is being dragged the chat is held as it was: new messages wait for the finger to lift (a drag frame must not re-lay out the list).
+    var frozen = false
     var onReply: ((ChatLine) -> Void)?
+
+    /// Equal means "do not rebuild": the closure is ignored (it only sets a state), a frozen list never changes, and two line arrays are the same list when their
+    /// ends match (lines are immutable and the feed only appends and trims).
+    static func == (a: ChatList, b: ChatList) -> Bool {
+        if b.frozen { return true }
+        return a.frozen == b.frozen && a.overVideo == b.overVideo && a.shadowed == b.shadowed && a.settings === b.settings
+            && a.lines.count == b.lines.count && a.lines.first?.id == b.lines.first?.id && a.lines.last?.id == b.lines.last?.id
+    }
 
     @State private var atBottom = true
     @State private var unread = 0
@@ -206,8 +290,9 @@ struct ChatList: View {
             ZStack(alignment: .bottom) {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
+                        let animated = Set(lines.suffix(8).map(\.id))
                         ForEach(lines, id: \.id) { line in
-                            ChatLineView(line: line, settings: settings, animate: lines.suffix(8).contains { $0.id == line.id }, overVideo: overVideo, onReply: onReply).id(line.id)
+                            ChatLineView(line: line, settings: settings, animate: animated.contains(line.id), overVideo: overVideo, shadowed: shadowed, onReply: onReply).id(line.id)
                         }
                     }
                     .padding(.horizontal, 6)
@@ -220,6 +305,7 @@ struct ChatList: View {
                     atBottom = bottom
                     if bottom { unread = 0 }
                 }
+                #if !os(tvOS)
                 if !atBottom {
                     Button {
                         unread = 0
@@ -229,6 +315,7 @@ struct ChatList: View {
                     }
                     .glassCapsule(interactive: true).buttonStyle(.plain).padding(.bottom, 8)
                 }
+                #endif
             }
             .onChange(of: lines.last?.id) { _, id in
                 guard let id else { return }

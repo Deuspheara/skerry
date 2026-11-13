@@ -7,8 +7,9 @@ import TwitchShared
 struct PlayerSheet: View {
     @Environment(AppModel.self) private var app
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var drag: CGFloat = 0
-    @State private var dragging = false
+    /// The one value the drag and the settle drive; no body here reads it (see `SheetProgress`).
+    @State private var progress = SheetProgress()
+    @State private var driver = SpringDriver()
     @State private var controlsVisible = true
     @State private var hideTask: Task<Void, Never>?
     @State private var replyTo: ChatLine?
@@ -24,39 +25,39 @@ struct PlayerSheet: View {
             // is laid out in full-screen coordinates (it covers the status bar and the home indicator); the keyboard only shortens the expanded sheet.
             let insets = outer.safeAreaInsets
             let size = CGSize(width: outer.size.width + insets.leading + insets.trailing, height: outer.size.height + insets.top + insets.bottom)
-            let base: CGFloat = session.position == .collapsed ? 1 : 0
             let tabBarVisible = (app.paths[app.tab] ?? []).isEmpty
-            let flat = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, keyboardHeight: keyboard.height, tabBarVisible: tabBarVisible, progress: base)
-            let p = SheetGeometry.progress(collapsed: base == 1, translation: drag, travel: flat.collapsedY)
-            let geometry = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, keyboardHeight: keyboard.height, tabBarVisible: tabBarVisible, progress: p)
-            let landscape = geometry.landscape
-            let travel = max(1, geometry.collapsedY)
-            let fullscreen = geometry.fullscreen
-            let videoWidth = geometry.videoWidth
-            let expandedVideoHeight = geometry.expandedVideoHeight
-            let videoHeight = geometry.videoHeight
-            let sheetY = geometry.sheetY
-            let sheetHeight = geometry.sheetHeight
+            let base = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, keyboardHeight: keyboard.height, tabBarVisible: tabBarVisible)
+            let landscape = base.landscape
+            let docked = session.position == .collapsed
+            // Fullscreen is the expanded landscape position; it is decided by the position, never by the drag value.
+            let fullscreen = landscape && !docked
+            let expandedVideoHeight = base.at(0).expandedVideoHeight
 
             ZStack(alignment: .topLeading) {
-                Rectangle().fill(p > 0.01 ? AnyShapeStyle(Theme.surface) : AnyShapeStyle(Theme.background))
-                    .opacity(fullscreen ? 0 : 1)
-                if !fullscreen { details(playback, session, p: p, top: videoHeight, bottom: insets.bottom) }
-                VideoStage(playback: playback, fullscreen: fullscreen, controlsVisible: $controlsVisible, p: p, insets: insets, size: size, expandedHeight: expandedVideoHeight, replyTo: $replyTo, onTap: toggleControls)
-                    .frame(width: videoWidth, height: videoHeight)
+                if !fullscreen {
+                    details(playback, session, top: expandedVideoHeight, bottom: insets.bottom, base: base)
+                        .frame(width: size.width, height: base.expandedHeight, alignment: .topLeading)
+                        .sheetFade(progress, .out)
+                }
+                VideoStage(playback: playback, fullscreen: fullscreen, docked: docked, progress: progress, controlsVisible: $controlsVisible, insets: insets, size: size, expandedHeight: expandedVideoHeight, replyTo: $replyTo, onTap: toggleControls)
+                    .modifier(VideoFrame(progress: progress, base: base))
                     .background(Color.black)
-                    .gesture(dragGesture(travel: travel), including: fullscreen ? .subviews : .all)
-                if p > 0.02 { strip(playback, session).opacity(Double(min(1, p * 1.4))).padding(.leading, 112).frame(height: miniHeight) }
+                    .gesture(dragGesture(travel: base.collapsedY), including: fullscreen ? .subviews : .all)
+                strip(playback, session, travel: base.collapsedY)
+                    .padding(.leading, SheetGeometry.miniVideoWidth).frame(height: miniHeight)
+                    .sheetFade(progress, .in)
             }
-            .frame(width: size.width, height: sheetHeight, alignment: .topLeading)
-            .clipShape(RoundedRectangle(cornerRadius: 14 * p, style: .continuous))
-            .shadow(color: .black.opacity(0.25 * p), radius: 12, y: 2)
-            .offset(y: sheetY)
-            .padding(.horizontal, 8 * p).frame(width: size.width)
+            .modifier(SheetFrame(progress: progress, base: base))
             .frame(width: size.width, height: size.height, alignment: .topLeading)
             .position(x: size.width / 2 - insets.leading, y: size.height / 2 - insets.top)
-            .onChange(of: session.position) { _, position in if position == .collapsed { Keyboard.dismiss() } }
-            .animation(dragging || reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86), value: session.position)
+            .onChange(of: session.position) { _, position in
+                if position == .collapsed { Keyboard.dismiss() }
+                // A position changed by something other than the drag (the chevron, a new stream, the strip's tap): settle there. The drag already did.
+                let target: CGFloat = position == .collapsed ? 1 : 0
+                if driver.target != target || (!driver.isRunning && abs(progress.value - target) > 0.001) {
+                    driver.animate(progress, to: target, velocity: 0, reduceMotion: reduceMotion)
+                }
+            }
             .onChange(of: landscape) { _, now in if now { controlsVisible = true; scheduleHide() } }
             .onChange(of: playback.controller.isPlaying) { _, _ in scheduleHide() }
         }
@@ -64,6 +65,13 @@ struct PlayerSheet: View {
         .onAppear {
             scheduleHide()
             #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-drag-benchmark") {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(8))
+                    let travel: CGFloat = 600
+                    DragBenchmark.run(label: "drag", travel: travel, begin: { beginDrag() }, changed: { changeDrag($0, travel: travel) }, ended: { translation, velocity in endDrag(translation: translation, velocity: velocity, travel: travel) })
+                }
+            }
             if ProcessInfo.processInfo.arguments.contains("-fullscreen") { Orientation.request(.landscape) }
             if ProcessInfo.processInfo.arguments.contains("-minimised") { app.session.minimise() }
             if let delay = LaunchMode.argument("-minimise-after").flatMap(Double.init) {
@@ -77,13 +85,12 @@ struct PlayerSheet: View {
 
     // MARK: Details under the picture
 
-    @ViewBuilder private func details(_ playback: PlaybackModel, _ session: PlayerSession, p: CGFloat, top: CGFloat, bottom: CGFloat) -> some View {
+    @ViewBuilder private func details(_ playback: PlaybackModel, _ session: PlayerSession, top: CGFloat, bottom: CGFloat, base: SheetGeometry) -> some View {
         VStack(spacing: 0) {
-            streamerRow(playback, session)
+            streamerRow(playback, session, travel: base.collapsedY)
             if (playback.ui?.chatMode ?? .compact) != .hidden, playback.isLive {
                 Divider().opacity(0.4)
-                ChatList(lines: playback.chat, settings: playback.chatSettings) { replyTo = $0 }
-                    .background(Color.black.opacity(0.0))
+                SheetChat(playback: playback, progress: progress, replyTo: $replyTo)
                 ChatComposer(playback: playback, replyTo: $replyTo)
             } else {
                 Spacer()
@@ -93,11 +100,9 @@ struct PlayerSheet: View {
         .background(Color(red: 0.055, green: 0.055, blue: 0.063))
         .environment(\.colorScheme, .dark)
         .padding(.top, top)
-        .opacity(Double(max(0, 1 - p * 3)))
-        .allowsHitTesting(p < 0.2)
     }
 
-    private func streamerRow(_ playback: PlaybackModel, _ session: PlayerSession) -> some View {
+    private func streamerRow(_ playback: PlaybackModel, _ session: PlayerSession, travel: CGFloat) -> some View {
         let target = session.target
         let stream = playback.ui?.current
         return Button { app.openChannel(target?.channelLogin ?? "") } label: {
@@ -126,12 +131,12 @@ struct PlayerSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(String(format: String(localized: "phone_player_open_channel"), target?.channelName ?? "")))
-        .gesture(dragGesture(travel: 600))
+        .gesture(dragGesture(travel: travel))
     }
 
     // MARK: Mini strip
 
-    private func strip(_ playback: PlaybackModel, _ session: PlayerSession) -> some View {
+    private func strip(_ playback: PlaybackModel, _ session: PlayerSession, travel: CGFloat) -> some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(playback.ui?.current?.title ?? session.target?.title ?? "").font(.footnote.weight(.semibold)).lineLimit(1)
@@ -150,32 +155,48 @@ struct PlayerSheet: View {
         .contentShape(Rectangle())
         .onTapGesture { session.expand() }
         .accessibilityAction(named: Text("phone_player_expand")) { session.expand() }
-        .gesture(dragGesture(travel: 400))
+        .gesture(dragGesture(travel: travel))
     }
 
     // MARK: Gestures
 
+    /// A pan that follows the finger 1:1 inside the two rest positions and with rubber-band resistance beyond them. Every sample writes one value, `progress.value`.
     private func dragGesture(travel: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 8)
+        DragGesture(minimumDistance: 6)
             .onChanged { value in
-                dragging = true
-                drag = value.translation.height
+                if !progress.isDragging { beginDrag() }
+                changeDrag(value.translation.height, travel: travel)
             }
-            .onEnded { value in
-                let session = app.session
-                let projected = value.predictedEndTranslation.height
-                dragging = false
-                let collapsed = session.position == .collapsed
-                withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86)) {
-                    if collapsed {
-                        // Up expands; a long, deliberate pull down closes.
-                        if value.translation.height < -40 || projected < -200 { session.expand() } else if value.translation.height > 70 && projected > 220 { session.close() }
-                    } else if value.translation.height > 80 || projected > 260 {
-                        session.minimise()
-                    }
-                    drag = 0
-                }
-            }
+            .onEnded { value in endDrag(translation: value.translation.height, velocity: value.velocity.height, travel: travel) }
+    }
+
+    /// A new touch catches the sheet wherever it is, in flight included, and carries on from that value.
+    private func beginDrag() {
+        driver.stop()
+        progress.isDragging = true
+        progress.dragBase = progress.value
+    }
+
+    private func changeDrag(_ translation: CGFloat, travel: CGFloat) {
+        progress.value = SheetGeometry.rubberBanded(progress.dragBase + translation / max(1, travel))
+    }
+
+    /// Settles from the release point with the finger's velocity. From the expanded sheet a pull of more than half the way (counting a short inertia) docks it; from the
+    /// strip a pull up expands it, and a long deliberate pull down, thrown downwards, sends it off the bottom and closes it.
+    private func endDrag(translation: CGFloat, velocity: CGFloat, travel: CGFloat) {
+        progress.isDragging = false
+        let session = app.session
+        let v = velocity / max(1, travel)
+        let p = progress.value
+        let startedDocked = progress.dragBase > 0.5
+        let projected = p + v * 0.15
+        if startedDocked, projected >= 0.5, (p - 1) * travel > 70, velocity > 220 {
+            driver.animate(progress, to: 1.3, velocity: v, reduceMotion: reduceMotion) { session.close() }
+            return
+        }
+        let target: CGFloat = projected > 0.5 ? 1 : 0
+        // The position (which rebuilds the sheet's content for the new state) is committed when the sheet lands, not while it is moving.
+        driver.animate(progress, to: target, velocity: v, reduceMotion: reduceMotion) { if target == 1 { session.minimise() } else { session.expand() } }
     }
 
     private func toggleControls() {
@@ -194,4 +215,17 @@ struct PlayerSheet: View {
     }
 
     private func lerp(_ a: CGFloat, _ b: CGFloat, _ t: CGFloat) -> CGFloat { a + (b - a) * t }
+}
+
+/// The chat under the picture. It is its own view so that the two moments a finger touches or leaves the sheet (and every new message) re-evaluate this view,
+/// not the sheet's body: the list is frozen while dragging and is never rebuilt for the drag frames themselves.
+private struct SheetChat: View {
+    let playback: PlaybackModel
+    let progress: SheetProgress
+    @Binding var replyTo: ChatLine?
+
+    var body: some View {
+        ChatList(lines: playback.chat, settings: playback.chatSettings, frozen: progress.isDragging) { replyTo = $0 }
+            .equatable()
+    }
 }
