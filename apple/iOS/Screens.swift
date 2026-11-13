@@ -25,7 +25,7 @@ struct HomeScreen: View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
         case .signedOut: SignedOutState(context: .home)
-        case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+        case .failed: MessageState.failed(retry: { model?.retry() })
         case .ready(let home, let loadedAtMs, let refreshFailed):
             let following = home.following as? [LiveStream] ?? []
             let forYou = home.forYou as? [LiveStream] ?? []
@@ -168,7 +168,7 @@ struct FollowingScreen: View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
         case .signedOut: SignedOutState(context: .following)
-        case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+        case .failed: MessageState.failed(retry: { model?.retry() })
         case .ready(let follows, let loadedAtMs, let refreshFailed):
             let live = follows.live as? [LiveStream] ?? []
             let offline = follows.offline as? [ChannelRef] ?? []
@@ -221,7 +221,7 @@ struct BrowseScreen: View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
         case .signedOut: SignedOutState(context: .browse)
-        case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+        case .failed: MessageState.failed(retry: { model?.retry() })
         case .ready(let browse, let loadedAtMs, let refreshFailed):
             let categories = browse.categories as? [TwitchShared.Category] ?? []
             ScrollView {
@@ -276,7 +276,7 @@ struct CategoryScreen: View {
         switch model?.state ?? .loading {
         case .loading: SkeletonList()
         case .signedOut: SignedOutState(context: .category)
-        case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+        case .failed: MessageState.failed(retry: { model?.retry() })
         case .ready(let category, let loadedAtMs, let refreshFailed):
             let streams = category.streams as? [LiveStream] ?? []
             ScrollView {

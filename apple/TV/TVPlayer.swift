@@ -30,6 +30,8 @@ struct TVPlayerScreen: View {
                 if mode != .hidden {
                     TVChatColumn(playback: playback, mode: mode, screen: screen.size)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: mode == .overlay ? .bottomTrailing : .topTrailing)
+                        // Over the picture the lines stay above the system transport bar (its scrubber and menus take the bottom fifth when they show).
+                        .padding(.bottom, mode == .overlay ? screen.size.height * 0.2 : 0)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }

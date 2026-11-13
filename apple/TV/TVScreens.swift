@@ -31,7 +31,7 @@ private struct TVLoadStates<Content, Body: View>: View {
         switch state {
         case .loading: TVSkeletonRow().frame(maxHeight: .infinity, alignment: .top).padding(.top, 60)
         case .signedOut: MessageState(title: "state_signin_title", message: "phone_signin_body", action: (title: "state_signin", run: { app.showSignIn = true }))
-        case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: retry))
+        case .failed: MessageState.failed(retry: retry)
         case .ready(let content, let loadedAtMs, let refreshFailed): ready(content, loadedAtMs, refreshFailed)
         }
     }
@@ -198,7 +198,7 @@ struct TVChannelScreen: View {
                 switch LoadState(state.details, as: ChannelDetails.self) {
                 case .loading: TVSkeletonRow()
                 case .signedOut: MessageState(title: "state_signin_title", message: "phone_signin_body", action: (title: "state_signin", run: { app.showSignIn = true }))
-                case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+                case .failed: MessageState.failed(retry: { model?.retry() })
                 case .ready(let details, _, _): page(details, state)
                 }
             } else {

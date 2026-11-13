@@ -26,19 +26,21 @@ struct TVSettingsScreen: View {
                 Section("phone_settings_playback") {
                     Toggle("tile_stats", isOn: Binding(get: { state.showStats }, set: { _ in app.onSettingsEvent(SettingsEventToggleStats.shared) }))
                     Toggle("tile_raids", isOn: Binding(get: { state.followRaids }, set: { _ in app.onSettingsEvent(SettingsEventToggleFollowRaids.shared) }))
+                }
+                Section("tile_chat") {
+                    let chat = state.chat
                     Picker("phone_settings_chat_mode", selection: Binding(get: { state.chatMode }, set: { app.onSettingsEvent(SettingsEventSetChatMode(mode: $0)) })) {
                         Text("chat_hidden").tag(ChatMode.hidden)
                         Text("chat_compact").tag(ChatMode.compact)
                         Text("chat_overlay").tag(ChatMode.overlay)
                     }
-                }
-                Section("tile_chat") {
-                    let chat = state.chat
+                    .pickerStyle(.menu)
                     Picker("chat_opt_text", selection: Binding(get: { chat.textSize }, set: { update(chat, size: $0) })) {
                         Text("opt_small").tag(ChatTextSize.small)
                         Text("opt_medium").tag(ChatTextSize.medium)
                         Text("opt_large").tag(ChatTextSize.large)
                     }
+                    .pickerStyle(.menu)
                     Toggle("chat_opt_badges", isOn: Binding(get: { chat.showBadges }, set: { update(chat, badges: $0) }))
                     Toggle("chat_opt_animated", isOn: Binding(get: { chat.animatedEmotes }, set: { update(chat, animated: $0) }))
                 }
@@ -48,11 +50,12 @@ struct TVSettingsScreen: View {
                         Text("phone_theme_light").tag(ThemeChoice.light.rawValue)
                         Text("phone_theme_dark").tag(ThemeChoice.dark.rawValue)
                     }
+                    .pickerStyle(.menu)
                     Toggle("tile_animations", isOn: Binding(get: { state.animationsEnabled }, set: { _ in app.onSettingsEvent(SettingsEventToggleAnimations.shared) }))
                 }
             }
             Section("phone_settings_about") {
-                LabeledContent("phone_settings_about") { Text(version).foregroundStyle(.secondary) }
+                Text(String(format: String(localized: "phone_about_version"), version))
                 Text("phone_about_disclaimer").font(.callout).foregroundStyle(.secondary)
             }
         }

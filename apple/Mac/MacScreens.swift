@@ -14,7 +14,7 @@ private struct LoadStates<Content, Body: View>: View {
         switch state {
         case .loading: MacSkeletonGrid()
         case .signedOut: MessageState(title: "state_signin_title", message: "phone_signin_body", action: (title: "state_signin", run: { app.showSignIn = true }))
-        case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: retry))
+        case .failed: MessageState.failed(retry: retry)
         case .ready(let content, let loadedAtMs, let refreshFailed): ready(content, loadedAtMs, refreshFailed)
         }
     }
@@ -184,7 +184,7 @@ struct MacChannelScreen: View {
                 switch LoadState(state.details, as: ChannelDetails.self) {
                 case .loading: MacSkeletonGrid()
                 case .signedOut: MessageState(title: "state_signin_title", message: "phone_signin_body", action: (title: "state_signin", run: { app.showSignIn = true }))
-                case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+                case .failed: MessageState.failed(retry: { model?.retry() })
                 case .ready(let details, _, _): page(details, state)
                 }
             } else {

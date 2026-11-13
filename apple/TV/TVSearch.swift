@@ -15,7 +15,7 @@ struct TVSearchScreen: View {
                     if state.query.trimmingCharacters(in: .whitespaces).isEmpty {
                         emptyState(state, model)
                     } else if state.failed {
-                        MessageState(title: "state_error", action: (title: "state_retry", run: { model.retry() })).frame(height: 400)
+                        MessageState.failed(retry: { model.retry() }).frame(height: 400)
                     } else {
                         results(state)
                     }
@@ -52,11 +52,11 @@ struct TVSearchScreen: View {
         if case .found(let found) = onEnum(of: state.results) {
             let channels = found.channels as? [ChannelRef] ?? []
             let categories = found.categories as? [TwitchShared.Category] ?? []
-            if channels.isEmpty && categories.isEmpty { MessageState(title: "state_no_result").frame(height: 400) }
+            if channels.isEmpty && categories.isEmpty { MessageState.noResults().frame(height: 400) }
             if !channels.isEmpty { TVRow(title: "sec_channels") { ForEach(channels, id: \.id) { c in TVChannelCard(channel: c) { open(c) } } } }
             if !categories.isEmpty { TVRow(title: "sec_categories") { ForEach(categories, id: \.id) { TVCategoryButton(category: $0) } } }
         } else if case .trends(let trends) = onEnum(of: state.results), trends.noResult {
-            MessageState(title: "state_no_result").frame(height: 400)
+            MessageState.noResults().frame(height: 400)
         }
     }
 

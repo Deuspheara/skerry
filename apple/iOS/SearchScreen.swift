@@ -42,7 +42,7 @@ struct SearchScreen: View {
     private var field: some View {
         HStack(spacing: 10) {
             Button { app.pop() } label: {
-                Image(systemName: "chevron.backward").font(.body.weight(.semibold)).frame(width: 38, height: 38).glass(in: Circle(), interactive: true)
+                Image(systemName: "chevron.backward").font(.body.weight(.semibold)).frame(width: 44, height: 44).glass(in: Circle(), interactive: true)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("cd_back"))
@@ -60,7 +60,7 @@ struct SearchScreen: View {
                         .buttonStyle(.plain).accessibilityLabel(Text("phone_search_clear_field"))
                 }
             }
-            .padding(.horizontal, 14).frame(height: 38)
+            .padding(.horizontal, 14).frame(height: 44)
             .glassCapsule(interactive: true)
         }
         .padding(.horizontal, 16).padding(.vertical, 6)
@@ -87,7 +87,7 @@ struct SearchScreen: View {
                         if state.query.trimmingCharacters(in: .whitespaces).isEmpty {
                             emptyState(state, model)
                         } else if state.failed {
-                            MessageState(title: "state_error", action: (title: "state_retry", run: { model.retry() })).frame(height: 300)
+                            MessageState.failed(retry: { model.retry() }).frame(height: 300)
                         } else {
                             results(state)
                         }
@@ -138,7 +138,7 @@ struct SearchScreen: View {
             let channels = found.channels as? [ChannelRef] ?? []
             let categories = found.categories as? [TwitchShared.Category] ?? []
             if channels.isEmpty && categories.isEmpty {
-                MessageState(title: "state_no_result").frame(height: 300)
+                MessageState.noResults(clear: { text = ""; model?.clear() }).frame(height: 300)
             }
             if filter != .categories && !channels.isEmpty {
                 if filter == .all { SectionTitle(key: "sec_channels") }
@@ -160,7 +160,7 @@ struct SearchScreen: View {
                 }
             }
         } else if case .trends(let trends) = onEnum(of: state.results), trends.noResult {
-            MessageState(title: "state_no_result").frame(height: 300)
+            MessageState.noResults(clear: { text = ""; model?.clear() }).frame(height: 300)
         }
     }
 }

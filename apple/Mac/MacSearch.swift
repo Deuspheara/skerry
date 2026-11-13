@@ -35,7 +35,7 @@ struct MacSearchView: View {
                     if state.query.trimmingCharacters(in: .whitespaces).isEmpty {
                         emptyState(state, model)
                     } else if state.failed {
-                        MessageState(title: "state_error", action: (title: "state_retry", run: { model.retry() })).frame(height: 300)
+                        MessageState.failed(retry: { model.retry() }).frame(height: 300)
                     } else {
                         results(state)
                     }
@@ -91,7 +91,7 @@ struct MacSearchView: View {
         if case .found(let found) = onEnum(of: state.results) {
             let channels = found.channels as? [ChannelRef] ?? []
             let categories = found.categories as? [TwitchShared.Category] ?? []
-            if channels.isEmpty && categories.isEmpty { MessageState(title: "state_no_result").frame(height: 300) }
+            if channels.isEmpty && categories.isEmpty { MessageState.noResults().frame(height: 300) }
             if filter != .categories && !channels.isEmpty {
                 if filter == .all { SectionTitle(key: "sec_channels") }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 16)], spacing: 14) {
@@ -103,7 +103,7 @@ struct MacSearchView: View {
                 LazyVGrid(columns: categoryGridColumns, spacing: 20) { ForEach(categories, id: \.id) { CategoryTile(category: $0) } }
             }
         } else if case .trends(let trends) = onEnum(of: state.results), trends.noResult {
-            MessageState(title: "state_no_result").frame(height: 300)
+            MessageState.noResults().frame(height: 300)
         }
     }
 }

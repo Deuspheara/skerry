@@ -88,20 +88,39 @@ struct SectionTitle: View {
 }
 
 /// A message with an optional action: empty and error states.
+/// The one empty / error state: a symbol, a title, one line and an action. Errors (`.failed`) say what to do; empty results (`.noResults`) say what to try.
 struct MessageState: View {
     let title: LocalizedStringKey
     var message: LocalizedStringKey?
     var action: (title: LocalizedStringKey, run: () -> Void)?
+    var icon: String?
+    var secondary: (title: LocalizedStringKey, run: () -> Void)?
+
+    /// Something went wrong loading: the symbol, the advice and a Retry that stands out.
+    static func failed(retry: @escaping () -> Void) -> MessageState {
+        MessageState(title: "state_error", message: "phone_error_body", action: (title: "state_retry", run: retry), icon: "wifi.exclamationmark")
+    }
+
+    /// A search with nothing to show: the hint, and a way out.
+    static func noResults(clear: (() -> Void)? = nil) -> MessageState {
+        MessageState(title: "state_no_result", message: "state_no_result_hint", action: clear.map { (title: "search_clear", run: $0) }, icon: "magnifyingglass")
+    }
 
     var body: some View {
         VStack(spacing: 10) {
-            Text(title).font(.headline)
+            if let icon {
+                Image(systemName: icon).font(.system(size: 34, weight: .regular)).foregroundStyle(Theme.textSecondary).padding(.bottom, 4).accessibilityHidden(true)
+            }
+            Text(title).font(.headline).multilineTextAlignment(.center)
             if let message { Text(message).font(.subheadline).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center) }
             if let action {
                 Button(action: action.run) { Text(action.title).font(.subheadline.weight(.semibold)).padding(.horizontal, 18).padding(.vertical, 9) }
                     .glassCapsule(interactive: true)
                     .buttonStyle(.plain)
                     .padding(.top, 6)
+            }
+            if let secondary {
+                Button(action: secondary.run) { Text(secondary.title).font(.footnote.weight(.semibold)) }.buttonStyle(.plain).foregroundStyle(Theme.accentText)
             }
         }
         .padding(32)

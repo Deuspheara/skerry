@@ -24,7 +24,7 @@ struct ChannelScreen: View {
             switch LoadState(state.details, as: ChannelDetails.self) {
             case .loading: SkeletonList()
             case .signedOut: SignedOutState(context: .channel)
-            case .failed: MessageState(title: "state_error", action: (title: "state_retry", run: { model?.retry() }))
+            case .failed: MessageState.failed(retry: { model?.retry() })
             case .ready(let details, _, _): page(details, state)
             }
         } else {
