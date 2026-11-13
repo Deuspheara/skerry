@@ -29,28 +29,34 @@ struct TVSettingsScreen: View {
                 }
                 Section("tile_chat") {
                     let chat = state.chat
-                    Picker("phone_settings_chat_mode", selection: Binding(get: { state.chatMode }, set: { app.onSettingsEvent(SettingsEventSetChatMode(mode: $0)) })) {
-                        Text("chat_hidden").tag(ChatMode.hidden)
-                        Text("chat_compact").tag(ChatMode.compact)
-                        Text("chat_overlay").tag(ChatMode.overlay)
+                    LabeledContent("phone_settings_chat_mode") {
+                        Picker("phone_settings_chat_mode", selection: Binding(get: { state.chatMode }, set: { app.onSettingsEvent(SettingsEventSetChatMode(mode: $0)) })) {
+                            Text("chat_hidden").tag(ChatMode.hidden)
+                            Text("chat_compact").tag(ChatMode.compact)
+                            Text("chat_overlay").tag(ChatMode.overlay)
+                        }
+                        .pickerStyle(.menu).labelsHidden()
                     }
-                    .pickerStyle(.menu)
-                    Picker("chat_opt_text", selection: Binding(get: { chat.textSize }, set: { update(chat, size: $0) })) {
-                        Text("opt_small").tag(ChatTextSize.small)
-                        Text("opt_medium").tag(ChatTextSize.medium)
-                        Text("opt_large").tag(ChatTextSize.large)
+                    LabeledContent("chat_opt_text") {
+                        Picker("chat_opt_text", selection: Binding(get: { chat.textSize }, set: { update(chat, size: $0) })) {
+                            Text("opt_small").tag(ChatTextSize.small)
+                            Text("opt_medium").tag(ChatTextSize.medium)
+                            Text("opt_large").tag(ChatTextSize.large)
+                        }
+                        .pickerStyle(.menu).labelsHidden()
                     }
-                    .pickerStyle(.menu)
                     Toggle("chat_opt_badges", isOn: Binding(get: { chat.showBadges }, set: { update(chat, badges: $0) }))
                     Toggle("chat_opt_animated", isOn: Binding(get: { chat.animatedEmotes }, set: { update(chat, animated: $0) }))
                 }
                 Section("phone_settings_appearance") {
-                    Picker("phone_settings_theme", selection: $theme) {
-                        Text("phone_theme_system").tag(ThemeChoice.system.rawValue)
-                        Text("phone_theme_light").tag(ThemeChoice.light.rawValue)
-                        Text("phone_theme_dark").tag(ThemeChoice.dark.rawValue)
+                    LabeledContent("phone_settings_theme") {
+                        Picker("phone_settings_theme", selection: $theme) {
+                            Text("phone_theme_system").tag(ThemeChoice.system.rawValue)
+                            Text("phone_theme_light").tag(ThemeChoice.light.rawValue)
+                            Text("phone_theme_dark").tag(ThemeChoice.dark.rawValue)
+                        }
+                        .pickerStyle(.menu).labelsHidden()
                     }
-                    .pickerStyle(.menu)
                     Toggle("tile_animations", isOn: Binding(get: { state.animationsEnabled }, set: { _ in app.onSettingsEvent(SettingsEventToggleAnimations.shared) }))
                 }
             }

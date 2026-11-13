@@ -150,11 +150,18 @@ struct TVChip: View {
     var action: () -> Void
 
     var body: some View {
+        // The selected chip inverts (white on the deep purple, with a check) so it never reads as an unselected one at ten feet.
         Button(action: action) {
-            Text(title).font(.callout.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 4)
+            HStack(spacing: 8) {
+                if selected { Image(systemName: "checkmark").font(.callout.weight(.bold)) }
+                Text(title).font(.callout.weight(.semibold))
+            }
+            .padding(.horizontal, 12).padding(.vertical, 4)
+            .foregroundStyle(selected ? Color.white : Color.primary)
         }
         .buttonStyle(.bordered)
         .tint(selected ? Theme.accentDeep : nil)
+        .background(selected ? Theme.accentDeep : Color.clear, in: Capsule())
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
