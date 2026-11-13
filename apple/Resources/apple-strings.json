@@ -238,5 +238,10 @@
     "en": "Live · %@ viewers",
     "fr": "En direct · %@ spectateurs",
     "ar": "مباشر · %@ مشاهد"
+  },
+  "phone_signin_body": {
+    "en": "Sign in with Twitch to see the channels you follow.",
+    "fr": "Connectez-vous avec Twitch pour voir les chaînes que vous suivez.",
+    "ar": "سجّل الدخول عبر Twitch لعرض القنوات التي تتابعها."
   }
 }

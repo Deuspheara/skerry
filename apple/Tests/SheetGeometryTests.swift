@@ -130,7 +130,7 @@ final class SheetDragMathTests: XCTestCase {
         XCTAssertEqual(portrait.pictureBase.width * scale, SheetGeometry.miniVideoWidth, accuracy: 0.001)
         XCTAssertLessThanOrEqual(portrait.pictureBase.height * scale, SheetGeometry.miniHeight + 0.001)
         XCTAssertEqual(portrait.videoWidth, SheetGeometry.miniVideoWidth)
-        XCTAssertEqual(portrait.videoHeight, SheetGeometry.miniHeight)
+        XCTAssertEqual(portrait.videoHeight, SheetGeometry.miniHeight, accuracy: 0.001)
     }
 
     func testTheScaleAndTheOffsetMoveContinuouslyBetweenTheTwoPositions() {

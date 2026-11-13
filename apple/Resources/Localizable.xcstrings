@@ -19984,6 +19984,29 @@
         }
       }
     },
+    "phone_signin_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Twitch to see the channels you follow."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous avec Twitch pour voir les chaînes que vous suivez."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول عبر Twitch لعرض القنوات التي تتابعها."
+          }
+        }
+      }
+    },
     "phone_signin_copied": {
       "extractionState": "manual",
       "localizations": {
