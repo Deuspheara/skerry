@@ -25,11 +25,13 @@ extension Color {
 
 // MARK: - Liquid Glass
 
-/// Liquid Glass on iOS/macOS/tvOS 26 and later, a material below. Every other file asks for `glass(...)`, never for `#available`.
+/// Liquid Glass on iOS/macOS/tvOS 26.2 and later, a material below. The gate is 26.2, not 26.0: an app built with the Xcode 27 beta
+/// toolchain crashed at launch on the iOS 26.0 simulator runtime inside `swift_getOpaqueTypeMetadata` (called from `glassEffect`),
+/// while 26.2 and 26.5 run. 26.1 was not tested. Revisit with the stable Xcode release. Every other file asks for `glass(...)`, never for `#available`.
 extension View {
     @ViewBuilder
     func glass<S: Shape>(in shape: S, interactive: Bool = false, tint: Color? = nil) -> some View {
-        if #available(iOS 26, macOS 26, tvOS 26, *) {
+        if #available(iOS 26.2, macOS 26.2, tvOS 26.2, *) {
             self.glassEffect(Self.glass(interactive: interactive, tint: tint), in: shape)
         } else {
             self.background(.ultraThinMaterial, in: shape)
@@ -42,7 +44,7 @@ extension View {
         glass(in: Capsule(), interactive: interactive, tint: tint)
     }
 
-    @available(iOS 26, macOS 26, tvOS 26, *)
+    @available(iOS 26.2, macOS 26.2, tvOS 26.2, *)
     private static func glass(interactive: Bool, tint: Color?) -> Glass {
         var glass = Glass.regular
         if let tint { glass = glass.tint(tint) }
@@ -57,7 +59,7 @@ struct GlassGroup<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        if #available(iOS 26, macOS 26, tvOS 26, *) {
+        if #available(iOS 26.2, macOS 26.2, tvOS 26.2, *) {
             GlassEffectContainer(spacing: spacing, content: content)
         } else {
             content()
