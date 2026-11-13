@@ -11,7 +11,7 @@ configuration="${1:-debug}"
 case "$configuration" in
   debug) task="assembleTwitchSharedDebugXCFramework"; dir="debug"; flags="" ;;
   # The release framework leaves the offline demo (fictional data for screenshots and tests) out.
-  release) task="assembleTwitchSharedReleaseXCFramework"; dir="release"; flags="-PappleDemo=false" ;;
+  release) task="assembleTwitchSharedReleaseXCFramework"; dir="release"; flags="-PappleDemo=false -Dorg.gradle.jvmargs=-Xmx4g" ;;
   *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac
 

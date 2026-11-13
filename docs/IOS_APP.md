@@ -9,7 +9,8 @@ and later, materials on iOS 18 to 25).
 ```sh
 brew install xcodegen                       # once
 cp apple/Config/Local.xcconfig.example apple/Config/Local.xcconfig   # then put the public Twitch client id in it (git-ignored)
-apple/scripts/build-shared.sh debug         # the XCFramework (about a minute once Kotlin/Native is downloaded)
+apple/scripts/build-shared.sh debug         # the XCFramework, with the offline demo (about a minute once Kotlin/Native is downloaded)
+apple/scripts/build-shared.sh release       # the XCFramework without any demo code (checked), for Release builds; needs -Xmx4g (the script sets it)
 python3 apple/scripts/sync-strings.py       # only when the Android strings changed (the catalog is committed)
 apple/scripts/ios-run.sh                    # builds TwitchIOS for a simulator, installs and launches it
 apple/scripts/ios-run.sh -demo -screenshot /tmp/home.png   # offline fictional data, then a screenshot
@@ -51,9 +52,13 @@ apple/
 - **Startup and refresh.** The shared presenters load from the on-disk snapshots first (stale-while-revalidate); `scenePhase == .active` calls the
   shared `ForegroundSignal`, so feeds older than their TTL refresh themselves (the same policy as Android and the TV). List changes animate
   (`animation(_:value:)` on stable ids), switched off by Reduce Motion and by the in-app animation setting.
-- **Localization.** `apple/scripts/sync-strings.py` generates `Localizable.xcstrings` from the Android resources (the TV's 156 strings in 36 locales
-  and the phone-only strings in English, French and Arabic; the other locales fall back to English, as on Android). The Android resource name is
-  the catalog key; `%s` becomes `%@`; locales are mapped (`in` to `id`, `iw` to `he`, `zh-rCN` to `zh-Hans`...). CI fails when the catalog is stale.
+- **Localization.** `apple/scripts/sync-strings.py` generates `Localizable.xcstrings` from the Android resources (the TV's 156 strings in 36 locales,
+  the phone-only strings in English, French and Arabic) and from `apple/Resources/AppleStrings.json` (strings only the Apple apps have: en, fr, ar). The
+  Android resource name is the catalog key; `%s` becomes `%@`; plurals (`<plurals>`) become catalog plural variations with `%lld` and are read with
+  `plural(key, count)` (sleep timer minutes, the "new messages" pill); locales are mapped (`in` to `id`, `iw` to `he`, `zh-rCN` to `zh-Hans`...). CI fails when the
+  catalog is stale, and `LocalizationTests` fails when a key used in the Swift sources is missing from it. **Which keys fall back to English:** 152 keys
+  (the TV strings) exist in all 36 locales; the other 141 keys (phone-only strings, the Mac menu and Apple-only strings) are translated to English,
+  French and Arabic only, so the other 33 locales show English for them. `python3 apple/scripts/sync-strings.py --report` prints the exact list.
 - **Accessibility.** Dynamic Type everywhere (system text styles, no fixed sizes except the chat, which follows the in-app text size), VoiceOver labels
   and traits on every control (the icon-only tab bar, the strip, chat lines with a "reply" action), RTL (leading/trailing, mirrored chevrons), Reduce
   Motion respected.
@@ -78,12 +83,42 @@ apple/
 | Voice search | not done | `UnavailableVoiceInput` on Apple |
 | Pull-to-refresh | not done | refresh is automatic (foreground signal) and via the stale banner |
 
+## Lifecycle and system integration
+
+- **Audio session.** Created inactive: it is activated when playback starts and deactivated (notifying other apps) when the player stops, so launching the app
+  never silences the viewer's music. Interruptions (calls, Siri) pause and resume.
+- **Observers and remote commands** are stored and removed in `PlayerController.tearDown()` and `deinit`; remote-command handlers hop to the main actor with a
+  `Task` (they are called on the system's queue); a test checks that creating and tearing down controllers never stacks handlers.
+- **Retry.** The failure flag is cleared before the reload, so a reload that fails again is reported again; a live stream restarts at its live edge, a replay
+  resumes where it stopped. `setRate` always sets `defaultRate` (the rate used on every resume) and the current rate when playing.
+- **Picture in Picture.** One `AVPictureInPictureController` per layer (reused); its "return to app" button calls `restoreUI`, which expands the sheet. Not
+  verified on hardware.
+- **Backgrounding** (`scenePhase == .background`) writes the replay position immediately (`AppModel.appWentToBackground`).
+- **The demo** lives in its own Kotlin source directory and is left out of the release XCFramework (`-PappleDemo=false`, `build-shared.sh release` checks
+  the binary for demo symbols); the Swift side calls it under `#if DEBUG` only. A Release build also has neither the demo clip nor the launch arguments.
+
+## Screenshots
+
+The PNGs in `docs/screenshots/{ios,macos,tvos}` are downscaled (iPhone captures at 50 %, tvOS at 1280 px wide) and quantised to 192 colours to keep the
+repository small (about 3.3 MB for all three folders, from 30 MB). Details such as 1 px hairlines are therefore softer than on screen.
+
 ## Verified, and not
 
-Verified on the iPhone 17 simulator (iOS 26.5) and the iPhone 16 simulator (iOS 18.3, material fallback), with screenshots in
-`docs/screenshots/ios/`, and by 17 Swift tests (`apple/Tests`: formatting, the shell's navigation rules, the player session, and the real Kotlin presenters
-running on the demo data through the bridge). The Release configuration builds and contains neither the demo clip nor the launch arguments.
+Verified on the iPhone 17 simulator (iOS 26.5) and the iPhone 16 simulator (iOS 18.3, material fallback), with screenshots in `docs/screenshots/ios/`, and by
+Swift tests that run on all three Apple platforms from one `apple/Tests` folder: 32 on iOS, 34 on macOS and 34 on tvOS (the Mac and tvOS targets add their own).
+They cover formatting, the shell's navigation rules, the player session, the `PlayerController` transitions (play, pause, stop, failure and retry, live
+edge vs replay resume, quality and audio-only, sleep timer, rate, no stacked remote handlers, audio session only while playing), the Keychain round trip from
+the signed app, localisation (every key used in Swift exists; plurals; fr and ar), and the real Kotlin presenters running on the demo data through the bridge.
+Tests run in random order (`randomExecutionOrder`): they share one Kotlin graph per process (DataStore allows one instance per file, so it cannot be reset
+between tests) and none may depend on another. Kotlin: the shared tests run on macOS, the iOS simulator and, with `-PtvosSimulatorTests=true`, the tvOS simulator
+(storage in Caches, DataStore and snapshot files written and read back there). The Release configuration builds and contains neither the demo clip nor the launch
+arguments.
+
+Strict concurrency: the projects build with `SWIFT_STRICT_CONCURRENCY=targeted`. With `complete` the iOS target reports 99 warning lines (about 50 distinct):
+redundant casts of SKIE-typed arrays, `nonisolated(unsafe)` notes in `PlayerController`, and "sending `graph.playback` / `self` risks data races" where Kotlin
+objects (not `Sendable`) cross into tasks. They are the list to clear before moving to Swift 6 language mode.
 
 Not verified: a physical device, a real Twitch account (everything above ran on the offline demo data), real HLS playback of a live channel, Picture in
-Picture and background audio on hardware, AirPlay, rotation with a real device sensor, TalkBack-equivalent VoiceOver passes, and Xcode stable releases
-(Xcode 27 beta 4 only). Performance was not measured.
+Picture and background audio on hardware (the "return to app" button included), AirPlay, rotation with a real device sensor, the Keychain fallback on a
+sandboxed, ad-hoc signed Mac app without the entitlement (only the success path ran), VoiceOver passes, the GitHub workflow (never run; Xcode 26.4 on `macos-26` is an
+assumption), and Xcode stable releases (Xcode 27 beta 4 only). Performance was not measured.

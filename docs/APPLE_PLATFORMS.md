@@ -51,8 +51,9 @@ The Apple TV target excludes `Views/SignInSheet.swift` and `Views/ChatComposer.s
   page on the stack of whichever section it is in.
 - **Focus.** Rows are focus sections (`focusSection()`), cards use the system `.card` button style (lift, highlight, parallax feel), everything has a stable id
   (`channelId`, category id) so a refresh keeps the focus where it is. Type is `callout` and up; cards are 400 pt wide; rows start at the 80 pt title-safe edge.
-- **Player.** Full-screen `AVPlayerViewController`: the Siri Remote's select, play or pause and swipe to scrub work as on any Apple TV app and Menu leaves the
-  player. The app adds transport-bar menu items: chat, quality, audio only, sleep timer. The chat is a read-only panel over the right of the picture (toggled
+- **Player.** Full-screen `AVPlayerViewController`: the Siri Remote's select, play or pause and swipe to scrub work as on any Apple TV app. The player is a `fullScreenCover`: the Menu button dismisses it (the system's behaviour for a full-screen cover, relied on and **not covered by an automated
+  test**: that needs a focus-engine driver this project does not have), and the dismissal closes the player session (binding setter), which stops the stream and
+  disconnects the chat. The app adds transport-bar menu items: chat, quality, audio only, sleep timer. The chat is a read-only panel over the right of the picture (toggled
   from the transport bar); the Apple TV has no chat input.
 - **Sign-in.** A large device code, the twitch.tv/activate address and a QR code that opens the activation page with the code filled in (`?device-code=`),
   so nothing has to be typed.
@@ -83,7 +84,7 @@ The Apple TV target excludes `Views/SignInSheet.swift` and `Views/ChatComposer.s
 - Screenshots in `docs/screenshots/macos/` come from the app rendering its own window (`MacSnapshotRunner`): this machine has no attached display, so a screen
   capture is impossible and the window server never composites. The result has limits: vibrancy is not reproduced (the sidebar's selected row and the Settings tab
   bar come out black or white), video layers are black, and animations and transitions never advance (`-no-animations` turns them off). Only Home, the player with
-  chat, the channel page and the Settings window were captured. **The Following, Browse, Category, Search and mini-player pages of the Mac app were not captured**: for them the window render kept showing the first section. I did not find out why (it may be how `cacheDisplay` and the layer tree treat views a section stack hides with `opacity`), so it is not evidence of a bug, and it is not evidence of their absence either. The channel page, which is reached by a push, rendered correctly; the same view models and shared tests cover the other pages.
+  chat, the channel page and the Settings window were captured. **Update:** the earlier "first section only" captures were a harness artefact, not a bug of the section stacks that are hidden with `opacity`. Re-running the snapshot runner with `-tab browse`, `-tab following`, `-search lun` and `-open lunaria -minimised` renders each page correctly in both modes (`docs/screenshots/macos/{browse,following,search,mini}.png`; the sidebar's selection bar shows black and the mini player's video is black, both known limits of rendering without a display). The same pattern on iOS is exercised by a real simulator, where all three sections render.
 - Not verified: a real Mac window with a display (vibrancy, hover, context menus, menu shortcuts, full screen, native Picture in Picture), a real Apple TV and
   Siri Remote (focus feel, parallax, transport-bar menus on hardware), a real Twitch account, real HLS playback, VoiceOver passes, RTL screenshots, Xcode
   stable releases.
