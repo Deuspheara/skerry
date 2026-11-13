@@ -11,13 +11,14 @@ while [ $# -gt 0 ]; do
     *) args+=("$1"); shift ;;
   esac
 done
-udid=$(xcrun simctl list devices available | grep -E "^ +${sim_name} \(" | grep Booted | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/' || true)
-[ -n "$udid" ] || udid=$(xcrun simctl list devices available | grep -E "^ +${sim_name} \(" | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+# Prefer a booted device, else the newest iOS runtime that has this device name.
+udid=$(xcrun simctl list devices available | grep -E "^ +${sim_name} \\(" | grep Booted | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/' || true)
+[ -n "$udid" ] || udid=$(xcrun simctl list devices available | grep -E "^ +${sim_name} \\(" | tail -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
 xcrun simctl boot "$udid" 2>/dev/null || true
 cd "$root"
 xcodegen generate >/dev/null
 xcodebuild -project TwitchPlayerApple.xcodeproj -scheme TwitchIOS -destination "id=$udid" -derivedDataPath build/dd build -quiet
 xcrun simctl install "$udid" build/dd/Build/Products/Debug-iphonesimulator/TwitchIOS.app
 xcrun simctl terminate "$udid" com.twitchplayer.ios 2>/dev/null || true
-xcrun simctl launch "$udid" com.twitchplayer.ios "${args[@]}"
+xcrun simctl launch "$udid" com.twitchplayer.ios ${args[@]+"${args[@]}"}
 if [ -n "$shot" ]; then sleep 4; xcrun simctl io "$udid" screenshot "$shot"; fi
