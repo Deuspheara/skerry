@@ -98,6 +98,36 @@ apple/
   loading) or a failure: it now shows the stream's thumbnail with a spinner, or a warning triangle when the stream failed or the channel is offline.
   Signed-in playback with the user's own account was not exercised here.
 
+## The sheet's drag: root causes and numbers
+
+The swipe-down to minimise was janky. Root causes, found by reading the code and confirmed by the numbers below:
+1. **Every drag frame rebuilt the whole sheet.** The drag offset was `@State` of `PlayerSheet`, read in its `body`, so each frame re-evaluated the sheet and everything under it:
+   the streamer row, the chat and its composer, the video stage and its controls.
+2. **The chat could not be skipped.** `ChatList` took an `onReply` closure; a new closure each body defeats SwiftUI's "inputs unchanged, skip the body", so the list of
+   ~150 lines was rebuilt per frame, and each line did `lines.suffix(8).contains { ... }` (an O(n) scan per line, O(n²) for the list).
+3. **Layout instead of transforms.** The sheet's height, the video's frame and the details' padding changed every frame (layout), plus a `shadow` on a moving, video-sized layer.
+4. **`withAnimation` against the gesture.** The release ran a SwiftUI spring on `drag` *and* on `session.position` (which changes what the stage draws), and the model value jumped
+   to the target at once, so a new touch could not catch the sheet in flight.
+
+The new drag: one value, `SheetProgress.value`, written per sample by the pan (1:1 inside the rest positions, a rubber band past them) and, after release, by a display-link spring
+(`SpringDriver` / `SpringMath`, seeded with the finger's velocity, interruptible: a new touch starts from the in-flight value). **No view body reads it**: only three small modifiers
+(`SheetFrame`, `VideoFrame`, `SheetFade`) do, so a frame re-evaluates those and moves the same views. The chat is its own view, frozen while the finger is down (`ChatList` is
+`Equatable` and ignores the closure), the shadow belongs to a plain shape behind the clip, the video view is one instance whose frame changes (never re-parented), and the position
+(which rebuilds the stage's content) is committed when the sheet lands, not while it moves.
+
+Measured with `-drag-benchmark` (debug: three minimise + expand cycles of scripted drag, one touch sample per display frame, 552 frames per run, iOS 26.2 simulator, demo data with
+the chat running; the host was busy, so absolute values are noisy). `xctrace`'s Animation Hitches template does not support the simulator ("Hitches is not supported on this
+platform") and `XCTHitchMetric` needs a device, so the numbers come from the display link's cadence and a run-loop observer:
+
+| | frames dropped (median of runs) | hitches (frames > 25 ms) | frame interval p95 | longest main-thread run loop pass | main thread busy |
+|---|---|---|---|---|---|
+| before (3 runs) | 9.5 % (9.4 / 9.5 / 10.2) | 29-34 | 27-33 ms | 73-115 ms | 36 % |
+| after (5 runs) | 1.6 % (1.1 / 1.3 / 1.6 / 2.0 / 4.2) | 5-10 | 16.7 ms (= nominal) in every run | 17-28 ms (one 225 ms host stall in 5) | 18-19 % |
+
+The macOS app and the Apple TV player have no drag gesture on the sheet (the Mac's mini player is a floating pane toggled by a button, the Apple TV's player is the system
+`AVPlayerViewController`), so there is nothing to measure there; they share `ChatList`, which now skips rebuilds when nothing changed. Not measured: a physical device (GPU
+hitches, ProMotion at 120 Hz), and the real touch recogniser (the benchmark feeds synthetic samples to the same handlers the gesture calls).
+
 ## Lifecycle and system integration
 
 - **Audio session.** Created inactive: it is activated when playback starts and deactivated (notifying other apps) when the player stops, so launching the app
