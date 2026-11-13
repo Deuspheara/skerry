@@ -52,7 +52,7 @@ struct ViewersPill: View {
 /// A stream in a horizontal rail: the picture with its audience, two lines of title, the channel.
 struct StreamTile: View {
     let stream: LiveStream
-    var width: CGFloat = 236
+    var width: CGFloat? = 236
     var onTap: () -> Void
 
     var body: some View {
@@ -67,7 +67,7 @@ struct StreamTile: View {
                 Text(stream.title).font(.subheadline.weight(.semibold)).lineLimit(2).multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
                 Text(stream.name).font(.footnote).foregroundStyle(Theme.textSecondary).lineLimit(1)
             }
-            .frame(width: width, alignment: .leading)
+            .frame(width: width, alignment: .leading).frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle())
@@ -247,6 +247,18 @@ struct ChannelHeader: View {
             }
             .glassCapsule(interactive: true).buttonStyle(.plain)
             .accessibilityHint(Text("phone_follow_opens_twitch"))
+        }
+    }
+}
+
+/// Streams as a grid of cards, two across on a phone (more on wider screens).
+struct StreamGrid: View {
+    let streams: [LiveStream]
+    var onTap: (LiveStream) -> Void
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12, alignment: .top)], alignment: .leading, spacing: 16) {
+            ForEach(streams, id: \.channelId) { stream in StreamTile(stream: stream, width: nil) { onTap(stream) } }
         }
     }
 }

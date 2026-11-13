@@ -35,6 +35,8 @@ struct SignInSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationBackground(Theme.background)
+        .presentationDragIndicator(.visible)
         .task { if model == nil { model = SignInModel(graph: app.graph) } }
         .onChange(of: model?.result) { _, result in
             guard result == .success else { return }
@@ -66,7 +68,8 @@ struct SignInSheet: View {
                 Text(code.userCode)
                     .font(.system(.largeTitle, design: .monospaced).weight(.bold)).kerning(4).minimumScaleFactor(0.5).lineLimit(1)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .glass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.hairline, lineWidth: 0.5))
                     .textSelection(.enabled)
                     .onTapGesture { copy(code.userCode, expiresIn: TimeInterval(code.expiresIn)) }
                     .accessibilityLabel(Text(code.userCode.map(String.init).joined(separator: " ")))

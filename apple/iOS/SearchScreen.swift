@@ -137,7 +137,8 @@ struct SearchScreen: View {
         if case .found(let found) = onEnum(of: state.results) {
             let channels = found.channels as? [ChannelRef] ?? []
             let categories = found.categories as? [TwitchShared.Category] ?? []
-            if channels.isEmpty && categories.isEmpty {
+            let scoped = filter == .categories ? categories.isEmpty : (filter == .channels ? channels.isEmpty : channels.isEmpty && categories.isEmpty)
+            if scoped {
                 MessageState.noResults(clear: { text = ""; model?.clear() }).frame(height: 300)
             }
             if filter != .categories && !channels.isEmpty {

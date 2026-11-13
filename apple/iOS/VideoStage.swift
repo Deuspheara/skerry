@@ -193,7 +193,9 @@ struct VideoStage: View {
             .buttonStyle(.plain).accessibilityLabel(Text(controller.isPlaying ? "player_pause" : "player_play"))
             if !controller.live { roundButton("goforward.15", label: "phone_player_forward", big: true) { controller.skip(by: 15) } }
         }
-        .opacity(controller.isBuffering ? 0 : 1)
+        // No play button over an error or an offline message: nothing to play.
+        .opacity(controller.isBuffering || controller.failed || playback.offline ? 0 : 1)
+        .allowsHitTesting(!(controller.failed || playback.offline))
     }
 
     private func bottomBar(_ controller: PlayerController) -> some View {
@@ -203,7 +205,7 @@ struct VideoStage: View {
                 HStack { Text(formatDuration(seconds: Int(controller.position))); Spacer(); Text(formatDuration(seconds: Int(controller.duration))) }.font(.caption.monospacedDigit())
             }
             HStack {
-                if controller.live { HStack(spacing: 6) { LiveBadge(); if let up = uptime(since: playback.ui?.current?.startedAtMs ?? 0) { Text(up).font(.caption.monospacedDigit()) } } }
+                if controller.live, !controller.failed, !playback.offline { HStack(spacing: 6) { LiveBadge(); if let up = uptime(since: playback.ui?.current?.startedAtMs ?? 0) { Text(up).font(.caption.monospacedDigit()) } } }
                 if let end = controller.sleepEndsAt { Label { Text(end, style: .timer).monospacedDigit() } icon: { Image(systemName: "moon.zzz.fill") }.font(.caption).accessibilityLabel(Text("phone_player_sleep_timer_active")) }
                 Spacer()
                 roundButton("speaker.slash.fill", label: "player_muted", selected: controller.muted) { controller.muted.toggle() }

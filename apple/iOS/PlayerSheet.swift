@@ -97,7 +97,9 @@ struct PlayerSheet: View {
     @ViewBuilder private func details(_ playback: PlaybackModel, _ session: PlayerSession, top: CGFloat, bottom: CGFloat, base: SheetGeometry) -> some View {
         VStack(spacing: 0) {
             streamerRow(playback, session, travel: base.collapsedY)
-            if (playback.ui?.chatMode ?? .compact) != .hidden, playback.isLive {
+            if playback.offline {
+                MessageState(title: "offline_title", message: "offline_body", action: (title: "offline_open", run: { app.openChannel(session.target?.channelLogin ?? "") }), icon: "moon.zzz")
+            } else if (playback.ui?.chatMode ?? .compact) != .hidden, playback.isLive {
                 Divider().opacity(0.4)
                 SheetChat(playback: playback, progress: progress, replyTo: $replyTo)
                 ChatComposer(playback: playback, replyTo: $replyTo)

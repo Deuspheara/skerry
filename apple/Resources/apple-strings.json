@@ -243,5 +243,20 @@
     "en": "Sign in with Twitch to see the channels you follow.",
     "fr": "Connectez-vous avec Twitch pour voir les chaînes que vous suivez.",
     "ar": "سجّل الدخول عبر Twitch لعرض القنوات التي تتابعها."
+  },
+  "offline_title": {
+    "en": "This channel is offline",
+    "fr": "Cette chaîne est hors ligne",
+    "ar": "هذه القناة غير متصلة"
+  },
+  "offline_body": {
+    "en": "Watch its replays and clips, or come back when it goes live.",
+    "fr": "Regardez ses rediffusions et ses clips, ou revenez quand elle sera en direct.",
+    "ar": "شاهد إعاداتها ومقاطعها أو عد عندما تبث."
+  },
+  "offline_open": {
+    "en": "Open the channel page",
+    "fr": "Ouvrir la page de la chaîne",
+    "ar": "فتح صفحة القناة"
   }
 }

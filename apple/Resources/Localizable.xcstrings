@@ -15206,6 +15206,75 @@
         }
       }
     },
+    "offline_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch its replays and clips, or come back when it goes live."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regardez ses rediffusions et ses clips, ou revenez quand elle sera en direct."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شاهد إعاداتها ومقاطعها أو عد عندما تبث."
+          }
+        }
+      }
+    },
+    "offline_open": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the channel page"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir la page de la chaîne"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح صفحة القناة"
+          }
+        }
+      }
+    },
+    "offline_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This channel is offline"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette chaîne est hors ligne"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه القناة غير متصلة"
+          }
+        }
+      }
+    },
     "opt_large": {
       "extractionState": "manual",
       "localizations": {
@@ -17020,6 +17089,52 @@
         }
       }
     },
+    "phone_category_favourite_add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to favourites"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إضافة إلى المفضلة"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter aux favoris"
+          }
+        }
+      }
+    },
+    "phone_category_favourite_on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your favourites"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في مفضلتك"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans vos favoris"
+          }
+        }
+      }
+    },
     "phone_category_watching": {
       "extractionState": "manual",
       "localizations": {
@@ -17223,6 +17338,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les clips populaires apparaîtront ici. Revenez dans un instant."
+          }
+        }
+      }
+    },
+    "phone_clips_go_live": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to live streams"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الانتقال إلى البثوث المباشرة"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir les directs"
           }
         }
       }
@@ -18722,6 +18860,52 @@
         }
       }
     },
+    "phone_offline_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to the internet and try again. What you saw last stays here when it was saved."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصل بالإنترنت وحاول مرة أخرى. يبقى هنا آخر ما شاهدته إذا كان محفوظاً."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous à Internet et réessayez. Ce que vous avez vu en dernier reste ici quand il a été enregistré."
+          }
+        }
+      }
+    },
+    "phone_offline_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're offline"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت غير متصل بالإنترنت"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous êtes hors ligne"
+          }
+        }
+      }
+    },
     "phone_player_back10": {
       "extractionState": "manual",
       "localizations": {
@@ -19363,6 +19547,29 @@
         }
       }
     },
+    "phone_player_twitch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch"
+          }
+        }
+      }
+    },
     "phone_search_clear_field": {
       "extractionState": "manual",
       "localizations": {
@@ -19754,6 +19961,29 @@
         }
       }
     },
+    "phone_settings_raids_help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the channel you watch raids another one, the app offers to follow the raid."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما تقوم القناة التي تشاهدها بغارة على قناة أخرى، يعرض التطبيق متابعة الغارة."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quand la chaîne que vous regardez fait un raid, l'app propose de suivre le raid."
+          }
+        }
+      }
+    },
     "phone_settings_signed_in": {
       "extractionState": "manual",
       "localizations": {
@@ -19773,6 +20003,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connecté"
+          }
+        }
+      }
+    },
+    "phone_settings_stats_help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows bitrate, resolution and dropped frames over the picture."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعرض معدل البتات والدقة والإطارات المفقودة فوق الصورة."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Affiche le débit, la résolution et les images perdues sur l'image."
           }
         }
       }

@@ -198,7 +198,7 @@ struct FollowingScreen: View {
                         if !live.isEmpty {
                             LiveAvatarRail(streams: live) { app.open($0) }
                             SectionTitle(key: "sec_following")
-                            ForEach(live, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
+                            StreamGrid(streams: live) { app.open($0) }
                         }
                         if !offline.isEmpty {
                             SectionTitle(key: "sec_offline")
@@ -215,6 +215,7 @@ struct FollowingScreen: View {
 }
 
 struct BrowseScreen: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(AppModel.self) private var app
     @State private var model: BrowseModel?
     var namespace: Namespace.ID
@@ -259,7 +260,7 @@ struct BrowseScreen: View {
                         }
                     }
                     .scrollIndicators(.hidden).scrollClipDisabled()
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 12, alignment: .top)], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 160 : 104), spacing: 12, alignment: .top)], spacing: 16) {
                         ForEach(categories, id: \.id) { category in
                             CategoryCard(category: category) { app.openCategory(category) }
                         }
@@ -281,7 +282,7 @@ struct CategoryScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            DetailBar(title: name)
+            DetailBar(title: "")
             content
         }
         .background(Theme.background.ignoresSafeArea())
@@ -303,7 +304,7 @@ struct CategoryScreen: View {
                     if streams.isEmpty {
                         MessageState(title: "state_no_live")
                     }
-                    ForEach(streams, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
+                    StreamGrid(streams: streams) { app.open($0) }
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
                 .animation(app.motion, value: ids(streams))

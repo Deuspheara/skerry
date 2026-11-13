@@ -23,11 +23,11 @@ struct TVSettingsScreen: View {
                 }
             }
             if let state = app.settingsState {
-                Section("phone_settings_playback") {
+                Section(header: SettingsHeader(key: "phone_settings_playback")) {
                     Toggle("tile_stats", isOn: Binding(get: { state.showStats }, set: { _ in app.onSettingsEvent(SettingsEventToggleStats.shared) }))
                     Toggle("tile_raids", isOn: Binding(get: { state.followRaids }, set: { _ in app.onSettingsEvent(SettingsEventToggleFollowRaids.shared) }))
                 }
-                Section("tile_chat") {
+                Section(header: SettingsHeader(key: "tile_chat")) {
                     let chat = state.chat
                     LabeledContent("phone_settings_chat_mode") {
                         Picker("phone_settings_chat_mode", selection: Binding(get: { state.chatMode }, set: { app.onSettingsEvent(SettingsEventSetChatMode(mode: $0)) })) {
@@ -48,7 +48,7 @@ struct TVSettingsScreen: View {
                     Toggle("chat_opt_badges", isOn: Binding(get: { chat.showBadges }, set: { update(chat, badges: $0) }))
                     Toggle("chat_opt_animated", isOn: Binding(get: { chat.animatedEmotes }, set: { update(chat, animated: $0) }))
                 }
-                Section("phone_settings_appearance") {
+                Section(header: SettingsHeader(key: "phone_settings_appearance")) {
                     LabeledContent("phone_settings_theme") {
                         Picker("phone_settings_theme", selection: $theme) {
                             Text("phone_theme_system").tag(ThemeChoice.system.rawValue)
@@ -60,7 +60,7 @@ struct TVSettingsScreen: View {
                     Toggle("tile_animations", isOn: Binding(get: { state.animationsEnabled }, set: { _ in app.onSettingsEvent(SettingsEventToggleAnimations.shared) }))
                 }
             }
-            Section("phone_settings_about") {
+            Section(header: SettingsHeader(key: "phone_settings_about")) {
                 Text(String(format: String(localized: "phone_about_version"), version))
                 Text("phone_about_disclaimer").font(.callout).foregroundStyle(.secondary)
             }
@@ -75,5 +75,14 @@ struct TVSettingsScreen: View {
                 animatedEmotes: animated ?? current.animatedEmotes, animatedLimit: current.animatedLimit,
             )
         })
+    }
+}
+
+/// A section heading readable at ten feet: the primary colour in semibold, not the system's faint grey.
+private struct SettingsHeader: View {
+    let key: LocalizedStringKey
+
+    var body: some View {
+        Text(key).font(.headline.weight(.semibold)).foregroundStyle(Theme.textSecondary).textCase(nil)
     }
 }

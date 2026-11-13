@@ -223,7 +223,7 @@ struct TVChannelScreen: View {
             }
             .padding(.horizontal, TVMetrics.edge).accessibilityElement(children: .combine)
             if let stream = details.stream {
-                TVRow(title: "live") { TVStreamCard(stream: stream) { app.open(stream) } }
+                TVRow(title: "home_live_now") { TVStreamCard(stream: stream) { app.open(stream) } }
             }
             if !replays.isEmpty {
                 TVRow(title: "sec_replays") {
