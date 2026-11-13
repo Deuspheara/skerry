@@ -22,6 +22,8 @@ struct VideoStage: View {
         let controller = playback.controller
         let dragging = progress.isDragging
         let chatMode = playback.ui?.chatMode ?? .compact
+        // Landscape, chat in the side panel (the middle mode): the picture shrinks to leave room for it, like the Android phone's.
+        let sideWidth = self.sideWidth(chatMode)
         ZStack {
             VideoSurface(controller: controller)
             // Until the first picture arrives (the address is still being resolved, the stream is loading, it failed) the stream's thumbnail stands in for
@@ -51,11 +53,34 @@ struct VideoStage: View {
                 .allowsHitTesting(!dragging)
             }
         }
+        // The picture and its controls are always on the dark ground of the video; the side panel is the app's own, in either appearance.
+        .environment(\.colorScheme, .dark)
+        .padding(.trailing, sideWidth > 0 ? sideWidth + insets.trailing : 0)
+        .overlay(alignment: .trailing) { if sideWidth > 0 { sidePanel(width: sideWidth) } }
         .contentShape(Rectangle())
         .onTapGesture { if !docked { onTap() } }
         .clipped()
         // While the sheet is dragged, glass over the live picture is replaced by a flat fill (glass would re-sample the video every frame).
         .environment(\.flatChrome, dragging)
+    }
+
+    private func sideWidth(_ chatMode: ChatMode) -> CGFloat {
+        fullscreen && playback.isLive && chatMode == .compact ? min(max(size.width * 0.34, 280), 400) : 0
+    }
+
+    /// The chat beside the picture in landscape: the list and the input on the app's own dark ground, clear of the cutout.
+    private func sidePanel(width: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            ChatList(lines: playback.chat, settings: playback.chatSettings) { replyTo = $0 }
+                .equatable()
+                .padding(.top, max(insets.top, 8))
+            ChatComposer(playback: playback, replyTo: $replyTo)
+                .padding(.bottom, max(insets.bottom, 6))
+        }
+        .padding(.trailing, insets.trailing)
+        .frame(width: width + insets.trailing)
+        .frame(maxHeight: .infinity)
+        .background(Theme.background)
     }
 
     private var chatOverlay: some View {
@@ -96,11 +121,19 @@ struct VideoStage: View {
                 Spacer()
                 bottomBar(controller)
             }
-            .padding(.leading, fullscreen ? max(insets.leading, 12) : 8).padding(.trailing, fullscreen ? max(insets.trailing, 12) : 8)
+            .padding(.leading, fullscreen ? max(insets.leading, 12) : 8).padding(.trailing, fullscreen ? (sideWidth(chatMode) > 0 ? 12 : max(insets.trailing, 12)) : 8)
             .padding(.top, fullscreen ? max(insets.top, 8) : insets.top + 2).padding(.bottom, fullscreen ? max(insets.bottom, 8) : 6)
             center(controller)
         }
         .foregroundStyle(.white)
+    }
+
+    private static func chatIcon(_ mode: ChatMode) -> String {
+        switch mode {
+        case .hidden: "bubble.left"
+        case .compact: "bubble.left.fill"
+        default: "text.bubble.fill"
+        }
     }
 
     private func topBar(_ controller: PlayerController, chatMode: ChatMode) -> some View {
@@ -108,6 +141,9 @@ struct VideoStage: View {
             roundButton("chevron.down", label: "phone_player_minimise") { fullscreen ? exitFullscreen() : app.session.minimise() }
             Text(playback.ui?.current?.title ?? app.session.target?.title ?? "").font(.subheadline.weight(.semibold)).lineLimit(1)
             Spacer(minLength: 0)
+            if playback.isLive {
+                roundButton(Self.chatIcon(chatMode), label: "phone_player_chat_toggle") { playback.setChatMode(chatMode.cycled(landscape: fullscreen)) }
+            }
             if controller.pipPossible { roundButton("pip.enter", label: "phone_player_pip") { controller.startPictureInPicture() } }
             Menu {
                 qualityMenu(controller)

@@ -191,3 +191,15 @@ Not verified: a physical device, a real Twitch account (everything above ran on 
 Picture and background audio on hardware (the "return to app" button included), AirPlay, rotation with a real device sensor, the Keychain fallback on a
 sandboxed, ad-hoc signed Mac app without the entitlement (only the success path ran), VoiceOver passes, the GitHub workflow (never run; Xcode 26.4 on `macos-26` is an
 assumption), and Xcode stable releases (Xcode 27 beta 4 only). Performance was not measured.
+
+## Replay crash, landscape chat, appearance (user testing, iPhone 17 iOS 26.5)
+
+- **Replay/clip crash.** `PlaybackUrls.replay/clip/live` and `ReplayProgress` are Kotlin `suspend` functions called from Swift; SKIE only turns a
+  Kotlin exception into a Swift `throw` when the function is `@Throws`. Without it a `VodAccessException` (subscriber-only, removed, integrity token) killed
+  the process ("Uncaught Kotlin exception"). They are `@Throws(Throwable::class)` now, `PlaybackModel` classifies the error (`PlaybackProblem`) and the sheet
+  says why with a retry that resolves again. Covered by `PlaybackFailureTests`. Mac and tvOS share `PlaybackModel`.
+- **Landscape chat.** Fullscreen cycles hidden → side panel → over the picture with the chat button in the top bar (the same cycle as the Android phone,
+  `ChatMode.cycled`); the choice is the shared presenter's persisted `SetChatMode`. The side panel shrinks the picture; replays have no chat.
+- **Appearance.** The sheet, its cover, the strip and the chat rows use `Theme` / semantic colours; only the picture and its controls are forced dark.
+  Nick colours go through `NickContrast` (WCAG 4.5:1, as Android's `readableOn`) on the light ground. The flat stand-in for glass while dragging
+  (`Theme.flatGlass`) follows the appearance.

@@ -66,7 +66,6 @@ struct PlayerSheet: View {
             }
             PictureTransform(progress: progress, base: base) {
                 VideoStage(playback: playback, fullscreen: fullscreen, docked: docked, progress: progress, controlsVisible: $controlsVisible, insets: controlInsets, size: base.pictureBase, replyTo: $replyTo, onTap: toggleControls)
-                    .environment(\.colorScheme, .dark)
             }
             .gesture(dragGesture(travel: base.collapsedY), including: fullscreen ? .subviews : .all)
             strip(playback, session, travel: base.collapsedY)
