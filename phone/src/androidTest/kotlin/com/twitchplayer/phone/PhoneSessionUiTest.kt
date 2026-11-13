@@ -30,8 +30,8 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
- * The Following tab and the session: the bar does not change shape while the session loads, and signing out and in again leaves the same
- * result whichever page the viewer was on (Following at its root, no Settings or channel page from before).
+ * The Following tab and the session: the bar always has the same four tabs, each signed-out screen says its own thing, and signing out and
+ * in again leaves the same result whichever page the viewer was on (Following at its root, no Settings or channel page from before).
  */
 @RunWith(AndroidJUnit4::class)
 class PhoneSessionUiTest {
@@ -52,9 +52,8 @@ class PhoneSessionUiTest {
         }
     }
 
-    private fun launch(session: SessionRepository, hintSignedIn: Boolean) {
+    private fun launch(session: SessionRepository) {
         context.getSharedPreferences(SharedPreferencesThemePreference.PREFS, Context.MODE_PRIVATE).edit().clear().commit()
-        context.getSharedPreferences("phone_session_hint", Context.MODE_PRIVATE).edit().putBoolean("signed_in", hintSignedIn).commit()
         loaded = listOf(demoModule, module { single<SessionRepository> { session } })
         loadKoinModules(phoneModules() + loaded)
         scenario = ActivityScenario.launch(MainActivity::class.java)
@@ -63,7 +62,6 @@ class PhoneSessionUiTest {
     @After fun close() {
         scenario?.close()
         if (loaded.isNotEmpty()) unloadKoinModules(loaded)
-        context.getSharedPreferences("phone_session_hint", Context.MODE_PRIVATE).edit().clear().commit()
     }
 
     private fun tab(label: Int) = isSelectable() and hasContentDescription(string(label))
@@ -74,32 +72,37 @@ class PhoneSessionUiTest {
 
     private fun described(description: String) = rule.onAllNodes(hasContentDescription(description, substring = true)).fetchSemanticsNodes().isNotEmpty()
 
-    @Test fun whileTheSessionLoadsTheBarKeepsLastTimesThreeTabsThenFollowsTheAnswer() {
-        val session = SwitchableSession(SessionState.Loading)
-        launch(session, hintSignedIn = true)
+    private fun fourTabs() = present(R.string.nav_home) && present(R.string.phone_nav_discover) && present(R.string.sec_following) && present(R.string.nav_browse)
 
+    @Test fun theBarHasTheSameFourTabsWhileTheSessionLoadsAndWhateverTheAnswer() {
+        val session = SwitchableSession(SessionState.Loading)
+        launch(session)
         rule.waitUntil(WAIT_MS) { present(R.string.nav_home) }
-        assertTrue("three tabs from the first frame, as last time", present(R.string.sec_following))
+        assertTrue("four tabs while loading", fourTabs())
 
         session.state.value = SessionState.SignedOut
-        rule.waitUntil(WAIT_MS) { !present(R.string.sec_following) }
-        assertTrue(present(R.string.nav_home) && present(R.string.nav_browse))
-    }
-
-    @Test fun aViewerWhoWasSignedOutSeesTwoTabsWhileTheSessionLoadsAndThreeOnceItIsSignedIn() {
-        val session = SwitchableSession(SessionState.Loading)
-        launch(session, hintSignedIn = false)
-
-        rule.waitUntil(WAIT_MS) { present(R.string.nav_home) }
-        assertTrue(!present(R.string.sec_following))
+        rule.waitForIdle()
+        assertTrue("four tabs signed out", fourTabs())
 
         session.state.value = SessionState.SignedIn(Account("1", "camille"))
-        rule.waitUntil(WAIT_MS) { present(R.string.sec_following) }
+        rule.waitForIdle()
+        assertTrue("four tabs signed in", fourTabs())
+    }
+
+    @Test fun eachSignedOutTabSaysItsOwnThing() {
+        launch(SwitchableSession(SessionState.SignedOut))
+        waitForText(string(R.string.phone_signedout_home_title))
+
+        rule.onNode(tab(R.string.sec_following)).performClick()
+        waitForText(string(R.string.phone_signedout_following_title))
+
+        rule.onNode(tab(R.string.nav_browse)).performClick()
+        waitForText(string(R.string.phone_signedout_browse_title))
     }
 
     @Test fun signingOutFromSettingsOnFollowingAndInAgainFindsFollowingAtItsRoot() {
         val session = SwitchableSession(SessionState.SignedIn(Account("1", "camille")))
-        launch(session, hintSignedIn = true)
+        launch(session)
         rule.waitUntil(WAIT_MS) { present(R.string.sec_following) }
 
         rule.onNode(tab(R.string.sec_following)).performClick()
@@ -108,32 +111,15 @@ class PhoneSessionUiTest {
         waitForText(string(R.string.phone_settings_signed_in))
 
         session.state.value = SessionState.SignedOut
-        // Whatever page it was: Following and its pages are gone, the viewer is on Home (signed out).
-        rule.waitUntil(WAIT_MS) { !present(R.string.sec_following) }
-        waitForText(string(R.string.state_signin_title))
+        // Following and its pages are gone: the tab is still in the bar and says to sign in; no Settings page is left on its stack.
+        waitForText(string(R.string.phone_signedout_following_title))
         assertTrue(rule.onAllNodesWithText(string(R.string.phone_settings_signed_in)).fetchSemanticsNodes().isEmpty())
+        assertTrue(fourTabs())
 
         session.state.value = SessionState.SignedIn(Account("1", "camille"))
-        rule.waitUntil(WAIT_MS) { present(R.string.sec_following) }
-        rule.onNode(tab(R.string.sec_following)).performClick()
         rule.waitUntil(WAIT_MS) { described("Lunaria") }
-        // No Settings page was left on Following's stack.
         assertTrue(rule.onAllNodesWithText(string(R.string.phone_settings_signed_in)).fetchSemanticsNodes().isEmpty())
         rule.onNode(tab(R.string.sec_following)).assertIsDisplayed()
-    }
-
-    @Test fun signingOutOnFollowingReturnsToHomeWhateverPageItWasOn() {
-        val session = SwitchableSession(SessionState.SignedIn(Account("1", "camille")))
-        launch(session, hintSignedIn = true)
-        rule.waitUntil(WAIT_MS) { present(R.string.sec_following) }
-        rule.onNode(tab(R.string.sec_following)).performClick()
-        rule.waitUntil(WAIT_MS) { described("Lunaria") }
-
-        session.state.value = SessionState.SignedOut
-
-        rule.waitUntil(WAIT_MS) { !present(R.string.sec_following) }
-        rule.onNode(tab(R.string.nav_home)).assertIsDisplayed()
-        waitForText(string(R.string.state_signin_title))
     }
 
     private companion object {

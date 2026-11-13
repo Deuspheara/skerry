@@ -20,13 +20,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object SettingsKey : NavKey
 
-@Serializable data class CategoryKey(val id: String, val name: String) : NavKey
+@Serializable data class CategoryKey(val id: String, val name: String, val artUrl: String = "") : NavKey
 
 @Serializable data class ChannelKey(val login: String) : NavKey
 
 /**
- * The tabs, in bar order; each keeps its own back stack. Following needs a signed-in viewer (without one there is nothing to show),
- * so the bar lists it only then: [visible].
+ * The tabs, in bar order; each keeps its own back stack. The bar always shows all four, in the same places whoever is signed in
+ * (an icon-only bar must not move its icons); a tab that needs a viewer (Following) shows its own sign-in message instead of hiding.
  */
 enum class PhoneTab(val root: NavKey) {
     Home(HomeKey),
@@ -39,17 +39,8 @@ enum class PhoneTab(val root: NavKey) {
         /** The tab a destination belongs to: category and channel pages belong to the tab they were opened from. */
         fun of(key: NavKey): PhoneTab? = entries.firstOrNull { it.root == key }
 
-        /** The tabs the bar shows: three when nobody is signed in (Home, Discover, Browse), four otherwise. */
-        fun visible(signedIn: Boolean): List<PhoneTab> = if (signedIn) entries else entries - Following
-
-        /**
-         * The tabs while the session may still be loading: until it has been read the bar shows what it showed the last time ([hintSignedIn]),
-         * so a signed-in viewer does not see two tabs and then three at every cold start.
-         */
-        fun bar(signedIn: Boolean, sessionLoading: Boolean, hintSignedIn: Boolean): List<PhoneTab> = visible(if (sessionLoading) hintSignedIn else signedIn)
-
-        /** A selected tab the bar no longer offers is left, but only once the session is known (a restored Following is kept while it loads). */
-        fun mustLeave(selected: PhoneTab, tabs: List<PhoneTab>, sessionLoading: Boolean): Boolean = !sessionLoading && selected !in tabs
+        /** The tabs the bar shows: all of them, always. */
+        val bar: List<PhoneTab> get() = entries
     }
 }
 

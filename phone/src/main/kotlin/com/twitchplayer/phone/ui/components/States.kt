@@ -27,12 +27,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,11 +47,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.twitchplayer.phone.R
@@ -64,19 +71,50 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** Centered empty / error / signed-out message with an optional action. Scrollable so pull-to-refresh and small screens work. */
+/** A page title of a tab root: one size, one weight on every tab (Browse, Following), announced as a heading. */
 @Composable
-fun MessageState(title: String, modifier: Modifier = Modifier, body: String? = null, actionLabel: String? = null, onAction: (() -> Unit)? = null) {
+fun PageTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier.semantics { heading() },
+    )
+}
+
+/**
+ * The one empty / error / signed-out component: a tonal icon disc, a title, one line of explanation and an optional action. Scrollable so
+ * pull-to-refresh and small screens work. [icon] is decorative (the title says it all).
+ */
+@Composable
+fun MessageState(
+    title: String,
+    modifier: Modifier = Modifier,
+    body: String? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    icon: ImageVector? = null,
+) {
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        if (icon != null) {
+            Box(
+                Modifier.size(MESSAGE_ICON_DISC).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(MESSAGE_ICON_SIZE))
+            }
+        }
         Text(
             title,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = if (icon != null) 16.dp else 0.dp).semantics { heading() },
         )
         if (body != null) {
             Text(
@@ -93,6 +131,13 @@ fun MessageState(title: String, modifier: Modifier = Modifier, body: String? = n
     }
 }
 
+private val MESSAGE_ICON_DISC = 64.dp
+private val MESSAGE_ICON_SIZE = 28.dp
+
+/** What a screen says when nobody is signed in: its own title and one line (never "channels you follow" on Browse). */
+@Immutable
+data class SignedOutCopy(val title: String, val body: String)
+
 /**
  * The four states of a network-backed screen: [skeleton] while loading, a sign-in prompt when signed out, a retry message when
  * nothing could be shown, and [content] otherwise.
@@ -104,6 +149,8 @@ fun <T> LoadHost(
     onSignIn: () -> Unit,
     skeleton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    /** The signed-out message of this screen; the generic one when null. */
+    signedOut: SignedOutCopy? = null,
     /** Whether a refresh that failed shows its marker above the content (a full-bleed page such as Discover says it another way). */
     staleMarker: Boolean = true,
     content: @Composable (T) -> Unit,
@@ -123,17 +170,19 @@ fun <T> LoadHost(
                 Load.Loading -> skeleton()
 
                 Load.SignedOut -> MessageState(
-                    title = stringResource(R.string.state_signin_title),
-                    body = stringResource(R.string.phone_signin_body),
+                    title = signedOut?.title ?: stringResource(R.string.phone_signedout_home_title),
+                    body = signedOut?.body ?: stringResource(R.string.phone_signedout_home_body),
                     actionLabel = stringResource(R.string.state_signin),
                     onAction = onSignIn,
+                    icon = Icons.Filled.Person,
                 )
 
                 Load.Failed -> MessageState(
-                    title = stringResource(R.string.state_error),
+                    title = stringResource(R.string.phone_error_title),
                     body = stringResource(R.string.phone_error_body),
                     actionLabel = stringResource(R.string.state_retry),
                     onAction = onRetry,
+                    icon = Icons.Filled.Warning,
                 )
 
                 is Load.Ready -> Column(Modifier.fillMaxSize()) {

@@ -104,8 +104,8 @@ class PhoneComponentsUiTest {
     @Test fun theBarAndTheRailListExactlyTheTabsTheyAreGiven() {
         rule.setContent {
             PhoneTheme(ThemeMode.Dark, reducedMotion = true) {
-                PhoneBottomBar(PhoneTab.visible(signedIn = false), PhoneTab.Home, onSelect = {})
-                PhoneRail(PhoneTab.visible(signedIn = true), PhoneTab.Following, onSelect = {})
+                PhoneBottomBar(PhoneTab.bar, PhoneTab.Home, onSelect = {})
+                PhoneRail(PhoneTab.bar, PhoneTab.Following, onSelect = {})
             }
         }
 

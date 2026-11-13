@@ -134,9 +134,8 @@ class PhoneNavigatorTest {
         assertEquals(3, nav.currentStack.size)
     }
 
-    @Test fun theBarListsFollowingOnlyForASignedInViewer() {
-        assertEquals(listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Following, PhoneTab.Browse), PhoneTab.visible(signedIn = true))
-        assertEquals(listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Browse), PhoneTab.visible(signedIn = false))
+    @Test fun theBarAlwaysListsTheFourTabsInTheSameOrder() {
+        assertEquals(listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Following, PhoneTab.Browse), PhoneTab.bar)
     }
 
     @Test fun openingAPageThatIsAlreadyFurtherDownTheStackReturnsToItInsteadOfStackingItAgain() {
@@ -163,7 +162,7 @@ class PhoneNavigatorTest {
         assertEquals(listOf(HomeKey, ChannelKey("a")), nav.currentStack.toList())
     }
 
-    @Test fun signingOutDropsFollowingsPagesAndLeavesItForHome() {
+    @Test fun signingOutDropsFollowingsPagesAndStaysOnItsSignInMessage() {
         val nav = navigator()
         nav.selectTab(PhoneTab.Following)
         nav.push(ChannelKey("a"))
@@ -171,10 +170,8 @@ class PhoneNavigatorTest {
 
         nav.onSignedOut()
 
-        assertEquals(PhoneTab.Home, nav.selected)
-        assertEquals(HomeKey, nav.top)
+        assertEquals(PhoneTab.Following, nav.selected)
         // A later sign-in finds Following at its root, not on a page from before.
-        nav.selectTab(PhoneTab.Following)
         assertEquals(listOf<NavKey>(FollowingKey), nav.currentStack.toList())
     }
 
@@ -201,19 +198,5 @@ class PhoneNavigatorTest {
 
         assertEquals(PhoneTab.Home, nav.selected)
         assertTrue(changes.isEmpty())
-    }
-
-    @Test fun whileTheSessionLoadsTheBarKeepsLastTimesShapeAndAFollowingSelectionIsKept() {
-        val two = listOf(PhoneTab.Home, PhoneTab.Discover, PhoneTab.Browse)
-        val three = PhoneTab.entries.toList()
-        assertEquals(three, PhoneTab.bar(signedIn = false, sessionLoading = true, hintSignedIn = true))
-        assertEquals(two, PhoneTab.bar(signedIn = false, sessionLoading = true, hintSignedIn = false))
-        assertEquals(two, PhoneTab.bar(signedIn = false, sessionLoading = false, hintSignedIn = true))
-        assertEquals(three, PhoneTab.bar(signedIn = true, sessionLoading = false, hintSignedIn = false))
-
-        assertFalse("a restored Following is not forced to Home while the session loads", PhoneTab.mustLeave(PhoneTab.Following, two, sessionLoading = true))
-        assertTrue("once signed out is known it must go", PhoneTab.mustLeave(PhoneTab.Following, two, sessionLoading = false))
-        assertFalse(PhoneTab.mustLeave(PhoneTab.Following, three, sessionLoading = false))
-        assertFalse(PhoneTab.mustLeave(PhoneTab.Home, two, sessionLoading = false))
     }
 }

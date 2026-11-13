@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="phone_nav_settings">الإعدادات</string>
-    <string name="phone_signin_body">سجّل الدخول عبر Twitch لعرض القنوات التي تتابعها.</string>
     <string name="phone_error_body">تحقق من اتصالك ثم حاول مرة أخرى.</string>
     <string name="phone_home_empty">ستظهر هنا البثوث من القنوات التي تتابعها والتوصيات عندما تكون مباشرة.</string>
     <string name="phone_following_empty">ستظهر هنا القنوات التي تتابعها.</string>
@@ -133,4 +132,27 @@
     <string name="phone_search_updating">جارٍ تحديث النتائج</string>
     <string name="phone_stale_failed">تعذّر التحديث</string>
     <string name="phone_stale_ago">تعذّر التحديث · آخر تحديث %1$s</string>
+    <!-- Audit round 2 -->
+    <string name="phone_signedout_home_title">سجّل الدخول لرؤية البثوث المباشرة</string>
+    <string name="phone_signedout_home_body">تُحمَّل قنواتك المتابَعة والتوصيات بحساب Twitch الخاص بك.</string>
+    <string name="phone_signedout_following_title">سجّل الدخول لرؤية من تتابعه</string>
+    <string name="phone_signedout_following_body">تظهر القنوات المباشرة أولاً ثم القنوات غير المتصلة.</string>
+    <string name="phone_signedout_browse_title">سجّل الدخول لتصفّح Twitch</string>
+    <string name="phone_signedout_browse_body">تُحمَّل الفئات والقنوات المباشرة بحساب Twitch الخاص بك.</string>
+    <string name="phone_signedout_discover_title">سجّل الدخول لاكتشاف البثوث</string>
+    <string name="phone_signedout_discover_body">تصفّح بثوثاً مباشرة ومقاطع شائعة من كل Twitch.</string>
+    <string name="phone_error_title">تعذّر تحميل هذه الصفحة</string>
+    <string name="phone_clips_empty_body">ستظهر هنا المقاطع الشائعة. عد بعد قليل.</string>
+    <string name="phone_no_results_for">لا نتائج لـ «%1$s»</string>
+    <string name="phone_no_results_hint">تحقق من الإملاء أو جرّب اسماً آخر.</string>
+    <string name="phone_feed_swipe_hint">اسحب لأعلى للبث التالي</string>
+    <string name="phone_feed_label_sound_on">الصوت يعمل</string>
+    <string name="phone_feed_label_sound_off">الصوت مكتوم</string>
+    <string name="phone_feed_label_chat">الدردشة</string>
+    <string name="phone_feed_label_channel">القناة</string>
+    <string name="phone_feed_label_watch">مشاهدة</string>
+    <string name="phone_following_live_now">مباشر الآن</string>
+    <string name="phone_category_watching">%1$s يشاهدون الآن</string>
+    <string name="phone_player_settings">إعدادات التشغيل</string>
+    <string name="phone_player_settings_off">متوقف</string>
 </resources>

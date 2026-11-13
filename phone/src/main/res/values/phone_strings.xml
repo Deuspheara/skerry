@@ -7,7 +7,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="phone_nav_settings">Settings</string>
 
-    <string name="phone_signin_body">Sign in with Twitch to see the channels you follow.</string>
     <string name="phone_error_body">Check your connection and try again.</string>
     <string name="phone_home_empty">Streams from channels you follow and recommendations will appear here when they are live.</string>
     <string name="phone_following_empty">The channels you follow will appear here.</string>
@@ -141,4 +140,27 @@
     <string name="phone_search_updating">Updating results</string>
     <string name="phone_stale_failed">Couldn\'t refresh</string>
     <string name="phone_stale_ago">Couldn\'t refresh · updated %1$s</string>
+    <!-- Audit round 2: one empty/error component, a signed-out message per tab -->
+    <string name="phone_signedout_home_title">Sign in to see what\'s live</string>
+    <string name="phone_signedout_home_body">Your followed channels and recommendations load with your Twitch account.</string>
+    <string name="phone_signedout_following_title">Sign in to see who you follow</string>
+    <string name="phone_signedout_following_body">Followed channels that are live appear first, offline ones below.</string>
+    <string name="phone_signedout_browse_title">Sign in to browse Twitch</string>
+    <string name="phone_signedout_browse_body">Categories and live channels load with your Twitch account.</string>
+    <string name="phone_signedout_discover_title">Sign in to discover streams</string>
+    <string name="phone_signedout_discover_body">Swipe through live streams and popular clips from across Twitch.</string>
+    <string name="phone_error_title">Couldn\'t load this page</string>
+    <string name="phone_clips_empty_body">Popular clips will appear here. Check back in a moment.</string>
+    <string name="phone_no_results_for">No results for \u201c%1$s\u201d</string>
+    <string name="phone_no_results_hint">Check the spelling or try another name.</string>
+    <string name="phone_feed_swipe_hint">Swipe up for the next stream</string>
+    <string name="phone_feed_label_sound_on">Sound on</string>
+    <string name="phone_feed_label_sound_off">Sound off</string>
+    <string name="phone_feed_label_chat">Chat</string>
+    <string name="phone_feed_label_channel">Channel</string>
+    <string name="phone_feed_label_watch">Watch</string>
+    <string name="phone_following_live_now">Live now</string>
+    <string name="phone_category_watching">%1$s watching now</string>
+    <string name="phone_player_settings">Playback settings</string>
+    <string name="phone_player_settings_off">Off</string>
 </resources>

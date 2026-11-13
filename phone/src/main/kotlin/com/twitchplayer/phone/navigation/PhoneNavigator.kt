@@ -52,16 +52,12 @@ class PhoneNavigator(
     }
 
     /**
-     * The viewer signed out: Following has nothing to show without one, so its pages are dropped (a later sign-in finds it at its root, not
-     * on a channel or Settings page from before) and, if it was the tab being looked at, Home takes over.
+     * The viewer signed out: Following's pages are dropped (a later sign-in finds it at its root, not on a channel or Settings page from
+     * before). The tab stays where it is: it is always in the bar and shows its own sign-in message.
      */
     fun onSignedOut() {
         val following = stacks.getValue(PhoneTab.Following)
         while (following.size > 1) following.removeAt(following.lastIndex)
-        if (selected == PhoneTab.Following) {
-            selected = PhoneTab.Home
-            onSelectedChanged(PhoneTab.Home)
-        }
     }
 
     fun pop() {

@@ -79,7 +79,6 @@ import com.twitchplayer.phone.navigation.PhoneTab
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.navigation.SearchKey
 import com.twitchplayer.phone.navigation.SettingsKey
-import com.twitchplayer.phone.navigation.SignedInHint
 import com.twitchplayer.phone.navigation.phoneTransition
 import com.twitchplayer.phone.navigation.rememberGuardedBackStack
 import com.twitchplayer.phone.navigation.rememberScreenFill
@@ -176,21 +175,12 @@ private fun PhoneScaffold(
     val wide = isWideWindow()
     val chromeVisible = navigator.showsNavigation
     val selectTab = { tab: PhoneTab -> navigator.selectTab(tab) }
-    // Following needs a viewer. While the session is being read the bar keeps the shape it had last time (no two-then-three tabs at every
-    // start) and a restored Following selection is left alone; once it is known, signing out drops Following's pages and returns to Home.
-    val context = LocalContext.current
-    val hint = remember { SignedInHint(context) }
+    // The bar always lists the four tabs. Signing out drops Following's pages (a later sign-in finds it at its root); the tab itself stays and
+    // shows its own sign-in message.
+    val tabs = PhoneTab.bar
     val signedIn = account != null
-    val tabs = remember(signedIn, sessionLoading) { PhoneTab.bar(signedIn, sessionLoading, hint.signedIn) }
     DisposableEffect(signedIn, sessionLoading) {
-        if (!sessionLoading) {
-            hint.signedIn = signedIn
-            if (!signedIn) navigator.onSignedOut()
-        }
-        onDispose { }
-    }
-    DisposableEffect(tabs, sessionLoading) {
-        if (PhoneTab.mustLeave(navigator.selected, tabs, sessionLoading)) navigator.selectTab(PhoneTab.Home)
+        if (!sessionLoading && !signedIn) navigator.onSignedOut()
         onDispose { }
     }
     Box(Modifier.fillMaxSize()) {
@@ -243,7 +233,7 @@ private fun PhoneScaffold(
                                         entry<HomeKey>(metadata = tab) {
                                             HomeRoute(
                                                 onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
-                                                onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                                onCategory = { category -> navigator.push(CategoryKey(category.id, category.name, category.artUrl)) },
                                                 onSignIn = onSignIn,
                                                 header = headers.getValue(PhoneTab.Home),
                                             )
@@ -267,7 +257,7 @@ private fun PhoneScaffold(
                                             )
                                         }
                                         entry<BrowseKey>(metadata = tab) {
-                                            BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) }, onSignIn = onSignIn, header = headers.getValue(PhoneTab.Browse))
+                                            BrowseRoute(onCategory = { category -> navigator.push(CategoryKey(category.id, category.name, category.artUrl)) }, onSignIn = onSignIn, header = headers.getValue(PhoneTab.Browse))
                                         }
                                         entry<SearchKey>(metadata = fade) {
                                             SearchRoute(
@@ -275,7 +265,7 @@ private fun PhoneScaffold(
                                                 onBack = navigator::pop,
                                                 onWatch = { login -> session.open(PlaybackTarget.Live(login)) },
                                                 onChannel = { login -> navigator.push(ChannelKey(login)) },
-                                                onCategory = { category -> navigator.push(CategoryKey(category.id, category.name)) },
+                                                onCategory = { category -> navigator.push(CategoryKey(category.id, category.name, category.artUrl)) },
                                             )
                                         }
                                         entry<SettingsKey> { SettingsRoute(onBack = navigator::pop, onSignIn = onSignIn, onSignOut = onSignOut) }

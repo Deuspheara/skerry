@@ -167,13 +167,14 @@ class PhoneUiTest {
         rule.onNode(isSelectable() and hasContentDescription(string(R.string.phone_nav_settings))).assertDoesNotExist()
     }
 
-    @Test fun signedOutTheBarOffersHomeAndBrowseOnly() {
+    @Test fun signedOutTheBarKeepsAllFourTabsInPlace() {
         launch(module { single<SessionRepository> { ControllableSession() } })
-        waitForText(string(R.string.state_signin_title))
+        waitForText(string(R.string.phone_signedout_home_title))
 
         rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_home))).assertIsDisplayed()
         rule.onNode(isSelectable() and hasContentDescription(string(R.string.nav_browse))).assertIsDisplayed()
-        rule.onNode(isSelectable() and hasContentDescription(string(R.string.sec_following))).assertDoesNotExist()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.sec_following))).assertIsDisplayed()
+        rule.onNode(isSelectable() and hasContentDescription(string(R.string.phone_nav_discover))).assertIsDisplayed()
     }
 
     @Test fun theTabsAndTheHeaderOpenTheirScreens() {
@@ -309,7 +310,7 @@ class PhoneUiTest {
     @Test fun theSignInDialogShowsTheCodeConfirmsACopyAndCancels() {
         val session = ControllableSession()
         launch(module { single<SessionRepository> { session } })
-        waitForText(string(R.string.state_signin_title))
+        waitForText(string(R.string.phone_signedout_home_title))
 
         rule.onNodeWithText(string(R.string.state_signin)).performClick()
         waitForText("ABCDEFGH")
@@ -324,7 +325,7 @@ class PhoneUiTest {
     @Test fun aSuccessfulSignInSaysSo() {
         val session = ControllableSession()
         launch(module { single<SessionRepository> { session } })
-        waitForText(string(R.string.state_signin_title))
+        waitForText(string(R.string.phone_signedout_home_title))
         rule.onNodeWithText(string(R.string.state_signin)).performClick()
         waitForText("ABCDEFGH")
 
@@ -336,7 +337,7 @@ class PhoneUiTest {
     @Test fun aFailedSignInIsReportedAndStillReportedAfterARotation() {
         val session = ControllableSession()
         launch(module { single<SessionRepository> { session } })
-        waitForText(string(R.string.state_signin_title))
+        waitForText(string(R.string.phone_signedout_home_title))
         rule.onNodeWithText(string(R.string.state_signin)).performClick()
         waitForText("ABCDEFGH")
 

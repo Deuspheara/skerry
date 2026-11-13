@@ -2,7 +2,6 @@
 <resources>
     <string name="phone_nav_settings">Réglages</string>
 
-    <string name="phone_signin_body">Connectez-vous avec Twitch pour voir les chaînes que vous suivez.</string>
     <string name="phone_error_body">Vérifiez votre connexion et réessayez.</string>
     <string name="phone_home_empty">Les streams des chaînes que vous suivez et les recommandations apparaîtront ici quand ils seront en direct.</string>
     <string name="phone_following_empty">Les chaînes que vous suivez apparaîtront ici.</string>
@@ -135,4 +134,27 @@
     <string name="phone_search_updating">Mise à jour des résultats</string>
     <string name="phone_stale_failed">Actualisation impossible</string>
     <string name="phone_stale_ago">Actualisation impossible · mis à jour %1$s</string>
+    <!-- Audit round 2 -->
+    <string name="phone_signedout_home_title">Connectez-vous pour voir ce qui est en direct</string>
+    <string name="phone_signedout_home_body">Vos chaînes suivies et les recommandations se chargent avec votre compte Twitch.</string>
+    <string name="phone_signedout_following_title">Connectez-vous pour voir vos suivis</string>
+    <string name="phone_signedout_following_body">Les chaînes en direct apparaissent d\'abord, les autres en dessous.</string>
+    <string name="phone_signedout_browse_title">Connectez-vous pour parcourir Twitch</string>
+    <string name="phone_signedout_browse_body">Les catégories et les chaînes en direct se chargent avec votre compte Twitch.</string>
+    <string name="phone_signedout_discover_title">Connectez-vous pour découvrir des streams</string>
+    <string name="phone_signedout_discover_body">Faites défiler des directs et des clips populaires de tout Twitch.</string>
+    <string name="phone_error_title">Impossible de charger cette page</string>
+    <string name="phone_clips_empty_body">Les clips populaires apparaîtront ici. Revenez dans un instant.</string>
+    <string name="phone_no_results_for">Aucun résultat pour \u00ab\u202f%1$s\u202f\u00bb</string>
+    <string name="phone_no_results_hint">Vérifiez l\'orthographe ou essayez un autre nom.</string>
+    <string name="phone_feed_swipe_hint">Balayez vers le haut pour le stream suivant</string>
+    <string name="phone_feed_label_sound_on">Son activé</string>
+    <string name="phone_feed_label_sound_off">Son coupé</string>
+    <string name="phone_feed_label_chat">Chat</string>
+    <string name="phone_feed_label_channel">Chaîne</string>
+    <string name="phone_feed_label_watch">Regarder</string>
+    <string name="phone_following_live_now">En direct</string>
+    <string name="phone_category_watching">%1$s spectateurs en ce moment</string>
+    <string name="phone_player_settings">Réglages de lecture</string>
+    <string name="phone_player_settings_off">Désactivé</string>
 </resources>
