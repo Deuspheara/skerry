@@ -91,7 +91,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.ios
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_EMIT_LOC_STRINGS: YES
-        SWIFT_STRICT_CONCURRENCY: minimal
+        SWIFT_STRICT_CONCURRENCY: targeted
     # The offline demo (`-demo` launch argument) plays the bundled test clip. It is copied into Debug builds only, so a release app has neither
     # the clip nor the launch argument (`LaunchMode` is `#if DEBUG`).
     postCompileScripts:
@@ -147,7 +147,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.mac
         SWIFT_EMIT_LOC_STRINGS: YES
-        SWIFT_STRICT_CONCURRENCY: minimal
+        SWIFT_STRICT_CONCURRENCY: targeted
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
     postCompileScripts:
@@ -199,7 +199,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twitchplayer.tv
         SWIFT_EMIT_LOC_STRINGS: YES
-        SWIFT_STRICT_CONCURRENCY: minimal
+        SWIFT_STRICT_CONCURRENCY: targeted
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
     postCompileScripts:
       - name: Copy demo clip (Debug only)
@@ -233,6 +233,8 @@ schemes:
     test:
       config: Debug
       targets: [TwitchIOSTests]
+      # Order independence is checked on every run: tests share one Kotlin graph (DataStore allows one instance per file), so none may rely on another.
+      randomExecutionOrder: true
       # The tests run inside the app: it must start on the offline demo data, not on the network.
       commandLineArguments:
         "-demo": true
@@ -261,6 +263,7 @@ schemes:
     test:
       config: Debug
       targets: [TwitchMacTests]
+      randomExecutionOrder: true
       commandLineArguments:
         "-demo": true
     run:
@@ -274,6 +277,7 @@ schemes:
     test:
       config: Debug
       targets: [TwitchTVTests]
+      randomExecutionOrder: true
       commandLineArguments:
         "-demo": true
     run:

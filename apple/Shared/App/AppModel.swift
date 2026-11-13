@@ -91,12 +91,13 @@ final class AppModel {
 
     init(launch: LaunchMode = .current) {
         self.launch = launch
-        if launch.demo {
-            graph = TwitchApp.shared.startDemo(signedIn: !launch.signedOut)
-        } else {
-            let id = (Bundle.main.object(forInfoDictionaryKey: "TwitchClientId") as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
-            graph = TwitchApp.shared.start(clientId: id)
-        }
+        let id = (Bundle.main.object(forInfoDictionaryKey: "TwitchClientId") as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
+        #if DEBUG
+        // The demo code only exists in debug XCFrameworks (see apple/scripts/build-shared.sh): a release build never references it.
+        graph = launch.demo ? TwitchDemoKt.startDemo(app: TwitchApp.shared, signedIn: !launch.signedOut) : TwitchApp.shared.start(clientId: id)
+        #else
+        graph = TwitchApp.shared.start(clientId: id)
+        #endif
         session = PlayerSession(graph: graph)
         settings = graph.settings(scope: lifetime.scope)
         let flow = settings.state as SkieSwiftStateFlow<SettingsUiState>
@@ -163,6 +164,11 @@ final class AppModel {
     /// Called when the scene becomes active: feeds older than their TTL refresh themselves (the shared policy).
     func appCameToForeground() {
         graph.foreground.appCameToForeground()
+    }
+
+    /// The app left the foreground (it may be killed in the background): the replay position is written now, not at the next 10 s tick.
+    func appWentToBackground() {
+        session.playback.saveProgress()
     }
 
     /// The animation list changes use: nil when the viewer turned animations off in the app or Reduce Motion is on.

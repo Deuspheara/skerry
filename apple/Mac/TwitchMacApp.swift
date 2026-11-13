@@ -25,14 +25,16 @@ struct TwitchMacApp: App {
             if MacSnapshotRunner.isActive {
                 Color.clear
             } else {
-                content
+                // Closing the window ends the player session: the stream stops, the replay position is saved, the chat disconnects (the app keeps
+                // running in the Dock like any Mac app; reopening the window starts from the lists).
+                content.onDisappear { model.session.close() }
             }
         }
         .defaultSize(width: 1220, height: 780)
         .windowResizability(.contentMinSize)
         .commands { MacCommands(app: model, mac: mac) }
         .onChange(of: phase) { _, new in
-            if new == .active { model.appCameToForeground() }
+            if new == .active { model.appCameToForeground() } else if new == .background { model.appWentToBackground() }
         }
 
         // Cmd+, opens this window (the system adds the menu item).

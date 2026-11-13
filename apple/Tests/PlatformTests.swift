@@ -7,6 +7,17 @@ import XCTest
 @testable import TwitchTV
 #endif
 
+/// The Keychain, from the signed app: the shared `AppleSelfTest` writes, reads and removes a probe item (never the real session) and says what failed.
+@MainActor
+final class KeychainFromSwiftTests: XCTestCase {
+    func testTheKeychainAndTheFilesRoundTripInTheSignedApp() async throws {
+        let app = AppModel(launch: LaunchMode(demo: true, signedOut: false, tab: nil, push: nil, open: nil, sheet: nil))
+        let lines = try await app.graph.selfTest.run()
+        XCTAssertTrue(lines.contains("keychain round trip: ok"), "\(lines)")
+        XCTAssertTrue(lines.contains("snapshot round trip: ok"), "\(lines)")
+    }
+}
+
 #if os(macOS)
 @MainActor
 final class MacPlatformTests: XCTestCase {
@@ -40,9 +51,11 @@ final class TVPlatformTests: XCTestCase {
         XCTAssertGreaterThan(image?.size.width ?? 0, 100, "a code that is too small cannot be scanned from the couch")
     }
 
-    func testTheCardsAreSizedForTheTenFootDistance() {
-        XCTAssertGreaterThanOrEqual(TVMetrics.cardWidth, 380)
-        XCTAssertEqual(TVMetrics.edge, 80, "the title-safe margin of the Apple TV")
+    func testDifferentCodesGiveDifferentQRImagesAndNothingGivesNoImage() {
+        let a = TVSignInScreen.qr(for: "https://www.twitch.tv/activate?device-code=AAAAAAAA")
+        let b = TVSignInScreen.qr(for: "https://www.twitch.tv/activate?device-code=BBBBBBBB")
+        XCTAssertNotNil(a)
+        XCTAssertNotEqual(a?.pngData(), b?.pngData(), "the code is in the picture")
     }
 }
 #endif

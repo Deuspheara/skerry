@@ -15,7 +15,7 @@ struct TwitchIOSApp: App {
                 .preferredColorScheme((ThemeChoice(rawValue: theme) ?? .system).scheme)
         }
         .onChange(of: phase) { _, new in
-            if new == .active { model.appCameToForeground() }
+            if new == .active { model.appCameToForeground() } else if new == .background { model.appWentToBackground() }
         }
     }
 }

@@ -47,13 +47,28 @@ final class PlayerController: NSObject {
     private(set) var live = true
     private var title = ""
     private var subtitle = ""
-    private var cancellables = Set<AnyCancellable>()
-    private var timeObserver: Any?
+    /// What the last `open` was asked to load: kept so a retry (and the tests) can tell a live reload from a replay resume.
+    private(set) var lastOpen: (url: String, startAt: Double)?
+    /// Called when the viewer taps the Picture in Picture window's "return to app" button: the app brings the player back.
+    var restoreUI: (() -> Void)?
+
+    /// Player-wide subscriptions (created once) and the current item's (replaced with each item, so they never accumulate).
+    private var playerCancellables = Set<AnyCancellable>()
+    private var itemCancellables = Set<AnyCancellable>()
+    // The tokens below are removed in `tearDown()` and `deinit`; `nonisolated(unsafe)` because `deinit` is not main-actor isolated.
+    nonisolated(unsafe) private var timeObserver: Any?
+    nonisolated(unsafe) private var loopObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var interruptionObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var remoteTargets: [(command: MPRemoteCommand, token: Any)] = []
     private var sleepTask: Task<Void, Never>?
-    private var loopObserver: NSObjectProtocol?
     private var resumeAfterInterruption = false
+    private var sessionActive = false
+    /// For the tests: how many remote-command handlers this controller has registered, and whether it holds the audio session.
+    var remoteTargetCount: Int { remoteTargets.count }
+    var audioSessionActive: Bool { sessionActive }
     #if os(iOS)
     private var pip: AVPictureInPictureController?
+    private var pipLayer: AVPlayerLayer?
     private var pipDelegateBridge: PiPDelegateBridge?
     #endif
 
@@ -61,9 +76,29 @@ final class PlayerController: NSObject {
         super.init()
         player.allowsExternalPlayback = true
         player.automaticallyWaitsToMinimizeStalling = true
-        configureAudioSession()
         observePlayer()
         configureRemoteCommands()
+        observeInterruptions()
+    }
+
+    deinit {
+        // `player` and the tokens are plain references: removing the observers here is safe from any thread.
+        if let timeObserver { player.removeTimeObserver(timeObserver) }
+        if let loopObserver { NotificationCenter.default.removeObserver(loopObserver) }
+        if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
+        for target in remoteTargets { target.command.removeTarget(target.token) }
+    }
+
+    /// Releases every system hook (remote commands, observers, the audio session). The controller is unusable afterwards.
+    func tearDown() {
+        stop()
+        if let timeObserver { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
+        if let loopObserver { NotificationCenter.default.removeObserver(loopObserver); self.loopObserver = nil }
+        if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver); self.interruptionObserver = nil }
+        for target in remoteTargets { target.command.removeTarget(target.token) }
+        remoteTargets.removeAll()
+        playerCancellables.removeAll()
+        itemCancellables.removeAll()
     }
 
     // MARK: Loading
@@ -83,6 +118,7 @@ final class PlayerController: NSObject {
     }
 
     private func open(urlString: String, startAt: Double, autoplay: Bool) {
+        lastOpen = (urlString, startAt)
         guard let url = Self.playableURL(urlString) else { failed = true; return }
         let item = AVPlayerItem(url: url)
         item.preferredForwardBufferDuration = 0
@@ -100,7 +136,7 @@ final class PlayerController: NSObject {
         player.replaceCurrentItem(with: item)
         if startAt > 0 { player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) }
         player.isMuted = muted
-        if autoplay { player.play() } else { player.pause() }
+        if autoplay { play() } else { player.pause() }
     }
 
     /// The demo URL (`demo://stream`) is the bundled test clip; everything else is a real URL.
@@ -115,18 +151,28 @@ final class PlayerController: NSObject {
         sleepTask?.cancel()
         sleepEndsAt = nil
         position = 0; duration = 0; hasPicture = false; videoSize = .zero; failed = false; isPlaying = false
+        itemCancellables.removeAll()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        deactivateSession()
     }
 
     func markFailed() { failed = true }
 
-    func retry() { open(urlString: qualityId == "auto" ? masterUrl : (qualities.first { $0.id == qualityId }?.url ?? masterUrl), startAt: position, autoplay: true); failed = false }
+    /// Loads the current stream again. A live stream restarts at its live edge; a replay resumes where it stopped. The failure flag is cleared
+    /// first, so a reload that fails again is reported again.
+    func retry() {
+        failed = false
+        open(urlString: qualityId == QualityOption.auto.id ? masterUrl : (qualities.first { $0.id == qualityId }?.url ?? masterUrl), startAt: live ? 0 : position, autoplay: true)
+    }
 
     // MARK: Transport
 
-    func togglePlay() { isPlaying ? player.pause() : player.play() }
+    func togglePlay() { isPlaying ? player.pause() : play() }
 
-    func play() { player.play() }
+    func play() {
+        activateSession()
+        player.play()
+    }
 
     func pause() { player.pause() }
 
@@ -137,7 +183,11 @@ final class PlayerController: NSObject {
 
     func skip(by seconds: Double) { seek(to: min(max(0, position + seconds), duration > 0 ? duration : .greatestFiniteMagnitude)) }
 
-    func setRate(_ rate: Float) { if isPlaying { player.rate = rate } else { player.defaultRate = rate } }
+    /// The rate playback uses now (when playing) and every time it resumes.
+    func setRate(_ rate: Float) {
+        player.defaultRate = rate
+        if isPlaying { player.rate = rate }
+    }
 
     // MARK: Quality and audio-only
 
@@ -177,7 +227,7 @@ final class PlayerController: NSObject {
             self.isPlaying = status == .playing
             self.isBuffering = status == .waitingToPlayAtSpecifiedRate
             self.updateNowPlaying()
-        }.store(in: &cancellables)
+        }.store(in: &playerCancellables)
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: 600), queue: .main) { [weak self] time in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -188,13 +238,14 @@ final class PlayerController: NSObject {
     }
 
     private func observe(item: AVPlayerItem) {
+        itemCancellables.removeAll()
         item.publisher(for: \.status).receive(on: DispatchQueue.main).sink { [weak self] status in
             if status == .failed { self?.failed = true }
-        }.store(in: &cancellables)
+        }.store(in: &itemCancellables)
         item.publisher(for: \.presentationSize).receive(on: DispatchQueue.main).sink { [weak self] size in
             self?.videoSize = size
             self?.hasPicture = size.width > 0 && size.height > 0
-        }.store(in: &cancellables)
+        }.store(in: &itemCancellables)
         if let loopObserver { NotificationCenter.default.removeObserver(loopObserver) }
         // The demo clip loops; real streams and replays stop at the end.
         loopObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
@@ -208,33 +259,59 @@ final class PlayerController: NSObject {
 
     // MARK: System integration
 
-    private func configureAudioSession() {
+    /// The audio session is activated when playback starts and released when it stops: launching the app must not silence the viewer's music.
+    private func activateSession() {
         #if os(iOS) || os(tvOS)
+        guard !sessionActive else { return }
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .moviePlayback)
         try? session.setActive(true)
-        NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
+        sessionActive = true
+        #endif
+    }
+
+    private func deactivateSession() {
+        #if os(iOS) || os(tvOS)
+        guard sessionActive else { return }
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        sessionActive = false
+        #endif
+    }
+
+    private func observeInterruptions() {
+        #if os(iOS) || os(tvOS)
+        interruptionObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
             let type = (note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt).flatMap(AVAudioSession.InterruptionType.init)
             let options = (note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt).map(AVAudioSession.InterruptionOptions.init)
-            MainActor.assumeIsolated {
+            Task { @MainActor [weak self] in
                 guard let self else { return }
-                if type == .began { self.resumeAfterInterruption = self.isPlaying } else if type == .ended, options?.contains(.shouldResume) == true, self.resumeAfterInterruption {
-                    self.player.play()
+                if type == .began {
+                    self.resumeAfterInterruption = self.isPlaying
+                } else if type == .ended, options?.contains(.shouldResume) == true, self.resumeAfterInterruption {
+                    self.play()
                 }
             }
         }
         #endif
     }
 
+    /// The system calls remote-command handlers on its own queue: each hops to the main actor (never `assumeIsolated`).
     private func configureRemoteCommands() {
         let center = MPRemoteCommandCenter.shared()
-        center.playCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.player.play() }; return .success }
-        center.pauseCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.player.pause() }; return .success }
-        center.togglePlayPauseCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.togglePlay() }; return .success }
+        func add(_ command: MPRemoteCommand, _ action: @escaping @MainActor (PlayerController) -> Void) {
+            let token = command.addTarget { [weak self] _ in
+                Task { @MainActor [weak self] in if let self { action(self) } }
+                return .success
+            }
+            remoteTargets.append((command, token))
+        }
+        add(center.playCommand) { $0.play() }
+        add(center.pauseCommand) { $0.pause() }
+        add(center.togglePlayPauseCommand) { $0.togglePlay() }
         center.skipForwardCommand.preferredIntervals = [15]
         center.skipBackwardCommand.preferredIntervals = [15]
-        center.skipForwardCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.skip(by: 15) }; return .success }
-        center.skipBackwardCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.skip(by: -15) }; return .success }
+        add(center.skipForwardCommand) { $0.skip(by: 15) }
+        add(center.skipBackwardCommand) { $0.skip(by: -15) }
         center.skipForwardCommand.isEnabled = true
         center.skipBackwardCommand.isEnabled = true
     }
@@ -257,6 +334,8 @@ final class PlayerController: NSObject {
     #if os(iOS)
     func attach(layer: AVPlayerLayer) {
         guard AVPictureInPictureController.isPictureInPictureSupported() else { return }
+        if pipLayer === layer, pip != nil { return }
+        pipLayer = layer
         let controller = AVPictureInPictureController(playerLayer: layer)
         controller?.canStartPictureInPictureAutomaticallyFromInline = true
         let bridge = PiPDelegateBridge(owner: self)
@@ -271,6 +350,8 @@ final class PlayerController: NSObject {
     func stopPictureInPicture() { pip?.stopPictureInPicture() }
 
     fileprivate func pipChanged(_ active: Bool) { pipActive = active }
+
+    fileprivate func pipRestore() { restoreUI?() }
     #endif
 }
 
@@ -289,7 +370,11 @@ private final class PiPDelegateBridge: NSObject, AVPictureInPictureControllerDel
     }
 
     func pictureInPictureController(_ controller: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
-        completionHandler(true)
+        // Tapping the window's "return" button: the player comes back to the full screen before the window closes.
+        Task { @MainActor in
+            owner?.pipRestore()
+            completionHandler(true)
+        }
     }
 }
 #endif

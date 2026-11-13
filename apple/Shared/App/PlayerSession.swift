@@ -48,7 +48,10 @@ final class PlayerSession {
     /// Bumped each time a target is opened, so the player view starts a fresh load even for the same channel.
     private(set) var generation = 0
 
-    init(graph: TwitchGraph) { playback = PlaybackModel(graph: graph) }
+    init(graph: TwitchGraph) {
+        playback = PlaybackModel(graph: graph)
+        playback.controller.restoreUI = { [weak self] in self?.expand() }
+    }
 
     func open(_ next: PlaybackTarget) {
         if target == next { position = .expanded; return }
