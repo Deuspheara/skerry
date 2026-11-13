@@ -41,3 +41,44 @@ Settings "Chat" sub-screen with a live preview; tablet side-by-side player; land
 ## Honest self-assessment (not a review)
 Home 7.5, Following 7.5, Discover 7, Browse 8, Category 7.5, Search 7, Channel 6.5, Player 7.5, Settings 7.5, signed-out/error 8. These are my
 numbers from looking at the captures in `docs/screenshots/audit/android-2/`; an independent review has not been run on this round. 9.5 was not reached.
+
+
+---
+
+# Round 2 (after `android-review-2.md`, 6.9 / 10)
+
+Frames: `docs/screenshots/audit/android-3/` (94, every one looked at; index and gaps in its `INDEX.md`). Code: `6cf5153` plus the working-tree
+changes that other sessions' commits swept in (the phone files of this round are in HEAD; `./gradlew check` passes on it).
+Decisions from the coordinator: no unofficial GQL guest browsing; designed guest and offline states instead.
+
+## Ranked list of review 2: status
+| # | Item | Status (with the frame that shows it) |
+|---|---|---|
+| 1 | Fill the Discover page | Done as far as a card goes: backdrop of the stream's picture, the card + facts + actions centred, chat fills the rest, no black half (12, 14). Not a full-bleed crop |
+| 2 | Re-shoot the unverifiable claims | Done: channel live / offline / scrolled / clips (40, 41, 60-63), replay (90-92), clip (95, 96), landscape in three modes (70, 72-74), drag (80), PiP (98), dialogs (101, 103-105), search morph (20-1..4) |
+| 3 | Fix the drag | Found and fixed from the frames: a black band above the shrinking picture was carried down with it (now closes in the first 10 % of the drag); the bar is revealed proportionally under the sheet by design. Frames 80-1..4 show it |
+| 4 | Home | Deeper scrim, category chip, play mark (dropped at large text), 40 dp avatar; recommendations and categories now captured (02, 03); one section-header style |
+| 5 | Player hierarchy | Title 18 sp medium above, channel line smaller, duplicate viewer count removed from the controls, the link is a labelled "Twitch" button (50) |
+| 6 | Browse | One tile construction in both themes (name over a bottom scrim, 15, 133); no viewer counts (the data has none); no trailing fade |
+| 7 | Following | Purple ring + red corner dot, names never broken across two lines (the column grows with the text), "Last seen live" in the demo data (11). The live-now row and the list still show the same channels |
+| 8 | Category | Labelled "Add to favourites" button replaces the heart, language chips without the pseudo-chip label (16). No related-categories tail |
+| 9 | Guest / offline | Distinct "You're offline" (airplane mode, 155, 156) and "Couldn't load this page" (154); signed-out Discover hides Live/Clips (151). No guest content (decision). Cached content while offline: not shown in any frame (see INDEX) |
+| 10 | Settings | Help lines on Playback stats and Follow raids (100). No Chat sub-screen with a preview |
+| 11 | Wide | Two-pane player: picture 62 % centred on black, page beside it (141, 145; landscape 143). Hero not capped, captions not enlarged |
+| 12 | Strip | Not changed this round (no inset or radius, no progress line); captured at 1.5x, 2x, light, dark (126, 138, 162) |
+| 13 | Sheets | Quality row shows its value ("Auto"); the sleep sheet opens fully (51, 53); no check mark on a chosen timer; the quality sheet itself could not be captured (demo has no renditions) |
+| 14 | RTL | Browse, Category, Following, Settings, player retaken in Arabic with the right taps (111-115). A French notice inside an Arabic chat now keeps its "!" at the end (direction from its own text) |
+| 15 | Large font | Settings, player, search, sheet-free strip, Home and Following at 1.5x and 2x (120-126). Home rows drop the streamer picture above 1.3x |
+
+Other fixes made while looking at the frames: the status bar icons of the (always black) Discover page are light in the light theme; a clip opened
+while another player sat in the strip kept the strip's picture size (a new stream now opens at once, not by growing out of the strip); the
+replay's own length is used in its meta line (the demo clip is 12 s long, the replay 3 h).
+
+## Not done
+Settings Chat sub-screen with a live preview; strip inset/radius/progress; the "stories row repeats the list" duplication; capped hero and larger
+captions on tablets; quality sheet frame; sign-in code dialog frame; cached lists shown offline (frame); viewer counts on category tiles (no data).
+
+## Calibrated self-scores (reviewer 2 was about 0.5 below my numbers; these are lowered by that)
+Home 7.5, Following 7.3, Discover 7.0, Browse 7.7, Category 7.0, Search 7.0, Channel 6.5, Player live 7.4, Replay 7.0, Settings 7.5, Sheets 6.8,
+Strip + drag 6.8, Landscape 6.5, Wide 7.0, RTL 7.5, Large font 7.3, Light parity 7.3, Dialogs 6.8, Signed-out / error / offline 8.0, PiP 7.0.
+Overall about 7.2. 9.5 is not reached anywhere; the demo art (grey cards, a test pattern as video) caps how good any frame can look.
