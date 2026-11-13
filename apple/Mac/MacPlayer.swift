@@ -238,6 +238,17 @@ struct MacMiniPlayer: View {
             }
         }
         .frame(width: 340, height: 192)
+        .overlay(alignment: .bottom) {
+            // Always-visible chrome: what is playing, so the picture is never an unlabelled black rectangle.
+            VStack(alignment: .leading, spacing: 1) {
+                Text(session.target?.title ?? "").font(.callout.weight(.semibold)).lineLimit(1)
+                Text(session.target?.channelName ?? "").font(.caption).opacity(0.8).lineLimit(1)
+            }
+            .foregroundStyle(.white).shadow(color: .black.opacity(0.8), radius: 2)
+            .padding(.horizontal, 10).padding(.top, 20).padding(.bottom, 8).frame(maxWidth: .infinity, alignment: .leading)
+            .background(LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom))
+            .opacity(hovering ? 0 : 1).allowsHitTesting(false)
+        }
         .background(Color.black)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.hairline, lineWidth: 1))

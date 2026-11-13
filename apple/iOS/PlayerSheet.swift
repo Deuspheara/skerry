@@ -69,7 +69,7 @@ struct PlayerSheet: View {
             }
             .gesture(dragGesture(travel: base.collapsedY), including: fullscreen ? .subviews : .all)
             strip(playback, session, travel: base.collapsedY)
-                .padding(.leading, SheetGeometry.miniVideoWidth).frame(height: miniHeight)
+                .modifier(StripInset(progress: progress, base: base)).frame(height: miniHeight)
                 .sheetFade(progress, .in)
         }
         .modifier(SheetFrame(progress: progress, base: base))

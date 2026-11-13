@@ -34,7 +34,7 @@ struct TabBar: View {
             }
             .padding(6)
             // Tinted with the page colour: untinted glass over bright thumbnails refracts them into coloured blobs in the light appearance.
-            .glassCapsule(tint: Theme.background.opacity(0.55))
+            .glassCapsule(tint: Theme.background.opacity(0.85))
         }
         .padding(.bottom, 4)
         // Docked to the bottom safe area whatever the keyboard does: a focused field (or a hardware-keyboard accessory) must never lift the bar.

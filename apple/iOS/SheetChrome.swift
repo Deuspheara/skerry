@@ -41,7 +41,7 @@ struct SheetFrame: ViewModifier {
         let g = base.at(progress.value)
         // Rounded corners clip the whole sheet (video and chat included) through a mask, and a blurred shadow of a big shape is a big blur: both are repainted every frame
         // while the sheet is large, which halved the frame rate on the way down. They appear only when the sheet is nearly the strip.
-        let corner = 14 * min(1, max(0, (g.q - 0.7) / 0.3))
+        let corner = 14 * min(1, max(0, (g.q - 0.7) / 0.3)).clampedMax(g.q) + 12 * min(1, max(0, (g.q - 0.2) / 0.2)) * (1 - min(1, max(0, (g.q - 0.7) / 0.3)))
         content
             .frame(width: g.container.width - 16 * g.q, height: g.sheetHeight, alignment: .topLeading)
             .background { ZStack { Theme.background; Theme.surface.opacity(g.q) } }
@@ -89,9 +89,9 @@ struct SheetFade: ViewModifier {
         let q = min(1, max(0, progress.value))
         let opacity: Double = switch direction {
         case .out: Double(max(0, 1 - q * 3))
-        case .in: Double(min(1, max(0, (q - 0.55) / 0.35)))
+        case .in: Double(min(1, max(0, (q - 0.18) / 0.3)))
         }
-        content.opacity(opacity).allowsHitTesting(direction == .out ? q < 0.2 : q > 0.8)
+        content.opacity(opacity).allowsHitTesting(direction == .out ? q < 0.2 : q > 0.7)
     }
 }
 
@@ -113,4 +113,18 @@ extension View {
     func sheetCover(_ progress: SheetProgress, color: Color) -> some View { modifier(SheetCover(progress: progress, color: color)) }
 
     func sheetFade(_ progress: SheetProgress, _ direction: SheetFade.Direction) -> some View { modifier(SheetFade(progress: progress, direction: direction)) }
+}
+
+/// The strip's title row starts where the shrinking picture ends, so while the card shrinks the title is always beside the picture, never over it.
+struct StripInset: ViewModifier {
+    let progress: SheetProgress
+    let base: SheetGeometry
+
+    func body(content: Content) -> some View {
+        content.padding(.leading, base.at(progress.value).videoWidth)
+    }
+}
+
+private extension CGFloat {
+    func clampedMax(_ other: CGFloat) -> CGFloat { Swift.min(self, 1) }
 }

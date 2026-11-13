@@ -48,9 +48,9 @@ struct StreamCard: View {
                 HStack(alignment: .top, spacing: 10) {
                     Avatar(url: stream.avatarUrl, name: stream.name, size: 36)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(stream.title).font(.subheadline.weight(.semibold)).lineLimit(1).truncationMode(.tail)
-                        Text(stream.name).font(.footnote).foregroundStyle(Theme.textSecondary).lineLimit(1)
-                        Text(stream.categoryName).font(.footnote).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                        Text(stream.title).font(.body.weight(.semibold)).lineLimit(1).truncationMode(.tail)
+                        Text(stream.name).font(.subheadline).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                        Text(stream.categoryName).font(.subheadline).foregroundStyle(Theme.textSecondary).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                 }
@@ -89,7 +89,7 @@ struct CategoryTile: View {
                     .aspectRatio(3 / 4, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(hovering ? Theme.accent : Theme.hairline, lineWidth: hovering ? 2 : 0.5))
-                Text(category.name).font(.subheadline.weight(.semibold)).lineLimit(1).truncationMode(.tail)
+                Text(category.name).font(.body.weight(.semibold)).lineLimit(1).truncationMode(.tail)
             }
         }
         .buttonStyle(MacCardStyle(hovering: hovering))
