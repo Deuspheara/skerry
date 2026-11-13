@@ -74,6 +74,11 @@ struct ChatComposer: View {
             #endif
         }
         .padding(.vertical, 6)
+        .onAppear {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-focus-chat") { focused = true }
+            #endif
+        }
         .onChange(of: focused) { _, now in if now, inlinePicker { pickerOpen = false } }
         .animation(app.motion, value: pickerOpen)
     }

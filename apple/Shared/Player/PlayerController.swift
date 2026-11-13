@@ -3,6 +3,7 @@ import Combine
 import Foundation
 import MediaPlayer
 import Observation
+import OSLog
 import TwitchShared
 #if os(iOS)
 import AVKit
@@ -26,6 +27,7 @@ struct QualityOption: Identifiable, Hashable {
 @Observable
 final class PlayerController: NSObject {
     let player = AVPlayer()
+    nonisolated static let log = Logger(subsystem: "com.twitchplayer.player", category: "playback")
 
     private(set) var isPlaying = false
     private(set) var isBuffering = false
@@ -119,6 +121,7 @@ final class PlayerController: NSObject {
 
     private func open(urlString: String, startAt: Double, autoplay: Bool) {
         lastOpen = (urlString, startAt)
+        Self.log.info("open \(urlString.prefix(120), privacy: .public) startAt=\(startAt)")
         guard let url = Self.playableURL(urlString) else { failed = true; return }
         let item = AVPlayerItem(url: url)
         item.preferredForwardBufferDuration = 0
@@ -240,7 +243,16 @@ final class PlayerController: NSObject {
     private func observe(item: AVPlayerItem) {
         itemCancellables.removeAll()
         item.publisher(for: \.status).receive(on: DispatchQueue.main).sink { [weak self] status in
-            if status == .failed { self?.failed = true }
+            guard let self else { return }
+            if status == .failed {
+                Self.log.error("item failed: \(item.error?.localizedDescription ?? "unknown", privacy: .public) (\((item.error as NSError?)?.code ?? 0)) \(String(describing: (item.error as NSError?)?.userInfo), privacy: .public)")
+                self.failed = true
+            }
+        }.store(in: &itemCancellables)
+        NotificationCenter.default.publisher(for: .AVPlayerItemNewErrorLogEntry, object: item).sink { _ in
+            if let event = item.errorLog()?.events.last {
+                Self.log.error("hls error \(event.errorStatusCode): \(event.errorComment ?? "", privacy: .public) \(event.uri ?? "", privacy: .public)")
+            }
         }.store(in: &itemCancellables)
         item.publisher(for: \.presentationSize).receive(on: DispatchQueue.main).sink { [weak self] size in
             self?.videoSize = size

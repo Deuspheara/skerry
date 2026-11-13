@@ -22,6 +22,14 @@ struct VideoStage: View {
         let chatMode = playback.ui?.chatMode ?? .compact
         ZStack {
             VideoSurface(controller: controller)
+            // Until the first picture arrives (the address is still being resolved, the stream is loading, it failed) the stream's thumbnail stands in for
+            // the black picture; in the docked strip a spinner or a warning says which.
+            if !controller.hasPicture, !controller.audioOnly {
+                if let thumbnail = app.session.target?.thumbnailUrl, !thumbnail.isEmpty { RemoteImage(url: URL(string: thumbnail)).opacity(0.55) }
+                if p >= 0.05 {
+                    if controller.failed || playback.offline { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.white.opacity(0.9)) } else { ProgressView().tint(.white) }
+                }
+            }
             if p < 0.05 {
                 if fullscreen, chatMode == .overlay, playback.isLive {
                     HStack { Spacer(minLength: 0); chatOverlay.frame(width: size.width * 0.34).padding(.trailing, insets.trailing).padding(.vertical, 24) }
