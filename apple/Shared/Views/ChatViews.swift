@@ -40,19 +40,39 @@ struct FlowLayout: Layout {
     }
 }
 
+extension ChatLine {
+    /// The line as VoiceOver reads it: the author, then the words (emotes by name).
+    var spokenText: String {
+        let words = pieces.map { piece -> String in
+            switch onEnum(of: piece) {
+            case .text(let text): text.text
+            case .strong(let strong): strong.text
+            case .emote(let emote): emote.name
+            }
+        }.joined()
+        return "\(nick). \(words)"
+    }
+}
+
 /// One chat line: badges, coloured nick, then the words and emotes of the message; a quoted line above a reply, a card for notices.
 struct ChatLineView: View {
     let line: ChatLine
     let settings: ChatSettings?
     var animate: Bool
+    /// Over the picture (the Apple TV overlay, the fullscreen chat): every line gets its own dark backing and a shadow so it stays readable on any frame.
+    var overVideo = false
     var onReply: ((ChatLine) -> Void)?
 
+    /// The in-app text size, scaled with the system's Dynamic Type setting like any other text.
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
     private var textSize: CGFloat {
-        switch settings?.textSize {
+        let base: CGFloat = switch settings?.textSize {
         case .small: 13
         case .large: 17
         default: 15
         }
+        return base * scale
     }
 
     private var gap: CGFloat {
@@ -73,7 +93,7 @@ struct ChatLineView: View {
             if line.canReply, let onReply { Button { onReply(line) } label: { Label("phone_chat_reply", systemImage: "arrowshape.turn.up.left") } }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
+        .accessibilityLabel(Text(line.spokenText))
         .accessibilityAction(named: Text("phone_chat_reply")) { if line.canReply { onReply?(line) } }
     }
 
@@ -81,7 +101,7 @@ struct ChatLineView: View {
         VStack(alignment: .leading, spacing: 2) {
             if let reply = line.reply {
                 Label { Text("\(reply.name): \(reply.body)").lineLimit(1) } icon: { Image(systemName: "arrowshape.turn.up.left.fill") }
-                    .font(.system(size: textSize - 3)).foregroundStyle(.white.opacity(0.65))
+                    .font(.system(size: textSize - 3 * scale)).foregroundStyle(.white.opacity(0.65))
             }
             FlowLayout(spacing: 3, lineSpacing: 1) {
                 if settings?.showTimestamps == true { Text(line.time).font(.system(size: textSize - 3)).foregroundStyle(.white.opacity(0.5)) }
@@ -92,8 +112,9 @@ struct ChatLineView: View {
                 ForEach(Array(line.pieces.enumerated()), id: \.offset) { _, piece in pieceView(piece) }
             }
         }
-        .padding(.horizontal, 6).padding(.vertical, line.kind == .normal ? 0 : 3)
+        .padding(.horizontal, 6).padding(.vertical, line.kind == .normal && !overVideo ? 0 : 3)
         .background(background, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .shadow(color: .black.opacity(overVideo ? 0.9 : 0), radius: overVideo ? 1.5 : 0)
     }
 
     @ViewBuilder private func pieceView(_ piece: ChatPiece) -> some View {
@@ -118,9 +139,9 @@ struct ChatLineView: View {
 
     private var background: Color {
         switch line.kind {
-        case .mention: Theme.accent.opacity(0.28)
-        case .highlight: Color.yellow.opacity(0.18)
-        default: .clear
+        case .mention: overVideo ? Theme.accent.opacity(0.55) : Theme.accent.opacity(0.28)
+        case .highlight: overVideo ? Color.yellow.opacity(0.35) : Color.yellow.opacity(0.18)
+        default: overVideo ? Color.black.opacity(0.5) : .clear
         }
     }
 
@@ -156,17 +177,6 @@ struct ChatLineView: View {
         default: line.notice == nil ? .gray : Theme.accent
         }
     }
-
-    private var accessibilityText: Text {
-        let words = line.pieces.map { piece -> String in
-            switch onEnum(of: piece) {
-            case .text(let text): text.text
-            case .strong(let strong): strong.text
-            case .emote(let emote): emote.name
-            }
-        }.joined()
-        return Text("\(line.nick). \(words)")
-    }
 }
 
 extension Color {
@@ -180,6 +190,7 @@ extension Color {
 struct ChatList: View {
     let lines: [ChatLine]
     let settings: ChatSettings?
+    var overVideo = false
     var onReply: ((ChatLine) -> Void)?
 
     @State private var atBottom = true
@@ -191,7 +202,7 @@ struct ChatList: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(lines, id: \.id) { line in
-                            ChatLineView(line: line, settings: settings, animate: lines.suffix(8).contains { $0.id == line.id }, onReply: onReply).id(line.id)
+                            ChatLineView(line: line, settings: settings, animate: lines.suffix(8).contains { $0.id == line.id }, overVideo: overVideo, onReply: onReply).id(line.id)
                         }
                     }
                     .padding(.horizontal, 6)
@@ -209,7 +220,7 @@ struct ChatList: View {
                         unread = 0
                         if let last = lines.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                     } label: {
-                        Label(unread > 0 ? "chat_new_messages" : "chat_back_to_live", systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
+                        Label(unread > 0 ? plural("chat_new_messages", unread) : String(localized: "chat_back_to_live"), systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                     }
                     .glassCapsule(interactive: true).buttonStyle(.plain).padding(.bottom, 8)
                 }

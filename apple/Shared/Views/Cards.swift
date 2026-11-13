@@ -52,7 +52,7 @@ struct Thumbnail: View {
 
 struct LiveBadge: View {
     var body: some View {
-        Text("live").font(.system(size: 10, weight: .heavy)).textCase(.uppercase)
+        Text("live").font(.caption2.weight(.heavy)).textCase(.uppercase)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Theme.live, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             .foregroundStyle(.white)

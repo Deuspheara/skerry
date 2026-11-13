@@ -30,7 +30,7 @@ struct TVRow<Content: View>: View {
 
 struct TVLiveBadge: View {
     var body: some View {
-        Text("live").font(.system(size: 20, weight: .heavy)).textCase(.uppercase)
+        Text("live").font(.callout.weight(.heavy)).textCase(.uppercase)
             .padding(.horizontal, 10).padding(.vertical, 3)
             .background(Theme.live, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .foregroundStyle(.white)

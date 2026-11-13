@@ -2,6 +2,29 @@
   "sourceLanguage": "en",
   "version": "1.0",
   "strings": {
+    "apple_licenses_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built with Kotlin Multiplatform, Ktor, DataStore, Koin, kotlinx libraries and SKIE, released under the Apache License 2.0, and SwiftUI."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construit avec Kotlin Multiplatform, Ktor, DataStore, Koin, les bibliothèques kotlinx et SKIE, publiés sous licence Apache 2.0, et SwiftUI."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مبني باستخدام Kotlin Multiplatform وKtor وDataStore وKoin ومكتبات kotlinx وSKIE، المرخّصة بموجب Apache License 2.0، وSwiftUI."
+          }
+        }
+      }
+    },
     "banner_offline": {
       "extractionState": "manual",
       "localizations": {
@@ -4210,13 +4233,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d new message"
+                  "value": "%lld new message"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d new messages"
+                  "value": "%lld new messages"
                 }
               }
             }
@@ -4246,19 +4269,19 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d رسائل جديدة"
+                  "value": "%lld رسائل جديدة"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d رسالة جديدة"
+                  "value": "%lld رسالة جديدة"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d رسالة جديدة"
+                  "value": "%lld رسالة جديدة"
                 }
               }
             }
@@ -4270,13 +4293,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d bagong mensahe"
+                  "value": "%lld bagong mensahe"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d bagong mensahe"
+                  "value": "%lld bagong mensahe"
                 }
               }
             }
@@ -4288,13 +4311,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d ново съобщение"
+                  "value": "%lld ново съобщение"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d нови съобщения"
+                  "value": "%lld нови съобщения"
                 }
               }
             }
@@ -4306,19 +4329,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d missatge nou"
+                  "value": "%lld missatge nou"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d de missatges nous"
+                  "value": "%lld de missatges nous"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d missatges nous"
+                  "value": "%lld missatges nous"
                 }
               }
             }
@@ -4330,25 +4353,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nová zpráva"
+                  "value": "%lld nová zpráva"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nové zprávy"
+                  "value": "%lld nové zprávy"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nové zprávy"
+                  "value": "%lld nové zprávy"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nových zpráv"
+                  "value": "%lld nových zpráv"
                 }
               }
             }
@@ -4360,13 +4383,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d ny besked"
+                  "value": "%lld ny besked"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nye beskeder"
+                  "value": "%lld nye beskeder"
                 }
               }
             }
@@ -4378,13 +4401,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d neue Nachricht"
+                  "value": "%lld neue Nachricht"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d neue Nachrichten"
+                  "value": "%lld neue Nachrichten"
                 }
               }
             }
@@ -4396,13 +4419,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d νέο μήνυμα"
+                  "value": "%lld νέο μήνυμα"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d νέα μηνύματα"
+                  "value": "%lld νέα μηνύματα"
                 }
               }
             }
@@ -4414,19 +4437,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d mensaje nuevo"
+                  "value": "%lld mensaje nuevo"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d mensajes nuevos"
+                  "value": "%lld mensajes nuevos"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d mensajes nuevos"
+                  "value": "%lld mensajes nuevos"
                 }
               }
             }
@@ -4438,13 +4461,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d uusi viesti"
+                  "value": "%lld uusi viesti"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d uutta viestiä"
+                  "value": "%lld uutta viestiä"
                 }
               }
             }
@@ -4456,19 +4479,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nouveau message"
+                  "value": "%lld nouveau message"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d de nouveaux messages"
+                  "value": "%lld de nouveaux messages"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nouveaux messages"
+                  "value": "%lld nouveaux messages"
                 }
               }
             }
@@ -4480,13 +4503,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d नया मैसेज"
+                  "value": "%lld नया मैसेज"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d नए मैसेज"
+                  "value": "%lld नए मैसेज"
                 }
               }
             }
@@ -4498,19 +4521,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nova poruka"
+                  "value": "%lld nova poruka"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nove poruke"
+                  "value": "%lld nove poruke"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d novih poruka"
+                  "value": "%lld novih poruka"
                 }
               }
             }
@@ -4522,13 +4545,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d új üzenet"
+                  "value": "%lld új üzenet"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d új üzenet"
+                  "value": "%lld új üzenet"
                 }
               }
             }
@@ -4540,7 +4563,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d pesan baru"
+                  "value": "%lld pesan baru"
                 }
               }
             }
@@ -4552,19 +4575,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nuovo messaggio"
+                  "value": "%lld nuovo messaggio"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nuovi messaggi"
+                  "value": "%lld nuovi messaggi"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nuovi messaggi"
+                  "value": "%lld nuovi messaggi"
                 }
               }
             }
@@ -4582,13 +4605,13 @@
               "two": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d הודעות חדשות"
+                  "value": "%lld הודעות חדשות"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d הודעות חדשות"
+                  "value": "%lld הודעות חדשות"
                 }
               }
             }
@@ -4600,7 +4623,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "新着メッセージ %d 件"
+                  "value": "新着メッセージ %lld 件"
                 }
               }
             }
@@ -4612,7 +4635,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "새 메시지 %d개"
+                  "value": "새 메시지 %lld개"
                 }
               }
             }
@@ -4624,7 +4647,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d pesan baru"
+                  "value": "%lld pesan baru"
                 }
               }
             }
@@ -4636,13 +4659,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d ny melding"
+                  "value": "%lld ny melding"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nye meldinger"
+                  "value": "%lld nye meldinger"
                 }
               }
             }
@@ -4654,13 +4677,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nieuw bericht"
+                  "value": "%lld nieuw bericht"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nieuwe berichten"
+                  "value": "%lld nieuwe berichten"
                 }
               }
             }
@@ -4672,25 +4695,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nowa wiadomość"
+                  "value": "%lld nowa wiadomość"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nowe wiadomości"
+                  "value": "%lld nowe wiadomości"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nowych wiadomości"
+                  "value": "%lld nowych wiadomości"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nowej wiadomości"
+                  "value": "%lld nowej wiadomości"
                 }
               }
             }
@@ -4702,19 +4725,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nova mensagem"
+                  "value": "%lld nova mensagem"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d novas mensagens"
+                  "value": "%lld novas mensagens"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d novas mensagens"
+                  "value": "%lld novas mensagens"
                 }
               }
             }
@@ -4726,19 +4749,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nova mensagem"
+                  "value": "%lld nova mensagem"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d novas mensagens"
+                  "value": "%lld novas mensagens"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d novas mensagens"
+                  "value": "%lld novas mensagens"
                 }
               }
             }
@@ -4750,19 +4773,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d mesaj nou"
+                  "value": "%lld mesaj nou"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d mesaje noi"
+                  "value": "%lld mesaje noi"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d de mesaje noi"
+                  "value": "%lld de mesaje noi"
                 }
               }
             }
@@ -4774,25 +4797,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d новое сообщение"
+                  "value": "%lld новое сообщение"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d новых сообщения"
+                  "value": "%lld новых сообщения"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d новых сообщений"
+                  "value": "%lld новых сообщений"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d нового сообщения"
+                  "value": "%lld нового сообщения"
                 }
               }
             }
@@ -4804,25 +4827,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nová správa"
+                  "value": "%lld nová správa"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nové správy"
+                  "value": "%lld nové správy"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d novej správy"
+                  "value": "%lld novej správy"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nových správ"
+                  "value": "%lld nových správ"
                 }
               }
             }
@@ -4834,13 +4857,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nytt meddelande"
+                  "value": "%lld nytt meddelande"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d nya meddelanden"
+                  "value": "%lld nya meddelanden"
                 }
               }
             }
@@ -4852,7 +4875,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "ข้อความใหม่ %d ข้อความ"
+                  "value": "ข้อความใหม่ %lld ข้อความ"
                 }
               }
             }
@@ -4864,13 +4887,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d yeni mesaj"
+                  "value": "%lld yeni mesaj"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d yeni mesaj"
+                  "value": "%lld yeni mesaj"
                 }
               }
             }
@@ -4882,25 +4905,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d нове повідомлення"
+                  "value": "%lld нове повідомлення"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d нові повідомлення"
+                  "value": "%lld нові повідомлення"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d нових повідомлень"
+                  "value": "%lld нових повідомлень"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d нового повідомлення"
+                  "value": "%lld нового повідомлення"
                 }
               }
             }
@@ -4912,7 +4935,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d tin nhắn mới"
+                  "value": "%lld tin nhắn mới"
                 }
               }
             }
@@ -4924,7 +4947,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d 条新消息"
+                  "value": "%lld 条新消息"
                 }
               }
             }
@@ -4936,7 +4959,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%d 則新訊息"
+                  "value": "%lld 則新訊息"
                 }
               }
             }
@@ -18478,13 +18501,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d minute"
+                  "value": "%lld minute"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d minutes"
+                  "value": "%lld minutes"
                 }
               }
             }
@@ -18496,7 +18519,7 @@
               "zero": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d دقيقة"
+                  "value": "%lld دقيقة"
                 }
               },
               "one": {
@@ -18514,19 +18537,19 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d دقائق"
+                  "value": "%lld دقائق"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d دقيقة"
+                  "value": "%lld دقيقة"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d دقيقة"
+                  "value": "%lld دقيقة"
                 }
               }
             }
@@ -18538,19 +18561,19 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d minute"
+                  "value": "%lld minute"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d minutes"
+                  "value": "%lld minutes"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$d minutes"
+                  "value": "%lld minutes"
                 }
               }
             }

@@ -64,7 +64,7 @@ struct SignInSheet: View {
                 if openFailed { Text("phone_signin_open_failed").font(.footnote).foregroundStyle(.red) }
                 Text("phone_signin_step_code").font(.body).fixedSize(horizontal: false, vertical: true)
                 Text(code.userCode)
-                    .font(.system(size: 38, weight: .bold, design: .monospaced)).kerning(4)
+                    .font(.system(.largeTitle, design: .monospaced).weight(.bold)).kerning(4).minimumScaleFactor(0.5).lineLimit(1)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .glass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .textSelection(.enabled)

@@ -45,7 +45,7 @@ struct TVSignInScreen: View {
                     VStack(alignment: .leading, spacing: 24) {
                         Text("tv_signin_scan").font(.title3).fixedSize(horizontal: false, vertical: true)
                         Text("tv_signin_code").font(.callout).foregroundStyle(.secondary)
-                        Text(code.userCode).font(.system(size: 84, weight: .bold, design: .monospaced)).kerning(8)
+                        Text(code.userCode).font(.system(.largeTitle, design: .monospaced).weight(.bold)).kerning(8).minimumScaleFactor(0.5).lineLimit(1)
                             .accessibilityLabel(Text(code.userCode.map(String.init).joined(separator: " ")))
                         Text(code.verificationUri.replacingOccurrences(of: "https://", with: "")).font(.title3.weight(.semibold)).foregroundStyle(Theme.accent)
                         if let expiresAt = model.expiresAt { Countdown(until: expiresAt) }

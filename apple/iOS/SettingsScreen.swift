@@ -202,7 +202,7 @@ struct LicensesScreen: View {
         VStack(spacing: 0) {
             DetailBar(title: String(localized: "phone_licenses"))
             ScrollView {
-                Text("Built with Kotlin Multiplatform, Ktor, DataStore, Koin, kotlinx libraries and SKIE, released under the Apache License 2.0, and SwiftUI.")
+                Text("apple_licenses_body")
                     .font(.body).padding(16)
             }
         }

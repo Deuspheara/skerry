@@ -71,7 +71,7 @@ private struct EmoteArtView: View {
         let spec = Self.spec(name)
         ZStack {
             Circle().fill(spec.color.gradient)
-            Image(systemName: spec.symbol).font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            Image(systemName: spec.symbol).font(.caption.weight(.bold)).foregroundStyle(.white)
         }
         .aspectRatio(1, contentMode: .fit)
     }

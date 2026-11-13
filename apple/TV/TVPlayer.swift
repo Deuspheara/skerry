@@ -23,12 +23,19 @@ struct TVPlayerScreen: View {
             if controller.audioOnly { audioOnly(playback, session) }
             if controller.failed { message("state_error", retry: { playback.retry() }) } else if playback.offline { message("phone_channel_offline", retry: nil) }
             if chatVisible, playback.isLive, (playback.ui?.chatMode ?? .compact) != .hidden {
-                ChatList(lines: playback.chat, settings: playback.chatSettings, onReply: nil)
-                    .frame(width: 560)
-                    .padding(.vertical, 60).padding(.trailing, 40)
-                    .background(LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
+                // Over the picture, on any frame: a dark scrim behind the column, a dark backing and a shadow behind every line, and the nick colours
+                // the shared mapper already made readable on a dark background (the Kotlin `NickContrast` logic).
+                ChatList(lines: playback.chat, settings: playback.chatSettings, overVideo: true, onReply: nil)
+                    .frame(width: 600)
+                    .padding(.vertical, 60).padding(.horizontal, 40)
+                    .background(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black.opacity(0.55), location: 0.25), .init(color: .black.opacity(0.85), location: 1)], startPoint: .leading, endPoint: .trailing))
                     .allowsHitTesting(false)
-                    .accessibilityElement(children: .contain).accessibilityLabel(Text("tile_chat"))
+                    // VoiceOver reads the chat as one live-updating element whose value is the latest messages (the visual list cannot be focused on tvOS).
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text("tile_chat"))
+                    .accessibilityValue(Text(playback.chat.suffix(5).map(\.spokenText).joined(separator: ". ")))
+                    .accessibilityAddTraits(.updatesFrequently)
+                    .accessibilityRespondsToUserInteraction(true)
                     .environment(\.colorScheme, .dark)
             }
         }
@@ -85,7 +92,7 @@ private struct TVPlayerView: UIViewControllerRepresentable {
             items.append(UIMenu(title: String(localized: "player_quality"), image: UIImage(systemName: "slider.horizontal.3"), children: children))
         }
         items.append(UIAction(title: String(localized: "quality_audio_only"), image: UIImage(systemName: "headphones"), state: audioOnly ? .on : .off) { _ in setAudioOnly(!audioOnly) })
-        let sleep = [15, 30, 45, 60, 90].map { minutes in UIAction(title: "\(minutes) min") { _ in controller.setSleepTimer(minutes: minutes) } }
+        let sleep = [15, 30, 45, 60, 90].map { minutes in UIAction(title: plural("phone_player_sleep_timer_minutes", minutes)) { _ in controller.setSleepTimer(minutes: minutes) } }
             + (controller.sleepEndsAt != nil ? [UIAction(title: String(localized: "phone_player_sleep_timer_cancel"), attributes: .destructive) { _ in controller.setSleepTimer(minutes: nil) }] : [])
         items.append(UIMenu(title: String(localized: "phone_player_sleep_timer"), image: UIImage(systemName: "moon.zzz"), children: sleep))
         vc.transportBarCustomMenuItems = items

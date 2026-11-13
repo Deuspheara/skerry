@@ -41,7 +41,7 @@ struct VideoStage: View {
     }
 
     private var chatOverlay: some View {
-        ChatList(lines: playback.chat, settings: playback.chatSettings) { replyTo = $0 }
+        ChatList(lines: playback.chat, settings: playback.chatSettings, overVideo: true) { replyTo = $0 }
             .mask(LinearGradient(colors: [.clear, .black, .black], startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.18)))
             .allowsHitTesting(false)
     }
@@ -93,7 +93,7 @@ struct VideoStage: View {
                 qualityMenu(controller)
                 Button { playback.setAudioOnly(!controller.audioOnly) } label: { Label("quality_audio_only", systemImage: controller.audioOnly ? "checkmark" : "headphones") }
                 Menu("phone_player_sleep_timer") {
-                    ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in Button("\(minutes) min") { controller.setSleepTimer(minutes: minutes) } }
+                    ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in Button(plural("phone_player_sleep_timer_minutes", minutes)) { controller.setSleepTimer(minutes: minutes) } }
                     if controller.sleepEndsAt != nil { Button("phone_player_sleep_timer_cancel", role: .destructive) { controller.setSleepTimer(minutes: nil) } }
                 }
                 if playback.isLive {
@@ -131,7 +131,7 @@ struct VideoStage: View {
         HStack(spacing: 36) {
             if !controller.live { roundButton("gobackward.15", label: "phone_player_back10", big: true) { controller.skip(by: -15) } }
             Button { controller.togglePlay() } label: {
-                Image(systemName: controller.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 30)).frame(width: 68, height: 68).glass(in: Circle(), interactive: true)
+                Image(systemName: controller.isPlaying ? "pause.fill" : "play.fill").font(.title).frame(width: 68, height: 68).glass(in: Circle(), interactive: true)
             }
             .buttonStyle(.plain).accessibilityLabel(Text(controller.isPlaying ? "player_pause" : "player_play"))
             if !controller.live { roundButton("goforward.15", label: "phone_player_forward", big: true) { controller.skip(by: 15) } }

@@ -1,0 +1,7 @@
+{
+  "apple_licenses_body": {
+    "en": "Built with Kotlin Multiplatform, Ktor, DataStore, Koin, kotlinx libraries and SKIE, released under the Apache License 2.0, and SwiftUI.",
+    "fr": "Construit avec Kotlin Multiplatform, Ktor, DataStore, Koin, les bibliothèques kotlinx et SKIE, publiés sous licence Apache 2.0, et SwiftUI.",
+    "ar": "مبني باستخدام Kotlin Multiplatform وKtor وDataStore وKoin ومكتبات kotlinx وSKIE، المرخّصة بموجب Apache License 2.0، وSwiftUI."
+  }
+}

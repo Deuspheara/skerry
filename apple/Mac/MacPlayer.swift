@@ -163,7 +163,7 @@ struct PlayerOptionsMenu: View {
             }
             Button { playback.setAudioOnly(!controller.audioOnly) } label: { Label("quality_audio_only", systemImage: controller.audioOnly ? "checkmark" : "headphones") }
             Menu("phone_player_sleep_timer") {
-                ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in Button("\(minutes) min") { controller.setSleepTimer(minutes: minutes) } }
+                ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in Button(plural("phone_player_sleep_timer_minutes", minutes)) { controller.setSleepTimer(minutes: minutes) } }
                 if controller.sleepEndsAt != nil { Button("phone_player_sleep_timer_cancel", role: .destructive) { controller.setSleepTimer(minutes: nil) } }
             }
             if !controller.live {

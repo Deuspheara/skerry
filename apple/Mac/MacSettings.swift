@@ -139,7 +139,7 @@ private struct AboutTab: View {
         Form {
             LabeledContent("phone_settings_about") { Text(version).foregroundStyle(Theme.textSecondary) }
             Text("phone_about_disclaimer").font(.footnote).foregroundStyle(Theme.textSecondary)
-            Text("Built with Kotlin Multiplatform, Ktor, DataStore, Koin, kotlinx libraries and SKIE, released under the Apache License 2.0, and SwiftUI.")
+            Text("apple_licenses_body")
                 .font(.footnote).foregroundStyle(Theme.textSecondary)
         }
         .formStyle(.grouped)
