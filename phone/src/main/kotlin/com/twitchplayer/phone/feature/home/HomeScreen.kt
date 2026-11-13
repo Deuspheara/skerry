@@ -35,11 +35,13 @@ import com.twitchplayer.phone.ui.components.CategoryCard
 import com.twitchplayer.phone.ui.components.ChannelListItem
 import com.twitchplayer.phone.ui.components.GridSpacing
 import com.twitchplayer.phone.ui.components.HeaderActions
+import com.twitchplayer.phone.ui.components.HeroStreamCard
 import com.twitchplayer.phone.ui.components.HomeHeader
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.RefreshBox
 import com.twitchplayer.phone.ui.components.ScreenPadding
+import com.twitchplayer.phone.ui.components.SignedOutCopy
 import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.StreamCardSkeleton
 import com.twitchplayer.phone.ui.components.StreamColumnMin
@@ -77,7 +79,7 @@ fun HomeRoute(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { HomeHeader(header, scrollBehavior) },
     ) { padding ->
-        LoadHost(home, onRetry = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
+        LoadHost(home, onRetry = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }, signedOut = SignedOutCopy(stringResource(R.string.phone_signedout_home_title), stringResource(R.string.phone_signedout_home_body))) { content ->
             RefreshBox(onRefresh = { homeViewModel.presenter.onEvent(HomeEvent.Retry) }) {
                 ForYou(content, onWatch, onCategory)
             }
@@ -95,6 +97,10 @@ private fun ForYou(content: HomeContent, onWatch: (String) -> Unit, onCategory: 
     val followingTitle = stringResource(R.string.phone_home_live_following)
     val forYouTitle = stringResource(R.string.sec_for_you)
     val categoriesTitle = stringResource(R.string.sec_categories)
+    // The page leads with one stream (a followed one first), then the lists without it.
+    val hero = content.following.firstOrNull() ?: content.forYou.firstOrNull()
+    val following = content.following.filter { it.channelId != hero?.channelId }
+    val forYou = content.forYou.filter { it.channelId != hero?.channelId }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(StreamColumnMin),
         contentPadding = ScreenPadding,
@@ -102,16 +108,19 @@ private fun ForYou(content: HomeContent, onWatch: (String) -> Unit, onCategory: 
         verticalArrangement = streamRowSpacing(layout),
         modifier = Modifier.fillMaxSize(),
     ) {
-        if (content.following.isNotEmpty()) {
+        if (hero != null) {
+            fullSpanItem("hero", contentType = "hero") { HeroStreamCard(hero, onClick = { onWatch(hero.login) }, modifier = Modifier.itemMotion(this)) }
+        }
+        if (following.isNotEmpty()) {
             sectionHeader("following-header", followingTitle)
-            items(content.following, key = { "following-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
+            items(following, key = { "following-${it.channelId}" }, contentType = { "stream" }) { stream ->
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, showLive = false, modifier = Modifier.itemMotion(this))
             }
         }
-        if (content.forYou.isNotEmpty()) {
+        if (forYou.isNotEmpty()) {
             sectionHeader("for-you-header", forYouTitle)
-            items(content.forYou, key = { "for-you-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
+            items(forYou, key = { "for-you-${it.channelId}" }, contentType = { "stream" }) { stream ->
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, showLive = false, modifier = Modifier.itemMotion(this))
             }
         }
         if (content.categories.isNotEmpty()) {
@@ -145,6 +154,3 @@ internal fun CardSkeletonGrid() {
 private const val SKELETON_COUNT = 6
 private const val SKELETON_ROWS = 9
 private val CATEGORY_CARD_WIDTH = 120.dp
-
-/** Dividers start under the text, past the avatar. */
-internal val CHANNEL_DIVIDER_INSET = 72.dp

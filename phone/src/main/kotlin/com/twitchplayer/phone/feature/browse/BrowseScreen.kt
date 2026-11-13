@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -30,17 +32,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.ui.components.CategoryCard
+import com.twitchplayer.phone.ui.components.FilterPill
 import com.twitchplayer.phone.ui.components.GridSpacing
 import com.twitchplayer.phone.ui.components.HeaderActions
 import com.twitchplayer.phone.ui.components.HomeHeader
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
 import com.twitchplayer.phone.ui.components.POSTER_RATIO
-import com.twitchplayer.phone.ui.components.PosterColumnMin
+import com.twitchplayer.phone.ui.components.PageTitle
 import com.twitchplayer.phone.ui.components.RefreshBox
 import com.twitchplayer.phone.ui.components.ScreenPadding
+import com.twitchplayer.phone.ui.components.SignedOutCopy
 import com.twitchplayer.phone.ui.components.SkeletonBlock
 import com.twitchplayer.phone.ui.components.itemMotion
+import com.twitchplayer.phone.ui.components.posterColumnMin
 import com.twitchplayer.tv.core.data.model.Category
 import com.twitchplayer.tv.feature.browse.presentation.BrowseEvent
 import com.twitchplayer.tv.feature.browse.presentation.BrowseFilter
@@ -73,22 +78,18 @@ fun BrowseRoute(
             onSignIn = onSignIn,
             modifier = Modifier.padding(padding),
             skeleton = { PosterSkeletonGrid() },
+            signedOut = SignedOutCopy(stringResource(R.string.phone_signedout_browse_title), stringResource(R.string.phone_signedout_browse_body)),
         ) { ui ->
             RefreshBox(onRefresh = { viewModel.presenter.onEvent(BrowseEvent.Retry) }) {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(PosterColumnMin),
+                    columns = GridCells.Adaptive(posterColumnMin()),
                     contentPadding = ScreenPadding,
                     horizontalArrangement = GridSpacing,
                     verticalArrangement = GridSpacing,
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     item(key = "title", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
-                        Text(
-                            stringResource(R.string.nav_browse),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.semantics { heading() },
-                        )
+                        PageTitle(stringResource(R.string.nav_browse))
                     }
                     // The chips scroll away with the wall.
                     item(key = "filters", span = { GridItemSpan(maxLineSpan) }) {
@@ -101,7 +102,7 @@ fun BrowseRoute(
                     }
                     if (ui.categories.isEmpty()) {
                         item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
-                            MessageState(title = stringResource(R.string.state_no_result), modifier = Modifier.padding(top = 48.dp))
+                            MessageState(title = stringResource(R.string.state_no_result), icon = Icons.Filled.Search, modifier = Modifier.padding(top = 48.dp))
                         }
                     }
                     items(ui.categories, key = { it.id }) { category -> CategoryCard(category, onClick = { onCategory(category) }, modifier = Modifier.itemMotion(this)) }
@@ -115,13 +116,11 @@ fun BrowseRoute(
 private fun FilterRow(filter: BrowseFilter, sort: BrowseSort, onFilter: (BrowseFilter) -> Unit, onSort: () -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(BrowseFilter.entries) { option ->
-            FilterChip(selected = option == filter, onClick = { onFilter(option) }, label = { Text(stringResource(option.label())) })
+            FilterPill(stringResource(option.label()), selected = option == filter, onClick = { onFilter(option) })
         }
         item {
-            AssistChip(
-                onClick = onSort,
-                label = { Text(stringResource(if (sort == BrowseSort.Popularity) R.string.sort_popularity else R.string.sort_alpha)) },
-            )
+            // Not a filter: it says how the wall is ordered and a tap flips it, so it never shows as selected.
+            FilterPill(stringResource(if (sort == BrowseSort.Popularity) R.string.sort_popularity else R.string.sort_alpha), selected = false, onClick = onSort)
         }
     }
 }
@@ -137,7 +136,7 @@ private fun BrowseFilter.label(): Int = when (this) {
 @Composable
 internal fun PosterSkeletonGrid() {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(PosterColumnMin),
+        columns = GridCells.Adaptive(posterColumnMin()),
         contentPadding = ScreenPadding,
         horizontalArrangement = GridSpacing,
         verticalArrangement = GridSpacing,

@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.ui.theme.LocalReducedMotion
 import kotlin.math.roundToInt
@@ -143,7 +144,8 @@ private fun SearchPill(onClick: () -> Unit, morphKey: String, modifier: Modifier
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        // The magnifier grows with the text beside it (a 18 dp icon next to 2x text looked like a speck).
+        Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(with(LocalDensity.current) { 18.sp.toDp() }))
         Text(
             stringResource(R.string.phone_search_hint),
             style = MaterialTheme.typography.bodyMedium,
@@ -162,7 +164,7 @@ private fun ProfileButton(account: String?, onClick: () -> Unit) {
         Box(Modifier.size(TopBarSpec.Avatar).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
             val initial = account?.firstOrNull()?.uppercaseChar()
             if (initial != null) {
-                Text(initial.toString(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                UnscaledText { Text(initial.toString(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer) }
             } else {
                 Icon(Icons.Filled.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
             }

@@ -1,15 +1,20 @@
 package com.twitchplayer.phone.feature.channel
 
 import android.text.format.DateUtils
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -45,6 +51,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +59,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,6 +80,8 @@ import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.THUMBNAIL_RATIO
 import com.twitchplayer.phone.ui.components.ThumbnailLabel
 import com.twitchplayer.phone.ui.components.clickableItem
+import com.twitchplayer.phone.ui.components.rememberLastSeenText
+import com.twitchplayer.phone.ui.theme.PhoneColors
 import com.twitchplayer.tv.core.data.model.ChannelClip
 import com.twitchplayer.tv.core.data.model.ChannelDetails
 import com.twitchplayer.tv.core.data.model.ChannelRef
@@ -165,11 +175,13 @@ private fun ChannelContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item(key = "header") {
+            val openTwitch = { channelUrl(details.channel.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } } }
             Header(
                 channel = details.channel,
                 followed = details.isFollowed,
-                live = details.stream != null,
-                onFollowClick = { channelUrl(details.channel.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } } },
+                stream = details.stream,
+                onFollowClick = { openTwitch() },
+                onOpenTwitch = { openTwitch() },
             )
         }
         details.stream?.let { stream ->
@@ -179,10 +191,6 @@ private fun ChannelContent(
                     StreamCard(stream, onClick = { onPlay(PlaybackTarget.Live(stream.login)) }, showChannel = false)
                     liveForLabel(stream.startedAtMs, now)?.let { uptime ->
                         Text(stringResource(R.string.phone_live_for, uptime), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Button(onClick = { onPlay(PlaybackTarget.Live(stream.login)) }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                        Text(stringResource(R.string.watch))
                     }
                 }
             }
@@ -242,23 +250,49 @@ private fun ChannelContent(
     }
 }
 
+/**
+ * The identity of the channel: a banner of the theme's colours (Twitch's API gives no banner image), the avatar overlapping its lower edge,
+ * the name, one status line (live with the count and category, or offline) and the actions: follow state, and open on Twitch. A live
+ * channel's stream card (below) is the way to watch, so there is no second Watch button.
+ */
 @Composable
-private fun Header(channel: ChannelRef, followed: Boolean, live: Boolean, onFollowClick: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Avatar(channel.avatarUrl, channel.name, AvatarLarge)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun Header(channel: ChannelRef, followed: Boolean, stream: com.twitchplayer.tv.core.data.model.LiveStream?, onFollowClick: () -> Unit, onOpenTwitch: () -> Unit) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.fillMaxWidth().padding(bottom = BANNER_OVERLAP)) {
+            Box(
+                Modifier.fillMaxWidth().height(BANNER_HEIGHT).clip(RoundedCornerShape(16.dp))
+                    .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceContainerHigh))),
+            )
+            Avatar(
+                channel.avatarUrl,
+                channel.name,
+                AvatarLarge,
+                Modifier.align(Alignment.BottomStart).offset(x = 16.dp, y = BANNER_OVERLAP).border(AVATAR_RING, MaterialTheme.colorScheme.background, CircleShape),
+            )
+        }
+        Spacer(Modifier.height(BANNER_OVERLAP - 12.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 channel.name,
                 style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.semantics { heading() },
             )
-            // The stream card below carries the LIVE badge; the header only needs to say when there is nothing live.
-            if (!live) {
-                Text(stringResource(R.string.phone_channel_offline), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val status = if (stream != null) {
+                listOf(stringResource(R.string.phone_search_viewers, remember(stream.viewers) { formatViewers(stream.viewers) }), stream.categoryName).filter { it.isNotBlank() }.joinToString(" · ")
+            } else {
+                rememberLastSeenText(channel.lastSeenLiveMs) ?: stringResource(R.string.phone_channel_offline)
             }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (stream != null) Box(Modifier.size(8.dp).clip(CircleShape).background(PhoneColors.Live))
+                Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             FollowButton(followed, onFollowClick)
+            IconButton(onClick = onOpenTwitch) { Icon(PhoneIcons.OpenInNew, contentDescription = stringResource(R.string.phone_player_open_twitch)) }
         }
     }
 }
@@ -279,7 +313,6 @@ private fun FollowButton(followed: Boolean, onClick: () -> Unit) {
     val content: @Composable RowScope.() -> Unit = {
         if (followed) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(FOLLOW_ICON))
         Text(stringResource(if (followed) R.string.followed else R.string.phone_follow))
-        Icon(PhoneIcons.OpenInNew, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(FOLLOW_ICON))
     }
     if (followed) {
         FilledTonalButton(onClick = onClick, modifier = semantics, content = content)
@@ -345,7 +378,7 @@ internal fun ReplayRow(replay: Replay, progress: VodProgress?, now: Long, onClic
             }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(replay.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(replay.title, style = MaterialTheme.typography.titleSmall.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Content), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(
                 listOf(published, stringResource(R.string.replay_views, views)).filter { it.isNotBlank() }.joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
@@ -384,6 +417,9 @@ private data class Paging(val canLoadMore: Boolean, val loaded: Int)
 
 private const val PREFETCH_ITEMS = 3
 private val FOLLOW_ICON = 18.dp
+private val BANNER_HEIGHT = 96.dp
+private val BANNER_OVERLAP = 36.dp
+private val AVATAR_RING = 4.dp
 private val CLIP_CARD_WIDTH = 220.dp
 private val REPLAY_THUMBNAIL_WIDTH = 150.dp
 private val SIMILAR_WIDTH = 80.dp

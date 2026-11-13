@@ -31,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
-import com.twitchplayer.phone.feature.home.CHANNEL_DIVIDER_INSET
 import com.twitchplayer.phone.feature.home.CardSkeletonGrid
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.components.CategoryCard
@@ -39,10 +38,13 @@ import com.twitchplayer.phone.ui.components.ChannelListItem
 import com.twitchplayer.phone.ui.components.GridSpacing
 import com.twitchplayer.phone.ui.components.HeaderActions
 import com.twitchplayer.phone.ui.components.HomeHeader
+import com.twitchplayer.phone.ui.components.LiveNowRow
 import com.twitchplayer.phone.ui.components.LoadHost
 import com.twitchplayer.phone.ui.components.MessageState
+import com.twitchplayer.phone.ui.components.PageTitle
 import com.twitchplayer.phone.ui.components.RefreshBox
 import com.twitchplayer.phone.ui.components.ScreenPadding
+import com.twitchplayer.phone.ui.components.SignedOutCopy
 import com.twitchplayer.phone.ui.components.StreamCard
 import com.twitchplayer.phone.ui.components.StreamCardSkeleton
 import com.twitchplayer.phone.ui.components.StreamColumnMin
@@ -83,7 +85,7 @@ fun FollowingRoute(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { HomeHeader(header, scrollBehavior) },
     ) { padding ->
-        LoadHost(follows, onRetry = { viewModel.presenter.onEvent(FollowsEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }) { content ->
+        LoadHost(follows, onRetry = { viewModel.presenter.onEvent(FollowsEvent.Retry) }, onSignIn = onSignIn, modifier = Modifier.padding(padding), skeleton = { CardSkeletonGrid() }, signedOut = SignedOutCopy(stringResource(R.string.phone_signedout_following_title), stringResource(R.string.phone_signedout_following_body))) { content ->
             RefreshBox(onRefresh = { viewModel.presenter.onEvent(FollowsEvent.Retry) }) {
                 FollowingList(content.live, content.offline, resumable, onWatch, onChannel, onReplay)
             }
@@ -108,6 +110,8 @@ private fun FollowingList(
     val nothingLive = stringResource(R.string.state_no_live)
     val offlineTitle = stringResource(R.string.sec_offline)
     val continueTitle = stringResource(R.string.phone_following_continue)
+    val followingTitle = stringResource(R.string.sec_following)
+    val liveNowTitle = stringResource(R.string.phone_following_live_now)
     LazyVerticalGrid(
         columns = GridCells.Adaptive(StreamColumnMin),
         contentPadding = ScreenPadding,
@@ -115,6 +119,12 @@ private fun FollowingList(
         verticalArrangement = streamRowSpacing(layout),
         modifier = Modifier.fillMaxSize(),
     ) {
+        fullSpanItem("title", contentType = "header") { PageTitle(followingTitle) }
+        if (live.isNotEmpty()) {
+            // Who is on, at a glance (avatars with a live ring), before the rows with their titles.
+            sectionHeader("live-now-header", liveNowTitle)
+            fullSpanItem("live-now-row", contentType = "live-now") { LiveNowRow(live, onClick = { onWatch(it.login) }) }
+        }
         if (resumable.isNotEmpty()) {
             sectionHeader("continue-header", continueTitle)
             fullSpanItem("continue-row", contentType = "continue") {
@@ -123,7 +133,7 @@ private fun FollowingList(
         }
         if (live.isNotEmpty()) {
             items(live, key = { "live-${it.channelId}" }, contentType = { "stream" }) { stream ->
-                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, modifier = Modifier.itemMotion(this))
+                StreamCard(stream, onClick = { onWatch(stream.login) }, layout = layout, showLive = false, modifier = Modifier.itemMotion(this))
             }
         } else {
             fullSpanItem("nothing-live") { Text(nothingLive, style = MaterialTheme.typography.bodyLarge) }
@@ -132,8 +142,7 @@ private fun FollowingList(
             sectionHeader("offline-header", offlineTitle)
             items(offline, key = { "offline-${it.id}" }, span = { GridItemSpan(maxLineSpan) }, contentType = { "channel" }) { channel ->
                 Column(Modifier.itemMotion(this)) {
-                    ChannelListItem(channel, onClick = { onChannel(channel.login) })
-                    HorizontalDivider(Modifier.padding(start = CHANNEL_DIVIDER_INSET, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                    ChannelListItem(channel, onClick = { onChannel(channel.login) }, showOfflineLabel = false)
                 }
             }
         }
