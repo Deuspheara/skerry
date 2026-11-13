@@ -14,6 +14,9 @@ private enum class Slot { Fill, Stage, Side, Body, Strip }
 
 private const val VIDEO_WIDTH_BY_HEIGHT = 16f / 9f
 
+/** Share of the width the picture takes in the two-pane layout. */
+private const val TWO_PANE_PICTURE_SHARE = 0.62f
+
 /**
  * The one layout of every player mode. The picture ([stage]) is always the same child in the same place of the composition, so
  * turning the phone or entering the Picture-in-Picture window changes where it is placed and how big it is, and never gives the
@@ -31,6 +34,8 @@ internal fun PlayerSheetLayout(
     stripPictureWidthPx: Int,
     stage: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    /** A wide window (a tablet) shows the expanded sheet as two panes: the picture on the start side, the page ([body]) beside it. */
+    twoPane: Boolean = false,
     /** Width / height of the expanded picture; read while measuring, so a stream whose shape differs from 16:9 only re-measures. */
     pictureAspect: (widthPx: Int, heightPx: Int) -> Float = { _, _ -> VIDEO_WIDTH_BY_HEIGHT },
     side: (@Composable () -> Unit)? = null,
@@ -78,22 +83,28 @@ internal fun PlayerSheetLayout(
 
             SheetMode.Portrait -> {
                 val p = progress()
-                val expandedPicture = (width / pictureAspect(width, height)).toInt()
-                val pictureWidth = SheetGeometry.lerp(width, stripPictureWidthPx, p)
+                // Two panes: the picture takes the start side (centred in it, on black), the page the rest, full height.
+                val expandedWidth = if (twoPane) (width * TWO_PANE_PICTURE_SHARE).toInt() else width
+                val expandedPicture = (expandedWidth / pictureAspect(expandedWidth, height)).toInt()
+                val expandedTop = if (twoPane) ((height - expandedPicture) / 2).coerceAtLeast(statusBarPx) else statusBarPx
+                val pictureWidth = SheetGeometry.lerp(expandedWidth, stripPictureWidthPx, p)
                 val pictureHeight = SheetGeometry.lerp(expandedPicture, stripHeightPx, p)
-                val top = SheetGeometry.lerp(statusBarPx, 0, p)
-                val background = fillItem?.measure(Constraints.fixed(pictureWidth, top + pictureHeight))
+                val top = SheetGeometry.lerp(expandedTop, 0, p)
+                val fillHeight = if (twoPane) SheetGeometry.lerp(height, top + pictureHeight, p) else top + pictureHeight
+                val background = fillItem?.measure(Constraints.fixed(pictureWidth, fillHeight))
                 val picture = stageItem?.measure(Constraints.fixed(pictureWidth, pictureHeight))
-                val bodyTop = top + pictureHeight
+                val bodyTop = if (twoPane) statusBarPx else top + pictureHeight
+                val bodyX = if (twoPane) expandedWidth else 0
+                val bodyWidth = if (twoPane) width - expandedWidth else width
                 val bodyAlpha = SheetGeometry.bodyAlpha(p)
-                val bodyPlaceable = if (bodyItem != null && bodyAlpha > 0f) bodyItem.measure(Constraints.fixed(width, (height - bodyTop).coerceAtLeast(0))) else null
+                val bodyPlaceable = if (bodyItem != null && bodyAlpha > 0f) bodyItem.measure(Constraints.fixed(bodyWidth.coerceAtLeast(0), (height - bodyTop).coerceAtLeast(0))) else null
                 val stripAlpha = SheetGeometry.stripAlpha(p)
                 val stripPlaceable = if (stripItem != null && stripAlpha > 0f) stripItem.measure(Constraints.fixed((width - pictureWidth).coerceAtLeast(0), stripHeightPx)) else null
                 // Relative placement: in a right-to-left language the picture sits at the right edge and the strip's text to its left.
                 layout(width, height) {
                     background?.placeRelative(0, 0)
                     picture?.placeRelative(0, top)
-                    bodyPlaceable?.placeRelativeWithLayer(0, bodyTop) { alpha = bodyAlpha }
+                    bodyPlaceable?.placeRelativeWithLayer(bodyX, bodyTop) { alpha = bodyAlpha }
                     stripPlaceable?.placeRelativeWithLayer(pictureWidth, 0) { alpha = stripAlpha }
                 }
             }

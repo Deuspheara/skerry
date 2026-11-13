@@ -12,7 +12,6 @@
     <string name="phone_follow_state_on">تتابع القناة</string>
     <string name="phone_follow_state_off">لا تتابع القناة</string>
     <string name="phone_follow_opens_twitch">يفتح القناة على Twitch حيث يمكنك تغيير ذلك</string>
-    <string name="phone_language_filter">اللغة</string>
     <string name="phone_favorite_on">في المفضلة</string>
     <string name="phone_favorite_off">ليست في المفضلة</string>
     <string name="phone_search_hint">ابحث عن قناة</string>
@@ -156,4 +155,12 @@
     <string name="phone_player_settings">إعدادات التشغيل</string>
     <string name="phone_player_settings_off">متوقف</string>
     <string name="phone_signout_body">يمكنك تسجيل الدخول مجدداً في أي وقت. تبقى إعداداتك على هذا الهاتف.</string>
+    <string name="phone_clips_go_live">الانتقال إلى البثوث المباشرة</string>
+    <string name="phone_offline_title">أنت غير متصل بالإنترنت</string>
+    <string name="phone_offline_body">اتصل بالإنترنت وحاول مرة أخرى. يبقى هنا آخر ما شاهدته إذا كان محفوظاً.</string>
+    <string name="phone_player_twitch">Twitch</string>
+    <string name="phone_settings_stats_help">يعرض معدل البتات والدقة والإطارات المفقودة فوق الصورة.</string>
+    <string name="phone_settings_raids_help">عندما تقوم القناة التي تشاهدها بغارة على قناة أخرى، يعرض التطبيق متابعة الغارة.</string>
+    <string name="phone_category_favourite_add">إضافة إلى المفضلة</string>
+    <string name="phone_category_favourite_on">في مفضلتك</string>
 </resources>

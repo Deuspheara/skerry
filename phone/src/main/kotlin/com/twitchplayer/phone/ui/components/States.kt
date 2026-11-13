@@ -66,7 +66,8 @@ import kotlinx.coroutines.delay
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
         modifier = modifier.semantics { heading() },
     )
 }
@@ -177,13 +178,17 @@ fun <T> LoadHost(
                     icon = Icons.Filled.Person,
                 )
 
-                Load.Failed -> MessageState(
-                    title = stringResource(R.string.phone_error_title),
-                    body = stringResource(R.string.phone_error_body),
-                    actionLabel = stringResource(R.string.state_retry),
-                    onAction = onRetry,
-                    icon = Icons.Filled.Warning,
-                )
+                Load.Failed -> {
+                    // No connection at all is said as such (and what was saved stays on the screens that have it); anything else is "couldn't load".
+                    val offline = !rememberIsOnline()
+                    MessageState(
+                        title = stringResource(if (offline) R.string.phone_offline_title else R.string.phone_error_title),
+                        body = stringResource(if (offline) R.string.phone_offline_body else R.string.phone_error_body),
+                        actionLabel = stringResource(R.string.state_retry),
+                        onAction = onRetry,
+                        icon = if (offline) PhoneIcons.OfflineBolt else Icons.Filled.Warning,
+                    )
+                }
 
                 is Load.Ready -> Column(Modifier.fillMaxSize()) {
                     if (staleMarker) StaleMarker(state, onRetry)
@@ -300,3 +305,15 @@ private const val SKELETON_PULSE_MS = 900
 private const val SKELETON_TITLE_WIDTH = 0.8f
 private const val SKELETON_META_WIDTH = 0.5f
 private const val REFRESH_INDICATOR_MS = 900L
+
+/** Whether the device has a network that reaches the internet right now (read when the screen composes; a retry recomposes it). */
+@Composable
+private fun rememberIsOnline(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return androidx.compose.runtime.remember {
+        val manager = context.getSystemService(android.net.ConnectivityManager::class.java)
+        val capabilities = manager?.getNetworkCapabilities(manager.activeNetwork)
+        capabilities?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
+            capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+}

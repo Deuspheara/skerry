@@ -14,7 +14,6 @@
     <string name="phone_follow_state_on">Suivi</string>
     <string name="phone_follow_state_off">Non suivi</string>
     <string name="phone_follow_opens_twitch">Ouvre la chaîne sur Twitch, où vous pouvez le modifier</string>
-    <string name="phone_language_filter">Langue</string>
     <string name="phone_favorite_on">Dans vos favoris</string>
     <string name="phone_favorite_off">Pas dans vos favoris</string>
     <string name="phone_search_hint">Rechercher une chaîne</string>
@@ -158,4 +157,12 @@
     <string name="phone_player_settings">Réglages de lecture</string>
     <string name="phone_player_settings_off">Désactivé</string>
     <string name="phone_signout_body">Vous pourrez vous reconnecter à tout moment. Vos réglages restent sur ce téléphone.</string>
+    <string name="phone_clips_go_live">Voir les directs</string>
+    <string name="phone_offline_title">Vous êtes hors ligne</string>
+    <string name="phone_offline_body">Connectez-vous à Internet et réessayez. Ce que vous avez vu en dernier reste ici quand il a été enregistré.</string>
+    <string name="phone_player_twitch">Twitch</string>
+    <string name="phone_settings_stats_help">Affiche le débit, la résolution et les images perdues sur l\'image.</string>
+    <string name="phone_settings_raids_help">Quand la chaîne que vous regardez fait un raid, l\'app propose de suivre le raid.</string>
+    <string name="phone_category_favourite_add">Ajouter aux favoris</string>
+    <string name="phone_category_favourite_on">Dans vos favoris</string>
 </resources>

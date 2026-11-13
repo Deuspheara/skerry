@@ -16,6 +16,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,7 +56,12 @@ fun HeroStreamCard(stream: LiveStream, onClick: () -> Unit, modifier: Modifier =
     ) {
         RemoteImage(stream.thumbnailUrl, Modifier.matchParentSize())
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Color.Transparent, HERO_SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = HERO_SCRIM_ALPHA))))
+        // The cues that this is a live stream you can open: its viewers (with the live dot), its category and a play mark.
         ViewersBadge(stream.viewers, Modifier.align(Alignment.TopEnd).padding(10.dp))
+        ThumbnailLabel(stream.categoryName, Modifier.align(Alignment.TopStart).padding(10.dp))
+        Box(Modifier.align(Alignment.Center).size(HERO_PLAY).clip(CircleShape).background(Color.Black.copy(alpha = HERO_PLAY_ALPHA)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(HERO_PLAY_ICON))
+        }
         Row(Modifier.align(Alignment.BottomStart).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(stream.avatarUrl, stream.name, HERO_AVATAR)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -77,22 +86,33 @@ fun LiveNowRow(streams: List<LiveStream>, onClick: (LiveStream) -> Unit, modifie
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Box(Modifier.size(LIVE_NOW_RING).border(RING_WIDTH, PhoneColors.Live, CircleShape).padding(RING_GAP), contentAlignment = Alignment.Center) {
-                    Avatar(stream.avatarUrl, stream.name, LIVE_NOW_AVATAR)
+                // A ring in the accent (red is kept for the live dot at its corner, so the row is calm and still says "live").
+                Box(Modifier.size(LIVE_NOW_RING)) {
+                    Box(Modifier.matchParentSize().border(RING_WIDTH, MaterialTheme.colorScheme.primary, CircleShape).padding(RING_GAP), contentAlignment = Alignment.Center) {
+                        Avatar(stream.avatarUrl, stream.name, LIVE_NOW_AVATAR)
+                    }
+                    Box(Modifier.align(Alignment.BottomEnd).size(DOT_SIZE).background(MaterialTheme.colorScheme.background, CircleShape).padding(DOT_RING).background(PhoneColors.Live, CircleShape))
                 }
-                Text(stream.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                // Two lines when the system text is large: the names are not cut to "Luna...".
+                Text(stream.name, style = MaterialTheme.typography.labelMedium, maxLines = if (LocalDensity.current.fontScale > LARGE_TEXT) 2 else 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             }
         }
     }
 }
 
 private val HERO_RADIUS = 16.dp
-private val HERO_AVATAR = 44.dp
-private const val HERO_SCRIM_START = 0.4f
-private const val HERO_SCRIM_ALPHA = 0.85f
+private val HERO_PLAY = 56.dp
+private val HERO_PLAY_ICON = 32.dp
+private const val HERO_PLAY_ALPHA = 0.45f
+private val HERO_AVATAR = 40.dp
+private const val HERO_SCRIM_START = 0.2f
+private const val HERO_SCRIM_ALPHA = 0.92f
 private const val HERO_META_ALPHA = 0.85f
 private val LIVE_NOW_WIDTH = 76.dp
 private val LIVE_NOW_RING = 64.dp
 private val LIVE_NOW_AVATAR = 54.dp
 private val RING_WIDTH = 2.dp
+private val DOT_SIZE = 18.dp
+private val DOT_RING = 3.dp
+private const val LARGE_TEXT = 1.3f
 private val RING_GAP = 3.dp

@@ -55,10 +55,15 @@ internal object DemoData {
     val liveStreams: List<LiveStream> = chans.filter { it.live }.map { it.stream() }
     val followedLive: List<LiveStream> = chans.filter { it.live && it.id in followedIds }.map { it.stream() }
     val recommended: List<LiveStream> = liveStreams.filter { s -> s.channelId !in followedIds }.sortedByDescending { it.viewers }
-    val followedOffline: List<ChannelRef> = chans.filter { !it.live && it.id in followedIds }.map { it.ref() }
+    val followedOffline: List<ChannelRef> = chans.filter { !it.live && it.id in followedIds }.mapIndexed { index, channel ->
+        // Last seen live a day or more ago, a different time each: the offline rows show their "last live" line.
+        channel.ref().copy(lastSeenLiveMs = System.currentTimeMillis() - (index + 1) * LAST_LIVE_STEP_MS)
+    }
     val channels: List<ChannelRef> = chans.map { it.ref() }
     fun channelSeed(id: String): Pair<Int, Int> = chans.first { it.id == id }.let { it.seed to it.style }
     fun isFollowed(id: String) = id in followedIds
     fun stream(login: String): LiveStream? = liveStreams.firstOrNull { it.login == login }
     fun artFor(seed: Int, style: Int) = art(seed, style)
 }
+
+private const val LAST_LIVE_STEP_MS = 27L * 3_600_000L

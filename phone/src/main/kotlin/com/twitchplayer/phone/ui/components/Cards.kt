@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -127,26 +126,28 @@ private fun Thumbnail(stream: LiveStream, showLive: Boolean, modifier: Modifier 
     }
 }
 
-/** A category poster (3:4) with its name below. */
+/**
+ * A category poster (3:4) with its name over a bottom scrim, in the light theme and the dark one alike (a caption strip under the art read as
+ * a second surface in the light theme). One line, ellipsized: "World of Warcraft" is cut, never wrapped, so every tile is the same.
+ */
 @Composable
 fun CategoryCard(category: Category, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.semantics { contentDescription = category.name },
-        shape = CardShape,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
+    Box(modifier.clip(CardShape).clickableItem(onClick).semantics(mergeDescendants = true) { contentDescription = category.name }) {
         RemoteImage(category.artUrl, Modifier.fillMaxWidth().aspectRatio(POSTER_RATIO))
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Color.Transparent, TILE_SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = TILE_SCRIM_ALPHA))))
         Text(
             text = category.name,
             style = MaterialTheme.typography.labelLarge,
-            // One line, ellipsized ("World of Warcraft" is cut, never wrapped): every card has the same height without reserving a second line.
+            color = Color.White,
             maxLines = CardSpec.CATEGORY_NAME_LINES,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 10.dp, vertical = 8.dp),
         )
     }
 }
+
+private const val TILE_SCRIM_START = 0.55f
+private const val TILE_SCRIM_ALPHA = 0.85f
 
 /**
  * A channel row (offline follows, similar channels): avatar, name and its state on one line. A live channel says "Live · 12K viewers" with a

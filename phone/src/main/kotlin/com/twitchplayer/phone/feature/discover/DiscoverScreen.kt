@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +25,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +75,7 @@ import com.twitchplayer.phone.ui.components.SignedOutCopy
 import com.twitchplayer.phone.ui.components.THUMBNAIL_RATIO
 import com.twitchplayer.phone.ui.components.ViewersBadge
 import com.twitchplayer.tv.core.data.model.LiveStream
+import com.twitchplayer.tv.core.presentation.Load
 import com.twitchplayer.tv.core.ui.formatViewers
 import com.twitchplayer.tv.feature.feed.presentation.FeedChatViewModel
 import com.twitchplayer.tv.feature.feed.presentation.FeedEvent
@@ -112,11 +116,14 @@ fun DiscoverRoute(
     var clips by rememberSaveable { mutableStateOf(false) }
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (clips) {
-            ClipsRoute(onOpenClip, onChannel, onSignIn, playerOpen)
+            ClipsRoute(onOpenClip, onChannel, onSignIn, playerOpen, onGoLive = { clips = false })
         } else {
             LiveFeed(state, resolver, playerOpen, onOpen, onChannel, onSignIn, onRetry = { viewModel.presenter.onEvent(FeedEvent.Retry) }, onSettle = { viewModel.presenter.onEvent(FeedEvent.Settled(it)) })
         }
-        ModeSwitch(clips, onChange = { clips = it }, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp))
+        // Live and Clips only mean something to a viewer who can see them: the signed-out page offers a sign-in, not two tabs.
+        if (state.load !is Load.SignedOut) {
+            ModeSwitch(clips, onChange = { clips = it }, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp))
+        }
     }
 }
 
@@ -336,6 +343,8 @@ private fun FeedPage(
         RemoteImage(stream.thumbnailUrl, Modifier.fillMaxSize().alpha(BACKDROP_ALPHA))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), BACKDROP_FADE to Color.Black)))
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = MODE_SWITCH_SPACE)) {
+            // The block (card, facts, actions) sits a little above the middle of the page and the chat fills what is under it: no black void.
+            Spacer(Modifier.weight(CARD_TOP_WEIGHT))
             // The card: the video (its surface, a PlayerView, is only built for the page the viewer rests on, never while it slides in: the swipe
             // itself draws a picture and text, and the video appears as soon as the page settles, its player prepared since the last page).
             Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
@@ -371,7 +380,7 @@ private fun FeedPage(
                         Modifier.weight(1f),
                     )
                     FeedAction(PhoneIcons.Chat, stringResource(R.string.phone_feed_label_chat), stringResource(if (chatOn) R.string.phone_feed_chat_hide else R.string.phone_feed_chat_show), onToggleChat, Modifier.weight(1f))
-                    FeedAction(PhoneIcons.Info, stringResource(R.string.phone_feed_label_channel), stringResource(R.string.phone_feed_channel), onChannel, Modifier.weight(1f))
+                    FeedAction(Icons.Filled.Person, stringResource(R.string.phone_feed_label_channel), stringResource(R.string.phone_feed_channel), onChannel, Modifier.weight(1f))
                     FeedAction(PhoneIcons.Discover, stringResource(R.string.phone_feed_label_watch), stringResource(R.string.phone_feed_open), onOpen, Modifier.weight(1f))
                 }
             }
@@ -464,8 +473,9 @@ private const val PLAYERS = 2
 private const val PREVIEW_QUALITY = "360p30"
 private const val DWELL_MS = 2_000L
 private const val CHAT_LINES = 8
-internal const val BACKDROP_ALPHA = 0.5f
-internal const val BACKDROP_FADE = 0.45f
+internal const val BACKDROP_ALPHA = 0.55f
+internal const val BACKDROP_FADE = 0.8f
+internal const val CARD_TOP_WEIGHT = 0.35f
 private const val ACTION_DISC_ALPHA = 0.16f
 internal val MODE_SWITCH_SPACE = 52.dp
 private const val SCRIM_ALPHA = 0.65f

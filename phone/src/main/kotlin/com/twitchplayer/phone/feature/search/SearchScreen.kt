@@ -465,9 +465,9 @@ private fun ChannelResultRow(channel: ChannelRef, onClick: () -> Unit, modifier:
         Column(Modifier.weight(1f)) {
             Text(channel.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (channel.isLive) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // The mark keeps its size at any font size: it is a label, not reading text.
-                    CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1f)) { LiveBadge() }
+                // The ring around the face says it is live; the line says how many watch (with the live dot): one cue, not a ring and a red chip.
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(PhoneColors.Live))
                     Text(stringResource(R.string.phone_search_viewers, viewers), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {

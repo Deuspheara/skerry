@@ -79,7 +79,7 @@ import org.koin.core.parameter.parametersOf
 
 /** The identity of the page: the box art, the name (up to two lines) and how many people watch it now (from the streams listed). */
 @Composable
-private fun CategoryHeader(name: String, artUrl: String, viewers: Int) {
+private fun CategoryHeader(name: String, artUrl: String, viewers: Int, favorite: Boolean, onToggleFavorite: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
         if (artUrl.isNotEmpty()) {
             RemoteImage(artUrl, Modifier.width(HEADER_ART_WIDTH).aspectRatio(POSTER_RATIO).clip(RoundedCornerShape(10.dp)))
@@ -88,6 +88,15 @@ private fun CategoryHeader(name: String, artUrl: String, viewers: Int) {
             Text(name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
             if (viewers > 0) {
                 Text(stringResource(R.string.phone_category_watching, remember(viewers) { formatViewers(viewers) }), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            // The favourite as a labelled button (a bare heart said nothing): tonal and ticked when it is one.
+            val stateText = stringResource(if (favorite) R.string.phone_favorite_on else R.string.phone_favorite_off)
+            androidx.compose.material3.FilledTonalButton(
+                onClick = onToggleFavorite,
+                modifier = Modifier.padding(top = 4.dp).semantics { stateDescription = stateText },
+            ) {
+                Icon(if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(if (favorite) R.string.phone_category_favourite_on else R.string.phone_category_favourite_add), modifier = Modifier.padding(start = 8.dp))
             }
         }
     }
@@ -161,7 +170,7 @@ fun CategoryRoute(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     fullSpanItem("header", contentType = "header") {
-                        CategoryHeader(key.name, key.artUrl, ui.streams.sumOf { it.viewers })
+                        CategoryHeader(key.name, key.artUrl, ui.streams.sumOf { it.viewers }, favorite) { viewModel.presenter.onEvent(CategoryEvent.ToggleFavorite) }
                     }
                     fullSpanItem("language") {
                         // Wraps onto a second line with large text instead of squeezing a chip into a narrow column.
@@ -170,7 +179,6 @@ fun CategoryRoute(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             itemVerticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(stringResource(R.string.phone_language_filter), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             // Two clear choices, the viewer's own language and everything (a chip that is on tells nothing about what it filters).
                             FilterPill(
                                 label = stringResource(R.string.filter_all_languages),

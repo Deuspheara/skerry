@@ -38,8 +38,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.ui.components.PhoneIcons
@@ -193,6 +195,8 @@ fun PlayerScaffold(
         }
     }
 
+    // A tablet-width window in portrait shows the expanded player as two panes (picture and page side by side).
+    val twoPane = !landscape && !inPip && with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() } >= TWO_PANE_MIN_WIDTH
     val mode = when {
         inPip -> SheetMode.Window
         landscape -> SheetMode.Landscape
@@ -208,6 +212,7 @@ fun PlayerScaffold(
         statusBarPx = WindowInsets.statusBars.getTop(density),
         stripHeightPx = with(density) { stripHeight.roundToPx() },
         stripPictureWidthPx = with(density) { SheetGeometry.stripPictureWidth(stripHeight).roundToPx() },
+        twoPane = twoPane,
         modifier = modifier.fillMaxSize().drawBehind {
             drawRect(if (mode == SheetMode.Portrait) lerp(background, stripBackground, progress()) else Color.Black)
         },
@@ -232,6 +237,7 @@ fun PlayerScaffold(
 }
 
 private val NOT_HOSTED: () -> Float = { 0f }
+private val TWO_PANE_MIN_WIDTH = 600.dp
 
 /** The fullscreen button of the bottom bar. */
 @Composable

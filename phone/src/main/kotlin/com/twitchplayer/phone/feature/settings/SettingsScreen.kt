@@ -121,9 +121,9 @@ fun SettingsRoute(
             }
             item(key = "playback") {
                 Section(R.string.phone_settings_playback, Icons.Filled.PlayArrow) {
-                    SwitchRow(R.string.tile_stats, state.showStats) { onEvent(SettingsEvent.ToggleStats) }
+                    SwitchRow(R.string.tile_stats, state.showStats, help = R.string.phone_settings_stats_help) { onEvent(SettingsEvent.ToggleStats) }
                     Rule()
-                    SwitchRow(R.string.tile_raids, state.followRaids) { onEvent(SettingsEvent.ToggleFollowRaids) }
+                    SwitchRow(R.string.tile_raids, state.followRaids, help = R.string.phone_settings_raids_help) { onEvent(SettingsEvent.ToggleFollowRaids) }
                     Rule()
                     ValueRow(R.string.phone_settings_feed_autoplay, stringResource(state.feedAutoplay.label())) { dialog = SettingsDialog.FeedAutoplay }
                     Text(
@@ -369,13 +369,16 @@ private fun ValueRow(title: Int, value: String?, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SwitchRow(title: Int, checked: Boolean, onToggle: () -> Unit) {
+private fun SwitchRow(title: Int, checked: Boolean, help: Int? = null, onToggle: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().minimumInteractiveComponentSize().selectable(selected = checked, role = Role.Switch, onClick = onToggle).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(stringResource(title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(title), style = MaterialTheme.typography.bodyLarge)
+            if (help != null) Text(stringResource(help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Switch(checked = checked, onCheckedChange = null)
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -42,7 +43,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.auth.channelUrl
@@ -252,8 +256,6 @@ fun LivePlayerRoute(
                     // A stream that cannot play is not shown as live.
                     if (!failed) {
                         LiveBadge()
-                        Spacer(Modifier.width(BADGE_GAP))
-                        current?.let { ViewersBadge(it.viewers) }
                     }
                     Box(Modifier.weight(1f))
                     ControlButton(
@@ -321,9 +323,11 @@ fun LivePlayerRoute(
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding())
         if (settingsOpen) {
             val off = stringResource(R.string.phone_player_settings_off)
+            // What the viewer asked for: Auto, or the rendition they picked.
+            val qualityValue = if (preferredQuality.isNullOrBlank() || preferredQuality.equals("auto", ignoreCase = true)) stringResource(R.string.quality_auto) else preferredQuality
             PlayerSettingsSheet(
                 rows = listOf(
-                    PlayerSettingRow(PhoneIcons.Quality, stringResource(R.string.player_quality), null) {
+                    PlayerSettingRow(PhoneIcons.Quality, stringResource(R.string.player_quality), qualityValue) {
                         settingsOpen = false
                         qualities = VideoQualities.None
                         player.loadQualities { qualities = it }
@@ -406,10 +410,11 @@ private fun StreamInfo(avatarUrl: String?, name: String, facts: StreamFacts, not
         }
     }
     val uptime = liveForLabel(facts.startedAtMs, now)
+    val twitchDescription = stringResource(R.string.phone_player_open_twitch)
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // What is being watched, always on the page (the controls over the picture hide): the stream's title, up to two lines.
         if (!facts.title.isNullOrBlank()) {
-            Text(facts.title, style = MaterialTheme.typography.titleSmall.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Content), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(facts.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = STREAM_TITLE_SP.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, textDirection = androidx.compose.ui.text.style.TextDirection.Content), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // The streamer (picture and name) leads to the channel page; the button at the end opens twitch.tv.
@@ -420,20 +425,18 @@ private fun StreamInfo(avatarUrl: String?, name: String, facts: StreamFacts, not
             ) {
                 Avatar(avatarUrl, name, 40.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     val watching = if (facts.viewers > 0) stringResource(R.string.phone_search_viewers, remember(facts.viewers) { com.twitchplayer.tv.core.ui.formatViewers(facts.viewers) }) else null
                     val line = listOfNotNull(facts.category?.ifBlank { null }, watching, uptime?.let { stringResource(R.string.phone_live_for, it) }).joinToString(" · ")
                     if (line.isNotEmpty()) {
-                        Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text(line, style = MaterialTheme.typography.bodySmall.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Content), color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
             }
-            ControlButton(
-                PhoneIcons.OpenInNew,
-                stringResource(R.string.phone_player_open_twitch),
-                onOpenTwitch,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            androidx.compose.material3.TextButton(onClick = onOpenTwitch, modifier = Modifier.semantics { contentDescription = twitchDescription }) {
+                Icon(PhoneIcons.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.phone_player_twitch), modifier = Modifier.padding(start = 6.dp), maxLines = 1)
+            }
         }
         StreamTags(facts.labels)
         NoticeBanner(notice)
@@ -471,8 +474,8 @@ private fun NoticeBanner(notice: ChannelNotice?) {
 
 private val SIDE_PANEL = 320.dp
 private val CONTROLS_BAR = 56.dp
-private val BADGE_GAP = 8.dp
 private const val RETRY_BORDER_ALPHA = 0.7f
 private const val OVERLAY_WIDTH = 0.34f
 private const val OVERLAY_HEIGHT = 0.5f
 private const val UPTIME_TICK_MS = 30_000L
+private const val STREAM_TITLE_SP = 18

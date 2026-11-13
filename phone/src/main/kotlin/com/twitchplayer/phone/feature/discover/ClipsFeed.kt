@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,8 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,6 +85,7 @@ fun ClipsRoute(
     onChannel: (String) -> Unit,
     onSignIn: () -> Unit,
     playerOpen: Boolean,
+    onGoLive: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ClipsFeedViewModel = koinViewModel(),
 ) {
@@ -92,8 +96,8 @@ fun ClipsRoute(
                 MessageState(
                     title = stringResource(R.string.phone_feed_clips_empty),
                     body = stringResource(R.string.phone_clips_empty_body),
-                    actionLabel = stringResource(R.string.state_retry),
-                    onAction = viewModel.presenter::retry,
+                    actionLabel = stringResource(R.string.phone_clips_go_live),
+                    onAction = onGoLive,
                     icon = PhoneIcons.Discover,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -255,6 +259,7 @@ private fun ClipPage(
         RemoteImage(clip.thumbnailUrl, Modifier.fillMaxSize().alpha(BACKDROP_ALPHA))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.35f), BACKDROP_FADE to Color.Black)))
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = MODE_SWITCH_SPACE)) {
+            Spacer(Modifier.weight(CARD_TOP_WEIGHT))
             Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
                 if (mine && settledPage) ExoVideoSurface(player.exo, Modifier.fillMaxSize())
                 if (!showVideo) RemoteImage(clip.thumbnailUrl, Modifier.fillMaxSize())
@@ -284,7 +289,7 @@ private fun ClipPage(
                         onToggleMute,
                         Modifier.weight(1f),
                     )
-                    FeedAction(PhoneIcons.Info, stringResource(R.string.phone_feed_label_channel), stringResource(R.string.phone_feed_channel), onChannel, Modifier.weight(1f))
+                    FeedAction(Icons.Filled.Person, stringResource(R.string.phone_feed_label_channel), stringResource(R.string.phone_feed_channel), onChannel, Modifier.weight(1f))
                     FeedAction(PhoneIcons.Discover, stringResource(R.string.phone_feed_label_watch), stringResource(R.string.phone_feed_clip_open), onOpen, Modifier.weight(1f))
                 }
             }
