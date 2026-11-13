@@ -138,5 +138,25 @@
     "en": "Sign in with Twitch",
     "fr": "Se connecter avec Twitch",
     "ar": "تسجيل الدخول عبر Twitch"
+  },
+  "media_more_from": {
+    "en": "More from %@",
+    "fr": "Plus de %@",
+    "ar": "المزيد من %@"
+  },
+  "media_share": {
+    "en": "Share",
+    "fr": "Partager",
+    "ar": "مشاركة"
+  },
+  "media_kind_replay": {
+    "en": "Replay",
+    "fr": "Rediffusion",
+    "ar": "إعادة"
+  },
+  "media_kind_clip": {
+    "en": "Clip",
+    "fr": "Clip",
+    "ar": "مقطع"
   }
 }

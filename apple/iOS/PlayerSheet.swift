@@ -101,6 +101,9 @@ struct PlayerSheet: View {
                 Divider().opacity(0.4)
                 SheetChat(playback: playback, progress: progress, replyTo: $replyTo)
                 ChatComposer(playback: playback, replyTo: $replyTo)
+            } else if !playback.isLive, let target = session.target {
+                Divider().opacity(0.4)
+                MediaPage(target: target, info: session.info)
             } else {
                 Spacer()
             }

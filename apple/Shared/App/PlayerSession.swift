@@ -35,6 +35,13 @@ enum PlaybackTarget: Hashable {
     }
 }
 
+/// What the listing knew about a replay or a clip when it was opened: the page under the picture shows it.
+struct MediaInfo: Hashable {
+    var views: Int = 0
+    var durationSeconds: Int = 0
+    var dateMs: Int64 = 0
+}
+
 /// Where the player sheet rests: expanded over the app, or docked as a strip above the tab bar. No target means no player.
 enum SheetPosition: String { case expanded, collapsed }
 
@@ -44,6 +51,7 @@ enum SheetPosition: String { case expanded, collapsed }
 final class PlayerSession {
     let playback: PlaybackModel
     private(set) var target: PlaybackTarget?
+    private(set) var info: MediaInfo?
     var position: SheetPosition = .expanded
     /// A finger is dragging the sheet: the tab bar's glass goes flat meanwhile (it sits over the moving sheet and the playing video).
     var isDragging = false
@@ -55,9 +63,10 @@ final class PlayerSession {
         playback.controller.restoreUI = { [weak self] in self?.expand() }
     }
 
-    func open(_ next: PlaybackTarget) {
+    func open(_ next: PlaybackTarget, info: MediaInfo? = nil) {
         if target == next { position = .expanded; return }
         target = next
+        self.info = info
         position = .expanded
         generation += 1
         playback.start(next)

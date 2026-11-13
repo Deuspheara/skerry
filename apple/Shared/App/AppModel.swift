@@ -135,7 +135,7 @@ final class AppModel {
         }
         if launch.sheet == "signin" { showSignIn = true }
         // Debug: `-open-vod <id>` and `-open-clip <slug>` open a replay or a clip straight in the player.
-        if let id = LaunchMode.argument("-open-vod") { session.open(.replay(id: id, title: "vod \(id)", channelLogin: "", channelName: "", thumbnailUrl: "")) }
+        if let id = LaunchMode.argument("-open-vod") { session.open(.replay(id: id, title: "vod \(id)", channelLogin: LaunchMode.argument("-open-vod-channel") ?? "", channelName: LaunchMode.argument("-open-vod-channel") ?? "", thumbnailUrl: ""), info: LaunchMode.argument("-open-vod-channel") == nil ? nil : MediaInfo(views: 12840, durationSeconds: 5025, dateMs: 1_760_000_000_000)) }
         if let slug = LaunchMode.argument("-open-clip") { session.open(.clip(slug: slug, title: "clip \(slug)", channelLogin: "", channelName: "", thumbnailUrl: "")) }
         if let login = launch.open {
             session.open(.live(login: login, name: login, title: login, avatarUrl: nil, thumbnailUrl: ""))
@@ -227,7 +227,7 @@ extension AppModel {
 
     func openReplay(_ item: ContinueWatchingItem) {
         let replay = item.replay.replay
-        session.open(.replay(id: replay.id, title: replay.title, channelLogin: item.replay.channelLogin, channelName: item.replay.channelName, thumbnailUrl: replay.thumbnailUrl))
+        session.open(.replay(id: replay.id, title: replay.title, channelLogin: item.replay.channelLogin, channelName: item.replay.channelName, thumbnailUrl: replay.thumbnailUrl), info: MediaInfo(views: Int(replay.views), durationSeconds: Int(replay.durationSeconds), dateMs: replay.publishedAtMs))
     }
 
     func openChannel(_ login: String) {

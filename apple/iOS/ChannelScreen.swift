@@ -75,7 +75,7 @@ struct ChannelScreen: View {
                     SectionTitle(key: "sec_replays")
                     ForEach(replays, id: \.id) { replay in
                         ReplayRow(replay: replay, channel: details.channel, progress: state.progress[replay.id]) {
-                            app.session.open(.replay(id: replay.id, title: replay.title, channelLogin: details.channel.login, channelName: details.channel.name, thumbnailUrl: replay.thumbnailUrl))
+                            app.session.open(.replay(id: replay.id, title: replay.title, channelLogin: details.channel.login, channelName: details.channel.name, thumbnailUrl: replay.thumbnailUrl), info: MediaInfo(views: Int(replay.views), durationSeconds: Int(replay.durationSeconds), dateMs: replay.publishedAtMs))
                         }
                     }
                     if let cursor = details.replaysCursor, state.tail.cursor != nil || !state.tail.started {
@@ -87,7 +87,7 @@ struct ChannelScreen: View {
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: 12) {
                             ForEach(clips, id: \.slug) { clip in
-                                Button { app.session.open(.clip(slug: clip.slug, title: clip.title, channelLogin: details.channel.login, channelName: details.channel.name, thumbnailUrl: clip.thumbnailUrl)) } label: {
+                                Button { app.session.open(.clip(slug: clip.slug, title: clip.title, channelLogin: details.channel.login, channelName: details.channel.name, thumbnailUrl: clip.thumbnailUrl), info: MediaInfo(views: Int(clip.views), durationSeconds: Int(clip.durationSeconds), dateMs: clip.createdAtMs)) } label: {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Thumbnail(url: clip.thumbnailUrl).frame(width: 168)
                                         Text(clip.title).font(.footnote.weight(.semibold)).lineLimit(1).frame(width: 168, alignment: .leading)
