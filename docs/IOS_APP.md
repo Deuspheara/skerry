@@ -83,6 +83,21 @@ apple/
 | Voice search | not done | `UnavailableVoiceInput` on Apple |
 | Pull-to-refresh | not done | refresh is automatic (foreground signal) and via the stale banner |
 
+## Real data and the docked chrome
+
+- **Root cause of the floating strip and tab bar.** The sheet's geometry was computed from the size SwiftUI proposes to the view, and that size shrinks by the
+  keyboard's safe area. With the chat field focused and then the sheet minimised, the field stays first responder under the strip, so the "keyboard" region stayed
+  reserved: the strip's rest position (`container height - tab bar - strip`) and the tab bar (aligned to the bottom of a shrunk stack) both ended up about a
+  keyboard's height too high, while the scroll views kept drawing to the real bottom. Now `SheetGeometry` (pure maths, `SheetGeometryTests`) takes the screen
+  size without the keyboard, the keyboard only shortens the expanded sheet, the sheet and the tab bar ignore the keyboard safe area, and minimising or closing
+  dismisses the keyboard. Verified on iOS 26.0 and 26.2 simulators (26.5 shares the code; its device was left alone, the user was watching it).
+- **Real playback.** Launched without `-demo` and signed out, `-open <login>` plays real live channels (rainbow6, shadowkekw, blastpremier, chopperinho,
+  kato_junichi0817) in the expanded sheet and in the strip: the shared resolver gets the usher URL with the public GQL client, `AVPlayer` plays the HLS master
+  playlist, no ATS or header change was needed. `AVPlayerItem` error-log entries ("START-TIME is too close to live", "Segment exceeds specified bandwidth")
+  appear in the log (`subsystem com.twitchplayer.player`) and are not failures. A strip that is black means no picture yet (address being resolved, stream
+  loading) or a failure: it now shows the stream's thumbnail with a spinner, or a warning triangle when the stream failed or the channel is offline.
+  Signed-in playback with the user's own account was not exercised here.
+
 ## Lifecycle and system integration
 
 - **Audio session.** Created inactive: it is activated when playback starts and deactivated (notifying other apps) when the player stops, so launching the app
@@ -105,7 +120,7 @@ repository small (about 3.3 MB for all three folders, from 30 MB). Details such 
 ## Verified, and not
 
 Verified on the iPhone 17 simulator (iOS 26.5) and the iPhone 16 simulator (iOS 18.3, material fallback), with screenshots in `docs/screenshots/ios/`, and by
-Swift tests that run on all three Apple platforms from one `apple/Tests` folder: 32 on iOS, 34 on macOS and 34 on tvOS (the Mac and tvOS targets add their own).
+Swift tests that run on all three Apple platforms from one `apple/Tests` folder: 41 on iOS, 43 on macOS and 43 on tvOS (the Mac and tvOS targets add their own).
 They cover formatting, the shell's navigation rules, the player session, the `PlayerController` transitions (play, pause, stop, failure and retry, live
 edge vs replay resume, quality and audio-only, sleep timer, rate, no stacked remote handlers, audio session only while playing), the Keychain round trip from
 the signed app, localisation (every key used in Swift exists; plurals; fr and ar), and the real Kotlin presenters running on the demo data through the bridge.
