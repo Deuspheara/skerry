@@ -208,5 +208,35 @@
     "en": "Live now",
     "fr": "En direct maintenant",
     "ar": "مباشر الآن"
+  },
+  "category_summary": {
+    "en": "%1$@ viewers · %2$d channels",
+    "fr": "%1$@ spectateurs · %2$d chaînes",
+    "ar": "%1$@ مشاهد · %2$d قناة"
+  },
+  "category_follow": {
+    "en": "Follow category",
+    "fr": "Suivre la catégorie",
+    "ar": "متابعة الفئة"
+  },
+  "category_following": {
+    "en": "Following",
+    "fr": "Catégorie suivie",
+    "ar": "تتم المتابعة"
+  },
+  "channel_open_twitch": {
+    "en": "Open on twitch.tv",
+    "fr": "Ouvrir sur twitch.tv",
+    "ar": "فتح على twitch.tv"
+  },
+  "channel_followed_badge": {
+    "en": "You follow this channel",
+    "fr": "Vous suivez cette chaîne",
+    "ar": "أنت تتابع هذه القناة"
+  },
+  "channel_live_now": {
+    "en": "Live · %@ viewers",
+    "fr": "En direct · %@ spectateurs",
+    "ar": "مباشر · %@ مشاهد"
   }
 }

@@ -135,3 +135,118 @@ struct LiveAvatarRail: View {
         .scrollClipDisabled()
     }
 }
+
+/// The top of a category page: the box art, the name, the audience of everything live in it, its most used tags and a button to keep it.
+struct CategoryHeader: View {
+    let name: String
+    let artUrl: String?
+    let streams: [LiveStream]
+    let favorite: Bool
+    var onToggleFavorite: () -> Void
+
+    private var viewers: Int32 { streams.reduce(0) { $0 + $1.viewers } }
+
+    private var tags: [String] {
+        var counts: [String: Int] = [:]
+        for tag in streams.flatMap({ $0.tags }) { counts[tag, default: 0] += 1 }
+        return counts.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }.prefix(4).map(\.key)
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Group {
+                if let artUrl, !artUrl.isEmpty {
+                    RemoteImage(url: URL(string: artUrl)).aspectRatio(3 / 4, contentMode: .fill)
+                } else {
+                    Theme.surface.overlay(Image(systemName: "gamecontroller.fill").font(.title).foregroundStyle(Theme.textSecondary))
+                }
+            }
+            .frame(width: 84, height: 112)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.hairline, lineWidth: 0.5))
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(name).font(.title2.weight(.bold)).lineLimit(2)
+                Text(String(format: String(localized: "category_summary"), formatViewers(viewers), streams.count)).font(.subheadline).foregroundStyle(Theme.textSecondary)
+                if !tags.isEmpty {
+                    FlowLayout(spacing: 6, lineSpacing: 6) {
+                        ForEach(tags, id: \.self) { tag in
+                            Text(tag).font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                                .padding(.horizontal, 8).padding(.vertical, 3).background(Theme.surface, in: Capsule())
+                        }
+                    }
+                }
+                Button(action: onToggleFavorite) {
+                    Label(favorite ? "category_following" : "category_follow", systemImage: favorite ? "heart.fill" : "heart")
+                        .font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 7)
+                }
+                .glassCapsule(interactive: true).buttonStyle(.plain)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.bottom, 4)
+    }
+}
+
+/// The top of a channel page: a backdrop made of the avatar, the avatar over it with the live ring, the name and login, the live state, an honest
+/// link to follow on twitch.tv (the viewer token cannot follow) and what the page holds.
+struct ChannelHeader: View {
+    let channel: ChannelRef
+    let stream: LiveStream?
+    let isFollowed: Bool
+    let replays: Int
+    let clips: Int
+    var onOpenTwitch: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ZStack(alignment: .bottomLeading) {
+                RemoteImage(url: channel.avatarUrl.flatMap { URL(string: $0) })
+                    .scaledToFill().blur(radius: 28).saturation(1.4)
+                    .frame(height: 112).clipped()
+                    .overlay(LinearGradient(colors: [.clear, Theme.background.opacity(0.9)], startPoint: .top, endPoint: .bottom))
+                    .accessibilityHidden(true)
+                HStack(alignment: .bottom, spacing: 14) {
+                    Avatar(url: channel.avatarUrl, name: channel.name, size: 84)
+                        .overlay(Circle().stroke(stream != nil ? Theme.live : Theme.background, lineWidth: 3).padding(-4))
+                        .padding(4)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(channel.name).font(.title2.weight(.bold)).lineLimit(1)
+                        Text("@\(channel.login)").font(.footnote).foregroundStyle(Theme.textSecondary)
+                    }
+                    .padding(.bottom, 6)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 4).offset(y: 34)
+            }
+            .padding(.bottom, 34)
+            FlowLayout(spacing: 8, lineSpacing: 8) {
+                if let stream {
+                    Label(String(format: String(localized: "channel_live_now"), formatViewers(stream.viewers)), systemImage: "dot.radiowaves.left.and.right")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.white).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.live, in: Capsule())
+                } else {
+                    Label("phone_channel_offline", systemImage: "moon.zzz").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
+                }
+                if isFollowed {
+                    Label("channel_followed_badge", systemImage: "heart.fill").font(.caption.weight(.medium)).foregroundStyle(Theme.accentText).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
+                }
+                if replays > 0 {
+                    Label("\(replays) replays", systemImage: "play.rectangle").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
+                }
+                if clips > 0 {
+                    Label("\(clips) clips", systemImage: "scissors").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
+                }
+            }
+            Button(action: onOpenTwitch) {
+                Label("channel_open_twitch", systemImage: "arrow.up.right").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
+            }
+            .glassCapsule(interactive: true).buttonStyle(.plain)
+            .accessibilityHint(Text("phone_follow_opens_twitch"))
+        }
+    }
+}

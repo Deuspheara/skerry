@@ -161,6 +161,20 @@ final class AuditCaptureUITests: XCTestCase {
         shot("player-chat-pill")
     }
 
+    /// Accessibility XXL text and Arabic (right to left): the main screens of each.
+    func testDemoDynamicTypeAndRTL() {
+        let xxl = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXL"]
+        let rtl = ["-AppleLanguages", "(ar)", "-AppleLocale", "ar"]
+        for (prefix, extra) in [("ax", xxl), ("rtl", rtl)] {
+            launch(["-demo"] + extra, wait: 7); shot("\(prefix)-home")
+            tabBar("tab-browse"); shot("\(prefix)-browse")
+            launch(["-demo", "-push", "channel:lunaria"] + extra, wait: 7); shot("\(prefix)-channel")
+            launch(["-demo", "-push", "settings"] + extra, wait: 6); shot("\(prefix)-settings")
+            launch(["-demo", "-open", "lunaria"] + extra, wait: 8); shot("\(prefix)-player")
+            launch(["-demo", "-demo-signed-out"] + extra, wait: 6); shot("\(prefix)-signed-out")
+        }
+    }
+
     func testDemoReplayClipAndErrors() {
         launch(["-demo", "-open-vod", "demo"], wait: 7); shot("player-replay-portrait")
         launch(["-demo", "-open-clip", "demo"], wait: 7); shot("player-clip-portrait")

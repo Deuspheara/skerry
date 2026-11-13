@@ -78,7 +78,7 @@ struct CategoryStrip: View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 12) {
                 ForEach(categories, id: \.id) { category in
-                    CategoryCard(category: category) { app.push(.category(id: category.id, name: category.name)) }.frame(width: 104)
+                    CategoryCard(category: category) { app.openCategory(category) }.frame(width: 104)
                 }
             }
         }
@@ -257,7 +257,7 @@ struct BrowseScreen: View {
                     .scrollIndicators(.hidden).scrollClipDisabled()
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 12, alignment: .top)], spacing: 16) {
                         ForEach(categories, id: \.id) { category in
-                            CategoryCard(category: category) { app.push(.category(id: category.id, name: category.name)) }
+                            CategoryCard(category: category) { app.openCategory(category) }
                         }
                     }
                     .animation(app.motion, value: categories.map(\.id))
@@ -295,6 +295,7 @@ struct CategoryScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: pageSpacing) {
                     if refreshFailed { StaleBanner(loadedAtMs: loadedAtMs) { model?.retry() } }
+                    CategoryHeader(name: name, artUrl: app.categoryArt[id], streams: streams, favorite: category.favorite) { model?.toggleFavorite() }
                     if streams.isEmpty {
                         MessageState(title: "state_no_live")
                     }

@@ -147,7 +147,7 @@ struct SearchScreen: View {
             if filter != .channels && !categories.isEmpty {
                 if filter == .all { SectionTitle(key: "sec_categories") }
                 ForEach(categories, id: \.id) { category in
-                    Button { app.push(.category(id: category.id, name: category.name)) } label: {
+                    Button { app.openCategory(category) } label: {
                         HStack(spacing: 12) {
                             RemoteImage(url: URL(string: category.artUrl)).frame(width: 40, height: 54).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                             Text(category.name).font(.subheadline.weight(.semibold)).lineLimit(1)

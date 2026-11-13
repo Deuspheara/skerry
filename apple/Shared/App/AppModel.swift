@@ -83,6 +83,8 @@ final class AppModel {
     var tab: AppTab = .home
     var paths: [AppTab: [Route]] = [:]
     var showSignIn = false
+    /// The box art of the categories opened from a list, for the header of their page.
+    private(set) var categoryArt: [String: String] = [:]
     let session: PlayerSession
 
     private let lifetime = Lifetime()
@@ -223,6 +225,12 @@ extension AppModel {
     /// A tap on a stream card opens the player with its chat; the channel page is one tap away under the picture.
     func open(_ stream: LiveStream) {
         session.open(.live(login: stream.login, name: stream.name, title: stream.title, avatarUrl: stream.avatarUrl, thumbnailUrl: stream.thumbnailUrl))
+    }
+
+    /// The box art of the categories opened from a list, for the header of their page (the route carries only the id and the name).
+    func openCategory(_ category: TwitchShared.Category) {
+        categoryArt[category.id] = category.artUrl
+        push(.category(id: category.id, name: category.name))
     }
 
     func openReplay(_ item: ContinueWatchingItem) {

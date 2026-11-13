@@ -11,7 +11,7 @@ struct ChannelScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            DetailBar(title: login)
+            DetailBar(title: "")
             content
         }
         .background(Theme.background.ignoresSafeArea())
@@ -39,25 +39,11 @@ struct ChannelScreen: View {
         let schedule = details.schedule as? [ScheduledStream] ?? []
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 14) {
-                    Avatar(url: details.channel.avatarUrl, name: details.channel.name, size: 72)
-                        .overlay(Circle().stroke(Theme.live, lineWidth: details.stream != nil ? 3 : 0).padding(-4))
-                        .padding(5)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(details.channel.name).font(.title2.weight(.bold)).lineLimit(1)
-                        Button { if let url = URL(string: "https://www.twitch.tv/\(details.channel.login)") { openURL(url) } } label: {
-                            Label(details.isFollowed ? "phone_follow_state_on" : "phone_follow", systemImage: details.isFollowed ? "heart.fill" : "heart")
-                                .font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 7)
-                        }
-                        .glassCapsule(interactive: true).buttonStyle(.plain)
-                        .accessibilityHint(Text("phone_follow_opens_twitch"))
-                    }
-                    Spacer(minLength: 0)
+                ChannelHeader(channel: details.channel, stream: details.stream, isFollowed: details.isFollowed, replays: replays.count, clips: clips.count) {
+                    if let url = URL(string: "https://www.twitch.tv/\(details.channel.login)") { openURL(url) }
                 }
                 if let stream = details.stream {
                     StreamRow(stream: stream) { app.open(stream) }
-                } else {
-                    Text("phone_channel_offline").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 }
                 if !schedule.isEmpty {
                     SectionTitle(key: "channel_schedule")
