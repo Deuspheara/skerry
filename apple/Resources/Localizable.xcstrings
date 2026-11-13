@@ -16721,6 +16721,29 @@
         }
       }
     },
+    "phone_category_watching": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ watching now"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ يشاهدون الآن"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ spectateurs en ce moment"
+          }
+        }
+      }
+    },
     "phone_channel_live_viewers": {
       "extractionState": "manual",
       "localizations": {
@@ -18143,6 +18166,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vu en direct %1$@"
+          }
+        }
+      }
+    },
+    "phone_following_live_now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live now"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر الآن"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En direct"
           }
         }
       }
@@ -27033,6 +27079,29 @@
         }
       }
     },
+    "search_clear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effacer la recherche"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح البحث"
+          }
+        }
+      }
+    },
     "search_field": {
       "extractionState": "manual",
       "localizations": {
@@ -30818,6 +30887,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "沒有結果"
+          }
+        }
+      }
+    },
+    "state_no_result_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the spelling or try another name."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez l'orthographe ou essayez un autre nom."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحقق من الإملاء أو جرّب اسمًا آخر."
           }
         }
       }
