@@ -57,7 +57,15 @@ struct SheetGeometry: Equatable {
 
     /// The box that holds the picture: it shrinks from the expanded picture (with its black status bar area) to the strip's 112 x 64 thumbnail.
     var videoWidth: CGFloat { lerp(container.width, Self.miniVideoWidth, q) }
-    var videoHeight: CGFloat { lerp(expandedVideoHeight, Self.miniHeight, q) }
+    /// The box wraps the picture exactly (status bar area above it included while it lasts), so no black band is ever left above a shrinking picture.
+    var videoHeight: CGFloat {
+        let fit = min(Self.miniVideoWidth / pictureBase.width, Self.miniHeight / pictureBase.height)
+        let dockedGap = (Self.miniHeight - pictureBase.height * fit) / 2
+        return pictureOffset.height + pictureBase.height * pictureScale + dockedGap * q
+    }
+
+    /// The status bar area above the picture is gone by the time the sheet has moved a third of the way, not spread over the whole drag.
+    var topInsetShown: CGFloat { pictureTopInset * (1 - min(1, q / 0.33)) }
 
     /// One scale for both axes (the picture is never stretched): from 1 to the factor that fits the thumbnail.
     var pictureScale: CGFloat {
@@ -70,7 +78,13 @@ struct SheetGeometry: Equatable {
         let fit = min(Self.miniVideoWidth / pictureBase.width, Self.miniHeight / pictureBase.height)
         let dockedX = (Self.miniVideoWidth - pictureBase.width * fit) / 2
         let dockedY = (Self.miniHeight - pictureBase.height * fit) / 2
-        return CGSize(width: lerp(0, dockedX, q), height: lerp(pictureTopInset, dockedY, q))
+        return CGSize(width: lerp(0, dockedX, q), height: topInsetShown + dockedY * q)
+    }
+
+    /// Half of what the docked thumbnail leaves around the fitted picture (test hook).
+    var dockedGapForTests: CGFloat {
+        let fit = min(Self.miniVideoWidth / pictureBase.width, Self.miniHeight / pictureBase.height)
+        return (Self.miniHeight - pictureBase.height * fit) / 2
     }
 
     /// Bottom edge of the strip at rest, in screen coordinates.

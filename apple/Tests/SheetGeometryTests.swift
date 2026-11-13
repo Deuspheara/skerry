@@ -140,8 +140,17 @@ final class SheetDragMathTests: XCTestCase {
             let current = g.at(q)
             XCTAssertLessThanOrEqual(current.pictureScale, previous.pictureScale + 1e-9)
             XCTAssertLessThan(abs(current.pictureScale - previous.pictureScale), 0.06, "no jump")
-            XCTAssertLessThan(abs(current.pictureOffset.height - previous.pictureOffset.height), 8, "no jump")
+            XCTAssertLessThan(abs(current.pictureOffset.height - previous.pictureOffset.height), 10.5, "no jump")
             previous = current
+        }
+    }
+
+    func testTheBoxAlwaysWrapsThePictureSoNoBlackBandIsLeftAboveIt() {
+        let g = SheetGeometry(container: CGSize(width: 402, height: 874), safeTop: 62, safeBottom: 34)
+        for q in stride(from: CGFloat(0.35), through: 0.95, by: 0.1) {
+            let at = g.at(q)
+            XCTAssertEqual(at.pictureOffset.height, at.dockedGapForTests * q, accuracy: 0.001, "the status bar area is gone after a third of the way")
+            XCTAssertEqual(at.videoHeight, at.pictureBase.height * at.pictureScale + 2 * at.dockedGapForTests * q, accuracy: 0.001)
         }
     }
 

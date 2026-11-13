@@ -104,7 +104,7 @@ struct SheetCover: ViewModifier {
     func body(content: Content) -> some View {
         let q = min(1, max(0, progress.value))
         content
-            .overlay { color.opacity(Double(min(1, q * 3))).allowsHitTesting(false) }
+            .overlay { color.opacity(Double(min(1, q * 4))).allowsHitTesting(false) }
             .allowsHitTesting(q < 0.2)
     }
 }
