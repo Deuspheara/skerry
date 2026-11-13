@@ -5,8 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -17,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,6 +29,8 @@ import com.twitchplayer.phone.R
 import com.twitchplayer.phone.ui.components.PhoneIcons
 
 private const val SUBTITLE_MAX_LINES = 1
+private const val HAIRLINE_DP = 1
+private val BUTTON_GAP = 12.dp
 
 /** What sits beside the small picture while the sheet is minimised: what plays, a play / pause button and the close button. A tap anywhere else expands. */
 @Composable
@@ -39,8 +45,12 @@ fun PlayerStrip(
     showPlay: Boolean = true,
 ) {
     val expand = stringResource(R.string.phone_player_expand)
+    val hairline = MaterialTheme.colorScheme.outlineVariant
     Row(
-        modifier.fillMaxSize().clickable(onClickLabel = expand, role = Role.Button, onClick = onExpand).padding(start = 12.dp),
+        modifier.fillMaxSize()
+            // A hairline on top: on the light theme the strip and the bar under it are almost the same tone.
+            .drawBehind { drawLine(hairline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = HAIRLINE_DP.dp.toPx()) }
+            .clickable(onClickLabel = expand, role = Role.Button, onClick = onExpand).padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -58,6 +68,8 @@ fun PlayerStrip(
                 )
             }
         }
+        // Room between pause and close: a slip of the thumb must not end the stream.
+        Spacer(Modifier.width(BUTTON_GAP))
         IconButton(onClick = onClose) {
             Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.phone_player_close), tint = MaterialTheme.colorScheme.onSurface)
         }

@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 
 // Dark: Twitch purple lightened so text and icons reach AA on the near-black surfaces; the dark label colour on the
 // filled button reaches 6:1.
-private val DarkScheme = darkColorScheme(
+internal val DarkScheme = darkColorScheme(
     primary = Color(0xFFA970FF),
     onPrimary = Color(0xFF1B0B3A),
     primaryContainer = Color(0xFF3D1F7A),
@@ -41,7 +41,7 @@ private val DarkScheme = darkColorScheme(
     onError = Color(0xFF690005),
 )
 
-private val LightScheme = lightColorScheme(
+internal val LightScheme = lightColorScheme(
     primary = Color(0xFF772CE8),
     onPrimary = Color.White,
     primaryContainer = Color(0xFFEBDDFF),

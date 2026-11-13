@@ -375,16 +375,26 @@ private fun LazyListScope.results(
             items(SKELETON_ROWS, key = { "skeleton-$it" }) { SkeletonRow() }
         }
 
-        found == null -> item(key = "no-result") {
-            MessageState(title = stringResource(R.string.state_no_result), modifier = Modifier.fillMaxWidth().height(320.dp))
-        }
+        found == null -> item(key = "no-result") { NoResults(state.query) }
 
-        else -> foundResults(found, filter, onWatch, onChannel, onCategory, onOpened)
+        else -> foundResults(found, state.query, filter, onWatch, onChannel, onCategory, onOpened)
     }
+}
+
+/** Nothing found: the query echoed back (so a typo is visible), a hint and a symbol, not one bare line. */
+@Composable
+private fun NoResults(query: String) {
+    MessageState(
+        title = stringResource(R.string.phone_no_results_for, query.trim()),
+        body = stringResource(R.string.phone_no_results_hint),
+        icon = androidx.compose.material.icons.Icons.Filled.Search,
+        modifier = Modifier.fillMaxWidth().height(320.dp),
+    )
 }
 
 private fun LazyListScope.foundResults(
     found: ResultsUi.Found,
+    query: String,
     filter: SearchFilter,
     onWatch: (String) -> Unit,
     onChannel: (String) -> Unit,
@@ -394,7 +404,7 @@ private fun LazyListScope.foundResults(
     val showChannels = filter != SearchFilter.Categories && found.channels.isNotEmpty()
     val showCategories = filter != SearchFilter.Channels && found.categories.isNotEmpty()
     if (!showChannels && !showCategories) {
-        item(key = "filtered-empty") { MessageState(title = stringResource(R.string.state_no_result), modifier = Modifier.fillMaxWidth().height(320.dp)) }
+        item(key = "filtered-empty") { NoResults(query) }
     }
     if (showChannels) {
         if (filter == SearchFilter.All) item(key = "channels-header") { SectionTitle(stringResource(R.string.sec_channels)) }

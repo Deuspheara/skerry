@@ -25,13 +25,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twitchplayer.phone.R
 import com.twitchplayer.phone.feature.channel.ReplayRow
 import com.twitchplayer.phone.feature.channel.durationLabel
 import com.twitchplayer.phone.navigation.PlaybackTarget
 import com.twitchplayer.phone.ui.components.Avatar
+import com.twitchplayer.phone.ui.components.FilterPill
 import com.twitchplayer.phone.ui.components.SectionHeader
 import com.twitchplayer.tv.core.data.model.ChannelDetails
 import com.twitchplayer.tv.core.data.model.Replay
@@ -64,7 +67,7 @@ fun ReplayDetails(
 ) {
     val now = remember { System.currentTimeMillis() }
     Column(modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(info.title, style = MaterialTheme.typography.headlineSmall)
+        Text(info.title, style = MaterialTheme.typography.titleMedium.copy(fontSize = TITLE_SP.sp, textDirection = androidx.compose.ui.text.style.TextDirection.Content), fontWeight = FontWeight.SemiBold)
         val meta = replayMeta(info, durationMs, now)
         if (meta.isNotBlank()) Text(meta, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (info.channelLogin.isNotBlank()) {
@@ -77,13 +80,10 @@ fun ReplayDetails(
         // A replay still being recorded is pinned to normal speed. The chips wrap onto a second line instead of running off the edge.
         if (speedsEnabled) {
             Text(stringResource(R.string.phone_player_speed), style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // One row that scrolls if it must, never a lone "2x" on a second line.
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PLAYBACK_SPEEDS.forEach { candidate ->
-                    FilterChip(
-                        selected = abs(speed - candidate) < SPEED_EPSILON,
-                        onClick = { onSpeed(candidate) },
-                        label = { Text(speedLabel(candidate, numbers)) },
-                    )
+                    FilterPill(speedLabel(candidate, numbers), selected = abs(speed - candidate) < SPEED_EPSILON, onClick = { onSpeed(candidate) })
                 }
             }
         }
@@ -121,5 +121,6 @@ private fun replayMeta(info: ReplayInfo, durationMs: Long, now: Long): String {
 }
 
 private const val SPEED_EPSILON = 0.01f
+private const val TITLE_SP = 18
 private const val MORE_REPLAYS = 6
 private const val MILLIS = 1_000L

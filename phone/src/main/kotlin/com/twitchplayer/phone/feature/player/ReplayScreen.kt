@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -180,6 +181,7 @@ private fun ReplayPlayer(
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     val sleep = rememberSleepTimer()
     var sleepOpen by remember { mutableStateOf(false) }
+    var settingsOpen by remember { mutableStateOf(false) }
     SleepTimerEffect(sleep) { exo.pause() }
     var dragging by remember { mutableStateOf(false) }
     val duration = if (snapshot.durationMs > 0) snapshot.durationMs else knownDurationMs
@@ -233,7 +235,7 @@ private fun ReplayPlayer(
         onBack = onBack,
         onTogglePlay = togglePlay,
         restoration = restoration,
-        pinned = dragging || qualities != null || sleepOpen || (decision is StartDecision.Ask && startAt == null),
+        pinned = dragging || qualities != null || sleepOpen || settingsOpen || (decision is StartDecision.Ask && startAt == null),
         video = { videoModifier -> ExoVideoSurface(exo, videoModifier) },
         stageOverlay = {
             val ask = decision as? StartDecision.Ask
@@ -280,23 +282,13 @@ private fun ReplayPlayer(
                             sleepOpen = true
                         })
                         ControlButton(
-                            PhoneIcons.Timer,
-                            stringResource(R.string.phone_player_sleep_timer),
+                            Icons.Filled.Settings,
+                            stringResource(R.string.phone_player_settings),
                             {
                                 chrome.controls.touch()
-                                sleepOpen = true
+                                settingsOpen = true
                             },
                         )
-                        if (vod.variants.size > 1) {
-                            ControlButton(
-                                PhoneIcons.Quality,
-                                stringResource(R.string.player_quality),
-                                {
-                                    chrome.controls.touch()
-                                    qualities = ReplayQuality.options(vod.variants, autoLabel, selected)
-                                },
-                            )
-                        }
                         FullscreenButton(chrome)
                     },
                 )
@@ -316,6 +308,26 @@ private fun ReplayPlayer(
             )
         },
     )
+    if (settingsOpen) {
+        val off = stringResource(R.string.phone_player_settings_off)
+        val rows = buildList {
+            if (vod.variants.size > 1) {
+                add(
+                    PlayerSettingRow(PhoneIcons.Quality, stringResource(R.string.player_quality), null) {
+                        settingsOpen = false
+                        qualities = ReplayQuality.options(vod.variants, autoLabel, selected)
+                    },
+                )
+            }
+            add(
+                PlayerSettingRow(PhoneIcons.Timer, stringResource(R.string.phone_player_sleep_timer), if (sleep.active) SleepTimerPolicy.format(sleep.remainingMs) else off) {
+                    settingsOpen = false
+                    sleepOpen = true
+                },
+            )
+        }
+        PlayerSettingsSheet(rows = rows, onDismiss = { settingsOpen = false })
+    }
     if (sleepOpen) SleepTimerSheet(sleep, onDismiss = { sleepOpen = false })
     qualities?.let { options ->
         QualitySheet(

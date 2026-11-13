@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -173,6 +175,7 @@ fun LivePlayerRoute(
     var qualities by remember { mutableStateOf<VideoQualities?>(null) }
     val sleep = rememberSleepTimer()
     var sleepOpen by remember { mutableStateOf(false) }
+    var settingsOpen by remember { mutableStateOf(false) }
     // When the timer runs out the stream pauses, like pressing pause (the presenter keeps the state in step).
     SleepTimerEffect(sleep) { if (snapshot.playWhenReady) presenter.onEvent(PlayerEvent.TogglePause) }
     val failed = status is NativeStatus.Failed
@@ -199,7 +202,7 @@ fun LivePlayerRoute(
             onBack = onBack,
             onTogglePlay = { presenter.onEvent(PlayerEvent.TogglePause) },
             restoration = restoration,
-            pinned = qualities != null || sleepOpen,
+            pinned = qualities != null || sleepOpen || settingsOpen,
             video = { videoModifier -> NativeVideoSurface(player, videoModifier) },
             stageOverlay = {
                 // Audio only: no picture comes, so the stage says so (and whose stream it is) instead of staying black.
@@ -262,20 +265,11 @@ fun LivePlayerRoute(
                         },
                     )
                     ControlButton(
-                        PhoneIcons.Quality,
-                        stringResource(R.string.player_quality),
+                        Icons.Filled.Settings,
+                        stringResource(R.string.phone_player_settings),
                         {
                             chrome.controls.touch()
-                            qualities = VideoQualities.None
-                            player.loadQualities { qualities = it }
-                        },
-                    )
-                    ControlButton(
-                        PhoneIcons.Timer,
-                        stringResource(R.string.phone_player_sleep_timer),
-                        {
-                            chrome.controls.touch()
-                            sleepOpen = true
+                            settingsOpen = true
                         },
                     )
                     FullscreenButton(chrome)
@@ -296,9 +290,13 @@ fun LivePlayerRoute(
                     StreamInfo(
                         avatarUrl = current?.avatarUrl,
                         name = title,
-                        category = current?.categoryName,
-                        startedAtMs = current?.startedAtMs ?: 0L,
-                        labels = listOfNotNull(current?.language?.takeIf { it.isNotBlank() }?.uppercase()) + current?.tags.orEmpty(),
+                        facts = StreamFacts(
+                            title = current?.title,
+                            viewers = current?.viewers ?: 0,
+                            category = current?.categoryName,
+                            startedAtMs = current?.startedAtMs ?: 0L,
+                            labels = listOfNotNull(current?.language?.takeIf { it.isNotBlank() }?.uppercase()) + current?.tags.orEmpty(),
+                        ),
                         notice = state.notice,
                         onOpenChannel = { onOpenChannel(state.login) },
                         onOpenTwitch = { channelUrl(state.login).takeIf(::isTwitchUrl)?.let { runCatching { uriHandler.openUri(it) } } },
@@ -321,6 +319,23 @@ fun LivePlayerRoute(
             },
         )
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).safeDrawingPadding())
+        if (settingsOpen) {
+            val off = stringResource(R.string.phone_player_settings_off)
+            PlayerSettingsSheet(
+                rows = listOf(
+                    PlayerSettingRow(PhoneIcons.Quality, stringResource(R.string.player_quality), null) {
+                        settingsOpen = false
+                        qualities = VideoQualities.None
+                        player.loadQualities { qualities = it }
+                    },
+                    PlayerSettingRow(PhoneIcons.Timer, stringResource(R.string.phone_player_sleep_timer), if (sleep.active) SleepTimerPolicy.format(sleep.remainingMs) else off) {
+                        settingsOpen = false
+                        sleepOpen = true
+                    },
+                ),
+                onDismiss = { settingsOpen = false },
+            )
+        }
         if (sleepOpen) SleepTimerSheet(sleep, onDismiss = { sleepOpen = false })
         qualities?.let { options ->
             QualitySheet(
@@ -376,9 +391,13 @@ private fun androidx.compose.foundation.layout.BoxScope.StageStatus(status: Nati
     }
 }
 
+/** What the page says about the stream under the picture: its title, category, viewers, start time and the language and tags the broadcaster set. */
+@androidx.compose.runtime.Immutable
+private class StreamFacts(val title: String?, val viewers: Int, val category: String?, val startedAtMs: Long, val labels: List<String>)
+
 /** Title, category, viewers and uptime under the picture, plus raids / stream-ended notices, and a button to open the channel on twitch.tv. */
 @Composable
-private fun StreamInfo(avatarUrl: String?, name: String, category: String?, startedAtMs: Long, labels: List<String>, notice: ChannelNotice?, onOpenChannel: () -> Unit, onOpenTwitch: () -> Unit) {
+private fun StreamInfo(avatarUrl: String?, name: String, facts: StreamFacts, notice: ChannelNotice?, onOpenChannel: () -> Unit, onOpenTwitch: () -> Unit) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -386,8 +405,12 @@ private fun StreamInfo(avatarUrl: String?, name: String, category: String?, star
             now = System.currentTimeMillis()
         }
     }
-    val uptime = liveForLabel(startedAtMs, now)
+    val uptime = liveForLabel(facts.startedAtMs, now)
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // What is being watched, always on the page (the controls over the picture hide): the stream's title, up to two lines.
+        if (!facts.title.isNullOrBlank()) {
+            Text(facts.title, style = MaterialTheme.typography.titleSmall.copy(textDirection = androidx.compose.ui.text.style.TextDirection.Content), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // The streamer (picture and name) leads to the channel page; the button at the end opens twitch.tv.
             Row(
@@ -398,7 +421,8 @@ private fun StreamInfo(avatarUrl: String?, name: String, category: String?, star
                 Avatar(avatarUrl, name, 40.dp)
                 Column(Modifier.weight(1f)) {
                     Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    val line = listOfNotNull(category?.ifBlank { null }, uptime?.let { stringResource(R.string.phone_live_for, it) }).joinToString(" · ")
+                    val watching = if (facts.viewers > 0) stringResource(R.string.phone_search_viewers, remember(facts.viewers) { com.twitchplayer.tv.core.ui.formatViewers(facts.viewers) }) else null
+                    val line = listOfNotNull(facts.category?.ifBlank { null }, watching, uptime?.let { stringResource(R.string.phone_live_for, it) }).joinToString(" · ")
                     if (line.isNotEmpty()) {
                         Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
@@ -411,7 +435,7 @@ private fun StreamInfo(avatarUrl: String?, name: String, category: String?, star
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        StreamTags(labels)
+        StreamTags(facts.labels)
         NoticeBanner(notice)
     }
 }
