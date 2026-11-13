@@ -100,33 +100,57 @@ apple/
 
 ## The sheet's drag: root causes and numbers
 
-The swipe-down to minimise was janky. Root causes, found by reading the code and confirmed by the numbers below:
-1. **Every drag frame rebuilt the whole sheet.** The drag offset was `@State` of `PlayerSheet`, read in its `body`, so each frame re-evaluated the sheet and everything under it:
-   the streamer row, the chat and its composer, the video stage and its controls.
-2. **The chat could not be skipped.** `ChatList` took an `onReply` closure; a new closure each body defeats SwiftUI's "inputs unchanged, skip the body", so the list of
-   ~150 lines was rebuilt per frame, and each line did `lines.suffix(8).contains { ... }` (an O(n) scan per line, O(n²) for the list).
-3. **Layout instead of transforms.** The sheet's height, the video's frame and the details' padding changed every frame (layout), plus a `shadow` on a moving, video-sized layer.
-4. **`withAnimation` against the gesture.** The release ran a SwiftUI spring on `drag` *and* on `session.position` (which changes what the stage draws), and the model value jumped
-   to the target at once, so a new touch could not catch the sheet in flight.
+The swipe-down to minimise was jittery with real data. What was measured, and how it was found:
 
-The new drag: one value, `SheetProgress.value`, written per sample by the pan (1:1 inside the rest positions, a rubber band past them) and, after release, by a display-link spring
-(`SpringDriver` / `SpringMath`, seeded with the finger's velocity, interruptible: a new touch starts from the in-flight value). **No view body reads it**: only three small modifiers
-(`SheetFrame`, `VideoFrame`, `SheetFade`) do, so a frame re-evaluates those and moves the same views. The chat is its own view, frozen while the finger is down (`ChatList` is
-`Equatable` and ignores the closure), the shadow belongs to a plain shape behind the clip, the video view is one instance whose frame changes (never re-parented), and the position
-(which rebuilds the stage's content) is committed when the sheet lands, not while it moves.
+**Real conditions.** `apple/scripts/measure-drag.sh <udid> [Debug|Profile]` runs an XCUITest (`apple/UITests`) that opens a real live channel (picked from Twitch's live list)
+beside a fast fictional chat (`-real-fast-chat`: the real network and playback, the demo's session and about 16 messages a second) and drags the sheet down and up with
+real touches (`press(forDuration:thenDragTo:withVelocity:)`, slow, default and fast, six drags each way), while `simctl io recordVideo` records the screen. The app logs the
+main thread's frame cadence per phase (`FrameMonitor`, `-frame-monitor`), and `apple/scripts/analyze-recording.py` reads the recording itself: it follows the sheet's top
+edge (a magenta bar drawn on the sheet's edge while measuring) frame by frame, i.e. what the render server really presented. `xctrace`'s Animation Hitches template does not
+support the simulator ("Hitches is not supported on this platform"). A control (`analyze-scroll.py`: a plain list scrolled with the same touches) gives the recorder's own noise floor:
+p95 frame interval 25.0 ms and 4.9 % of intervals above 25 ms.
 
-Measured with `-drag-benchmark` (debug: three minimise + expand cycles of scripted drag, one touch sample per display frame, 552 frames per run, iOS 26.2 simulator, demo data with
-the chat running; the host was busy, so absolute values are noisy). `xctrace`'s Animation Hitches template does not support the simulator ("Hitches is not supported on this
-platform") and `XCTHitchMetric` needs a device, so the numbers come from the display link's cadence and a run-loop observer:
+**Root cause (the one that was jitter):** the pan's translation was measured in the gesture's *local* coordinate space. The view carrying the gesture moves (and scales) with the
+sheet, so its own origin moves under the finger, the translation loses what the view has already moved, and the next sample compensates: the sheet zigzags between two positions
+from one frame to the next (in the recordings, 40 % of the steps went against the movement, and every other frame showed the sheet at an earlier progress with the details at
+full opacity). The main-thread timer saw nothing (0 hitches in every drag, in every version), which is why the first two rounds of measurements missed it. Fix:
+`DragGesture(minimumDistance:coordinateSpace: .global)`.
 
-| | frames dropped (median of runs) | hitches (frames > 25 ms) | frame interval p95 | longest main-thread run loop pass | main thread busy |
-|---|---|---|---|---|---|
-| before (3 runs) | 9.5 % (9.4 / 9.5 / 10.2) | 29-34 | 27-33 ms | 73-115 ms | 36 % |
-| after (5 runs) | 1.6 % (1.1 / 1.3 / 1.6 / 2.0 / 4.2) | 5-10 | 16.7 ms (= nominal) in every run | 17-28 ms (one 225 ms host stall in 5) | 18-19 % |
+**Bisect (same harness, real touches, recordings; demo clip and demo chat for the older commits).** Zigzag, as the share of steps against the movement: 0ce8bc6 (the first sheet)
+42.5 %, fe1e320 (before the keyboard/strip fix) 40.5 %, b5b75d9 (the keyboard/strip fix) 40.9 %, 1d46d2c (the first drag rewrite) 42.6 %, then 0.0 % with the global space. So the
+chat fixes did not introduce it: it was there from the first sheet and the commits in between neither added nor removed it (the user's report that it appeared with the chat fix is not
+supported by the measurements; what changed meanwhile was the amount of chat and video on screen, which is what made it visible).
 
-The macOS app and the Apple TV player have no drag gesture on the sheet (the Mac's mini player is a floating pane toggled by a button, the Apple TV's player is the system
-`AVPlayerViewController`), so there is nothing to measure there; they share `ChatList`, which now skips rebuilds when nothing changed. Not measured: a physical device (GPU
-hitches, ProMotion at 120 Hz), and the real touch recogniser (the benchmark feeds synthetic samples to the same handlers the gesture calls).
+**Second cause (the 30 fps on the way down):** with the zigzag gone, the downward drags still ran at about 30 fps while the upward ones ran at 60. The cost was GPU work proportional
+to the sheet's size, repainted per frame while the large sheet moved: Liquid Glass elements over the playing video and the moving sheet (the chat input's glass, the controls', the tab
+bar's: each samples what is behind it every frame), an opacity group over the whole details subtree (chat lines, emotes, input), a rounded-corner mask over the whole sheet and the
+shadow's blur of a full-screen shape. Now: glass is a flat translucent fill while the sheet moves (`flatChrome`, set for the whole sheet and the tab bar, until 260 ms after it has landed),
+the details fade by a flat cover of their own colour instead of an opacity group, the controls go in one short fade at touch-down, corners and shadow only appear when the sheet is nearly
+the strip, and the landing's work (the position the stage is rebuilt for, the glass coming back, the chat catching up) waits until the sheet has visibly stopped.
+
+**Pure SwiftUI, one value.** `SheetProgress.value` is the only thing the drag and the settle drive; no view body reads it, only `SheetFrame`, `PictureTransform` and the cover/fade
+modifiers do. The picture is laid out once at its own size and only scaled and moved (`scaleEffect`, `offset`) while the sheet moves, so the video layer is never resized mid-drag; the
+chat is held (new batches kept aside, `holdChat`) until the sheet has landed; the settle is SwiftUI's own `interpolatingSpring` launched with the finger's velocity, and a new touch starts
+from the value SwiftUI is showing (`PresentedProbe`), so the sheet can be caught in flight; the screen is measured with `onGeometryChange`, not a `GeometryReader`.
+
+**Numbers** (iPhone 17 Pro, iOS 26.5 simulator, Debug, real touches, live video, fast chat; the 12 drags of one run; the recorder's own control in the last column):
+
+| | 1d46d2c, Debug (before) | now, Debug | now, Profile (Release optimisation) | plain list scrolled (control) |
+|---|---|---|---|---|
+| steps against the movement (zigzag) | 42.6 % (81 of 190) | 0.0 % (0 of 666) | 0.0 % (0 of 704) | - |
+| distinct positions presented | 188 | 661 | 699 | - |
+| median interval between positions | 21.7 ms (46 fps) | 16.7 ms (60 fps) | 16.7 ms (60 fps) | 16.7 ms |
+| p95 interval | 125 ms | 25.0 ms | 23.3 ms | 25.0 ms |
+| intervals above 25 ms (fast part) | 46.3 % | 5.1 % | 3.6 % (11.4 % in a first run while the host was busier) | 4.9 % |
+| speed discontinuity between frames (p50, 1 = a full speed change) | 1.99 | 0.17 | 0.15 | - |
+
+Debug is not slower than Release for this gesture any more (they are both at the recorder's noise floor); before, Debug and the older commits all zigzagged alike, so the jitter was not
+a Debug-only cost. `Profile` = Release's optimisation with the debug hooks (`apple/scripts/measure-drag.sh <udid> Profile`, with a framework built by
+`./gradlew :shared:platform-apple:assembleTwitchSharedReleaseXCFramework -PappleDemo=true`, copied to `apple/Frameworks`). Building it also found a crash in the Kotlin logger
+(`NSLog("%@", <Kotlin string>)` segfaulted in optimised builds): fixed by passing an `NSString`.
+
+The macOS app and the Apple TV player have no drag on the sheet (the Mac's mini player is toggled by a button, the Apple TV's player is the system `AVPlayerViewController`),
+so there is nothing to measure there. Not measured: a physical device (ProMotion at 120 Hz, the real GPU), a real finger.
 
 ## Lifecycle and system integration
 
