@@ -72,7 +72,12 @@ struct ChatLineView: View {
         case .large: 17
         default: 15
         }
+        #if os(tvOS)
+        // Read from the couch: the same in-app size setting, drawn about twice as large.
+        return base * scale * 1.9
+        #else
         return base * scale
+        #endif
     }
 
     private var gap: CGFloat {

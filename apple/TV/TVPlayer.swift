@@ -26,7 +26,7 @@ struct TVPlayerScreen: View {
                 // Over the picture, on any frame: a dark scrim behind the column, a dark backing and a shadow behind every line, and the nick colours
                 // the shared mapper already made readable on a dark background (the Kotlin `NickContrast` logic).
                 ChatList(lines: playback.chat, settings: playback.chatSettings, overVideo: true, onReply: nil)
-                    .frame(width: 600)
+                    .frame(width: 760)
                     .padding(.vertical, 60).padding(.horizontal, 40)
                     .background(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black.opacity(0.55), location: 0.25), .init(color: .black.opacity(0.85), location: 1)], startPoint: .leading, endPoint: .trailing))
                     .allowsHitTesting(false)
