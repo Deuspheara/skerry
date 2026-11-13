@@ -11,6 +11,13 @@ enum Orientation {
     }
 }
 
+/// The keyboard follows the player's state: minimising or closing the sheet hides it (the chat field is still first responder, hidden under the strip).
+enum Keyboard {
+    @MainActor static func dismiss() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 /// The on-screen keyboard's height, so the sheet (which covers the whole screen) can keep the chat input above it.
 @MainActor
 @Observable

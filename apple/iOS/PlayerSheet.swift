@@ -14,30 +14,29 @@ struct PlayerSheet: View {
     @State private var replyTo: ChatLine?
     @State private var keyboard = KeyboardObserver()
 
-    private let miniHeight: CGFloat = 64
-    private let tabBarHeight: CGFloat = 72
+    private let miniHeight = SheetGeometry.miniHeight
 
     var body: some View {
         let session = app.session
         let playback = session.playback
         GeometryReader { outer in
-            // The sheet is laid out in full-screen coordinates (it covers the status bar and the home indicator): the outer reader still reports the
-            // real safe areas, the keyboard is subtracted so the composer stays above it.
+            // The reader ignores the keyboard (below), so `outer` is the screen minus the real safe areas whether or not the keyboard is up. The sheet
+            // is laid out in full-screen coordinates (it covers the status bar and the home indicator); the keyboard only shortens the expanded sheet.
             let insets = outer.safeAreaInsets
-            let keyboard = keyboard.height
-            let size = CGSize(width: outer.size.width + insets.leading + insets.trailing, height: outer.size.height + insets.top + insets.bottom - (keyboard > 0 ? max(0, keyboard - insets.bottom) : 0))
-            let landscape = size.width > size.height
-            let bottomChrome = (app.paths[app.tab] ?? []).isEmpty ? tabBarHeight : 0
-            let collapsedY = outer.size.height + insets.top - bottomChrome - miniHeight
-            let travel = max(1, collapsedY)
+            let size = CGSize(width: outer.size.width + insets.leading + insets.trailing, height: outer.size.height + insets.top + insets.bottom)
             let base: CGFloat = session.position == .collapsed ? 1 : 0
-            let p = min(1, max(0, base + drag / travel))
-            let fullscreen = landscape && p == 0
-            let videoWidth = lerp(size.width, 112, p)
-            let expandedVideoHeight = fullscreen ? size.height : size.width * 9 / 16 + insets.top
-            let videoHeight = lerp(expandedVideoHeight, miniHeight, p)
-            let sheetY = lerp(0, collapsedY, p)
-            let sheetHeight = lerp(size.height, miniHeight, p)
+            let tabBarVisible = (app.paths[app.tab] ?? []).isEmpty
+            let flat = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, keyboardHeight: keyboard.height, tabBarVisible: tabBarVisible, progress: base)
+            let p = SheetGeometry.progress(collapsed: base == 1, translation: drag, travel: flat.collapsedY)
+            let geometry = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, keyboardHeight: keyboard.height, tabBarVisible: tabBarVisible, progress: p)
+            let landscape = geometry.landscape
+            let travel = max(1, geometry.collapsedY)
+            let fullscreen = geometry.fullscreen
+            let videoWidth = geometry.videoWidth
+            let expandedVideoHeight = geometry.expandedVideoHeight
+            let videoHeight = geometry.videoHeight
+            let sheetY = geometry.sheetY
+            let sheetHeight = geometry.sheetHeight
 
             ZStack(alignment: .topLeading) {
                 Rectangle().fill(p > 0.01 ? AnyShapeStyle(Theme.surface) : AnyShapeStyle(Theme.background))
@@ -56,15 +55,20 @@ struct PlayerSheet: View {
             .padding(.horizontal, 8 * p).frame(width: size.width)
             .frame(width: size.width, height: size.height, alignment: .topLeading)
             .position(x: size.width / 2 - insets.leading, y: size.height / 2 - insets.top)
+            .onChange(of: session.position) { _, position in if position == .collapsed { Keyboard.dismiss() } }
             .animation(dragging || reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86), value: session.position)
             .onChange(of: landscape) { _, now in if now { controlsVisible = true; scheduleHide() } }
             .onChange(of: playback.controller.isPlaying) { _, _ in scheduleHide() }
         }
+        .ignoresSafeArea(.keyboard)
         .onAppear {
             scheduleHide()
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-fullscreen") { Orientation.request(.landscape) }
             if ProcessInfo.processInfo.arguments.contains("-minimised") { app.session.minimise() }
+            if let delay = LaunchMode.argument("-minimise-after").flatMap(Double.init) {
+                Task { try? await Task.sleep(for: .seconds(delay)); app.session.minimise() }
+            }
             #endif
         }
         .accessibilityElement(children: .contain)
