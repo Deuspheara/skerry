@@ -37,12 +37,15 @@ import com.twitchplayer.tv.feature.player.data.emotes.EmoteGroup
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteSection
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteSource
 import com.twitchplayer.tv.feature.player.data.emotes.UserEmoteAccess
+import com.twitchplayer.tv.feature.player.data.stream.ChannelOfflineException
 import com.twitchplayer.tv.feature.player.data.stream.ClipResolver
 import com.twitchplayer.tv.feature.player.data.stream.ClipSource
 import com.twitchplayer.tv.feature.player.data.stream.ResolvedStream
 import com.twitchplayer.tv.feature.player.data.stream.ResolvedVod
 import com.twitchplayer.tv.feature.player.data.stream.StreamVariant
 import com.twitchplayer.tv.feature.player.data.stream.TwitchPlaybackResolver
+import com.twitchplayer.tv.feature.player.data.stream.VodAccessException
+import com.twitchplayer.tv.feature.player.data.stream.VodFailure
 import com.twitchplayer.tv.feature.player.data.stream.VodResolver
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -225,7 +228,11 @@ private class AppleDemoRepository : TwitchRepository {
 
 /** Every demo channel "streams" the bundled test clip (a looping 720p file), so `AVPlayer` runs offline. */
 private class AppleDemoClips : ClipResolver {
-    override suspend fun resolve(slug: String) = listOf(ClipSource(720, 60f, DEMO_STREAM_URL))
+    override suspend fun resolve(slug: String): List<ClipSource> {
+        // A clip that is gone (a plain failure: the network, a removed clip): the player must show an error, never take the app down.
+        if (slug == "gone") error("demo: the clip is gone")
+        return listOf(ClipSource(720, 60f, DEMO_STREAM_URL))
+    }
 }
 
 private val demoVariants = listOf(
@@ -233,12 +240,28 @@ private val demoVariants = listOf(
     StreamVariant("480p30", "480p", 1_400_000, 852, 480, 30f, "avc1.4D401F,mp4a.40.2", DEMO_STREAM_URL),
 )
 
+/** `gone`, `subs` and `token` simulate the failures Twitch answers with (the Android demo does the same with its debug setting); `net` a network failure. */
 private class AppleDemoVods : VodResolver {
-    override suspend fun resolve(vodId: String) = ResolvedVod(vodId, DEMO_STREAM_URL, demoVariants)
+    override suspend fun resolve(vodId: String): ResolvedVod {
+        val failure: Throwable? = when (vodId) {
+            "gone" -> VodAccessException(VodFailure.NOT_FOUND, "gql")
+            "subs" -> VodAccessException(VodFailure.SUBSCRIBER_ONLY, "usher", 403)
+            "token" -> VodAccessException(VodFailure.TOKEN, "gql", 200, integrity = true)
+            "net" -> IllegalStateException("demo: no network")
+            else -> null
+        }
+        if (failure != null) throw failure
+        return ResolvedVod(vodId, DEMO_STREAM_URL, demoVariants)
+    }
 }
 
 private class AppleDemoResolver : TwitchPlaybackResolver {
-    override suspend fun resolve(channel: String) = ResolvedStream(
+    override suspend fun resolve(channel: String): ResolvedStream {
+        if (channel == "offline") throw ChannelOfflineException(channel)
+        return resolved(channel)
+    }
+
+    private fun resolved(channel: String) = ResolvedStream(
         channel,
         DEMO_STREAM_URL,
         demoVariants + StreamVariant(StreamVariant.AUDIO_ONLY, "audio_only", 160_000, 0, 0, 0f, "mp4a.40.2", DEMO_STREAM_URL),

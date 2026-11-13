@@ -3,6 +3,45 @@ import Observation
 import SwiftUI
 import TwitchShared
 
+/// Why a replay, a clip or a stream could not start, as the player says it (the Android strings): a removed replay, a subscriber-only one, a refused or unavailable one,
+/// a failure of the network. It comes from the Kotlin exception the resolver threw (they cross the bridge as `NSError`s: the Swift side must never let one end the app).
+enum PlaybackProblem: Equatable {
+    case gone, subscribersOnly, unavailable, network, offline
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .gone: "vod_gone"
+        case .subscribersOnly: "vod_subs"
+        case .unavailable, .network: "vod_failed"
+        case .offline: "phone_channel_offline"
+        }
+    }
+
+    var line: LocalizedStringKey? {
+        switch self {
+        case .gone: "vod_gone_line"
+        case .subscribersOnly: "vod_subs_line"
+        case .unavailable: "vod_failed_line"
+        case .network: "vod_failed_net_line"
+        case .offline: nil
+        }
+    }
+
+    /// The Kotlin exception inside the `NSError` of a throwing suspend call decides; anything else is a network-type failure.
+    static func from(_ error: Error) -> PlaybackProblem {
+        let thrown = (error as NSError).userInfo["KotlinException"]
+        if let access = thrown as? VodAccessException {
+            switch access.failure {
+            case .notFound: return .gone
+            case .subscriberOnly: return .subscribersOnly
+            default: return .unavailable
+            }
+        }
+        if thrown is ChannelOfflineException { return .offline }
+        return .network
+    }
+}
+
 /// What the player sheet shows and plays: the AVPlayer controller plus, for a live channel, the shared `PlayerPresenter` (chat, emotes, room modes, stream info).
 /// One instance lives for the whole app: opening another target replaces the previous one (and disconnects its chat).
 @MainActor
@@ -23,10 +62,13 @@ final class PlaybackModel {
         }
     }
     @ObservationIgnored private var heldChat: [ChatLine]?
+    @ObservationIgnored private var current: PlaybackTarget?
     private(set) var picker: EmotePickerState?
     private(set) var room: RoomState?
     private(set) var chatSettings: ChatSettings?
     private(set) var offline = false
+    /// Set when starting failed: the sheet says why (`PlaybackProblem`) with a retry.
+    private(set) var problem: PlaybackProblem?
     private(set) var sendProblem: LocalizedStringKey?
     /// The quality the viewer last picked before audio-only (what "audio-only off" returns to).
     private var previousQuality = QualityOption.auto.id
@@ -44,6 +86,7 @@ final class PlaybackModel {
 
     func start(_ target: PlaybackTarget, autoplay: Bool = true) {
         end()
+        current = target
         lifetime = Lifetime()
         switch target {
         case .live(let login, let name, let title, _, _): startLive(login: login, name: name, title: title, autoplay: autoplay)
@@ -59,7 +102,7 @@ final class PlaybackModel {
         lifetime.cancel()
         presenter = nil
         controller.stop()
-        ui = nil; chat = []; picker = nil; room = nil; offline = false; replayId = nil; sendProblem = nil
+        ui = nil; chat = []; picker = nil; room = nil; offline = false; problem = nil; replayId = nil; sendProblem = nil
     }
 
     // MARK: Live
@@ -90,7 +133,8 @@ final class PlaybackModel {
                 let variants = (stream.variants as [StreamVariant]).map(QualityOption.init)
                 self.controller.load(masterUrl: stream.masterUrl, variants: variants, live: true, title: title, subtitle: name, autoplay: autoplay)
             } catch {
-                self.offline = true
+                let reason = PlaybackProblem.from(error)
+                if reason == .offline { self.offline = true } else { self.problem = reason; self.controller.markFailed() }
             }
         }
     }
@@ -130,14 +174,15 @@ final class PlaybackModel {
     func setAudioOnly(_ on: Bool) { controller.setAudioOnly(on, previous: previousQuality) }
 
     func retry() {
-        if offline, let login = ui?.login, !login.isEmpty { start(.live(login: login, name: login, title: login, avatarUrl: nil, thumbnailUrl: "")) } else { controller.retry() }
+        // Nothing was ever loaded (the address could not be resolved): resolve again from the target. Otherwise the player reloads what it had.
+        if (offline || problem != nil), let current { start(current) } else { controller.retry() }
     }
 
     // MARK: Replays and clips
 
     private func startReplay(id: String, title: String, channelName: String, autoplay: Bool) {
         replayId = id
-        offline = false
+        offline = false; problem = nil
         loadTask = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
@@ -152,13 +197,14 @@ final class PlaybackModel {
                     }
                 }
             } catch {
+                self.problem = PlaybackProblem.from(error)
                 self.controller.markFailed()
             }
         }
     }
 
     private func startClip(slug: String, title: String, channelName: String, autoplay: Bool) {
-        offline = false
+        offline = false; problem = nil
         loadTask = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
@@ -166,6 +212,7 @@ final class PlaybackModel {
                 guard let best = (sources as [ClipSource]).max(by: { $0.height < $1.height }) else { throw CancellationError() }
                 self.controller.load(masterUrl: best.url, variants: [], live: false, title: title, subtitle: channelName, autoplay: autoplay)
             } catch {
+                self.problem = PlaybackProblem.from(error)
                 self.controller.markFailed()
             }
         }

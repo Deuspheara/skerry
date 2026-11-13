@@ -67,9 +67,9 @@ struct VideoStage: View {
 
     @ViewBuilder private func status(_ controller: PlayerController) -> some View {
         if playback.offline {
-            overlayMessage("phone_channel_offline", retry: nil)
+            overlayMessage("phone_channel_offline", line: nil, retry: nil)
         } else if controller.failed {
-            overlayMessage("state_error", retry: { playback.retry() })
+            overlayMessage(playback.problem?.title ?? "state_error", line: playback.problem?.line, retry: { playback.retry() })
         } else if controller.isBuffering || (!controller.hasPicture && !controller.audioOnly) {
             ProgressView().tint(.white).controlSize(.large)
         } else if controller.audioOnly {
@@ -80,9 +80,10 @@ struct VideoStage: View {
         }
     }
 
-    private func overlayMessage(_ key: LocalizedStringKey, retry: (() -> Void)?) -> some View {
+    private func overlayMessage(_ key: LocalizedStringKey, line: LocalizedStringKey?, retry: (() -> Void)?) -> some View {
         VStack(spacing: 10) {
             Text(key).font(.headline).foregroundStyle(.white)
+            if let line { Text(line).font(.footnote).foregroundStyle(.white.opacity(0.75)).multilineTextAlignment(.center).padding(.horizontal, 24) }
             if let retry { Button("state_retry", action: retry).buttonStyle(.borderedProminent).tint(Theme.accentDeep) }
         }
     }

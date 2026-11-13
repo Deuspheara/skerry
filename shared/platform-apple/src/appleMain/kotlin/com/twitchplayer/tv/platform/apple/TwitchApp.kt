@@ -102,23 +102,33 @@ class TwitchGraph internal constructor(private val koin: Koin) {
     val playback: PlaybackUrls get() = PlaybackUrls(koin.get(), koin.get(), koin.get())
 }
 
-/** The replay positions, as concrete suspend functions Swift can call (the store itself is a Kotlin interface). */
+/**
+ * The replay positions, as concrete suspend functions Swift can call (the store itself is a Kotlin interface).
+ *
+ * Every suspend function Swift calls is `@Throws(Throwable::class)`: without it Kotlin/Native does not turn an exception into a Swift error (SKIE included), it terminates
+ * the app ("Uncaught Kotlin exception"): opening a subscriber-only, removed or failing replay, a clip that is gone or an offline channel crashed the iOS app.
+ */
 class ReplayProgress internal constructor(private val store: VodProgressStore) {
+    @Throws(Throwable::class)
     suspend fun position(vodId: String): Long = store.progress.first()[vodId]?.positionMs ?: 0L
 
+    @Throws(Throwable::class)
     suspend fun save(vodId: String, positionMs: Long, durationMs: Long) = store.save(vodId, positionMs, durationMs)
 }
 
-/** Resolves a live channel, a replay or a clip to URLs `AVPlayer` can open (native HLS, no web view). Throws on offline or refused. */
+/** Resolves a live channel, a replay or a clip to URLs `AVPlayer` can open (native HLS, no web view). Throws on offline or refused (`ChannelOfflineException`, `VodAccessException`...). */
 class PlaybackUrls internal constructor(
     private val live: TwitchPlaybackResolver,
     private val vods: VodResolver,
     private val clips: ClipResolver,
 ) {
+    @Throws(Throwable::class)
     suspend fun live(channel: String): ResolvedStream = live.resolve(channel)
 
+    @Throws(Throwable::class)
     suspend fun replay(vodId: String): ResolvedVod = vods.resolve(vodId)
 
+    @Throws(Throwable::class)
     suspend fun clip(slug: String): List<ClipSource> = clips.resolve(slug)
 }
 

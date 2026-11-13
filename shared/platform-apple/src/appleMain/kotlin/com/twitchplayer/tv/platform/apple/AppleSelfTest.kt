@@ -16,6 +16,7 @@ class AppleSelfTest internal constructor(
     private val deviceProfile: DeviceProfile,
     private val numbers: NumberFormatter,
 ) {
+    @Throws(Throwable::class)
     suspend fun run(): List<String> = listOf(
         snapshotCheck(),
         keychainCheck(),
