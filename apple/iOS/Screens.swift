@@ -228,6 +228,13 @@ struct BrowseScreen: View {
         .task { if model == nil { model = BrowseModel(graph: app.graph) } }
     }
 
+    private func sortButton(_ sort: BrowseSort) -> some View {
+        Button { model?.toggleSort() } label: {
+            Label(sort == .popularity ? "sort_popularity" : "sort_alpha", systemImage: "arrow.up.arrow.down").font(.footnote.weight(.semibold)).lineLimit(1)
+        }
+        .buttonStyle(.plain).foregroundStyle(Theme.accentText)
+    }
+
     private static let filters: [(BrowseFilter, String)] = [(.all, "filter_all"), (.games, "filter_games"), (.irl, "filter_irl"), (.music, "filter_music"), (.creative, "filter_creative")]
 
     @ViewBuilder private var content: some View {
@@ -240,12 +247,9 @@ struct BrowseScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: pageSpacing) {
                     if refreshFailed { StaleBanner(loadedAtMs: loadedAtMs) { model?.retry() } }
-                    HStack {
-                        SectionTitle(key: "nav_browse")
-                        Button { model?.toggleSort() } label: {
-                            Label(browse.sort == .popularity ? "sort_popularity" : "sort_alpha", systemImage: "arrow.up.arrow.down").font(.footnote.weight(.semibold))
-                        }
-                        .buttonStyle(.plain).foregroundStyle(Theme.accentText)
+                    ViewThatFits(in: .horizontal) {
+                        HStack { SectionTitle(key: "nav_browse"); sortButton(browse.sort) }
+                        VStack(alignment: .leading, spacing: 8) { SectionTitle(key: "nav_browse"); sortButton(browse.sort) }
                     }
                     ScrollView(.horizontal) {
                         HStack(spacing: 8) {
@@ -325,5 +329,6 @@ struct DetailBar: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16).padding(.vertical, 6)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 }

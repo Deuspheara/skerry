@@ -223,22 +223,22 @@ struct ChannelHeader: View {
             FlowLayout(spacing: 8, lineSpacing: 8) {
                 if let stream {
                     Label(String(format: String(localized: "channel_live_now"), formatViewers(stream.viewers)), systemImage: "dot.radiowaves.left.and.right")
-                        .font(.caption.weight(.semibold)).foregroundStyle(.white).fixedSize()
+                        .font(.caption.weight(.semibold)).foregroundStyle(.white).fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.live, in: Capsule())
                 } else {
-                    Label("phone_channel_offline", systemImage: "moon.zzz").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                    Label("phone_channel_offline", systemImage: "moon.zzz").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
                 }
                 if isFollowed {
-                    Label("channel_followed_badge", systemImage: "heart.fill").font(.caption.weight(.medium)).foregroundStyle(Theme.accentText).fixedSize()
+                    Label("channel_followed_badge", systemImage: "heart.fill").font(.caption.weight(.medium)).foregroundStyle(Theme.accentText).fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
                 }
                 if replays > 0 {
-                    Label("\(replays) replays", systemImage: "play.rectangle").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                    Label("\(replays) replays", systemImage: "play.rectangle").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
                 }
                 if clips > 0 {
-                    Label("\(clips) clips", systemImage: "scissors").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize()
+                    Label("\(clips) clips", systemImage: "scissors").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 10).padding(.vertical, 5).background(Theme.surface, in: Capsule())
                 }
             }

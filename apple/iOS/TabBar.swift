@@ -44,5 +44,6 @@ struct TabBar: View {
         .opacity(hidden ? 0 : 1)
         .animation(reduceMotion ? nil : .snappy, value: hidden)
         .accessibilityElement(children: .contain)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 }

@@ -143,6 +143,7 @@ struct PlayerSheet: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(String(format: String(localized: "phone_player_open_channel"), target?.channelName ?? "")))
         .gesture(dragGesture(travel: travel))
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 
     // MARK: Mini strip
@@ -165,6 +166,7 @@ struct PlayerSheet: View {
         .padding(.leading, 12).padding(.trailing, 4)
         .contentShape(Rectangle())
         .onTapGesture { session.expand() }
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
         .accessibilityAction(named: Text("phone_player_expand")) { session.expand() }
         .gesture(dragGesture(travel: travel))
     }

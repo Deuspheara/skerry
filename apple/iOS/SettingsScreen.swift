@@ -63,7 +63,7 @@ struct SettingsScreen: View {
                     }
                     section("phone_settings_about") {
                         HStack(spacing: 12) {
-                            Image(systemName: "info.circle").font(.body).foregroundStyle(Theme.accentText).frame(width: 28)
+                            Image(systemName: "info.circle").font(.body).dynamicTypeSize(...DynamicTypeSize.large).foregroundStyle(Theme.accentText).frame(width: 28)
                             Text(String(format: String(localized: "phone_about_version"), version)).font(.body)
                             Spacer(minLength: 0)
                         }
@@ -85,17 +85,21 @@ struct SettingsScreen: View {
     }
 
     private var accountCard: some View {
-        HStack(spacing: 14) {
+        let identity = HStack(spacing: 14) {
             AccountGlyph(account: app.account).scaleEffect(1.4).frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 2) {
-                Text(app.account ?? String(localized: "state_signin_title")).font(.headline).lineLimit(1)
+                Text(app.account ?? String(localized: "state_signin_title")).font(.headline).lineLimit(2)
                 if app.isSignedIn { Text("phone_settings_signed_in").font(.footnote).foregroundStyle(Theme.textSecondary) }
             }
             Spacer(minLength: 0)
-            Button { if app.isSignedIn { confirmSignOut = true } else { app.showSignIn = true } } label: {
-                Text(app.isSignedIn ? "sign_out" : "dialog_signin").font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 9)
-            }
-            .glassCapsule(interactive: true).buttonStyle(.plain)
+        }
+        let action = Button { if app.isSignedIn { confirmSignOut = true } else { app.showSignIn = true } } label: {
+            Text(app.isSignedIn ? "sign_out" : "dialog_signin").font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 9).fixedSize(horizontal: false, vertical: true)
+        }
+        .glassCapsule(interactive: true).buttonStyle(.plain)
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) { identity; action }
+            VStack(alignment: .leading, spacing: 12) { identity; action }
         }
         .padding(16)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -158,7 +162,7 @@ private struct RowLabel: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.body).foregroundStyle(Theme.accentText).frame(width: 28)
+            Image(systemName: icon).font(.body).dynamicTypeSize(...DynamicTypeSize.large).foregroundStyle(Theme.accentText).frame(width: 28)
             Text(title).font(.body).lineLimit(1)
             Spacer(minLength: 8)
             Text(value).font(.subheadline).foregroundStyle(Theme.textSecondary).lineLimit(1)
@@ -177,7 +181,7 @@ private struct ToggleRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.body).foregroundStyle(Theme.accentText).frame(width: 28)
+            Image(systemName: icon).font(.body).dynamicTypeSize(...DynamicTypeSize.large).foregroundStyle(Theme.accentText).frame(width: 28)
             Toggle(isOn: Binding(get: { isOn }, set: { _ in toggle() })) { Text(title).font(.body) }
         }
         .padding(.horizontal, 16).padding(.vertical, 8)

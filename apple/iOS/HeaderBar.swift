@@ -30,6 +30,8 @@ struct HeaderBar: View {
             .accessibilityLabel(Text(app.isSignedIn ? "cd_account_signed_in" : "cd_account_signed_out"))
         }
         .padding(.horizontal, 16).padding(.vertical, 6)
+        // Fixed chrome: it stays at a size that fits its glass; the content below scales without limit.
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 }
 

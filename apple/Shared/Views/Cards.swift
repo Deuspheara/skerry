@@ -28,7 +28,7 @@ struct StreamRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(height: 148 * 9 / 16)
+            .frame(minHeight: 148 * 9 / 16)
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle())
@@ -53,7 +53,7 @@ struct Thumbnail: View {
 struct LiveBadge: View {
     var body: some View {
         Text("live").font(.caption2.weight(.heavy)).textCase(.uppercase)
-            .padding(.horizontal, 6).padding(.vertical, 2)
+            .padding(.horizontal, 6).padding(.vertical, 2).fixedSize()
             .background(Theme.live, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             .foregroundStyle(.white)
     }
@@ -71,7 +71,7 @@ struct CategoryCard: View {
                     .aspectRatio(3 / 4, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.hairline, lineWidth: 0.5))
-                Text(category.name).font(.footnote.weight(.semibold)).lineLimit(1).truncationMode(.tail)
+                Text(category.name).font(.footnote.weight(.semibold)).lineLimit(2).truncationMode(.tail)
             }
         }
         .buttonStyle(PressableStyle())

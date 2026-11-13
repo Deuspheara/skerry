@@ -62,6 +62,7 @@ struct VideoStage: View {
         .clipped()
         // While the sheet is dragged, glass over the live picture is replaced by a flat fill (glass would re-sample the video every frame).
         .environment(\.flatChrome, dragging)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 
     private func sideWidth(_ chatMode: ChatMode) -> CGFloat {
