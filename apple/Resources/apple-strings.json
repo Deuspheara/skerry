@@ -198,5 +198,15 @@
     "en": "Locked",
     "fr": "Verrouillées",
     "ar": "مقفلة"
+  },
+  "home_featured": {
+    "en": "Featured live",
+    "fr": "À la une",
+    "ar": "في الواجهة"
+  },
+  "home_live_now": {
+    "en": "Live now",
+    "fr": "En direct maintenant",
+    "ar": "مباشر الآن"
   }
 }

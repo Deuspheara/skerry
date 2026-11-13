@@ -11933,6 +11933,52 @@
         }
       }
     },
+    "home_featured": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Featured live"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À la une"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في الواجهة"
+          }
+        }
+      }
+    },
+    "home_live_now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live now"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En direct maintenant"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر الآن"
+          }
+        }
+      }
+    },
     "key_clear": {
       "extractionState": "manual",
       "localizations": {
@@ -20026,6 +20072,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "1. Ouvrez la page d'activation Twitch et connectez-vous."
+          }
+        }
+      }
+    },
+    "phone_signout_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can sign in again at any time. Your settings stay on this phone."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك تسجيل الدخول مجدداً في أي وقت. تبقى إعداداتك على هذا الهاتف."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous pourrez vous reconnecter à tout moment. Vos réglages restent sur ce téléphone."
           }
         }
       }

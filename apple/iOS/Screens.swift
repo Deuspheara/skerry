@@ -36,13 +36,25 @@ struct HomeScreen: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: pageSpacing) {
                         if refreshFailed { StaleBanner(loadedAtMs: loadedAtMs) { model?.retry() } }
-                        if !following.isEmpty {
-                            SectionTitle(key: "phone_home_live_following")
-                            ForEach(following, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
+                        // The most watched channel you follow (else the first recommendation) is the featured one; the rest follow as a rail and as cards.
+                        let hero = following.first ?? forYou.first
+                        if let hero {
+                            HeroStreamCard(stream: hero) { app.open(hero) }
                         }
-                        if !forYou.isEmpty {
+                        let railStreams = Array(following.filter { $0.channelId != hero?.channelId })
+                        if !railStreams.isEmpty {
+                            SectionTitle(key: "phone_home_live_following")
+                            ScrollView(.horizontal) {
+                                LazyHStack(alignment: .top, spacing: 12) {
+                                    ForEach(railStreams, id: \.channelId) { stream in StreamTile(stream: stream) { app.open(stream) } }
+                                }
+                            }
+                            .scrollIndicators(.hidden).scrollClipDisabled()
+                        }
+                        let recommended = forYou.filter { $0.channelId != hero?.channelId }
+                        if !recommended.isEmpty {
                             SectionTitle(key: "sec_for_you")
-                            ForEach(forYou, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
+                            ForEach(recommended, id: \.channelId) { stream in StreamCardWide(stream: stream) { app.open(stream) } }
                         }
                         if !categories.isEmpty {
                             SectionTitle(key: "sec_categories")
@@ -184,6 +196,7 @@ struct FollowingScreen: View {
                             ContinueWatchingRow(items: resume)
                         }
                         if !live.isEmpty {
+                            LiveAvatarRail(streams: live) { app.open($0) }
                             SectionTitle(key: "sec_following")
                             ForEach(live, id: \.channelId) { stream in StreamRow(stream: stream) { app.open(stream) } }
                         }
