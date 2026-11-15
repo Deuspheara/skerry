@@ -112,7 +112,7 @@ header.top .btn{padding:var(--sp-2) var(--sp-4);font-size:.9rem}
 section{padding-block:var(--section)}
 section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
 .head{margin-bottom:var(--sp-9)}
-.head h2{margin-bottom:var(--sp-5)}
+h2+.lede{margin-top:var(--sp-5)}
 .split{display:grid;gap:var(--sp-9);align-items:center;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .split>*{min-width:0}
 
@@ -123,12 +123,16 @@ section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
 .hero h1 em{font-style:normal;color:var(--accent)}
 .hero .lede{margin:var(--sp-6) 0 var(--sp-7)}
 .cta{display:flex;flex-wrap:wrap;gap:var(--sp-3)}
-.notice-pill{display:inline-flex;align-items:center;gap:var(--sp-3);margin:var(--sp-7) 0 0;padding:var(--sp-2) var(--sp-4);border:1px solid oklch(0.62 0.2 295 / .5);background:oklch(0.5 0.2 295 / .12);border-radius:2rem;font-size:.9rem;max-width:none}
+.proof{margin:var(--sp-5) 0 0;color:var(--faint);font-size:.95rem;max-width:none}
+.notice-pill{display:inline-flex;align-items:center;gap:var(--sp-3);margin:var(--sp-5) 0 0;padding:var(--sp-2) var(--sp-4);border:1px solid oklch(0.62 0.2 295 / .5);background:oklch(0.5 0.2 295 / .12);border-radius:2rem;font-size:.9rem;max-width:none}
 .notice-pill svg{width:1rem;height:1rem;color:var(--accent);flex:none}
 .notice-pill a{color:var(--accent)}
 .stage{position:relative;justify-self:center;width:min(100%,23rem)}
 .stage::before{content:"";position:absolute;inset:8% -22% 0 -22%;background:linear-gradient(100deg,var(--b1),var(--b2),var(--b3),var(--b4),var(--b5),var(--b6));filter:blur(52px);opacity:.42;border-radius:40%}
 .stage .frame{position:relative}
+.pause{display:block;margin:var(--sp-4) auto 0;font:500 .85rem var(--body);color:var(--faint);background:transparent;border:1px solid var(--line);border-radius:2rem;padding:var(--sp-1) var(--sp-4);cursor:pointer;transition:color .2s,border-color .2s}
+.pause:hover{color:var(--text);border-color:var(--accent)}
+.pause[hidden]{display:none}
 @keyframes rise{from{opacity:0;transform:translateY(2rem)}to{opacity:1;transform:none}}
 .stage .frame{animation:rise .9s var(--ease) both .1s}
 
@@ -148,7 +152,7 @@ section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
 .points strong{display:block;font:600 1.15rem var(--display);letter-spacing:-.01em;margin-bottom:var(--sp-1)}
 .points span{color:var(--muted)}
 .chatframe{justify-self:center;width:min(100%,27rem)}
-.chatframe .clip{aspect-ratio:9/10.5;overflow:hidden;position:relative;background:#0b0b0e}
+.chatframe .clip{aspect-ratio:9/10.5;overflow:hidden;position:relative;background:#0b0b0e;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10%);mask-image:linear-gradient(to bottom,transparent 0,#000 10%)}
 .chatframe video{position:absolute;left:0;width:100%;bottom:0;height:auto}
 
 /* other screens */
@@ -157,18 +161,19 @@ section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
 .tab{font:600 .95rem var(--body);color:var(--muted);background:transparent;border:0;border-radius:.7rem;padding:var(--sp-3) var(--sp-5);cursor:pointer;white-space:nowrap;transition:background .2s,color .2s}
 .tab:hover{color:var(--text)}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
-.panels{margin-top:var(--sp-8)}
+.panels{margin-top:var(--sp-9)}
 .js .panels{display:grid}
 .js .panel{grid-area:1/1;align-self:start}
 .js .panel[hidden]{display:grid;visibility:hidden;pointer-events:none}
-.panel{display:grid;gap:var(--sp-8)}
+.panel{display:grid;gap:var(--sp-9);grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);align-items:center}
+.panel>*{min-width:0}
+.phone-shot{justify-self:center;width:min(100%,21rem)}
 .panel.show{animation:swap .55s var(--ease) both}
 @keyframes swap{from{opacity:0;transform:translateY(.9rem)}to{opacity:1;transform:none}}
-.panel + .panel{margin-top:var(--sp-10)}
 .js .panel + .panel{margin-top:0}
+.panel + .panel{margin-top:var(--sp-10)}
+.panels + .cap{margin-top:var(--sp-7)}
 .panel .copy{max-width:36rem}
-.fan{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-6);max-width:54rem}
-.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-6)}
 
 /* try it */
 .try{align-items:center}
@@ -215,7 +220,7 @@ footer a{color:var(--text)}
 footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
 
 @media (max-width:64rem){
-  .split,.notice{grid-template-columns:minmax(0,1fr)}
+  .split,.notice,.panel{grid-template-columns:minmax(0,1fr)}
   .hero .split{min-height:0}
   .stage{margin-top:var(--sp-6)}
   .chatframe{order:2}
@@ -226,10 +231,6 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
   .trio::-webkit-scrollbar{display:none}
   .trio figure{scroll-snap-align:center}
   .trio figure:nth-child(2){margin-top:0}
-  .fan{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:66%;overflow-x:auto;scroll-snap-type:x mandatory;margin-inline:calc(-1*var(--gutter));padding:0 var(--gutter) var(--sp-4);scrollbar-width:none}
-  .fan::-webkit-scrollbar{display:none}
-  .fan .frame{scroll-snap-align:center}
-  .pair{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:40rem){
   nav.links{gap:0}
@@ -279,6 +280,7 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
         <a class="btn primary" href="#try">Run the demo</a>
         <a class="btn ghost" href="https://github.com/Deuspheara/skerry">View the source</a>
       </div>
+      <p class="proof">Apache-2.0 · 36 languages · no analytics, no server</p>
       <p class="notice-pill">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.4"/><path d="M8 7.2v3.6M8 5.2v.1"/></svg>
         <span>Unofficial. Not affiliated with Twitch. <a href="#fine-print">Read the fine print</a></span>
@@ -286,6 +288,7 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
     </div>
     <div class="stage" aria-label="Skerry on Android: a live stream with chat scrolling">
       <div class="frame phone front"><video data-live muted loop playsinline preload="metadata" poster="img/live-chat-poster.webp" width="540" height="1200" aria-label="Screen recording of a live stream with chat scrolling by"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
+      <button class="pause" type="button" data-pause aria-pressed="false">Pause recording</button>
     </div>
   </div>
 </div>
@@ -348,34 +351,24 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
           <h3>SwiftUI, with a sheet that follows your thumb.</h3>
           <p>The player is a draggable sheet that collapses to a mini strip, the way a music app does, so you keep browsing while a stream plays. Liquid Glass tab bar and controls.</p>
         </div>
-        <div class="fan">
-          <div class="frame phone"><img loading="lazy" src="img/ios-home.webp" width="603" height="1311" alt="iPhone home screen with a floating tab bar"></div>
-          <div class="frame phone"><img loading="lazy" src="img/ios-player.webp" width="603" height="1311" alt="iPhone player with live chat"></div>
-          <div class="frame phone"><img loading="lazy" src="img/ios-browse.webp" width="603" height="1311" alt="iPhone Browse screen with category artwork"></div>
-        </div>
+        <div class="shot phone-shot"><div class="frame phone"><img loading="lazy" src="img/ios-player.webp" width="603" height="1311" alt="iPhone player with live chat under the video"></div></div>
       </div>
       <div class="panel" role="tabpanel" tabindex="0" id="panel-mac" aria-labelledby="tab-mac">
         <div class="copy">
           <h3>A real Mac window.</h3>
           <p>Sidebar navigation, a resizable chat column next to the video, a floating mini player, and an emote picker that opens as a popover.</p>
         </div>
-        <div class="pair">
-          <div class="frame win"><div class="bar"><i></i><i></i><i></i><span>Skerry</span></div><img loading="lazy" src="img/mac-home.webp" width="1070" height="800" alt="Skerry on macOS: live channels in a grid"></div>
-          <div class="frame win"><div class="bar"><i></i><i></i><i></i><span>Skerry</span></div><img loading="lazy" src="img/mac-browse.webp" width="1070" height="800" alt="Skerry on macOS: category browser"></div>
-        </div>
+        <div class="shot"><div class="frame win"><div class="bar"><i></i><i></i><i></i><span>Skerry</span></div><img loading="lazy" src="img/mac-home.webp" width="1070" height="800" alt="Skerry on macOS: live channels in a grid"></div></div>
       </div>
       <div class="panel" role="tabpanel" tabindex="0" id="panel-tv" aria-labelledby="tab-tv">
         <div class="copy">
           <h3>Made for the remote.</h3>
           <p>Focus, not touch: every screen is built around the Siri Remote, with Back behaving the way the platform expects. The Android TV app gets the same care with the D-pad.</p>
         </div>
-        <div class="pair">
-          <div class="frame"><img loading="lazy" src="img/tv-home.webp" width="1280" height="720" alt="Skerry on Apple TV: Home with live and recommended rows"></div>
-          <div class="frame"><img loading="lazy" src="img/tv-browse.webp" width="1280" height="720" alt="Skerry on Apple TV: Browse with category filters"></div>
-        </div>
+        <div class="shot"><div class="frame"><img loading="lazy" src="img/tv-home.webp" width="1280" height="720" alt="Skerry on Apple TV: Home with live and recommended rows"></div></div>
       </div>
     </div>
-    <p class="cap">The Apple apps' screenshots still use the simpler demo artwork; they are due for the same photo treatment. Android TV screenshots are still to come.</p>
+    <p class="cap">These Apple screenshots still use the simpler placeholder artwork and are due for the same photo treatment. Android TV screenshots are still to come.</p>
   </div>
 </section>
 
@@ -436,11 +429,7 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
       <div class="tier"><span class="label">Presenters</span><div class="chips"><span class="chip">StateFlow&lt;UiState&gt; out</span><span class="chip">onEvent(…) in</span></div></div>
       <div class="tier"><span class="label">Shared Kotlin modules</span><div class="chips"><span class="chip">core</span><span class="chip">stream</span><span class="chip">chat</span><span class="chip">player-api</span><span class="chip">presenters</span></div></div>
     </div>
-    <div class="facts">
-      <div><strong>A rule the build enforces</strong><p>Shared code may not touch Android or <code>java.*</code> APIs. A Gradle check fails the build if it does.</p></div>
-      <div><strong>36 languages</strong><p>Translations are generated into each app at build time, and right-to-left layouts are supported.</p></div>
-      <div><strong>Measured, not guessed</strong><p>Startup and frame timing are tracked with Macrobenchmark, with the numbers kept in the repository.</p></div>
-    </div>
+    <p class="cap" style="max-width:44rem;margin-top:var(--sp-7)">Shared code may not touch Android or <code>java.*</code> APIs: a Gradle check fails the build if it does. Translations for all 36 languages are generated into each app, and startup and frame timing are tracked with Macrobenchmark.</p>
   </div>
 </section>
 
@@ -482,7 +471,7 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
     tabs.forEach(function(t){
       var on=t===tab, p=document.getElementById(t.getAttribute('aria-controls'));
       t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;
-      p.hidden=!on;p.classList.toggle('show',on&&!!animate);
+      p.hidden=!on;p.inert=!on;p.classList.toggle('show',on&&!!animate);
     });
     if(focus)tab.focus();
   }
@@ -501,10 +490,17 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
 
   // Live recordings play only while visible, and never with reduced motion (the poster stays).
   var vids=[].slice.call(document.querySelectorAll('video[data-live]'));
+  var paused=false,pbtn=document.querySelector('[data-pause]');
+  if(reduce&&pbtn)pbtn.hidden=true;
+  if(pbtn)pbtn.addEventListener('click',function(){
+    paused=!paused;pbtn.setAttribute('aria-pressed',paused);pbtn.textContent=paused?'Play recording':'Pause recording';
+    vids.forEach(function(v){if(paused)v.pause();else if(v.dataset.visible==='1'){var p=v.play();if(p&&p.catch)p.catch(function(){})}});
+  });
   if(!reduce&&'IntersectionObserver' in window){
     var io=new IntersectionObserver(function(es){es.forEach(function(e){
       var v=e.target;
-      if(e.isIntersecting){v.preload='auto';var p=v.play();if(p&&p.catch)p.catch(function(){})}else{v.pause()}
+      v.dataset.visible=e.isIntersecting?'1':'0';
+      if(e.isIntersecting&&!paused){v.preload='auto';var p=v.play();if(p&&p.catch)p.catch(function(){})}else{v.pause()}
     })},{threshold:.25});
     vids.forEach(function(v){io.observe(v)});
   }
