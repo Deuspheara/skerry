@@ -120,8 +120,9 @@ private fun FollowingList(
         modifier = Modifier.fillMaxSize(),
     ) {
         fullSpanItem("title", contentType = "header") { PageTitle(followingTitle) }
-        if (live.isNotEmpty()) {
-            // Who is on, at a glance (avatars with a live ring), before the rows with their titles.
+        if (live.size > LIVE_ROW_MIN) {
+            // Who is on, at a glance (avatars with a live ring), before the rows with their titles. A short list needs no summary of itself:
+            // the avatars would only repeat the two or three rows right under them.
             sectionHeader("live-now-header", liveNowTitle)
             fullSpanItem("live-now-row", contentType = "live-now") { LiveNowRow(live, onClick = { onWatch(it.login) }) }
         }
@@ -148,3 +149,5 @@ private fun FollowingList(
         }
     }
 }
+
+private const val LIVE_ROW_MIN = 3

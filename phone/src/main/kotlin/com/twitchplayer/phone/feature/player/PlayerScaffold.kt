@@ -229,7 +229,17 @@ fun PlayerScaffold(
             null
         },
         strip = if (mode == SheetMode.Portrait && sheet != null && sheet.stripVisible) {
-            { PlayerStrip(title, subtitle, snapshot.playWhenReady, onTogglePlay, sheet.expand, sheet.close) }
+            {
+                PlayerStrip(
+                    title,
+                    subtitle,
+                    snapshot.playWhenReady,
+                    onTogglePlay,
+                    sheet.expand,
+                    sheet.close,
+                    progress = { if (snapshot.durationMs > 0) snapshot.positionMs.toFloat() / snapshot.durationMs else 0f },
+                )
+            }
         } else {
             null
         },

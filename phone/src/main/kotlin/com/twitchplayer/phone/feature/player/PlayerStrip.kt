@@ -32,6 +32,8 @@ import com.twitchplayer.phone.ui.components.PhoneIcons
 private const val SUBTITLE_MAX_LINES = 1
 private const val HAIRLINE_DP = 1
 private const val SUBTITLE_MAX_FONT_SCALE = 1.15f
+private const val PROGRESS_DP = 2
+private val NO_PROGRESS: () -> Float = { 0f }
 private val BUTTON_GAP = 12.dp
 
 /** What sits beside the small picture while the sheet is minimised: what plays, a play / pause button and the close button. A tap anywhere else expands. */
@@ -45,13 +47,23 @@ fun PlayerStrip(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     showPlay: Boolean = true,
+    progress: () -> Float = NO_PROGRESS,
 ) {
     val expand = stringResource(R.string.phone_player_expand)
     val hairline = MaterialTheme.colorScheme.outlineVariant
+    val progressColor = MaterialTheme.colorScheme.primary
     Row(
         modifier.fillMaxSize()
             // A hairline on top: on the light theme the strip and the bar under it are almost the same tone.
-            .drawBehind { drawLine(hairline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = HAIRLINE_DP.dp.toPx()) }
+            .drawBehind {
+                drawLine(hairline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = HAIRLINE_DP.dp.toPx())
+                // A replay's progress, read here (draw phase) so the ticking position never recomposes the strip.
+                val fraction = progress().coerceIn(0f, 1f)
+                if (fraction > 0f) {
+                    val thickness = PROGRESS_DP.dp.toPx()
+                    drawLine(progressColor, Offset(0f, thickness / 2), Offset(size.width * fraction, thickness / 2), strokeWidth = thickness)
+                }
+            }
             .clickable(onClickLabel = expand, role = Role.Button, onClick = onExpand).padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

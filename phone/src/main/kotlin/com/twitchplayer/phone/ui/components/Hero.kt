@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -42,6 +43,9 @@ import com.twitchplayer.phone.ui.theme.PhoneColors
 import com.twitchplayer.tv.core.data.model.LiveStream
 import com.twitchplayer.tv.core.ui.formatViewers
 
+/** A tablet's hero stops growing here instead of becoming a banner wider than it is useful. */
+private val HERO_MAX_WIDTH = 720.dp
+
 /**
  * The stream Home leads with: one full-width 16:9 card, the picture under a bottom scrim that carries the streamer's face, the title (two
  * lines) and who and what. The viewer count sits top-right; no LIVE badge (every stream on Home is live, the count and its dot say so).
@@ -52,7 +56,7 @@ fun HeroStreamCard(stream: LiveStream, onClick: () -> Unit, modifier: Modifier =
     val viewers = remember(stream.viewers) { formatViewers(stream.viewers) }
     val description = stringResource(R.string.cd_stream, stream.name, viewers, stream.title)
     Box(
-        modifier.fillMaxWidth().aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(HERO_RADIUS)).clickableItem(onClick).semantics(mergeDescendants = true) { contentDescription = description },
+        modifier.fillMaxWidth().widthIn(max = HERO_MAX_WIDTH).aspectRatio(THUMBNAIL_RATIO).clip(RoundedCornerShape(HERO_RADIUS)).clickableItem(onClick).semantics(mergeDescendants = true) { contentDescription = description },
     ) {
         RemoteImage(stream.thumbnailUrl, Modifier.matchParentSize())
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Color.Transparent, HERO_SCRIM_START to Color.Transparent, 1f to Color.Black.copy(alpha = HERO_SCRIM_ALPHA))))
