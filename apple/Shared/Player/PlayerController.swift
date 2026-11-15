@@ -137,6 +137,7 @@ final class PlayerController: NSObject {
         #endif
         observe(item: item)
         player.replaceCurrentItem(with: item)
+        watchForPicture(item)
         if startAt > 0 { player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) }
         player.isMuted = muted
         if autoplay { play() } else { player.pause() }
@@ -149,6 +150,7 @@ final class PlayerController: NSObject {
     }
 
     func stop() {
+        pictureWatchdog?.cancel()
         player.pause()
         player.replaceCurrentItem(with: nil)
         sleepTask?.cancel()
@@ -160,6 +162,22 @@ final class PlayerController: NSObject {
     }
 
     func markFailed() { failed = true }
+
+    private var pictureWatchdog: Task<Void, Never>?
+
+    /// A stream that never produces a picture (a decoder that rejects every frame fails silently) is reported as failed after 15 s, so the
+    /// viewer gets the retry screen instead of a black rectangle. Audio-only playback and a deliberate pause are not failures.
+    private func watchForPicture(_ item: AVPlayerItem) {
+        pictureWatchdog?.cancel()
+        pictureWatchdog = Task { @MainActor [weak self, weak item] in
+            try? await Task.sleep(for: .seconds(15))
+            guard !Task.isCancelled, let self, let item, self.player.currentItem === item else { return }
+            if !self.hasPicture && !self.failed && !self.audioOnly && self.isPlaying {
+                Self.log.error("no picture after 15 s while playing: reporting a failure")
+                self.failed = true
+            }
+        }
+    }
 
     /// Loads the current stream again. A live stream restarts at its live edge; a replay resumes where it stopped. The failure flag is cleared
     /// first, so a reload that fails again is reported again.
