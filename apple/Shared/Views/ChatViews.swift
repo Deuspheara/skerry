@@ -270,6 +270,12 @@ extension Color {
 }
 
 /// The messages of the channel: newest at the bottom, auto-scrolling while the viewer is at the bottom, with a pill to jump back down.
+/// What the chat list's scroll position says: at the live edge or not, and how tall the list is.
+private struct ScrollReading: Equatable {
+    var bottom: Bool
+    var height: CGFloat
+}
+
 struct ChatList: View, Equatable {
     let lines: [ChatLine]
     let settings: ChatSettings?
@@ -312,19 +318,22 @@ struct ChatList: View, Equatable {
                 .simultaneousGesture(TapGesture().onEnded { Keyboard.dismiss() })
                 #endif
                 .defaultScrollAnchor(.bottom)
-                .onScrollGeometryChange(for: Bool.self) { geometry in
-                    geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48
-                } action: { _, bottom in
-                    if !bottom && Date() < resizingUntil { return }
-                    atBottom = bottom
-                    if bottom { unread = 0 }
-                }
-                // The chat moves up with the keyboard: while the list follows the live edge, a change of its height keeps the latest line in view.
-                .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height } action: { _, _ in
-                    guard atBottom, let last = lines.last else { return }
-                    resizingUntil = Date().addingTimeInterval(0.6)
-                    var transaction = Transaction(); transaction.disablesAnimations = true
-                    withTransaction(transaction) { proxy.scrollTo(last.id, anchor: .bottom) }
+                .onScrollGeometryChange(for: ScrollReading.self) { geometry in
+                    ScrollReading(bottom: geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48, height: geometry.containerSize.height)
+                } action: { old, new in
+                    if old.height != new.height {
+                        // The list was resized (the keyboard coming, going or being dragged): that is not the viewer scrolling up. While it follows the live edge, the
+                        // latest line stays in view, and "back to live" neither appears nor disappears on the way.
+                        resizingUntil = Date().addingTimeInterval(0.5)
+                        if atBottom, let last = lines.last {
+                            var transaction = Transaction(); transaction.disablesAnimations = true
+                            withTransaction(transaction) { proxy.scrollTo(last.id, anchor: .bottom) }
+                        }
+                        return
+                    }
+                    if !new.bottom && Date() < resizingUntil { return }
+                    atBottom = new.bottom
+                    if new.bottom { unread = 0 }
                 }
                 #if !os(tvOS)
                 if !atBottom {

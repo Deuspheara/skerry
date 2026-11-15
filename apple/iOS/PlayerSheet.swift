@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import UIKit
 import TwitchShared
 
 /// The player, above the tab navigation. One layout for every position: the video view never changes parent, only its frame, so expanding,
@@ -334,6 +335,16 @@ private struct SheetChat: View {
 /// frame (one per display frame while the viewer drags it down) re-lays out the room under the chat and nothing else of the sheet.
 @MainActor @Observable final class KeyboardInset {
     var value: CGFloat = 0
+    nonisolated(unsafe) private var token: NSObjectProtocol?
+
+    init() {
+        // After a keyboard dragged down and let go the last measurement can be a few points above the floor: once the keyboard is gone, nothing of it stays.
+        token = NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.value = 0 }
+        }
+    }
+
+    deinit { token.map(NotificationCenter.default.removeObserver) }
 }
 
 /// The room the chat input leaves for the keyboard (or the home indicator when there is none). Changes apply at once: the system already animates them.
