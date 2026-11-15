@@ -26,6 +26,10 @@ final class KeyboardObserver {
     private var tokens: [NSObjectProtocol] = []
 
     init() {
+        #if DEBUG
+        // `-fake-keyboard <points>`: lays the sheet out as if the keyboard were up (the simulator with a hardware keyboard shows none).
+        if let fake = LaunchMode.argument("-fake-keyboard").flatMap(Double.init) { height = fake }
+        #endif
         let center = NotificationCenter.default
         tokens.append(center.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] note in
             let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero

@@ -241,4 +241,13 @@ final class AuditCaptureUITests: XCTestCase {
         launch(["-open-vod", "999999999"], wait: 8); shot("real-error-replay-unavailable")
         launch(["-push", "channel:thischanneldoesnotexist9"], wait: 6); shot("real-error-channel-unknown")
     }
+
+    /// The chat input with the software keyboard up (the pill must sit right above the keyboard).
+    func testChatKeyboard() {
+        launch(["-demo", "-open-live", "lunaria"])
+        let field = app.textFields.firstMatch
+        if field.waitForExistence(timeout: 5) { field.tap() }
+        Thread.sleep(forTimeInterval: 1.5)
+        shot("chat-keyboard")
+    }
 }

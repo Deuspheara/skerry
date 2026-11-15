@@ -138,6 +138,7 @@ final class AppModel {
         if launch.sheet == "signin" { showSignIn = true }
         // Debug: `-open-vod <id>` and `-open-clip <slug>` open a replay or a clip straight in the player.
         if let id = LaunchMode.argument("-open-vod") { session.open(.replay(id: id, title: "vod \(id)", channelLogin: LaunchMode.argument("-open-vod-channel") ?? "", channelName: LaunchMode.argument("-open-vod-channel") ?? "", thumbnailUrl: ""), info: LaunchMode.argument("-open-vod-channel") == nil ? nil : MediaInfo(views: 12840, durationSeconds: 5025, dateMs: 1_760_000_000_000)) }
+        if let login = LaunchMode.argument("-open-live") { session.open(.live(login: login, name: login, title: "live \(login)", avatarUrl: nil, thumbnailUrl: "")) }
         if let slug = LaunchMode.argument("-open-clip") { session.open(.clip(slug: slug, title: "clip \(slug)", channelLogin: "", channelName: "", thumbnailUrl: "")) }
         if let login = launch.open {
             session.open(.live(login: login, name: login, title: login, avatarUrl: nil, thumbnailUrl: ""))
