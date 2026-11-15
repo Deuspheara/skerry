@@ -18699,29 +18699,6 @@
         }
       }
     },
-    "phone_language_filter": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اللغة"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Langue"
-          }
-        }
-      }
-    },
     "phone_licenses": {
       "extractionState": "manual",
       "localizations": {
@@ -18866,19 +18843,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect to the internet and try again. What you saw last stays here when it was saved."
+            "value": "Connect to the internet and try again."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "اتصل بالإنترنت وحاول مرة أخرى. يبقى هنا آخر ما شاهدته إذا كان محفوظاً."
+            "value": "اتصل بالإنترنت وحاول مرة أخرى."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connectez-vous à Internet et réessayez. Ce que vous avez vu en dernier reste ici quand il a été enregistré."
+            "value": "Connectez-vous à Internet et réessayez."
           }
         }
       }
