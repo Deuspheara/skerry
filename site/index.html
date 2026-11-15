@@ -40,7 +40,7 @@
   --line:oklch(0.38 0.045 292 / .6);
   --text:oklch(0.97 0.01 292);
   --muted:oklch(0.8 0.025 292);
-  --faint:oklch(0.72 0.03 292);
+  --faint:oklch(0.77 0.03 292);
   --accent:oklch(0.74 0.19 295);
   --accent-ink:oklch(0.16 0.03 292);
   --b1:oklch(0.64 0.26 28);--b2:oklch(0.78 0.24 145);--b3:oklch(0.9 0.18 100);--b4:oklch(0.55 0.25 262);--b5:oklch(0.66 0.27 330);--b6:oklch(0.85 0.13 205);
@@ -121,7 +121,7 @@ section{padding-block:var(--section)}
 .cta{display:flex;flex-wrap:wrap;gap:var(--sp-3)}
 .fine{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3) var(--sp-5);margin:var(--sp-6) 0 0;color:var(--faint);font-size:.92rem;max-width:none}
 .fine a{color:var(--accent)}
-.stage{position:relative;justify-self:center;width:min(100%,24rem);margin-bottom:calc(-1*var(--sp-10))}
+.stage{position:relative;justify-self:center;width:min(100%,24rem);margin-bottom:calc(-1*var(--sp-8))}
 .stage::before{content:"";position:absolute;inset:6% -26% 0 -26%;background:linear-gradient(100deg,var(--b1),var(--b2),var(--b3),var(--b4),var(--b5),var(--b6));filter:blur(56px);opacity:.4;border-radius:40%}
 .stage .frame{position:relative;animation:rise .9s var(--ease) both .1s}
 @keyframes rise{from{opacity:0;transform:translateY(2rem)}to{opacity:1;transform:none}}
@@ -163,11 +163,12 @@ section{padding-block:var(--section)}
 .violet h2 em{font-style:normal;color:var(--b3)}
 .tags{list-style:none;display:flex;flex-wrap:wrap;gap:var(--sp-2);padding:0;margin:var(--sp-7) 0 0;max-width:34rem}
 .tags li{padding:var(--sp-2) var(--sp-4);border:1px solid oklch(1 0 0 / .35);border-radius:2rem;font-size:.95rem;background:oklch(1 0 0 / .08)}
-.chatframe{justify-self:center;width:min(100%,28rem);box-shadow:0 2px 3px oklch(0 0 0 / .4),0 50px 100px -30px oklch(0.1 0.1 292 / .9),0 0 0 1px oklch(0 0 0 / .5)}
+.chatcol{justify-self:center;width:min(100%,28rem);display:grid;gap:var(--sp-5);justify-items:center}
+.chatframe{width:100%;box-shadow:0 2px 3px oklch(0 0 0 / .4),0 50px 100px -30px oklch(0.1 0.1 292 / .9),0 0 0 1px oklch(0 0 0 / .5)}
 .chatframe .clip{aspect-ratio:9/10.5;overflow:hidden;position:relative;background:#0b0b0e;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10%);mask-image:linear-gradient(to bottom,transparent 0,#000 10%)}
 .chatframe video{position:absolute;left:0;width:100%;bottom:0;height:auto}
-.chatframe .pause{width:100%;border:0;border-top:1px solid var(--line);border-radius:0;background:#0b0b0e;color:#b8b3c8}
-.violet .pause:hover{color:#fff}
+.violet .pause{color:var(--muted)}
+.violet .pause:hover{color:#fff;border-color:#fff}
 
 /* ---------- 4. platforms (ink) ---------- */
 .index{list-style:none;margin:var(--sp-9) 0 0;padding:0}
@@ -229,7 +230,7 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
   .hero-top,.split,.notice{grid-template-columns:minmax(0,1fr)}
   .hero-copy{padding-top:var(--sp-5)}
   .stage{margin:var(--sp-6) auto calc(-1*var(--sp-8))}
-  .chatframe{order:2}
+  .chatcol{order:2}
   .index li{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:48rem){
@@ -292,8 +293,8 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
       <p class="fine">
         <span>Apache-2.0 · 36 languages · no analytics</span>
         <span>Unofficial, not affiliated with Twitch. <a href="#fine-print">Fine print</a></span>
+        <button class="pause" type="button" data-pause aria-pressed="false">Pause motion</button>
       </p>
-      <p class="fine"><button class="pause" type="button" data-pause aria-pressed="false">Pause motion</button></p>
     </div>
     <div class="stage" role="group" aria-label="Skerry on Android: a live stream with chat scrolling">
       <div class="frame phone"><video data-live muted loop playsinline preload="metadata" poster="img/live-chat-poster.webp" width="720" height="1600" aria-label="Screen recording of a live stream with chat scrolling by"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
@@ -335,9 +336,11 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
         <li>Replies</li><li>Highlighted mentions</li><li>Gift subs and announcements</li><li>7TV, BTTV and FFZ emotes</li><li>Back to live</li>
       </ul>
     </div>
-    <div class="chatframe frame phone">
-      <div class="clip"><video data-live muted loop playsinline preload="none" poster="img/live-chat-poster.webp" width="720" height="1600" aria-label="Close-up recording of the chat scrolling"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
-      <button class="pause" type="button" data-pause aria-pressed="false">Pause recordings</button>
+    <div class="chatcol">
+      <div class="chatframe frame phone">
+        <div class="clip"><video data-live muted loop playsinline preload="none" poster="img/live-chat-poster.webp" width="720" height="1600" aria-label="Close-up recording of the chat scrolling"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
+      </div>
+      <button class="pause" type="button" data-pause aria-pressed="false">Pause motion</button>
     </div>
   </div>
 </section>
@@ -396,7 +399,7 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
       <desc id="arch-d">Five native UIs (Android TV and Android phone in Jetpack Compose; iPhone, Mac and Apple TV in SwiftUI) all connect to one layer of presenters that expose state and take events, which sit on the shared Kotlin core modules: core, stream, chat, player-api and presenters.</desc>
       <g class="ln">
         <path d="M84 78V150"/><path d="M282 78V150"/><path d="M480 78V150"/><path d="M678 78V150"/><path d="M876 78V150"/>
-        <path d="M200 214V262"/><path d="M480 214V262"/><path d="M760 214V262"/>
+        <path d="M480 214V262"/>
       </g>
       <g>
         <rect class="ui" x="0" y="14" width="168" height="64" rx="12"/><text class="t" x="84" y="42" text-anchor="middle">Android TV</text><text class="s" x="84" y="63" text-anchor="middle">Jetpack Compose</text>
@@ -417,7 +420,7 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
       <div class="tier"><span class="label">Presenters</span><div class="chips"><span class="chip">StateFlow&lt;UiState&gt; out</span><span class="chip">onEvent(…) in</span></div></div>
       <div class="tier"><span class="label">Shared Kotlin modules</span><div class="chips"><span class="chip">core</span><span class="chip">stream</span><span class="chip">chat</span><span class="chip">player-api</span><span class="chip">presenters</span></div></div>
     </div>
-    <p class="cap" style="max-width:44rem;margin-top:var(--sp-7)">Shared code may not touch Android or <code>java.*</code> APIs: a Gradle check fails the build if it does. Translations for all 36 languages are generated into each app, and startup and frame timing are tracked with Macrobenchmark.</p>
+    <p style="max-width:44rem;margin-top:var(--sp-7);color:var(--muted)">Shared code may not touch Android or <code>java.*</code> APIs: a Gradle check fails the build if it does. Translations for all 36 languages are generated into each app, and startup and frame timing are tracked with Macrobenchmark.</p>
   </div>
 </section>
 
