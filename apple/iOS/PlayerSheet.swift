@@ -50,7 +50,7 @@ struct PlayerSheet: View {
         let insets = metrics.insets
         let size = CGSize(width: metrics.size.width + insets.leading + insets.trailing, height: metrics.size.height + insets.top + insets.bottom)
         let tabBarVisible = (app.paths[app.tab] ?? []).isEmpty
-        let base = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, keyboardHeight: keyboard.height, tabBarVisible: tabBarVisible)
+        let base = SheetGeometry(container: size, safeTop: insets.top, safeBottom: insets.bottom, tabBarVisible: tabBarVisible)
         let landscape = base.landscape
         let docked = session.position == .collapsed
         // Fullscreen is the expanded landscape position; it is decided by the position, never by the drag value.
@@ -60,7 +60,7 @@ struct PlayerSheet: View {
 
         ZStack(alignment: .topLeading) {
             if !fullscreen {
-                details(playback, session, top: base.expandedVideoHeight, bottom: keyboard.height > 0 ? 0 : insets.bottom, base: base)
+                details(playback, session, top: base.expandedVideoHeight, bottom: max(keyboard.height, insets.bottom), base: base)
                     .frame(width: size.width, height: base.expandedHeight, alignment: .topLeading)
                     .sheetCover(progress, color: Theme.surface)
             }

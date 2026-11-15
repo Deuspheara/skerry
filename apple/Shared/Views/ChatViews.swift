@@ -306,6 +306,11 @@ struct ChatList: View, Equatable {
                     .padding(.horizontal, 6)
                 }
                 .scrollIndicators(.hidden)
+                #if os(iOS)
+                // Dragging the chat down (or tapping it) puts the keyboard away.
+                .scrollDismissesKeyboard(.interactively)
+                .simultaneousGesture(TapGesture().onEnded { Keyboard.dismiss() })
+                #endif
                 .defaultScrollAnchor(.bottom)
                 .onScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48

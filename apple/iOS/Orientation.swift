@@ -1,4 +1,5 @@
 import Observation
+import SwiftUI
 import UIKit
 
 /// Fullscreen is landscape: the button asks the window scene to rotate (the system keeps honouring the viewer's rotation lock) and, after leaving
@@ -34,10 +35,14 @@ final class KeyboardObserver {
         tokens.append(center.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] note in
             let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
             let screen = UIScreen.main.bounds
-            MainActor.assumeIsolated { self?.height = max(0, screen.height - frame.minY) }
+            let duration = (note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+            MainActor.assumeIsolated {
+                // Animated with the keyboard's own duration: the sheet's content rises and falls with it instead of jumping.
+                withAnimation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: max(0.2, duration))) { self?.height = max(0, screen.height - frame.minY) }
+            }
         })
         tokens.append(center.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.height = 0 }
+            MainActor.assumeIsolated { withAnimation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.25)) { self?.height = 0 } }
         })
     }
 }
