@@ -14,7 +14,7 @@ struct PlayerSheet: View {
     @State private var hideTask: Task<Void, Never>?
     @State private var replyTo: ChatLine?
     /// The bottom safe area as the system lays it out: the home indicator's, or the keyboard's height while it is up (and while it is dragged).
-    @State private var keyboardInset: CGFloat = 0
+    @State private var keyboardInset = KeyboardInset()
 
     private let miniHeight = SheetGeometry.miniHeight
 
@@ -44,7 +44,7 @@ struct PlayerSheet: View {
         // Outside the modifier above, so it sees the keyboard: the system moves this safe area with the keyboard frame by frame, including while the
         // viewer drags the keyboard down with the chat, which the keyboard notifications (start and end only) cannot follow.
         .background {
-            Color.clear.onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { keyboardInset = $0 }
+            Color.clear.onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { keyboardInset.value = $0 }
         }
         .onGeometryChange(for: ScreenMetrics.self) { ScreenMetrics(size: $0.size, insets: $0.safeAreaInsets) } action: { metrics = $0 }
         .onAppear {
@@ -75,7 +75,7 @@ struct PlayerSheet: View {
 
         ZStack(alignment: .topLeading) {
             if !fullscreen {
-                details(playback, session, top: base.expandedVideoHeight, bottom: max(Self.fakeKeyboard ?? keyboardInset, insets.bottom), base: base)
+                details(playback, session, top: base.expandedVideoHeight, bottom: insets.bottom, base: base)
                     .frame(width: size.width, height: base.expandedHeight, alignment: .topLeading)
                     .sheetCover(progress, color: Theme.surface)
             }
@@ -125,7 +125,7 @@ struct PlayerSheet: View {
                 Spacer()
             }
         }
-        .padding(.bottom, bottom)
+        .safeAreaInset(edge: .bottom, spacing: 0) { KeyboardSpacer(model: keyboardInset, floor: bottom, fake: Self.fakeKeyboard) }
         .background(Theme.background)
         .padding(.top, top)
     }
@@ -327,5 +327,23 @@ private struct SheetChat: View {
                     LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 26)
                 },
             )
+    }
+}
+
+/// The bottom safe area as the system lays it out, written by a background measurement of the sheet and read only by `KeyboardSpacer`, so a keyboard
+/// frame (one per display frame while the viewer drags it down) re-lays out the room under the chat and nothing else of the sheet.
+@MainActor @Observable final class KeyboardInset {
+    var value: CGFloat = 0
+}
+
+/// The room the chat input leaves for the keyboard (or the home indicator when there is none). Changes apply at once: the system already animates them.
+private struct KeyboardSpacer: View {
+    let model: KeyboardInset
+    let floor: CGFloat
+    let fake: CGFloat?
+
+    var body: some View {
+        Color.clear.frame(height: max(fake ?? model.value, floor))
+            .transaction { $0.animation = nil }
     }
 }

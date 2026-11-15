@@ -319,12 +319,12 @@ struct ChatList: View, Equatable {
                     atBottom = bottom
                     if bottom { unread = 0 }
                 }
-                // The chat moves up with the keyboard: when the list shrinks or grows while it follows the live edge, the latest line stays in view.
+                // The chat moves up with the keyboard: while the list follows the live edge, a change of its height keeps the latest line in view.
                 .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height } action: { _, _ in
                     guard atBottom, let last = lines.last else { return }
                     resizingUntil = Date().addingTimeInterval(0.6)
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { proxy.scrollTo(last.id, anchor: .bottom) }
+                    var transaction = Transaction(); transaction.disablesAnimations = true
+                    withTransaction(transaction) { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
                 #if !os(tvOS)
                 if !atBottom {
