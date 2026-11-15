@@ -1,5 +1,6 @@
 package com.twitchplayer.tv.demo
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -28,6 +29,7 @@ internal object DemoPhotos {
      * [seed] is `base + 1000 * variant`: the base picks the photo (a thumbnail adds [THUMB_OFFSET]), the variant picks a different
      * crop of it, so a channel's replays and clips look like different moments of the same stream.
      */
+    @SuppressLint("UseKtx") // demo-android has no core-ktx dependency; DemoArt and DemoEmotes use the platform call the same way
     fun render(context: Context, seed: Int, width: Int, height: Int): Bitmap? {
         val variant = seed / VARIANT_STEP
         var base = seed % VARIANT_STEP
