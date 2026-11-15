@@ -96,8 +96,7 @@ struct PlayerSheet: View {
 
     @ViewBuilder private func details(_ playback: PlaybackModel, _ session: PlayerSession, top: CGFloat, bottom: CGFloat, base: SheetGeometry) -> some View {
         VStack(spacing: 0) {
-            // With the keyboard up the chat needs the room: the streamer row steps aside (it is back when the keyboard goes).
-            if keyboard.height == 0 || playback.offline { streamerRow(playback, session, travel: base.collapsedY) }
+            streamerRow(playback, session, travel: base.collapsedY)
             if playback.offline {
                 MessageState(title: "offline_title", message: "offline_body", action: (title: "offline_open", run: { app.openChannel(session.target?.channelLogin ?? "") }), icon: "moon.zzz")
             } else if (playback.ui?.chatMode ?? .compact) != .hidden, playback.isLive {
@@ -113,7 +112,6 @@ struct PlayerSheet: View {
         }
         .padding(.bottom, bottom)
         .background(Theme.background)
-        .animation(.easeOut(duration: 0.2), value: keyboard.height == 0)
         .padding(.top, top)
     }
 
