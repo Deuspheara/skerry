@@ -131,6 +131,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  commit-hygiene:
+    name: commit hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: No co-author trailers or AI attribution in commit messages
+        run: |
+          range="origin/${{ github.base_ref }}..HEAD"
+          if git log --format=%B "$range" | grep -iE '^co-authored-by:|generated with|🤖'; then
+            echo "Remove the attribution lines from the commit messages (see AGENTS.md)"; exit 1
+          fi
+
   test:
     name: test
     runs-on: ubuntu-latest
