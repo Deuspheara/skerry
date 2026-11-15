@@ -25,32 +25,70 @@ One shared Kotlin Multiplatform core, native UIs on top.</p>
 <p align="center"><sub>Demo mode: fictional channels, chat and a test-pattern video. No real streamers appear in any screenshot.</sub></p>
 
 > **Unofficial project.** Skerry is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. or Amazon.com,
-> Inc. Twitch and the Twitch logo are trademarks of their owners. Read [LEGAL.md](LEGAL.md), in particular the part about native
-> playback, before you build or run it.
+> Inc. Twitch and the Twitch logo are trademarks of their owners. See [LEGAL.md](LEGAL.md).
 
-## What it is
+## Hi, this is Skerry
 
-- **Native screens.** Jetpack Compose on Android TV and phone, SwiftUI on iPhone, Mac and Apple TV. Not a wrapped website.
-- **Native chat** with badges, replies, highlights and 7TV, BetterTTV and FrankerFaceZ emotes (animated and zero-width included).
-- **One shared core** in Kotlin Multiplatform: API, auth, repositories, chat, presenters. Each presenter exposes
-  `StateFlow<UiState>` and `onEvent(...)`; the UIs only render and send events.
-- **36 languages**, right-to-left layouts, large-text support, Baseline Profiles and R8 full mode on Android.
-- **Demo mode** that needs no account and no network, used for every screenshot, test and benchmark here.
+Skerry is a Twitch viewer that feels at home on each device. On your phone it behaves like a phone app, on a Mac like a Mac app,
+on a TV like a TV app, and all of them share the same brain underneath. It is a hobby project, built in the open, and it is
+happy to have company.
 
-## Playback and Twitch's terms
+- **Browse and watch.** Your followed channels that are live, categories, search, channel pages, replays and clips.
+- **Chat that is fun to read.** Badges, replies, highlighted mentions, and 7TV, BetterTTV and FrankerFaceZ emotes, animated ones included.
+- **Speaks your language.** 36 languages, right-to-left layouts, large-text support.
+- **Fast.** Baseline Profiles and R8 on Android; the numbers are tracked in [docs/](docs/perf-baseline.md).
+- **Try it without an account.** Demo mode fills every screen with fictional channels, chat and a test-pattern video.
 
-| Platform | Video |
-|---|---|
-| Android TV | Twitch's official embedded player by default (with its controls and ads). Native Media3 player is optional. |
-| Android phone, iPhone, Mac, Apple TV | Native player only. |
+| Device | UI | Status |
+|---|---|---|
+| Android phone | Jetpack Compose | Working: browse, chat, replays, clips, Picture-in-Picture |
+| Android TV | Jetpack Compose | Working: official embedded player by default |
+| iPhone | SwiftUI | Working: draggable player sheet, Liquid Glass bar |
+| Mac | SwiftUI | Working: sidebar, chat column, mini player |
+| Apple TV | SwiftUI | Working: built for the Siri Remote |
 
-The native player resolves streams through Twitch interfaces that are **not documented** and may break Twitch's terms.
-This repository therefore ships **no client id for it**: `playbackClientId` is empty, and without it the phone and Apple apps cannot
-play video and the TV app uses the embed. If you set one (`-PplaybackClientId=...` in your own `~/.gradle/gradle.properties`, or
-`TWITCH_PLAYBACK_CLIENT_ID` in `apple/Config/Local.xcconfig`), that is your decision and your risk. Ads are never skipped or hidden.
-Details: [LEGAL.md](LEGAL.md) and [docs/TWITCH_INTEGRATION.md](docs/TWITCH_INTEGRATION.md).
+## Try it in five minutes (Android phone, demo mode)
 
-## Build
+You need JDK 21 and the Android SDK, plus an emulator or a phone with USB debugging.
+
+```sh
+git clone https://github.com/Deuspheara/skerry.git
+cd skerry
+cp local.properties.example local.properties     # then set sdk.dir to your Android SDK
+./gradlew :phone:assembleDebug
+ANDROID_SERIAL=<your device> ./gradlew :phone:installDebug
+adb -s <your device> shell run-as com.twitchplayer.phone touch files/demo    # turns on demo mode
+```
+
+Open the app again and you will see fictional channels, chat and a test-pattern video. No account, no network. The Apple apps are
+in [apple/README.md](apple/README.md).
+
+## Good to know
+
+**Is this allowed by Twitch?** Skerry is unofficial and Twitch has not approved it. Sign-in, lists and chat use Twitch's documented
+APIs. Playing video natively uses interfaces Twitch does not document, which may go against Twitch's terms, so this repository
+does **not** include the key it needs: the Android TV app plays Twitch's own embedded player by default, and the other apps only
+play video if *you* build them with your own `playbackClientId` (in `~/.gradle/gradle.properties` or `-PplaybackClientId=...`, or
+`TWITCH_PLAYBACK_CLIENT_ID` in `apple/Config/Local.xcconfig`). That is your call and your risk. Ads are never skipped or hidden.
+The full, plain-language version is in [LEGAL.md](LEGAL.md).
+
+**What does it know about me?** Nothing leaves your device except requests to Twitch and the emote services. No account of its own, no analytics,
+no server. See [PRIVACY.md](PRIVACY.md).
+
+**Can I help?** Yes, please. Bug reports, translations, screenshots from real devices (we have no Android TV shots yet) and pull requests are all
+welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); the rules for everyone are in [AGENTS.md](AGENTS.md). Found a security problem?
+See [SECURITY.md](SECURITY.md).
+
+**Why "Skerry"?** A skerry is a small rocky island, a good spot to watch from.
+
+---
+
+## Developer guide
+
+Everything below is for people building or changing the code.
+
+<details>
+<summary>All the Gradle commands (checks, benchmarks, profiles)</summary>
 
 ```sh
 ./gradlew :app:assembleDebug
@@ -65,6 +103,8 @@ benchmark/tools/generate-profiles.sh            # regenerate the Baseline + star
 ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV, AOT-compiled at install with its profile
 ./gradlew :app:analyzeReleaseR8Config           # R8 Configuration Analyzer report (app/build/reports/r8/)
 ```
+
+</details>
 
 ## Modules
 
