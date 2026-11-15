@@ -131,8 +131,11 @@ h2+.lede{margin-top:var(--sp-5)}
 .stage::before{content:"";position:absolute;inset:8% -22% 0 -22%;background:linear-gradient(100deg,var(--b1),var(--b2),var(--b3),var(--b4),var(--b5),var(--b6));filter:blur(52px);opacity:.42;border-radius:40%}
 .stage .frame{position:relative}
 .pause{display:block;margin:var(--sp-4) auto 0;font:500 .85rem var(--body);color:var(--faint);background:transparent;border:1px solid var(--line);border-radius:2rem;padding:var(--sp-1) var(--sp-4);cursor:pointer;transition:color .2s,border-color .2s}
+.pause[aria-pressed="true"]::after{content:" (paused)"}
 .pause:hover{color:var(--text);border-color:var(--accent)}
 .pause[hidden]{display:none}
+.pause.in-frame{margin:0;border-radius:0;border-width:1px 0 0;width:100%;padding:var(--sp-3) var(--sp-4);background:#0b0b0e}
+.pause{min-height:2.75rem}
 @keyframes rise{from{opacity:0;transform:translateY(2rem)}to{opacity:1;transform:none}}
 .stage .frame{animation:rise .9s var(--ease) both .1s}
 
@@ -181,7 +184,7 @@ h2+.lede{margin-top:var(--sp-5)}
 section.alt .code{background:var(--bg)}
 .code pre{margin:0;padding:var(--sp-5) var(--sp-5);overflow-x:auto;font:400 .92rem/1.85 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:oklch(0.9 0.03 292);tab-size:2}
 .code .c{color:var(--faint)}
-.copy-btn{position:absolute;top:var(--sp-3);right:var(--sp-3);font:600 .78rem var(--body);color:var(--muted);background:var(--bg-raise);border:1px solid var(--line);border-radius:.5rem;padding:var(--sp-1) var(--sp-3);cursor:pointer;transition:color .2s,border-color .2s}
+.copy-btn{position:absolute;top:var(--sp-3);right:var(--sp-3);min-height:2.25rem;font:600 .78rem var(--body);color:var(--muted);background:var(--bg-raise);border:1px solid var(--line);border-radius:.5rem;padding:var(--sp-1) var(--sp-3);cursor:pointer;transition:color .2s,border-color .2s}
 .copy-btn:hover{color:var(--text);border-color:var(--accent)}
 .try .btn{margin-top:var(--sp-4)}
 
@@ -275,7 +278,7 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
   <div class="wrap split">
     <div>
       <h1>Twitch, at home on <em>every</em> screen.</h1>
-      <p class="lede">Skerry is an open-source viewer for Android, iPhone, Mac and Apple TV. Real native lists, real native chat, one shared Kotlin core.</p>
+      <p class="lede">Skerry is an open-source viewer for Android and Android TV, iPhone, Mac and Apple TV. Real native lists, real native chat, one shared Kotlin core.</p>
       <div class="cta">
         <a class="btn primary" href="#try">Run the demo</a>
         <a class="btn ghost" href="https://github.com/Deuspheara/skerry">View the source</a>
@@ -286,9 +289,9 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
         <span>Unofficial. Not affiliated with Twitch. <a href="#fine-print">Read the fine print</a></span>
       </p>
     </div>
-    <div class="stage" aria-label="Skerry on Android: a live stream with chat scrolling">
+    <div class="stage" role="group" aria-label="Skerry on Android: a live stream with chat scrolling">
       <div class="frame phone front"><video data-live muted loop playsinline preload="metadata" poster="img/live-chat-poster.webp" width="540" height="1200" aria-label="Screen recording of a live stream with chat scrolling by"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
-      <button class="pause" type="button" data-pause aria-pressed="false">Pause recording</button>
+      <button class="pause" type="button" data-pause aria-pressed="false">Pause recordings</button>
     </div>
   </div>
 </div>
@@ -330,6 +333,7 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
     </div>
     <div class="chatframe frame phone">
       <div class="clip"><video data-live muted loop playsinline preload="none" poster="img/live-chat-poster.webp" width="540" height="1200" aria-label="Close-up recording of the chat scrolling"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
+      <button class="pause in-frame" type="button" data-pause aria-pressed="false">Pause recordings</button>
     </div>
   </div>
 </section>
@@ -390,7 +394,7 @@ cp local.properties.example local.properties
 ./gradlew :phone:assembleDebug
 ANDROID_SERIAL=emulator-5554 ./gradlew :phone:installDebug
 
-<span class="c"># fictional channels, no account, no network</span>
+<span class="c"># turn on demo mode: fictional channels, no account, no network</span>
 adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
       <span role="status" aria-live="polite" id="copy-status" style="position:absolute;left:-999px"></span>
     </div>
@@ -490,11 +494,14 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
 
   // Live recordings play only while visible, and never with reduced motion (the poster stays).
   var vids=[].slice.call(document.querySelectorAll('video[data-live]'));
-  var paused=false,pbtn=document.querySelector('[data-pause]');
-  if(reduce&&pbtn)pbtn.hidden=true;
-  if(pbtn)pbtn.addEventListener('click',function(){
-    paused=!paused;pbtn.setAttribute('aria-pressed',paused);pbtn.textContent=paused?'Play recording':'Pause recording';
-    vids.forEach(function(v){if(paused)v.pause();else if(v.dataset.visible==='1'){var p=v.play();if(p&&p.catch)p.catch(function(){})}});
+  var paused=false,pbtns=[].slice.call(document.querySelectorAll('[data-pause]'));
+  pbtns.forEach(function(b){
+    if(reduce)b.hidden=true;
+    b.addEventListener('click',function(){
+      paused=!paused;
+      pbtns.forEach(function(x){x.setAttribute('aria-pressed',paused)});
+      vids.forEach(function(v){if(paused)v.pause();else if(v.dataset.visible==='1'){var p=v.play();if(p&&p.catch)p.catch(function(){})}});
+    });
   });
   if(!reduce&&'IntersectionObserver' in window){
     var io=new IntersectionObserver(function(es){es.forEach(function(e){
