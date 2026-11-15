@@ -30,7 +30,7 @@ private const val EVENT_STREAM_TIMEOUT_SECONDS = 24.0 * 60 * 60
 
 /** The Apple bindings. The platform-independent ones come from the `shared*Module()` functions. */
 fun appleModule(config: AppleConfig): Module = module {
-    single { AppConfig(clientId = config.twitchClientId, defaultPlayerEngine = PlayerEngine.Fallback) }
+    single { AppConfig(clientId = config.twitchClientId, defaultPlayerEngine = PlayerEngine.Fallback, playbackClientId = config.playbackClientId) }
     single<HttpClientEngineFactory<*>> { Darwin }
     single<Logger> { AppleLogger() }
     single<DeviceProfile> { AppleDeviceProfile() }

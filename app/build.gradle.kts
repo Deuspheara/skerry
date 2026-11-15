@@ -16,14 +16,16 @@ android {
     val twitchClientId = providers.gradleProperty("twitchClientId").orElse("").get()
     val twitchPlayerHost = providers.gradleProperty("twitchPlayerHost").orElse("").get()
     val twitchPlayerParent = providers.gradleProperty("twitchPlayerParent").orElse("").get()
+    val playbackClientId = providers.gradleProperty("playbackClientId").orElse("").get()
     buildConfigField("String", "TWITCH_CLIENT_ID", "\"$twitchClientId\"")
+    buildConfigField("String", "PLAYBACK_CLIENT_ID", "\"$playbackClientId\"")
     buildConfigField("String", "TWITCH_PLAYER_HOST", "\"$twitchPlayerHost\"")
     buildConfigField("String", "TWITCH_PLAYER_PARENT", "\"$twitchPlayerParent\"")
     // Player engines. `-PnativePlayer=false` compiles the Media3 player out (R8 removes it): WebView only.
     // `-PplayerEngine=webview|native` is the engine a fresh install starts with; Settings > Player engine overrides it.
     val nativePlayer = providers.gradleProperty("nativePlayer").orElse("true").get().toBooleanStrict()
-    val playerEngine = providers.gradleProperty("playerEngine").orElse("native").get().also { require(it == "native" || it == "webview") { "playerEngine must be native or webview" } }
-    buildConfigField("boolean", "NATIVE_PLAYER_ENABLED", nativePlayer.toString())
+    val playerEngine = providers.gradleProperty("playerEngine").orElse("webview").get().also { require(it == "native" || it == "webview") { "playerEngine must be native or webview" } }
+    buildConfigField("boolean", "NATIVE_PLAYER_ENABLED", (nativePlayer && playbackClientId.isNotBlank()).toString())
     buildConfigField("String", "PLAYER_ENGINE_DEFAULT", "\"$playerEngine\"")
   }
 

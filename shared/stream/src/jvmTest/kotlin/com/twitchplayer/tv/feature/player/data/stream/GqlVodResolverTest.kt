@@ -30,7 +30,7 @@ class GqlVodResolverTest {
     private val json = headersOf(HttpHeaders.ContentType, "application/json")
     private val noSleep = RetryPolicy(attempts = 3, sleep = {})
 
-    private fun resolver(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) = GqlVodResolver(HttpClient(MockEngine { handler(it) }), Logger { _, _ -> }, retry = noSleep, deviceId = "dev", random = Random(1))
+    private fun resolver(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) = GqlVodResolver(HttpClient(MockEngine { handler(it) }), Logger { _, _ -> }, clientId = "web-test-id", retry = noSleep, deviceId = "dev", random = Random(1))
 
     private suspend fun failure(r: GqlVodResolver, id: String = "2922475029") = assertFailsWith<VodAccessException> { r.resolve(id) }
 
@@ -57,7 +57,7 @@ class GqlVodResolverTest {
 
         val post = seen[0]
         assertEquals("https://gql.twitch.tv/gql", post.url.toString())
-        assertEquals("kimne78kx3ncx6brgo4mv6wki5h1ko", post.headers["Client-Id"])
+        assertEquals("web-test-id", post.headers["Client-Id"])
         assertTrue(gqlBody.contains("videoPlaybackAccessToken(id: \$id"))
         assertTrue(gqlBody.contains("playerBackend: \\\"mediaplayer\\\""))
         assertFalse(gqlBody.contains("persistedQuery"), "raw query, not a persisted-query hash")

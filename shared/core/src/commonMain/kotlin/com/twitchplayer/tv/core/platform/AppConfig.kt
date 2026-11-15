@@ -11,4 +11,6 @@ data class AppConfig(
     val clientId: String,
     /** The engine a fresh install starts with. */
     val defaultPlayerEngine: PlayerEngine = PlayerEngine.Fallback,
+    /** Client id sent with the unofficial playback requests; blank (the default) switches native playback off. See LEGAL.md. */
+    val playbackClientId: String = "",
 )

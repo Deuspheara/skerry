@@ -167,7 +167,7 @@ val demoModule = module {
     single<SessionRepository> { DemoSession() }
     single<TwitchRepository> { DemoRepository(androidContext()) }
     single<ClipResolver> { DemoClips() }
-    single<VodResolver> { DemoVods(androidContext(), GqlVodResolver(get(), get())) }
+    single<VodResolver> { DemoVods(androidContext(), GqlVodResolver(get(), get(), clientId = get<com.twitchplayer.tv.core.platform.AppConfig>().playbackClientId)) }
     single<ChatSource> { DemoChat(androidContext()) }
     single<ChatAssetsSource> { DemoChatAssets }
     factory<VoiceInput> { DemoVoice() }

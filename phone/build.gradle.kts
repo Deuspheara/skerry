@@ -16,7 +16,9 @@ android {
     versionName = "1.0"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     val twitchClientId = providers.gradleProperty("twitchClientId").orElse("").get()
+    val playbackClientId = providers.gradleProperty("playbackClientId").orElse("").get()
     buildConfigField("String", "TWITCH_CLIENT_ID", "\"$twitchClientId\"")
+    buildConfigField("String", "PLAYBACK_CLIENT_ID", "\"$playbackClientId\"")
   }
 
   // Declares the translated languages to Android 13+ (per-app language settings); the language folders come from the

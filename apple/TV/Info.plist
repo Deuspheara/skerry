@@ -61,6 +61,8 @@
 	<string>1</string>
 	<key>TwitchClientId</key>
 	<string>$(TWITCH_CLIENT_ID)</string>
+	<key>PlaybackClientId</key>
+	<string>$(TWITCH_PLAYBACK_CLIENT_ID)</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 </dict>

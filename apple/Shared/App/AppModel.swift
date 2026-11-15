@@ -94,6 +94,7 @@ final class AppModel {
     init(launch: LaunchMode = .current) {
         self.launch = launch
         let id = (Bundle.main.object(forInfoDictionaryKey: "TwitchClientId") as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
+        TwitchApp.shared.playbackClientId = (Bundle.main.object(forInfoDictionaryKey: "PlaybackClientId") as? String) ?? ""
         #if DEBUG
         // The demo code only exists in debug XCFrameworks (see apple/scripts/build-shared.sh): a release build never references it.
         if launch.demo {

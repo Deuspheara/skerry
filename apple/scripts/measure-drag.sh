@@ -4,7 +4,7 @@
 set -euo pipefail
 udid="$1"; config="${2:-Debug}"; channel="${3:-}"
 cd "$(dirname "$0")/.."
-[ -n "$channel" ] || channel=$(curl -s -H "Client-ID: kimne78kx3ncx6brgo4mv6wki5h1ko" -d '{"query":"{streams(first:3){edges{node{broadcaster{login}}}}}"}' https://gql.twitch.tv/gql | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['streams']['edges'][0]['node']['broadcaster']['login'])")
+[ -n "$channel" ] || channel=$(curl -s -H "Client-ID: $PLAYBACK_CLIENT_ID" -d '{"query":"{streams(first:3){edges{node{broadcaster{login}}}}}"}' https://gql.twitch.tv/gql | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['streams']['edges'][0]['node']['broadcaster']['login'])")
 echo "channel: $channel, configuration: $config"
 xcrun simctl boot "$udid" 2>/dev/null || true
 xcodegen generate >/dev/null

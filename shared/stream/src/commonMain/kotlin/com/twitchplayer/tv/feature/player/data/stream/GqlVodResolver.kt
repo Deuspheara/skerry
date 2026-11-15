@@ -55,7 +55,7 @@ class VodAccessException(
  * 3. parse its variants.
  *
  * Checked live on 2026-11-08 (102 public VODs, muted and still-recording ones included): no integrity token needed. The
- * Client-Id is Twitch's public web player id and no viewer token is sent, same as the live and clip resolvers.
+ * Client-Id is the one supplied at build time (`playbackClientId`) and no viewer token is sent, same as the live and clip resolvers.
  * Subscriber-only replays cannot be played: Twitch's unofficial interface rejects the app's own login token (HTTP 401 "token is
  * invalid" with either client id, tried on a real account on 2026-11-08), so the request stays anonymous and usher answers 403.
  * Same retry rule: network errors and 5xx / 429 retry with backoff, everything else surfaces at once with the exact answer logged.
@@ -63,7 +63,7 @@ class VodAccessException(
 class GqlVodResolver(
     private val http: HttpClient,
     private val logger: Logger,
-    private val clientId: String = GqlPlaybackResolver.WEB_CLIENT_ID,
+    private val clientId: String,
     private val gqlUrl: String = GqlPlaybackResolver.GQL_URL,
     private val usherUrl: String = USHER_URL,
     private val retry: RetryPolicy = RetryPolicy(),
@@ -72,6 +72,7 @@ class GqlVodResolver(
 ) : VodResolver {
 
     override suspend fun resolve(vodId: String): ResolvedVod {
+        GqlPlaybackResolver.requireConfigured(clientId)
         require(ID.matches(vodId)) { "Invalid video id." }
         try {
             return resolveAs(vodId)

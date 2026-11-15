@@ -39,6 +39,8 @@ data class PlatformConfig(
     /** HTTPS origin and exact hostname of the hosted Twitch embed page; blank disables the WebView embed. */
     val playerHost: String,
     val playerParent: String,
+    /** Client id for the unofficial playback requests; blank switches native playback off. See LEGAL.md. */
+    val playbackClientId: String = "",
 )
 
 /** Android bindings. The platform-independent ones are in `sharedCoreModule()`. */
@@ -47,7 +49,7 @@ fun coreModule(config: PlatformConfig) = module {
     single<DeviceProfile> { AndroidDeviceProfile() }
     single<NetworkStatus> { AndroidNetworkStatus(androidContext()) }
     single<NumberFormatter> { AndroidNumberFormatter() }
-    single { AppConfig(clientId = config.twitchClientId, defaultPlayerEngine = config.defaultPlayerEngine) }
+    single { AppConfig(clientId = config.twitchClientId, defaultPlayerEngine = config.defaultPlayerEngine, playbackClientId = config.playbackClientId) }
     single<HttpClientEngineFactory<*>> { OkHttp }
     // Warn level survives R8's stripping of Log.v/d/i (see proguard-rules.pro).
     single<Logger> { Logger { tag, message -> Log.w(tag, message) } }

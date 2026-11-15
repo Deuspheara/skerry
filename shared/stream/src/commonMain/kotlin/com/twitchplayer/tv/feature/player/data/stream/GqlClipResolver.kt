@@ -29,10 +29,11 @@ fun interface ClipResolver {
 class GqlClipResolver(
     private val http: HttpClient,
     private val logger: Logger,
-    private val clientId: String = GqlPlaybackResolver.WEB_CLIENT_ID,
+    private val clientId: String,
     private val gqlUrl: String = GqlPlaybackResolver.GQL_URL,
 ) : ClipResolver {
     override suspend fun resolve(slug: String): List<ClipSource> {
+        GqlPlaybackResolver.requireConfigured(clientId)
         require(SLUG.matches(slug)) { "Invalid clip id." }
         val body = Json.encodeToString(GqlPlaybackResolver.GqlRequest.serializer(), GqlPlaybackResolver.GqlRequest(QUERY, mapOf("slug" to slug)))
         val response = http.post(gqlUrl) {

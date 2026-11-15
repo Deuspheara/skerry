@@ -21,14 +21,14 @@ import kotlin.random.Random
  * 2. GET the master playlist from usher.ttvnw.net with that token;
  * 3. parse its variants.
  *
- * The Client-Id is Twitch's public web player id (the token is issued for the web player); it is a constructor
- * argument so it can change without touching the flow. Both steps retry network errors and 5xx with backoff; offline
+ * This uses interfaces Twitch does not document (see LEGAL.md). The Client-Id is supplied by whoever builds the app
+ * (`-PplaybackClientId`, empty in this repository) and is never hard-coded here; with it empty the resolvers refuse to run. Both steps retry network errors and 5xx with backoff; offline
  * channels and refusals do not retry, and a refusal always logs the exact HTTP status and body.
  */
 class GqlPlaybackResolver(
     private val http: HttpClient,
     private val logger: Logger,
-    private val clientId: String = WEB_CLIENT_ID,
+    private val clientId: String,
     private val gqlUrl: String = GQL_URL,
     private val usherUrl: String = USHER_URL,
     private val retry: RetryPolicy = RetryPolicy(),
@@ -37,6 +37,7 @@ class GqlPlaybackResolver(
 ) : TwitchPlaybackResolver {
 
     override suspend fun resolve(channel: String): ResolvedStream {
+        requireConfigured(clientId)
         val login = channel.lowercase()
         require(LOGIN.matches(login)) { "Invalid Twitch channel login." }
         val token = retry.run { accessToken(login) }
@@ -115,8 +116,8 @@ class GqlPlaybackResolver(
         const val GQL_URL = "https://gql.twitch.tv/gql"
         const val USHER_URL = "https://usher.ttvnw.net/api/channel/hls"
 
-        /** Twitch's public web player client id. */
-        const val WEB_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko"
+        internal fun requireConfigured(clientId: String) = check(clientId.isNotBlank()) { "Native playback is not configured: set -PplaybackClientId (see LEGAL.md)." }
+
         private const val PLAYER_TYPE = "site"
         private const val TAG = "PlaybackResolver"
         private val lenient = Json { ignoreUnknownKeys = true }

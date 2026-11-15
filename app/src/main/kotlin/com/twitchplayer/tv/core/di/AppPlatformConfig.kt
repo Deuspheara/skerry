@@ -10,4 +10,5 @@ fun appPlatformConfig() = PlatformConfig(
     defaultPlayerEngine = PlayerEngine.buildDefault(),
     playerHost = BuildConfig.TWITCH_PLAYER_HOST,
     playerParent = BuildConfig.TWITCH_PLAYER_PARENT,
+    playbackClientId = BuildConfig.PLAYBACK_CLIENT_ID,
 )

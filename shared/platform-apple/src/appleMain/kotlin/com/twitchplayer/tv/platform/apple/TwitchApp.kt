@@ -51,18 +51,21 @@ import org.koin.core.parameter.parametersOf
 object TwitchApp {
     private var graph: TwitchGraph? = null
 
+    /** Client id for the unofficial playback requests (Info.plist `PlaybackClientId`); set before [start]. Blank means native playback stays off. */
+    var playbackClientId: String = ""
+
     /**
      * Starts Koin with the production graph (once), loads the stored Twitch session and returns the graph. Later calls return the same
      * graph. Without the session start every screen would wait forever for "who is signed in".
      */
-    fun start(clientId: String): TwitchGraph = graph ?: TwitchGraph(startKoin { modules(appleModules(AppleConfig(clientId))) }.koin).also {
+    fun start(clientId: String): TwitchGraph = graph ?: TwitchGraph(startKoin { modules(appleModules(AppleConfig(clientId, playbackClientId = playbackClientId))) }.koin).also {
         it.startSession()
         graph = it
     }
 
     /** Starts Koin with the production graph plus [extra] modules loaded after it (they override its bindings); used by the demo, which is not in release builds. */
     internal fun startWith(clientId: String, extra: List<Module>): TwitchGraph = graph ?: TwitchGraph(
-        startKoin { modules(appleModules(AppleConfig(clientId)) + extra) }.koin,
+        startKoin { modules(appleModules(AppleConfig(clientId, playbackClientId = playbackClientId)) + extra) }.koin,
     ).also {
         it.startSession()
         graph = it

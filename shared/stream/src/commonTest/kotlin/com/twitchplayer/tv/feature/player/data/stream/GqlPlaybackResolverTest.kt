@@ -31,7 +31,7 @@ class GqlPlaybackResolverTest {
     private val json = headersOf(HttpHeaders.ContentType, "application/json")
     private val noSleep = RetryPolicy(attempts = 3, sleep = {})
 
-    private fun resolver(handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.request.HttpResponseData) = GqlPlaybackResolver(HttpClient(MockEngine { handler(it) }), Logger { _, _ -> }, retry = noSleep, deviceId = "dev", random = Random(1))
+    private fun resolver(handler: suspend MockRequestHandleScope.(io.ktor.client.request.HttpRequestData) -> io.ktor.client.request.HttpResponseData) = GqlPlaybackResolver(HttpClient(MockEngine { handler(it) }), Logger { _, _ -> }, clientId = "web-test-id", retry = noSleep, deviceId = "dev", random = Random(1))
 
     @Test fun resolvesTokenThenMasterPlaylistWithTheDocumentedUsherParameters() = runTest {
         val seen = mutableListOf<io.ktor.client.request.HttpRequestData>()
@@ -51,7 +51,7 @@ class GqlPlaybackResolverTest {
 
         val post = seen[0]
         assertEquals("https://gql.twitch.tv/gql", post.url.toString())
-        assertEquals("kimne78kx3ncx6brgo4mv6wki5h1ko", post.headers["Client-Id"])
+        assertEquals("web-test-id", post.headers["Client-Id"])
         assertTrue(gqlBody.contains("streamPlaybackAccessToken(channelName: \$login"))
         assertFalse(gqlBody.contains("persistedQuery"), "raw query, not a persisted-query hash")
         assertTrue(gqlBody.contains("\"login\":\"zerator\""))

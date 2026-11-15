@@ -12,4 +12,5 @@ fun phonePlatformConfig() = PlatformConfig(
     defaultPlayerEngine = PlayerEngine.Native,
     playerHost = "",
     playerParent = "",
+    playbackClientId = BuildConfig.PLAYBACK_CLIENT_ID,
 )
