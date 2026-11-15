@@ -1,10 +1,12 @@
 # Twitch integration research
 
-Research snapshot: 2026-11-06. Twitch documentation can change; recheck it before implementation and release. This is an unaffiliated third-party client concept.
+Research snapshot: 2026-11-06. Twitch documentation can change; recheck it before implementation and release. This is an unaffiliated third-party client; see [LEGAL.md](../LEGAL.md).
 
 ## Decision and open gate
 
-Use only documented Helix, OAuth, EventSub, and official embedded player interfaces. Do not obtain media URLs, suppress ads, alter quality through hidden interfaces, scrape chat, or emulate undocumented endpoints.
+Account, lists and chat use only documented Helix, OAuth Device Code and EventSub interfaces, and the official embedded player is the default way to play video. Ads are never suppressed.
+
+**Exception, disclosed in [LEGAL.md](../LEGAL.md):** the optional native player resolves streams, VODs and clips through Twitch's undocumented playback interfaces (`gql.twitch.tv`, `usher.ttvnw.net`). That may violate Twitch's terms. It is switched off unless the builder supplies `playbackClientId`; the repository ships none. The sections below were written before the native player existed and still describe the documented parts.
 
 **Player approval remains unverified.** Twitch's embedding documentation is framed around websites and requires an SSL domain and matching `parent`; it also forbids obscuring the embed and sets a 400×300 minimum for video. It does not explicitly state that a standalone Android TV application embedding a remotely hosted page inside Android WebView is an approved distribution model. A public Twitch developer issue reports WebView player errors, but that historical report is not definitive policy. Obtain written Twitch developer support confirmation and test on target Android TV hardware before treating this architecture as production viable. If Twitch declines, stop this player path and pursue a documented Twitch-approved option; do not substitute direct stream playback.
 

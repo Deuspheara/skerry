@@ -1,6 +1,54 @@
-# Twitch TV
+<h1 align="center">Skerry</h1>
 
-Native Android TV client built with Kotlin and Jetpack Compose. Browsing, channel details, and chat are native. Video uses Twitch's official embedded player in WebView; it does not proxy or extract video streams.
+<p align="center"><strong>A native, open-source client for Twitch on Android, iPhone, Mac and Apple TV.</strong><br>
+One shared Kotlin Multiplatform core, native UIs on top.</p>
+
+<p align="center">
+  <a href="https://deuspheara.github.io/skerry/">Website</a> ·
+  <a href="#build">Build</a> ·
+  <a href="LEGAL.md">Legal</a> ·
+  <a href="PRIVACY.md">Privacy</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <img src="site/img/phone-home.webp" width="19%" alt="Android: live channels from your follows">
+  <img src="site/img/phone-player.webp" width="19%" alt="Android: a live stream with chat">
+  <img src="site/img/ios-home.webp" width="19%" alt="iPhone: home with a floating tab bar">
+  <img src="site/img/ios-player.webp" width="19%" alt="iPhone: player with chat">
+  <img src="site/img/phone-channel.webp" width="19%" alt="Android: channel page">
+</p>
+<p align="center">
+  <img src="site/img/mac-home.webp" width="49%" alt="macOS: live channels grid">
+  <img src="site/img/tv-home.webp" width="49%" alt="Apple TV: home rows">
+</p>
+<p align="center"><sub>Demo mode: fictional channels, chat and a test-pattern video. No real streamers appear in any screenshot.</sub></p>
+
+> **Unofficial project.** Skerry is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. or Amazon.com,
+> Inc. Twitch and the Twitch logo are trademarks of their owners. Read [LEGAL.md](LEGAL.md), in particular the part about native
+> playback, before you build or run it.
+
+## What it is
+
+- **Native screens.** Jetpack Compose on Android TV and phone, SwiftUI on iPhone, Mac and Apple TV. Not a wrapped website.
+- **Native chat** with badges, replies, highlights and 7TV, BetterTTV and FrankerFaceZ emotes (animated and zero-width included).
+- **One shared core** in Kotlin Multiplatform: API, auth, repositories, chat, presenters. Each presenter exposes
+  `StateFlow<UiState>` and `onEvent(...)`; the UIs only render and send events.
+- **36 languages**, right-to-left layouts, large-text support, Baseline Profiles and R8 full mode on Android.
+- **Demo mode** that needs no account and no network, used for every screenshot, test and benchmark here.
+
+## Playback and Twitch's terms
+
+| Platform | Video |
+|---|---|
+| Android TV | Twitch's official embedded player by default (with its controls and ads). Native Media3 player is optional. |
+| Android phone, iPhone, Mac, Apple TV | Native player only. |
+
+The native player resolves streams through Twitch interfaces that are **not documented** and may break Twitch's terms.
+This repository therefore ships **no client id for it**: `playbackClientId` is empty, and without it the phone and Apple apps cannot
+play video and the TV app uses the embed. If you set one (`-PplaybackClientId=...` in your own `~/.gradle/gradle.properties`, or
+`TWITCH_PLAYBACK_CLIENT_ID` in `apple/Config/Local.xcconfig`), that is your decision and your risk. Ads are never skipped or hidden.
+Details: [LEGAL.md](LEGAL.md) and [docs/TWITCH_INTEGRATION.md](docs/TWITCH_INTEGRATION.md).
 
 ## Build
 
@@ -23,7 +71,7 @@ ANDROID_SERIAL=<tv> benchmark/tools/install-release.sh   # release build on a TV
 | Module | What it is |
 |---|---|
 | `app` | Android TV UI (Jetpack Compose), Media3 and WebView players, Android implementations of the platform interfaces, Koin wiring, demo data |
-| `phone` | Android phone UI (Jetpack Compose, Material 3): Home, Browse, Category, Search, Channel, Settings, sign-in, and native playback (live with chat, replays, clips, fullscreen, Picture-in-Picture) |
+| `phone` | Android phone UI (Jetpack Compose, Material 3): Home, Browse, Category, Search, Channel, Settings, sign-in, and native playback (live with chat, replays, clips, fullscreen, Picture-in-Picture; needs `playbackClientId`, see above) |
 | `platform-android` | Android library, no UI: Android implementations of the platform interfaces, the Koin wiring, holder ViewModels, the Media3 player |
 | `demo-android` | fictional demo data (no account, no network) and its video asset; debug, benchmark and nonMinified builds only |
 | `shared/core` | Kotlin Multiplatform: models, Twitch API and auth, repositories, settings, platform interfaces |
@@ -87,3 +135,8 @@ The static player page is in `player-site/`. Host it over HTTPS on a domain you 
 The app currently builds and runs on the Android TV emulator. Device-code auth and followed streams have been exercised with Twitch. EventSub chat reaches the connected state; live message delivery and sending still need full account/channel validation. The player remains unavailable until the hosted page is deployed and Twitch confirms this WebView distribution model. Emulator playback is not treated as TV hardware validation.
 
 This is an independent, unofficial client and is not endorsed by Twitch.
+
+## License
+
+[Apache License 2.0](LICENSE), see [NOTICE](NOTICE). The licence grants no trademark rights. Emotes belong to their creators and
+are loaded at runtime from the providers; nothing from Twitch is bundled.

@@ -1,0 +1,12 @@
+Skerry
+Copyright 2026 Quentin Gaillardet
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Skerry is an unofficial project. It is not affiliated with, endorsed by or sponsored by Twitch Interactive, Inc. or
+Amazon.com, Inc. See LEGAL.md.
+
+Bundled third-party material:
+- Inter typeface, SIL Open Font License 1.1 (docs/licenses/Inter-OFL.txt).
+- Libraries resolved by Gradle (Kotlin, Compose, Media3, Ktor, Koin, kotlinx.serialization, SKIE and others), each under its
+  own licence, mostly Apache-2.0. Their versions are pinned in gradle/libs.versions.toml.

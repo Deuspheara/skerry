@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">TwitchPlayer</string>
+    <string name="app_name" translatable="false">Skerry</string>
     <string name="live">LIVE</string>
 
     <string name="nav_home">Home</string>

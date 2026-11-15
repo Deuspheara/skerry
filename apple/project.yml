@@ -87,7 +87,7 @@ targets:
     info:
       path: iOS/Info.plist
       properties:
-        CFBundleDisplayName: TwitchPlayer
+        CFBundleDisplayName: Skerry
         TwitchClientId: "$(TWITCH_CLIENT_ID)"
         PlaybackClientId: "$(TWITCH_PLAYBACK_CLIENT_ID)"
         UILaunchScreen: {}
@@ -144,7 +144,7 @@ targets:
     info:
       path: Mac/Info.plist
       properties:
-        CFBundleDisplayName: TwitchPlayer
+        CFBundleDisplayName: Skerry
         LSApplicationCategoryType: public.app-category.entertainment
         LSMinimumSystemVersion: "15.0"
         TwitchClientId: "$(TWITCH_CLIENT_ID)"
@@ -203,7 +203,7 @@ targets:
     info:
       path: TV/Info.plist
       properties:
-        CFBundleDisplayName: TwitchPlayer
+        CFBundleDisplayName: Skerry
         TwitchClientId: "$(TWITCH_CLIENT_ID)"
         PlaybackClientId: "$(TWITCH_PLAYBACK_CLIENT_ID)"
         UILaunchScreen: {}

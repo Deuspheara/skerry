@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skerry: a native client for Twitch</title>
+<meta name="description" content="Skerry is an open-source, unofficial Twitch client with native screens and chat on Android, iPhone, Mac and Apple TV, built on one Kotlin Multiplatform core.">
+<meta name="theme-color" content="#120f1c">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Skerry: a native client for Twitch">
+<meta property="og:description" content="Open source. Native on Android, iPhone, Mac and Apple TV. Unofficial, not affiliated with Twitch.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Bricolage Grotesque";src:url(fonts/bricolage.woff2) format("woff2");font-weight:600 800;font-display:swap}
+@font-face{font-family:"Inter";src:url(fonts/inter.woff2) format("woff2");font-weight:400 600;font-display:swap}
+
+:root{
+  color-scheme:dark;
+  --bg:oklch(0.16 0.025 292);
+  --bg-raise:oklch(0.2 0.03 292);
+  --bg-sunk:oklch(0.13 0.022 292);
+  --line:oklch(0.34 0.04 292 / .55);
+  --text:oklch(0.95 0.012 292);
+  --muted:oklch(0.76 0.025 292);
+  --faint:oklch(0.62 0.03 292);
+  --accent:oklch(0.7 0.2 295);
+  --accent-strong:oklch(0.62 0.24 292);
+  --accent-ink:oklch(0.16 0.03 292);
+  --live:oklch(0.63 0.24 27);
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --gutter:clamp(1rem,4vw,2.5rem);
+  --wrap:72rem;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:5rem;scrollbar-color:oklch(0.4 0.06 292) var(--bg-sunk)}
+body{margin:0;background:var(--bg);color:var(--text);font:400 1.0625rem/1.65 var(--body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--accent);color:var(--accent-ink)}
+::-webkit-scrollbar{width:.7rem;height:.7rem}
+::-webkit-scrollbar-track{background:var(--bg-sunk)}
+::-webkit-scrollbar-thumb{background:oklch(0.38 0.06 292);border-radius:1rem;border:2px solid var(--bg-sunk)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:.4rem}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+.wrap{width:min(100% - 2*var(--gutter),var(--wrap));margin-inline:auto}
+.skip{position:absolute;left:-999px;top:.5rem;background:var(--accent);color:var(--accent-ink);padding:.5rem 1rem;border-radius:.5rem;z-index:20}
+.skip:focus{left:var(--gutter)}
+
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.04;letter-spacing:-.03em;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.6rem,5.6vw,4.5rem)}
+h2{font-size:clamp(2rem,4.6vw,3.3rem);margin-bottom:1.1rem}
+h3{font-size:1.45rem;letter-spacing:-.02em;line-height:1.15;margin-bottom:.6rem}
+p{margin:0 0 1rem;max-width:62ch;text-wrap:pretty}
+.lede{font-size:clamp(1.1rem,2vw,1.3rem);color:var(--muted);max-width:44ch}
+.muted{color:var(--muted)}
+
+/* header */
+header.top{position:sticky;top:0;z-index:10;background:oklch(0.16 0.025 292 / .82);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:1.5rem;height:3.6rem}
+.brand{display:flex;align-items:center;gap:.6rem;font:700 1.25rem var(--display);letter-spacing:-.02em;text-decoration:none}
+.brand svg{width:1.7rem;height:1.7rem}
+nav.links{display:flex;gap:1.4rem;margin-left:auto;font-size:.95rem}
+nav.links a{color:var(--muted);text-decoration:none;padding:.3rem 0;transition:color .2s}
+nav.links a:hover{color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:.55rem;font:600 .98rem var(--body);padding:.7rem 1.2rem;border-radius:.8rem;text-decoration:none;border:1px solid transparent;transition:transform .35s var(--ease),background .2s,border-color .2s}
+.btn svg{width:1.15rem;height:1.15rem;flex:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 1px 0 oklch(1 0 0 / .25) inset,0 10px 24px -10px oklch(0.6 0.25 295 / .7)}
+.btn.primary:hover{background:oklch(0.76 0.18 295);transform:translateY(-2px)}
+.btn.ghost{border-color:var(--line);background:oklch(1 0 0 / .03)}
+.btn.ghost:hover{border-color:var(--accent);transform:translateY(-2px)}
+header.top .btn{padding:.5rem .95rem;font-size:.9rem}
+
+/* hero */
+.hero{padding:clamp(3rem,8vw,6.5rem) 0 clamp(3rem,7vw,5rem);position:relative;overflow:clip}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto 35%;height:90%;background:radial-gradient(closest-side,oklch(0.5 0.2 295 / .35),transparent 70%);pointer-events:none}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(2rem,5vw,4rem);align-items:center;position:relative}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{margin:1.4rem 0 2rem}
+.cta{display:flex;flex-wrap:wrap;gap:.8rem}
+.fine{margin-top:1.6rem;font-size:.9rem;color:var(--faint);max-width:none}
+.stage{position:relative;aspect-ratio:1/0.92}
+.stage .tv{position:absolute;right:0;top:4%;width:92%}
+.stage .ph{position:absolute;width:30%}
+.stage .ph.a{left:6%;bottom:0}
+.stage .ph.b{left:33%;bottom:-4%;width:32%}
+@keyframes rise{from{opacity:0;transform:translateY(2.2rem) scale(.97);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+.stage .tv{animation:rise 1.1s var(--ease) both .05s}
+.stage .ph.a{animation:rise 1.1s var(--ease) both .22s}
+.stage .ph.b{animation:rise 1.1s var(--ease) both .36s}
+
+.frame{border-radius:1.1rem;overflow:hidden;border:1px solid oklch(1 0 0 / .13);background:#000;box-shadow:0 2px 3px oklch(0 0 0 / .4),0 28px 60px -18px oklch(0 0 0 / .75),0 0 0 1px oklch(0 0 0 / .5)}
+.frame.phone{border-radius:1.5rem}
+.frame img{width:100%}
+
+/* sections */
+section{padding:clamp(3.5rem,8vw,6.5rem) 0}
+section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
+.row{display:grid;gap:clamp(2rem,5vw,4.5rem);align-items:center}
+.row.split{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}
+.row.split.flip{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.row.split.flip .copy{order:2}
+.copy ul{list-style:none;padding:0;margin:1.4rem 0 0;display:grid;gap:.7rem}
+.copy li{padding-left:1.4rem;position:relative;max-width:56ch}
+.copy li::before{content:"";position:absolute;left:0;top:.72em;width:.6rem;height:2px;background:var(--accent);border-radius:2px}
+.fan{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.6rem,2vw,1.4rem);align-items:end}
+.fan .frame:nth-child(1){transform:translateY(1.6rem)}
+.fan .frame:nth-child(3){transform:translateY(2.6rem)}
+.fan-wrap{padding-bottom:3rem}
+.wide{margin-top:2.4rem}
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(.8rem,2.4vw,1.6rem);margin-top:2.4rem}
+.cap{font-size:.88rem;color:var(--faint);margin-top:.7rem;max-width:none}
+.pill{display:inline-block;font:600 .74rem var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:oklch(0.5 0.2 295 / .16);border:1px solid oklch(0.6 0.2 295 / .4);border-radius:2rem;padding:.2rem .65rem;margin-bottom:1rem}
+
+/* chat */
+.chat-img{max-width:25rem;margin-inline:auto}
+
+/* architecture */
+.arch{border:1px solid var(--line);border-radius:1.2rem;background:var(--bg-raise);padding:clamp(1rem,3vw,2rem);display:grid;gap:1.1rem;margin-top:2.4rem}
+.arch .tier{display:grid;gap:.6rem}
+.arch .label{font:600 .8rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{font:500 .92rem var(--body);padding:.45rem .85rem;border-radius:.6rem;background:oklch(1 0 0 / .05);border:1px solid var(--line)}
+.chip.ui{background:oklch(0.5 0.2 295 / .18);border-color:oklch(0.6 0.2 295 / .45)}
+.chip code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em}
+.arch .down{height:1.4rem;width:2px;background:linear-gradient(var(--accent),transparent);margin-left:1rem;border-radius:2px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(1.2rem,3vw,2.4rem);margin-top:2.6rem}
+.facts div{border-top:1px solid var(--line);padding-top:1rem}
+.facts strong{display:block;font:700 1.12rem var(--display);letter-spacing:-.01em;margin-bottom:.3rem}
+.facts p{font-size:.97rem;color:var(--muted);margin:0}
+
+/* fine print */
+.notice{border:1px solid oklch(0.6 0.2 295 / .4);background:oklch(0.5 0.2 295 / .09);border-radius:1.2rem;padding:clamp(1.3rem,3.5vw,2.4rem)}
+.notice h2{font-size:clamp(1.6rem,3.4vw,2.3rem)}
+.notice p{color:var(--muted)}
+.notice p strong{color:var(--text);font-weight:600}
+
+/* code */
+.code{position:relative;background:var(--bg-sunk);border:1px solid var(--line);border-radius:1rem;margin-top:1.4rem}
+.code pre{margin:0;padding:1.2rem 1.3rem;overflow-x:auto;font:400 .9rem/1.75 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:oklch(0.88 0.03 292);tab-size:2}
+.code .c{color:var(--faint)}
+.copy-btn{position:absolute;top:.6rem;right:.6rem;font:600 .78rem var(--body);color:var(--muted);background:var(--bg-raise);border:1px solid var(--line);border-radius:.5rem;padding:.3rem .65rem;cursor:pointer;transition:color .2s,border-color .2s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+
+footer{border-top:1px solid var(--line);padding:2.6rem 0 3.4rem;color:var(--muted);font-size:.93rem}
+footer .wrap{display:grid;gap:1.1rem}
+footer nav{display:flex;flex-wrap:wrap;gap:.5rem 1.6rem}
+footer a{color:var(--text)}
+footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
+
+@media (max-width:60rem){
+  .hero .wrap,.row.split,.row.split.flip{grid-template-columns:1fr}
+  .row.split.flip .copy{order:0}
+  .stage{max-width:34rem;margin-inline:auto;width:100%}
+  .facts{grid-template-columns:1fr}
+}
+@media (max-width:40rem){
+  nav.links{display:none}
+  header.top .btn{margin-left:auto}
+  .duo{grid-template-columns:1fr}
+  .fan .frame:nth-child(n){transform:none}
+  .fan-wrap{padding-bottom:0}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .stage .tv,.stage .ph{animation:none}
+  .btn{transition:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Skerry, back to top">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="oklch(0.62 0.24 292)"/><path d="M21.5 11.2c-1-1.6-2.8-2.4-5.2-2.4-3 0-5 1.4-5 3.6 0 2.1 1.6 3 4.6 3.6 3.6.7 5.6 1.6 5.6 4.3 0 2.7-2.4 4.5-5.9 4.5-2.9 0-5-1.1-6.2-3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+      Skerry
+    </a>
+    <nav class="links" aria-label="Sections">
+      <a href="#platforms">Screens</a>
+      <a href="#chat">Chat</a>
+      <a href="#core">Under the hood</a>
+      <a href="#fine-print">Fine print</a>
+      <a href="#build">Build</a>
+    </nav>
+    <a class="btn ghost" href="https://github.com/Deuspheara/skerry">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<main id="main">
+<div id="top" class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Twitch, native on <em>every</em> screen you own.</h1>
+      <p class="lede">Skerry is an open-source client for Android, iPhone, Mac and Apple TV. Real native lists, real native chat, one shared Kotlin core.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/Deuspheara/skerry">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+          View the source
+        </a>
+        <a class="btn ghost" href="#platforms">See the screens</a>
+      </div>
+      <p class="fine">Unofficial. Not affiliated with Twitch. Apache-2.0.</p>
+    </div>
+    <div class="stage" aria-label="Skerry on Apple TV and on two phones">
+      <div class="frame tv"><img src="img/tv-home.webp" width="1280" height="720" alt="Skerry on Apple TV: a row of live channels with viewer counts" fetchpriority="high"></div>
+      <div class="frame phone ph a"><img src="img/phone-home.webp" width="600" height="1333" alt="Skerry on Android: live channels from your follows" fetchpriority="high"></div>
+      <div class="frame phone ph b"><img src="img/phone-player.webp" width="600" height="1333" alt="Skerry on Android: a live stream with chat below it" fetchpriority="high"></div>
+    </div>
+  </div>
+</div>
+
+<section id="platforms" class="alt">
+  <div class="wrap">
+    <h2>One app, built for each screen.</h2>
+    <p class="lede">Not a web view in a wrapper. Each platform gets its own UI, and all of them run the same logic underneath. Every screenshot here shows the built-in demo mode: fictional channels, fictional chat, a test pattern for video.</p>
+
+    <div class="row split" style="margin-top:4rem">
+      <div class="copy">
+        <span class="pill">Android phone</span>
+        <h3>Jetpack Compose, Material 3.</h3>
+        <p>Home, Browse, Search, channel pages, replays and clips. Streams play in a drag-to-expand player with chat, fullscreen and Picture-in-Picture.</p>
+        <ul>
+          <li>Dark and light themes, large-text and right-to-left layouts checked.</li>
+          <li>R8 full mode with a Baseline Profile, so it starts fast.</li>
+        </ul>
+      </div>
+      <div class="fan-wrap"><div class="fan">
+        <div class="frame phone"><img loading="lazy" src="img/phone-browse.webp" width="600" height="1333" alt="Android Browse screen with category tiles"></div>
+        <div class="frame phone"><img loading="lazy" src="img/phone-channel.webp" width="600" height="1333" alt="Android channel page with a Watch button and replays"></div>
+        <div class="frame phone"><img loading="lazy" src="img/phone-home-light.webp" width="600" height="1333" alt="Android home screen in the light theme"></div>
+      </div></div>
+    </div>
+
+    <div class="row split flip" style="margin-top:5rem">
+      <div class="fan-wrap"><div class="fan">
+        <div class="frame phone"><img loading="lazy" src="img/ios-home.webp" width="603" height="1311" alt="iPhone home screen with a floating tab bar"></div>
+        <div class="frame phone"><img loading="lazy" src="img/ios-player.webp" width="603" height="1311" alt="iPhone player with live chat"></div>
+        <div class="frame phone"><img loading="lazy" src="img/ios-browse.webp" width="603" height="1311" alt="iPhone Browse screen with category artwork"></div>
+      </div></div>
+      <div class="copy">
+        <span class="pill">iPhone</span>
+        <h3>SwiftUI, with a sheet that follows your thumb.</h3>
+        <p>The player is a draggable sheet that collapses to a mini strip, the way a music app does, so you keep browsing while a stream plays.</p>
+        <ul>
+          <li>Liquid Glass tab bar and controls.</li>
+          <li>The same presenters as Android, rendered in Swift.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:5.5rem">
+      <span class="pill">Mac</span>
+      <h3>A real Mac window.</h3>
+      <p>Sidebar navigation, a resizable chat column next to the video, a floating mini player, and an emote picker that opens as a popover.</p>
+      <div class="duo wide">
+        <div class="frame"><img loading="lazy" src="img/mac-home.webp" width="1280" height="800" alt="Skerry on macOS: live channels in a grid with a sidebar"></div>
+        <div class="frame"><img loading="lazy" src="img/mac-browse.webp" width="1280" height="800" alt="Skerry on macOS: category browser"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:5.5rem">
+      <span class="pill">Apple TV and Android TV</span>
+      <h3>Made for the remote.</h3>
+      <p>Focus, not touch: every screen is built around the D-pad or the Siri Remote, with Back behaving the way the platform expects. The Android TV app also plays Twitch's official embedded player by default.</p>
+      <div class="duo wide">
+        <div class="frame"><img loading="lazy" src="img/tv-home.webp" width="1280" height="720" alt="Skerry on Apple TV: Home with live and recommended rows"></div>
+        <div class="frame"><img loading="lazy" src="img/tv-browse.webp" width="1280" height="720" alt="Skerry on Apple TV: Browse with category filters"></div>
+      </div>
+      <p class="cap">Apple TV shown. Android TV screenshots will be added.</p>
+    </div>
+  </div>
+</section>
+
+<section id="chat">
+  <div class="wrap row split flip">
+    <div class="chat-img frame phone"><img loading="lazy" src="img/chat-crop.webp" width="900" height="1158" alt="Live chat with colored names, badges, replies, emotes and a highlighted subscription message"></div>
+    <div class="copy">
+      <h2>Chat that keeps up.</h2>
+      <p>Chat is drawn natively, not scraped into a web page. Badges, replies, highlighted mentions, subscription notices and emotes from 7TV, BetterTTV and FrankerFaceZ, including animated and zero-width ones.</p>
+      <ul>
+        <li>Connects through Twitch's documented EventSub chat interface.</li>
+        <li>A "back to live" pill when you scroll up, so a busy chat never fights you.</li>
+        <li>Stress-tested in demo mode at around 16 messages a second.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="core" class="alt">
+  <div class="wrap">
+    <h2>One Kotlin core. Five native UIs.</h2>
+    <p class="lede">The logic is written once in Kotlin Multiplatform and shared. The screens are written natively, and only render state.</p>
+    <div class="arch" role="img" aria-label="Diagram: five native UIs on top of presenters, on top of shared core modules">
+      <div class="tier">
+        <span class="label">Native UIs</span>
+        <div class="chips"><span class="chip ui">Android TV · Compose</span><span class="chip ui">Android phone · Compose</span><span class="chip ui">iPhone · SwiftUI</span><span class="chip ui">Mac · SwiftUI</span><span class="chip ui">Apple TV · SwiftUI</span></div>
+      </div>
+      <div class="down"></div>
+      <div class="tier">
+        <span class="label">Presenters, one per screen</span>
+        <div class="chips"><span class="chip"><code>StateFlow&lt;UiState&gt;</code></span><span class="chip"><code>onEvent(…)</code></span></div>
+      </div>
+      <div class="down"></div>
+      <div class="tier">
+        <span class="label">Shared modules, no platform APIs</span>
+        <div class="chips"><span class="chip">core</span><span class="chip">stream</span><span class="chip">chat</span><span class="chip">player-api</span><span class="chip">presenters</span><span class="chip">testing</span></div>
+      </div>
+    </div>
+    <div class="facts">
+      <div><strong>A rule the build enforces</strong><p>Shared code may not touch Android or <code>java.*</code> APIs. A Gradle check fails the build if it does.</p></div>
+      <div><strong>36 languages</strong><p>Translations are generated into each app at build time. Right-to-left layouts are supported.</p></div>
+      <div><strong>Measured, not guessed</strong><p>Startup and frame timing are tracked with Macrobenchmark, with numbers kept in the repository.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="fine-print">
+  <div class="wrap">
+    <div class="notice">
+      <h2>The fine print, up front.</h2>
+      <p><strong>Skerry is unofficial.</strong> It is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. or Amazon. Twitch and the Twitch logo are trademarks of their owners, and Skerry uses none of Twitch's logos or emotes.</p>
+      <p><strong>Official video is the default.</strong> On Android TV, video plays in Twitch's own embedded player with its controls and ads untouched. Sign-in, lists and chat use Twitch's documented APIs.</p>
+      <p><strong>Native playback is opt-in and may break Twitch's rules.</strong> The optional native player reads Twitch's undocumented playback interfaces. This repository ships no key for it, so it only runs if you build the app and supply your own, at your own risk. Ads are never skipped or hidden.</p>
+      <p style="margin-bottom:0"><a href="https://github.com/Deuspheara/skerry/blob/main/LEGAL.md">Read the legal notice</a> · <a href="https://github.com/Deuspheara/skerry/blob/main/PRIVACY.md">Privacy</a>: no account, no analytics, no server.</p>
+    </div>
+  </div>
+</section>
+
+<section id="build" class="alt">
+  <div class="wrap row split">
+    <div class="copy">
+      <h2>Build it yourself.</h2>
+      <p>You need JDK 21 and the Android SDK. Turn on demo mode and the apps run with no account and no network, so you can see every screen straight away.</p>
+      <p>Apple apps build with Xcode and XcodeGen on top of the same shared framework. The README and <code>apple/README.md</code> cover it.</p>
+      <a class="btn primary" href="https://github.com/Deuspheara/skerry#readme">Read the README</a>
+    </div>
+    <div>
+      <div class="code">
+        <button class="copy-btn" type="button" data-copy>Copy</button>
+<pre><code><span class="c"># set up</span>
+cp local.properties.example local.properties
+
+<span class="c"># phone app, then install on a device or emulator</span>
+./gradlew :phone:assembleDebug
+ANDROID_SERIAL=emulator-5554 ./gradlew :phone:installDebug
+
+<span class="c"># fictional channels, no account, no network</span>
+adb shell run-as com.twitchplayer.phone touch files/demo
+
+<span class="c"># everything CI checks</span>
+./gradlew check</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav aria-label="Project links">
+      <a href="https://github.com/Deuspheara/skerry">Source</a>
+      <a href="https://github.com/Deuspheara/skerry/blob/main/LICENSE">Apache-2.0</a>
+      <a href="https://github.com/Deuspheara/skerry/blob/main/LEGAL.md">Legal</a>
+      <a href="https://github.com/Deuspheara/skerry/blob/main/PRIVACY.md">Privacy</a>
+      <a href="https://github.com/Deuspheara/skerry/issues">Issues</a>
+    </nav>
+    <p>Skerry is an unofficial, independent project and is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. or Amazon.com, Inc. Twitch, the Twitch logo and the Glitch logo are trademarks of Twitch Interactive, Inc. or its affiliates. Emotes belong to their creators and are loaded from 7TV, BetterTTV and FrankerFaceZ at runtime. Screenshots show fictional demo data.</p>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('[data-copy]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var t=b.parentElement.querySelector('code').innerText;
+    var done=function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1600)};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){})}
+  });
+});
+</script>
+</body>
+</html>

@@ -37,7 +37,7 @@ enum MacSnapshotRunner {
             let window = NSWindow(contentViewController: controller)
             window.setContentSize(NSSize(width: width, height: height))
             window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
-            window.title = "TwitchPlayer"
+            window.title = "Skerry"
             NSApp.activate()
             window.makeKeyAndOrderFront(nil)
             window.orderFrontRegardless()

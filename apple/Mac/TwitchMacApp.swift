@@ -20,7 +20,7 @@ struct TwitchMacApp: App {
 
     var body: some Scene {
         // One window: the app model (session, navigation, player) is shared, and the window's size, tab and search are restored by the system.
-        Window("TwitchPlayer", id: "main") {
+        Window("Skerry", id: "main") {
             // A debug snapshot run (`MacSnapshotRunner`) renders the window itself: this scene stays empty so two views never drive the same navigation state.
             if MacSnapshotRunner.isActive {
                 Color.clear
