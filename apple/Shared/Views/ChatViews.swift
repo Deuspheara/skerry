@@ -366,7 +366,10 @@ struct ChatList: View, Equatable {
                     } label: {
                         Label(unread > 0 ? plural("chat_new_messages", unread) : String(localized: "chat_back_to_live"), systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                     }
-                    .foregroundStyle(Theme.accent).buttonStyle(.plain).padding(.vertical, 6)
+                    .foregroundStyle(Theme.accentText).buttonStyle(.plain)
+                    // Over the video the label needs something to read against; over the chat it sits on the faded lines and has no ground of its own.
+                    .background { if overVideo { Capsule().fill(.regularMaterial) } }
+                    .padding(.vertical, 6)
                 }
                 #endif
             }
