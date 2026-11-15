@@ -320,7 +320,7 @@ struct ChatList: View, Equatable {
                         VStack(spacing: 0) {
                             LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 18)
                             Rectangle()
-                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 26)
+                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: atBottom ? 26 : 0)
                         }
                     } else {
                         Rectangle()
