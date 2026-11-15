@@ -250,4 +250,14 @@ final class AuditCaptureUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.5)
         shot("chat-keyboard")
     }
+
+    /// The "back to live" button after scrolling the chat up (it must be a glass capsule, not a block).
+    func testBackToLive() {
+        launch(["-demo", "-open-live", "lunaria"])
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85))
+        from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.3)
+        Thread.sleep(forTimeInterval: 1)
+        shot("back-to-live")
+    }
 }

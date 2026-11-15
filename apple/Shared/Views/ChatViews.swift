@@ -284,6 +284,8 @@ struct ChatList: View, Equatable {
     var shadowed = false
     /// While the sheet is being dragged the chat is held as it was: new messages wait for the finger to lift (a drag frame must not re-lay out the list).
     var frozen = false
+    /// The lines fade out at the top and bottom edges (a mask on the list only: glass such as the back-to-live button must stay outside it, a mask renders it black).
+    var fadeEdges = false
     var onReply: ((ChatLine) -> Void)?
 
     /// Equal means "do not rebuild": the closure is ignored (it only sets a state), a frozen list never changes, and two line arrays are the same list when their
@@ -310,6 +312,17 @@ struct ChatList: View, Equatable {
                         }
                     }
                     .padding(.horizontal, 6)
+                }
+                .mask {
+                    if fadeEdges {
+                        VStack(spacing: 0) {
+                            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 18)
+                            Rectangle()
+                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 26)
+                        }
+                    } else {
+                        Rectangle()
+                    }
                 }
                 .scrollIndicators(.hidden)
                 #if os(iOS)

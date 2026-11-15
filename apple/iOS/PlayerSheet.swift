@@ -318,16 +318,8 @@ private struct SheetChat: View {
     @Binding var replyTo: ChatLine?
 
     var body: some View {
-        ChatList(lines: playback.chat, settings: playback.chatSettings, frozen: progress.isDragging) { replyTo = $0 }
+        ChatList(lines: playback.chat, settings: playback.chatSettings, frozen: progress.isDragging, fadeEdges: true) { replyTo = $0 }
             .equatable()
-            // The lines fade out at both edges (the opacity follows the theme: it is a mask, not a colour), so they slide under the input instead of being cut.
-            .mask(
-                VStack(spacing: 0) {
-                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 18)
-                    Rectangle()
-                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 26)
-                },
-            )
     }
 }
 
