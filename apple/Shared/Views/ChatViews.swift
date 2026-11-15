@@ -290,6 +290,8 @@ struct ChatList: View, Equatable {
 
     @State private var atBottom = true
     @State private var unread = 0
+    /// While the list's height is changing (the keyboard coming or going) a "not at the bottom" reading is the resize, not the viewer scrolling up.
+    @State private var resizingUntil = Date.distantPast
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -308,8 +310,16 @@ struct ChatList: View, Equatable {
                 .onScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 48
                 } action: { _, bottom in
+                    if !bottom && Date() < resizingUntil { return }
                     atBottom = bottom
                     if bottom { unread = 0 }
+                }
+                // The chat moves up with the keyboard: when the list shrinks or grows while it follows the live edge, the latest line stays in view.
+                .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height } action: { _, _ in
+                    guard atBottom, let last = lines.last else { return }
+                    resizingUntil = Date().addingTimeInterval(0.6)
+                    proxy.scrollTo(last.id, anchor: .bottom)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
                 #if !os(tvOS)
                 if !atBottom {

@@ -236,7 +236,7 @@ class PlayerPresenter(
                         ?: return@collectLatest
                     coroutineScope {
                         launch { repository.roomState(channelId)?.let(chatFeed::setRoom) }
-                        chatFeed.run(channelId, me.userId, me.login)
+                        chatFeed.run(channelId, me.userId, me.login, channelLogin = login)
                     }
                 } catch (e: CancellationException) {
                     throw e

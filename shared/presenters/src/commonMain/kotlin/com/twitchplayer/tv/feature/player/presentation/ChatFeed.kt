@@ -14,12 +14,14 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,7 +69,9 @@ class ChatFeed(
     }
 
     /** Streams until cancelled. Asset changes (late providers, live emote edits) apply to the messages that follow. */
-    suspend fun run(channelId: String, userId: String, selfLogin: String?) = coroutineScope {
+    suspend fun run(channelId: String, userId: String, selfLogin: String?, channelLogin: String = "") = coroutineScope {
+        // The channel's last lines are asked for while the assets load, and go first; a slow answer is not waited for.
+        val past = async { runCatching { source.recent(channelLogin) }.getOrDefault(emptyList()) }
         // Written by the assets collector, read on the mapper dispatcher: a StateFlow gives the cross-thread visibility.
         val current = mutableAssets
         val firstAssets = CompletableDeferred<Unit>()
@@ -79,7 +83,11 @@ class ChatFeed(
         }
         // Chat starts with the badges and emotes when they are quick; a slow provider must not hold messages back.
         withTimeoutOrNull(ASSETS_WAIT_MS) { firstAssets.await() }
-        source.events(channelId, userId).batch(batchMs).collect { batch ->
+        val recent = withTimeoutOrNull(RECENT_WAIT_MS) { past.await() }.orEmpty()
+        flow {
+            if (recent.isNotEmpty()) emit(recent)
+            source.events(channelId, userId).batch(batchMs).collect { emit(it) }
+        }.collect { batch ->
             val now = clock()
             // Lines are resolved off the main thread; the other events keep their place between them.
             val steps = withContext(mapper) {
@@ -120,5 +128,6 @@ class ChatFeed(
         /** Bounded buffer (docs/ARCHITECTURE.md: 100-200). */
         const val MAX_LINES = 200
         const val ASSETS_WAIT_MS = 4_000L
+        const val RECENT_WAIT_MS = 2_500L
     }
 }

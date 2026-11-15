@@ -1,6 +1,7 @@
 package com.twitchplayer.tv.feature.player.data
 
 import com.twitchplayer.tv.core.platform.AppConfig
+import com.twitchplayer.tv.feature.player.data.chat.RecentMessages
 import com.twitchplayer.tv.feature.player.data.emotes.BttvProvider
 import com.twitchplayer.tv.feature.player.data.emotes.EmoteRepository
 import com.twitchplayer.tv.feature.player.data.emotes.FfzProvider
@@ -26,5 +27,5 @@ fun sharedChatModule(): Module = module {
     single { ChatAssetsRepository(get(), get(), get()) }
     single<ChatAssetsSource> { get<ChatAssetsRepository>() }
     single<LiteChatAssets> { get<ChatAssetsRepository>() }
-    single<ChatSource> { EventSubChatSource(tokens = get(), clientId = get<AppConfig>().clientId, engine = get(), logger = get()) }
+    single<ChatSource> { EventSubChatSource(tokens = get(), clientId = get<AppConfig>().clientId, engine = get(), logger = get(), history = RecentMessages(get())) }
 }
