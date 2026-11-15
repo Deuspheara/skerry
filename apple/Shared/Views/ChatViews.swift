@@ -300,6 +300,8 @@ struct ChatList: View, Equatable {
     @State private var unread = 0
     /// While the list's height is changing (the keyboard coming or going) a "not at the bottom" reading is the resize, not the viewer scrolling up.
     @State private var resizingUntil = Date.distantPast
+    /// A finger is on the list or it is coasting from one: only then is "not at the bottom" the viewer's choice.
+    @State private var userScrolling = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -324,6 +326,7 @@ struct ChatList: View, Equatable {
                         Rectangle()
                     }
                 }
+                .onScrollPhaseChange { _, phase in userScrolling = phase == .interacting || phase == .decelerating }
                 .scrollIndicators(.hidden)
                 #if os(iOS)
                 // Dragging the chat down (or tapping it) puts the keyboard away.
@@ -344,9 +347,16 @@ struct ChatList: View, Equatable {
                         }
                         return
                     }
-                    if !new.bottom && Date() < resizingUntil { return }
-                    atBottom = new.bottom
-                    if new.bottom { unread = 0 }
+                    if new.bottom {
+                        atBottom = true
+                        unread = 0
+                    } else if userScrolling {
+                        atBottom = false
+                    } else if atBottom, Date() >= resizingUntil, let last = lines.last {
+                        // Not at the edge although the viewer did not scroll (the layout moved under the list): follow the live edge again, never "unread".
+                        var transaction = Transaction(); transaction.disablesAnimations = true
+                        withTransaction(transaction) { proxy.scrollTo(last.id, anchor: .bottom) }
+                    }
                 }
                 #if !os(tvOS)
                 if !atBottom {
@@ -356,7 +366,7 @@ struct ChatList: View, Equatable {
                     } label: {
                         Label(unread > 0 ? plural("chat_new_messages", unread) : String(localized: "chat_back_to_live"), systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                     }
-                    .glassCapsule(interactive: true).buttonStyle(.plain).padding(.vertical, 6)
+                    .background(.regularMaterial, in: Capsule()).overlay(Capsule().stroke(Theme.hairline, lineWidth: 0.5)).buttonStyle(.plain).padding(.vertical, 6)
                 }
                 #endif
             }
