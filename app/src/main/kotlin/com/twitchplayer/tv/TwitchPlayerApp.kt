@@ -12,6 +12,7 @@ import com.twitchplayer.tv.core.data.repository.SessionRepository
 import com.twitchplayer.tv.core.di.DebugModules
 import com.twitchplayer.tv.core.di.appPlatformConfig
 import com.twitchplayer.tv.core.di.productionModules
+import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
@@ -33,10 +34,20 @@ class TwitchPlayerApp :
     override fun newImageLoader(context: PlatformContext): ImageLoader = ImageLoader.Builder(context)
         .components {
             DebugModules.registerImageComponents(this)
-            add(OkHttpNetworkFetcherFactory())
+            add(OkHttpNetworkFetcherFactory(callFactory = { imageClient }))
         }
         .memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.20).build() }
         .diskCache { DiskCache.Builder().directory(cacheDir.resolve("images").toOkioPath()).maxSizeBytes(64L * 1024 * 1024).build() }
         .allowHardware(true)
         .build()
+
+    /** Image URLs are immutable per size but the CDN's cache headers do not always say so: keep every picture for a week (the disk cache bounds the space). */
+    private val imageClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .addNetworkInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                if (response.isSuccessful) response.newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=604800").build() else response
+            }
+            .build()
+    }
 }
