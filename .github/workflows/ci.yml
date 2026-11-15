@@ -198,7 +198,7 @@ jobs:
             if grep -q 'com\.twitchplayer\.tv\.demo' "$module/build/outputs/mapping/release/mapping.txt"; then
               echo "demo classes found in the $module release build"; exit 1
             fi
-            if unzip -l "$module"/build/outputs/apk/release/*.apk | grep -q demo_stream; then
+            if unzip -l "$module"/build/outputs/apk/release/*.apk | grep -qE 'demo_(stream|scenic|photos)'; then
               echo "demo asset found in the $module release APK"; exit 1
             fi
           done

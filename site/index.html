@@ -15,14 +15,25 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" as="image" href="img/phone-player.webp" fetchpriority="high">
+<link rel="preload" as="image" href="img/live-chat-poster.webp" fetchpriority="high">
 <script>document.documentElement.classList.add('js')</script>
 <style>
 @font-face{font-family:"Bricolage Grotesque";src:url(fonts/bricolage.woff2) format("woff2");font-weight:600 800;font-display:swap}
 @font-face{font-family:"Inter";src:url(fonts/inter.woff2) format("woff2");font-weight:400 600;font-display:swap}
 
+/*
+  Spatial rules for this page (change the tokens, not individual margins):
+  1. One spacing scale, --sp-1..--sp-10, on a 4px base. No other margin or padding values.
+  2. Every section has the same outer rhythm (--section) and the same gap between its heading and its content (--sp-9).
+  3. One idea per viewport: a heading, one paragraph of at most 36rem, one visual. Lists stay under four items.
+  4. Text columns are 28 to 36rem; visuals take the rest. Nothing is squeezed to fit beside something else.
+  5. Tight inside a group (--sp-2..--sp-4), generous between groups (--sp-7..--sp-10).
+  6. Screenshots are shown big enough to read their own UI text; if they cannot be, show fewer of them.
+*/
 :root{
   color-scheme:dark;
+  --sp-1:.25rem;--sp-2:.5rem;--sp-3:.75rem;--sp-4:1rem;--sp-5:1.5rem;--sp-6:2rem;--sp-7:3rem;--sp-8:4.5rem;--sp-9:clamp(3rem,6vw,5.5rem);--sp-10:9rem;
+  --section:clamp(6rem,13vw,10rem);
   --bg:oklch(0.16 0.025 292);
   --bg-raise:oklch(0.2 0.03 292);
   --bg-sunk:oklch(0.13 0.022 292);
@@ -32,35 +43,36 @@
   --faint:oklch(0.71 0.03 292);
   --accent:oklch(0.72 0.19 295);
   --accent-ink:oklch(0.16 0.03 292);
-  /* the demo clip's test-pattern bars: the one decorative motif of the page */
+  /* the demo clip's test-pattern bars: the page's one decorative motif */
   --b1:oklch(0.64 0.26 28);--b2:oklch(0.78 0.24 145);--b3:oklch(0.9 0.18 100);--b4:oklch(0.55 0.25 262);--b5:oklch(0.66 0.27 330);--b6:oklch(0.85 0.13 205);
   --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --ease:cubic-bezier(.16,1,.3,1);
-  --gutter:clamp(1rem,4vw,2.5rem);
-  --wrap:72rem;
+  --gutter:clamp(1.25rem,5vw,3rem);
+  --wrap:78rem;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:5rem;scrollbar-color:oklch(0.42 0.06 292) var(--bg-sunk)}
-body{margin:0;background:var(--bg);color:var(--text);font:400 1.0625rem/1.65 var(--body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{margin:0;background:var(--bg);color:var(--text);font:400 1.0625rem/1.7 var(--body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 ::selection{background:var(--accent);color:var(--accent-ink)}
 ::-webkit-scrollbar{width:.7rem;height:.7rem}
 ::-webkit-scrollbar-track{background:var(--bg-sunk)}
 ::-webkit-scrollbar-thumb{background:oklch(0.4 0.06 292);border-radius:1rem;border:2px solid var(--bg-sunk)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:.4rem}
-img{display:block;max-width:100%;height:auto}
+img,video{display:block;max-width:100%;height:auto}
 a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
-.wrap{width:min(100% - 2*var(--gutter),var(--wrap));margin-inline:auto}
-.skip{position:absolute;left:-999px;top:.5rem;background:var(--accent);color:var(--accent-ink);padding:.5rem 1rem;border-radius:.5rem;z-index:30}
-.skip:focus{left:var(--gutter)}
 code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.9em}
+.wrap{width:min(100% - 2*var(--gutter),var(--wrap));margin-inline:auto}
+.skip{position:absolute;left:-999px;top:var(--sp-2);background:var(--accent);color:var(--accent-ink);padding:var(--sp-2) var(--sp-4);border-radius:.5rem;z-index:30}
+.skip:focus{left:var(--gutter)}
 
-h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance;font-variant-ligatures:no-common-ligatures}
-h1{font-size:clamp(2.6rem,5.8vw,4.7rem);letter-spacing:-.026em}
-h2{font-size:clamp(2rem,4.4vw,3.2rem);letter-spacing:-.018em;margin-bottom:1rem}
-h3{font-size:1.5rem;letter-spacing:-.02em;line-height:1.15;margin-bottom:.6rem}
-p{margin:0 0 1rem;max-width:62ch;text-wrap:pretty}
-.lede{font-size:clamp(1.1rem,2vw,1.3rem);color:var(--muted);max-width:46ch}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.04;margin:0;text-wrap:balance;font-variant-ligatures:no-common-ligatures}
+h1{font-size:clamp(2.9rem,6.4vw,5.2rem);letter-spacing:-.028em}
+h2{font-size:clamp(2.2rem,4.8vw,3.6rem);letter-spacing:-.02em}
+h3{font-size:1.6rem;letter-spacing:-.015em;line-height:1.15;margin-bottom:var(--sp-4)}
+p{margin:0 0 var(--sp-4);max-width:36rem;text-wrap:pretty}
+.lede{font-size:clamp(1.15rem,2vw,1.38rem);line-height:1.6;color:var(--muted);max-width:34rem}
+.cap{font-size:.9rem;line-height:1.6;color:var(--faint);margin:var(--sp-4) 0 0;max-width:none}
 
 /* test-pattern strip */
 .bars{display:flex;height:5px}
@@ -73,117 +85,103 @@ header.top .bars i:nth-child(2){animation-delay:.07s}header.top .bars i:nth-chil
 
 /* header */
 header.top{position:sticky;top:0;z-index:20;background:oklch(0.16 0.025 292 / .86);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
-header.top .wrap{display:flex;align-items:center;gap:1.5rem;height:3.6rem}
-.brand{display:flex;align-items:center;gap:.6rem;font:700 1.25rem var(--display);letter-spacing:-.02em;text-decoration:none}
+header.top .wrap{display:flex;align-items:center;gap:var(--sp-5);height:3.75rem}
+.brand{display:flex;align-items:center;gap:var(--sp-3);font:700 1.25rem var(--display);letter-spacing:-.02em;text-decoration:none}
 .brand svg{width:1.7rem;height:1.7rem}
-nav.links{display:flex;gap:1.4rem;margin-left:auto;font-size:.95rem}
-nav.links a{color:var(--muted);text-decoration:none;padding:.3rem 0;transition:color .2s}
+nav.links{display:flex;gap:var(--sp-6);margin-left:auto;font-size:.95rem}
+nav.links a{color:var(--muted);text-decoration:none;padding:var(--sp-1) 0;transition:color .2s}
 nav.links a:hover{color:var(--text)}
-.btn{display:inline-flex;align-items:center;gap:.55rem;font:600 .98rem var(--body);padding:.75rem 1.25rem;border-radius:.8rem;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .35s var(--ease),background .2s,border-color .2s}
+.btn{display:inline-flex;align-items:center;gap:var(--sp-2);font:600 1rem var(--body);padding:var(--sp-3) var(--sp-5);border-radius:.85rem;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .35s var(--ease),background .2s,border-color .2s}
 .btn svg{width:1.15rem;height:1.15rem;flex:none}
 .btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 1px 0 oklch(1 0 0 / .3) inset,0 12px 26px -12px oklch(0.6 0.25 295 / .8)}
 .btn.primary:hover{background:oklch(0.78 0.17 295);transform:translateY(-2px)}
 .btn.ghost{border-color:var(--line);background:oklch(1 0 0 / .03);color:var(--text)}
 .btn.ghost:hover{border-color:var(--accent);transform:translateY(-2px)}
-header.top .btn{padding:.5rem .95rem;font-size:.9rem}
+header.top .btn{padding:var(--sp-2) var(--sp-4);font-size:.9rem}
 
-/* hero */
-.hero{padding:clamp(2.5rem,6vw,5rem) 0 clamp(3rem,6vw,5rem);position:relative;overflow:clip}
-.hero::before{content:"";position:absolute;inset:-10% -5% auto 40%;height:110%;background:radial-gradient(closest-side,oklch(0.5 0.2 295 / .18),transparent 72%);pointer-events:none}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2rem,5vw,4rem);align-items:center;position:relative}
-.hero h1 em{font-style:normal;color:var(--accent)}
-.hero .lede{margin:1.3rem 0 1.8rem}
-.cta{display:flex;flex-wrap:wrap;gap:.8rem}
-.proof{list-style:none;margin:1.8rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.45rem 1.4rem;font-size:.93rem;color:var(--muted)}
-.proof li{display:flex;align-items:center;gap:.45rem}
-.proof svg{width:1rem;height:1rem;color:var(--b2);flex:none}
-.notice-pill{display:inline-flex;align-items:center;gap:.55rem;margin-top:1.3rem;padding:.4rem .85rem;border:1px solid oklch(0.62 0.2 295 / .5);background:oklch(0.5 0.2 295 / .12);border-radius:2rem;font-size:.88rem;color:var(--text)}
-.notice-pill svg{width:1rem;height:1rem;color:var(--accent);flex:none}
-.notice-pill a{color:var(--accent)}
-
-.duo-phones::before{content:"";position:absolute;inset:4% -14% -2% -4%;background:linear-gradient(100deg,var(--b1),var(--b2),var(--b3),var(--b4),var(--b5),var(--b6));filter:blur(48px);opacity:.5;border-radius:40%;z-index:0}
-.duo-phones{position:relative;width:100%;max-width:34rem;margin-inline:auto;aspect-ratio:1/1.12}
-.duo-phones .ph{position:absolute;width:52%}
-.duo-phones .ph.a{left:0;top:0;z-index:2}
-.duo-phones .ph.b{right:0;bottom:0;width:48%}
-@keyframes rise{from{opacity:0;transform:translateY(1.8rem)}to{opacity:1;transform:none}}
-.duo-phones .ph.a{animation:rise .9s var(--ease) both .05s}
-.duo-phones .ph.b{animation:rise .9s var(--ease) both .17s}
-
-.frame{border-radius:1.1rem;overflow:hidden;border:1px solid oklch(1 0 0 / .14);background:#000;box-shadow:0 2px 3px oklch(0 0 0 / .4),0 30px 70px -20px oklch(0 0 0 / .8),0 0 0 1px oklch(0 0 0 / .5)}
-.frame.phone{border-radius:1.6rem}
-.frame img{width:100%}
+/* frames */
+.frame{border-radius:1.1rem;overflow:hidden;border:1px solid oklch(1 0 0 / .14);background:#000;box-shadow:0 2px 3px oklch(0 0 0 / .4),0 36px 80px -24px oklch(0 0 0 / .85),0 0 0 1px oklch(0 0 0 / .5)}
+.frame.phone{border-radius:1.9rem}
+.frame img,.frame video{width:100%}
+.win .bar{display:flex;align-items:center;gap:.42rem;padding:var(--sp-2) var(--sp-3);background:#1c1c20;border-bottom:1px solid #000}
+.win .bar i{width:.66rem;height:.66rem;border-radius:50%;background:#ff5f57}
+.win .bar i:nth-child(2){background:#febc2e}.win .bar i:nth-child(3){background:#28c840}
+.win .bar span{margin-left:var(--sp-3);font:500 .8rem var(--body);color:#a1a1ab}
 
 /* sections */
-section{padding:clamp(3.5rem,8vw,6.5rem) 0}
+section{padding-block:var(--section)}
 section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
-.head{max-width:48rem;margin-bottom:2.2rem}
+.head{margin-bottom:var(--sp-9)}
+.head h2{margin-bottom:var(--sp-5)}
+.split{display:grid;gap:var(--sp-9);align-items:center;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.split>*{min-width:0}
 
-/* platform tabs */
-.tabs{display:flex;gap:.4rem;padding:.3rem;border:1px solid var(--line);border-radius:1rem;background:var(--bg-raise);width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+/* hero */
+.hero{position:relative;overflow:clip;padding-block:clamp(3.5rem,7vw,6rem) clamp(5rem,9vw,8rem)}
+.hero::before{content:"";position:absolute;inset:-10% -5% auto 45%;height:110%;background:radial-gradient(closest-side,oklch(0.5 0.2 295 / .2),transparent 72%);pointer-events:none}
+.hero .split{position:relative;min-height:min(46rem,calc(100svh - 9rem))}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{margin:var(--sp-6) 0 var(--sp-7)}
+.cta{display:flex;flex-wrap:wrap;gap:var(--sp-3)}
+.notice-pill{display:inline-flex;align-items:center;gap:var(--sp-3);margin:var(--sp-7) 0 0;padding:var(--sp-2) var(--sp-4);border:1px solid oklch(0.62 0.2 295 / .5);background:oklch(0.5 0.2 295 / .12);border-radius:2rem;font-size:.9rem;max-width:none}
+.notice-pill svg{width:1rem;height:1rem;color:var(--accent);flex:none}
+.notice-pill a{color:var(--accent)}
+.stage{position:relative;justify-self:center;width:min(100%,23rem)}
+.stage::before{content:"";position:absolute;inset:8% -22% 0 -22%;background:linear-gradient(100deg,var(--b1),var(--b2),var(--b3),var(--b4),var(--b5),var(--b6));filter:blur(52px);opacity:.42;border-radius:40%}
+.stage .frame{position:relative}
+@keyframes rise{from{opacity:0;transform:translateY(2rem)}to{opacity:1;transform:none}}
+.stage .frame{animation:rise .9s var(--ease) both .1s}
+
+/* one idea: browsing, with big phones */
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-8);max-width:72rem;margin-inline:auto}
+.trio figure{margin:0}
+.trio figcaption{margin-top:var(--sp-5);text-align:center;color:var(--muted);font-size:.98rem;line-height:1.55}
+.trio figcaption strong{display:block;color:var(--text);font:600 1.1rem var(--display);letter-spacing:-.01em;margin-bottom:var(--sp-1)}
+.trio figure:nth-child(2){margin-top:var(--sp-8)}
+
+/* chat */
+.chat{position:relative;overflow:clip}
+.chat::before{content:"";position:absolute;inset:auto 0 -30% 0;height:80%;background:radial-gradient(closest-side at 70% 50%,oklch(0.5 0.2 295 / .22),transparent 75%);pointer-events:none}
+.chat .wrap{position:relative}
+.points{list-style:none;padding:0;margin:var(--sp-7) 0 0;display:grid;gap:var(--sp-5);max-width:34rem}
+.points li{padding-top:var(--sp-4);border-top:1px solid var(--line)}
+.points strong{display:block;font:600 1.15rem var(--display);letter-spacing:-.01em;margin-bottom:var(--sp-1)}
+.points span{color:var(--muted)}
+.chatframe{justify-self:center;width:min(100%,27rem)}
+.chatframe .clip{aspect-ratio:9/10.5;overflow:hidden;position:relative;background:#0b0b0e}
+.chatframe video{position:absolute;left:0;width:100%;bottom:0;height:auto}
+
+/* other screens */
+.tabs{display:flex;gap:var(--sp-2);padding:var(--sp-1);border:1px solid var(--line);border-radius:1rem;background:var(--bg-raise);width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{font:600 .95rem var(--body);color:var(--muted);background:transparent;border:0;border-radius:.7rem;padding:.6rem 1.1rem;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s}
+.tab{font:600 .95rem var(--body);color:var(--muted);background:transparent;border:0;border-radius:.7rem;padding:var(--sp-3) var(--sp-5);cursor:pointer;white-space:nowrap;transition:background .2s,color .2s}
 .tab:hover{color:var(--text)}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
-.panels{margin-top:2.4rem}
+.panels{margin-top:var(--sp-8)}
 .js .panels{display:grid}
 .js .panel{grid-area:1/1;align-self:start}
 .js .panel[hidden]{display:grid;visibility:hidden;pointer-events:none}
-.panel{display:grid;gap:clamp(1.6rem,4vw,3.5rem);align-items:center;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}
+.panel{display:grid;gap:var(--sp-8)}
 .panel.show{animation:swap .55s var(--ease) both}
 @keyframes swap{from{opacity:0;transform:translateY(.9rem)}to{opacity:1;transform:none}}
-.panel + .panel{margin-top:clamp(3.5rem,8vw,6rem)}
+.panel + .panel{margin-top:var(--sp-10)}
 .js .panel + .panel{margin-top:0}
-.panel .copy ul{list-style:none;padding:0;margin:1.2rem 0 0;display:grid;gap:.65rem}
-.panel .copy li{padding-left:1.4rem;position:relative}
-.panel .copy li::before{content:"";position:absolute;left:0;top:.75em;width:.6rem;height:2px;background:var(--accent);border-radius:2px}
-.fan{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.6rem,2vw,1.3rem);align-items:end;padding-bottom:2.4rem}
-.fan .frame:nth-child(1){transform:translateY(1.4rem)}
-.fan .frame:nth-child(3){transform:translateY(2.4rem)}
-.panel:not(.wide){grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr)}
-.panel.wide{grid-template-columns:1fr}
-.panel.wide .copy{max-width:44rem}
-.panel.wide .shot{max-width:none}
-.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(.8rem,2vw,1.4rem)}
-.win .bar{display:flex;align-items:center;gap:.42rem;padding:.55rem .8rem;background:#1c1c20;border-bottom:1px solid #000}
-.win .bar i{width:.66rem;height:.66rem;border-radius:50%;background:#ff5f57}
-.win .bar i:nth-child(2){background:#febc2e}.win .bar i:nth-child(3){background:#28c840}
-.win .bar span{margin-left:.7rem;font:500 .8rem var(--body);color:#a1a1ab}
-.cap{font-size:.88rem;color:var(--faint);margin:.9rem 0 0;max-width:none}
+.panel .copy{max-width:36rem}
+.fan{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-6);max-width:54rem}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-6)}
 
-/* chat */
-.chat{position:relative;overflow:clip;padding-block:clamp(4rem,8vw,6.5rem)}
-#try{padding-block:clamp(3rem,6vw,4.8rem)}
-.chat::before{content:"";position:absolute;inset:auto 0 -30% 0;height:80%;background:radial-gradient(closest-side at 50% 50%,oklch(0.5 0.2 295 / .22),transparent 75%);pointer-events:none}
-.chat .wrap{position:relative}
-.chat-stage{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,25rem) minmax(0,1fr);gap:2rem;align-items:start;margin-top:2.6rem}
-.chat-stage .frame{grid-column:2}
-.chat-stage .frame img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 7%);mask-image:linear-gradient(to bottom,transparent 0,#000 7%)}
-.callouts{list-style:none;margin:0;padding:0}
-.callouts li{position:absolute;max-width:13.5rem;font-size:.95rem;line-height:1.4;color:var(--muted)}
-.callouts strong{display:block;color:var(--text);font:600 1rem var(--display);letter-spacing:-.01em;margin-bottom:.15rem}
-.callouts li::after{content:"";position:absolute;top:.7rem;height:1px;width:4.1rem;background:linear-gradient(90deg,var(--accent),transparent)}
-.callouts li::before{content:"";position:absolute;top:calc(.7rem - 3px);width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px oklch(0.72 0.19 295 / .22)}
-.callouts .l{right:calc(50% + 12.5rem + 4.6rem);text-align:right}
-.callouts .l::after{left:calc(100% + .5rem);background:linear-gradient(90deg,transparent,var(--accent))}
-.callouts .l::before{left:calc(100% + 4.6rem - 3px)}
-.callouts .r{left:calc(50% + 12.5rem + 4.6rem)}
-.callouts .r::after{right:calc(100% + .5rem);background:linear-gradient(270deg,transparent,var(--accent))}
-.callouts .r::before{right:calc(100% + 4.6rem - 3px)}
-.js .callouts li{opacity:0;transform:translateY(.6rem);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.js .chat.in .callouts li{opacity:1;transform:none}
-.chat.in .callouts li:nth-child(2){transition-delay:.18s}.chat.in .callouts li:nth-child(3){transition-delay:.36s}.chat.in .callouts li:nth-child(4){transition-delay:.54s}
-
-/* code */
-.try{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(2rem,5vw,4rem);align-items:center}
+/* try it */
+.try{align-items:center}
 .code{position:relative;background:var(--bg-sunk);border:1px solid var(--line);border-radius:1rem}
-.code pre{margin:0;padding:1.3rem 1.4rem;overflow-x:auto;font:400 .9rem/1.8 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:oklch(0.9 0.03 292);tab-size:2}
+section.alt .code{background:var(--bg)}
+.code pre{margin:0;padding:var(--sp-5) var(--sp-5);overflow-x:auto;font:400 .92rem/1.85 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:oklch(0.9 0.03 292);tab-size:2}
 .code .c{color:var(--faint)}
-.copy-btn{position:absolute;top:.6rem;right:.6rem;font:600 .78rem var(--body);color:var(--muted);background:var(--bg-raise);border:1px solid var(--line);border-radius:.5rem;padding:.3rem .65rem;cursor:pointer;transition:color .2s,border-color .2s}
+.copy-btn{position:absolute;top:var(--sp-3);right:var(--sp-3);font:600 .78rem var(--body);color:var(--muted);background:var(--bg-raise);border:1px solid var(--line);border-radius:.5rem;padding:var(--sp-1) var(--sp-3);cursor:pointer;transition:color .2s,border-color .2s}
 .copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.try .btn{margin-top:var(--sp-4)}
 
 /* architecture */
-.arch-svg{width:100%;height:auto;display:block;margin-top:2.2rem}
+.arch-svg{width:100%;height:auto;display:block}
 .arch-svg text{font-family:var(--body);fill:var(--text)}
 .arch-svg .t{font-weight:600;font-size:17px}
 .arch-svg .s{font-size:13px;fill:var(--muted)}
@@ -192,62 +190,58 @@ section.alt{background:var(--bg-sunk);border-block:1px solid var(--line)}
 .arch-svg .core{fill:oklch(0.22 0.04 292);stroke:var(--accent);stroke-width:1.5}
 .arch-svg .ln{stroke:var(--accent);stroke-width:1.5;fill:none;stroke-dasharray:3 5;animation:flow 1.4s linear infinite}
 @keyframes flow{to{stroke-dashoffset:-16}}
-.arch-list{display:none;margin-top:2rem}
-.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(1.2rem,3vw,2.4rem);margin-top:2.6rem}
-.facts div{border-top:1px solid var(--line);padding-top:1rem}
-.facts strong{display:block;font:700 1.15rem var(--display);letter-spacing:-.01em;margin-bottom:.3rem}
-.facts p{font-size:.97rem;color:var(--muted);margin:0}
+.arch-list{display:none}
+.arch-list .tier{display:grid;gap:var(--sp-2)}
+.arch-list .label{font:600 .8rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.arch-list .chips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.arch-list .chip{font:500 .92rem var(--body);padding:var(--sp-2) var(--sp-3);border-radius:.6rem;background:oklch(1 0 0 / .05);border:1px solid var(--line)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-8);margin-top:var(--sp-9)}
+.facts div{border-top:1px solid var(--line);padding-top:var(--sp-4)}
+.facts strong{display:block;font:700 1.15rem var(--display);letter-spacing:-.01em;margin-bottom:var(--sp-2)}
+.facts p{font-size:.98rem;color:var(--muted);margin:0}
 
 /* fine print */
-.notice{border:1px solid oklch(0.62 0.2 295 / .45);background:oklch(0.5 0.2 295 / .09);border-radius:1.2rem;padding:clamp(1.3rem,3.5vw,2.4rem);display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(1.4rem,4vw,3rem)}
-.notice h2{font-size:clamp(1.7rem,3.4vw,2.4rem);margin:0}
+.notice{border:1px solid oklch(0.62 0.2 295 / .45);background:oklch(0.5 0.2 295 / .09);border-radius:1.4rem;padding:clamp(1.75rem,4vw,3.5rem);display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:var(--sp-8)}
+.notice>*{min-width:0}
+.notice h2{font-size:clamp(1.9rem,3.6vw,2.6rem);margin:0}
 .notice p{color:var(--muted)}
 .notice p:last-child{margin-bottom:0}
 .notice p strong{color:var(--text);font-weight:600}
 
-footer{padding:0 0 3.4rem;color:var(--muted);font-size:.93rem}
-footer .wrap{display:grid;gap:1.1rem;padding-top:2.6rem}
-footer nav{display:flex;flex-wrap:wrap;gap:.5rem 1.6rem}
+footer{padding-bottom:var(--sp-8);color:var(--muted);font-size:.93rem}
+footer .wrap{display:grid;gap:var(--sp-4);padding-top:var(--sp-7)}
+footer nav{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-6)}
 footer a{color:var(--text)}
 footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
 
-.fan::-webkit-scrollbar{display:none}
-.try>*,.panel>*,.notice>*,.hero .wrap>*{min-width:0}
 @media (max-width:64rem){
-  .hero .wrap,.panel,.try,.notice,.panel:not(.wide){grid-template-columns:minmax(0,1fr)}
-  .facts{grid-template-columns:1fr}
+  .split,.notice{grid-template-columns:minmax(0,1fr)}
+  .hero .split{min-height:0}
+  .stage{margin-top:var(--sp-6)}
+  .chatframe{order:2}
+  .facts{grid-template-columns:minmax(0,1fr);gap:var(--sp-6)}
 }
-@media (max-width:70rem){
-  .chat-stage{display:flex;flex-direction:column}
-  .callouts{order:2}
-  .js .callouts li{opacity:1;transform:none}
-  .chat-stage .frame{grid-column:1;max-width:25rem;margin-inline:auto}
-  .callouts{display:grid;gap:1.1rem;margin-top:1.8rem;max-width:25rem;margin-inline:auto}
-  .callouts li,.callouts .l,.callouts .r{position:static;max-width:none;text-align:left}
-  .callouts li::after{display:none}
-  .callouts li::before{position:static;display:inline-block;margin-right:.6rem;vertical-align:middle}
+@media (max-width:48rem){
+  .trio{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:70%;overflow-x:auto;scroll-snap-type:x mandatory;gap:var(--sp-5);margin-inline:calc(-1*var(--gutter));padding:0 var(--gutter) var(--sp-4);scrollbar-width:none}
+  .trio::-webkit-scrollbar{display:none}
+  .trio figure{scroll-snap-align:center}
+  .trio figure:nth-child(2){margin-top:0}
+  .fan{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:66%;overflow-x:auto;scroll-snap-type:x mandatory;margin-inline:calc(-1*var(--gutter));padding:0 var(--gutter) var(--sp-4);scrollbar-width:none}
+  .fan::-webkit-scrollbar{display:none}
+  .fan .frame{scroll-snap-align:center}
+  .pair{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:40rem){
   nav.links{gap:0}
   nav.links a:not([href="#try"]){display:none}
-  .pair{grid-template-columns:1fr}
-  .fan .frame:nth-child(n){transform:none}
-  .fan{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:62%;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 var(--gutter) 1rem;margin-inline:calc(-1*var(--gutter));scrollbar-width:none}
-  .fan .frame{scroll-snap-align:center}
   .arch-svg{display:none}
-  .arch-list{display:grid;gap:1rem}
-  .duo-phones{max-width:22rem}
+  .arch-list{display:grid;gap:var(--sp-4)}
 }
-.arch-list .tier{display:grid;gap:.5rem}
-.arch-list .label{font:600 .8rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
-.arch-list .chips{display:flex;flex-wrap:wrap;gap:.5rem}
-.arch-list .chip{font:500 .92rem var(--body);padding:.4rem .8rem;border-radius:.6rem;background:oklch(1 0 0 / .05);border:1px solid var(--line)}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .duo-phones .ph,.panel.show,header.top .bars i,.arch-svg .ln{animation:none}
-  .btn,.js .callouts li{transition:none}
+  .stage .frame,.panel.show,header.top .bars i,.arch-svg .ln{animation:none}
+  .btn{transition:none}
   .btn:hover{transform:none}
-  .js .callouts li{opacity:1;transform:none}
 }
 </style>
 </head>
@@ -262,10 +256,10 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
       Skerry
     </a>
     <nav class="links" aria-label="Sections">
-      <a href="#platforms">Screens</a>
+      <a href="#browse">Browse</a>
       <a href="#chat">Chat</a>
+      <a href="#more">More screens</a>
       <a href="#try">Try it</a>
-      <a href="#core">Under the hood</a>
       <a href="#fine-print">Fine print</a>
     </nav>
     <a class="btn ghost" href="https://github.com/Deuspheara/skerry">
@@ -277,75 +271,82 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
 
 <main id="main">
 <div id="top" class="hero">
-  <div class="wrap">
+  <div class="wrap split">
     <div>
       <h1>Twitch, at home on <em>every</em> screen.</h1>
       <p class="lede">Skerry is an open-source viewer for Android, iPhone, Mac and Apple TV. Real native lists, real native chat, one shared Kotlin core.</p>
       <div class="cta">
         <a class="btn primary" href="#try">Run the demo</a>
-        <a class="btn ghost" href="https://github.com/Deuspheara/skerry">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
-          View the source
-        </a>
+        <a class="btn ghost" href="https://github.com/Deuspheara/skerry">View the source</a>
       </div>
-      <ul class="proof">
-        <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>5 native UIs, 1 shared core</li>
-        <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>36 languages</li>
-        <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>No analytics, no server</li>
-        <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>Apache-2.0</li>
-      </ul>
       <p class="notice-pill">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.4"/><path d="M8 7.2v3.6M8 5.2v.1"/></svg>
         <span>Unofficial. Not affiliated with Twitch. <a href="#fine-print">Read the fine print</a></span>
       </p>
     </div>
-    <div class="duo-phones" aria-label="Skerry on Android: a live stream with chat, and the home screen">
-      <div class="frame phone ph a"><img src="img/phone-player.webp" width="600" height="1333" alt="Skerry on Android: a live stream with chat below it" fetchpriority="high"></div>
-      <div class="frame phone ph b"><img src="img/phone-home.webp" width="600" height="1333" alt="Skerry on Android: live channels from the channels you follow" fetchpriority="high"></div>
+    <div class="stage" aria-label="Skerry on Android: a live stream with chat scrolling">
+      <div class="frame phone front"><video data-live muted loop playsinline preload="metadata" poster="img/live-chat-poster.webp" width="540" height="1200" aria-label="Screen recording of a live stream with chat scrolling by"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
     </div>
   </div>
 </div>
 
-<section id="platforms" class="alt">
+<section id="browse" class="alt">
   <div class="wrap">
     <div class="head">
-      <h2>One app, built for each screen.</h2>
-      <p class="lede">Not a web page in a wrapper. Every platform gets its own UI and its own habits, and all of them run the same logic underneath.</p>
+      <h2>Browse like an app,<br>not a website.</h2>
+      <p class="lede">Live channels, categories and the people you follow, drawn natively with real artwork, so a list of fifty streams stays easy to scan.</p>
     </div>
+    <div class="trio">
+      <figure>
+        <div class="frame phone"><img loading="lazy" src="img/phone-home.webp" width="600" height="1333" alt="Home: a featured stream and the live channels you follow"></div>
+        <figcaption><strong>Home</strong>The stream worth opening first, then everyone you follow who is live.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame phone"><img loading="lazy" src="img/phone-browse.webp" width="600" height="1333" alt="Browse: category artwork in a grid"></div>
+        <figcaption><strong>Browse</strong>Categories as artwork you recognise at a glance.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame phone"><img loading="lazy" src="img/phone-following.webp" width="600" height="1333" alt="Following: live channel avatars with a red live dot, then their streams"></div>
+        <figcaption><strong>Following</strong>Who is live right now, one tap away.</figcaption>
+      </figure>
+    </div>
+    <p class="cap" style="text-align:center">Android shown. Every channel, photo and message here is fictional demo data, and the photographs are public domain or CC0.</p>
+  </div>
+</section>
 
+<section id="chat" class="chat">
+  <div class="wrap split">
+    <div>
+      <h2>Chat that keeps up.</h2>
+      <p class="lede">Drawn natively, not scraped into a web page, so it stays smooth when a channel gets busy.</p>
+      <ul class="points">
+        <li><strong>Everything people send</strong><span>Replies, highlighted mentions, subscription and gift notices, announcements and badges.</span></li>
+        <li><strong>Emotes that move</strong><span>7TV, BetterTTV and FrankerFaceZ, animated and zero-width ones included.</span></li>
+        <li><strong>Never lose your place</strong><span>Scroll up to read, then a pill takes you back to live.</span></li>
+      </ul>
+    </div>
+    <div class="chatframe frame phone">
+      <div class="clip"><video data-live muted loop playsinline preload="none" poster="img/live-chat-poster.webp" width="540" height="1200" aria-label="Close-up recording of the chat scrolling"><source src="img/live-chat.mp4" type="video/mp4"></video></div>
+    </div>
+  </div>
+</section>
+
+<section id="more" class="alt">
+  <div class="wrap">
+    <div class="head">
+      <h2>And on the rest<br>of your screens.</h2>
+      <p class="lede">The same core runs on iPhone, Mac and Apple TV, each with its own native interface and its own habits.</p>
+    </div>
     <div class="tabs" role="tablist" aria-label="Platform">
-      <button class="tab" role="tab" id="tab-android" aria-controls="panel-android" aria-selected="true" type="button">Android</button>
-      <button class="tab" role="tab" id="tab-iphone" aria-controls="panel-iphone" aria-selected="false" tabindex="-1" type="button">iPhone</button>
+      <button class="tab" role="tab" id="tab-iphone" aria-controls="panel-iphone" aria-selected="true" type="button">iPhone</button>
       <button class="tab" role="tab" id="tab-mac" aria-controls="panel-mac" aria-selected="false" tabindex="-1" type="button">Mac</button>
       <button class="tab" role="tab" id="tab-tv" aria-controls="panel-tv" aria-selected="false" tabindex="-1" type="button">Apple TV</button>
     </div>
-
     <div class="panels">
-      <div class="panel" role="tabpanel" tabindex="0" id="panel-android" aria-labelledby="tab-android">
-        <div class="copy">
-          <h3>Jetpack Compose, Material 3.</h3>
-          <p>Home, Browse, Search, channel pages, replays and clips. Streams play in a drag-to-expand player with chat, fullscreen and Picture-in-Picture.</p>
-          <ul>
-            <li>Dark and light themes, large text and right-to-left layouts checked.</li>
-            <li>R8 full mode and a Baseline Profile, so it starts fast.</li>
-            <li>The Android TV app shares the same core and defaults to Twitch's official embedded player.</li>
-          </ul>
-        </div>
-        <div class="fan">
-          <div class="frame phone"><img loading="lazy" src="img/phone-browse.webp" width="600" height="1333" alt="Android Browse screen with category tiles"></div>
-          <div class="frame phone"><img loading="lazy" src="img/phone-channel.webp" width="600" height="1333" alt="Android channel page with a Watch button and replays"></div>
-          <div class="frame phone"><img loading="lazy" src="img/phone-home-light.webp" width="600" height="1333" alt="Android home screen in the light theme"></div>
-        </div>
-      </div>
-
       <div class="panel" role="tabpanel" tabindex="0" id="panel-iphone" aria-labelledby="tab-iphone">
         <div class="copy">
           <h3>SwiftUI, with a sheet that follows your thumb.</h3>
-          <p>The player is a draggable sheet that collapses to a mini strip, the way a music app does, so you keep browsing while a stream plays.</p>
-          <ul>
-            <li>Liquid Glass tab bar and controls.</li>
-            <li>The same presenters as Android, rendered in Swift.</li>
-          </ul>
+          <p>The player is a draggable sheet that collapses to a mini strip, the way a music app does, so you keep browsing while a stream plays. Liquid Glass tab bar and controls.</p>
         </div>
         <div class="fan">
           <div class="frame phone"><img loading="lazy" src="img/ios-home.webp" width="603" height="1311" alt="iPhone home screen with a floating tab bar"></div>
@@ -353,61 +354,37 @@ footer p{max-width:72ch;font-size:.88rem;color:var(--faint);margin:0}
           <div class="frame phone"><img loading="lazy" src="img/ios-browse.webp" width="603" height="1311" alt="iPhone Browse screen with category artwork"></div>
         </div>
       </div>
-
-      <div class="panel wide" role="tabpanel" tabindex="0" id="panel-mac" aria-labelledby="tab-mac">
+      <div class="panel" role="tabpanel" tabindex="0" id="panel-mac" aria-labelledby="tab-mac">
         <div class="copy">
           <h3>A real Mac window.</h3>
           <p>Sidebar navigation, a resizable chat column next to the video, a floating mini player, and an emote picker that opens as a popover.</p>
         </div>
-        <div class="shot pair">
+        <div class="pair">
           <div class="frame win"><div class="bar"><i></i><i></i><i></i><span>Skerry</span></div><img loading="lazy" src="img/mac-home.webp" width="1070" height="800" alt="Skerry on macOS: live channels in a grid"></div>
           <div class="frame win"><div class="bar"><i></i><i></i><i></i><span>Skerry</span></div><img loading="lazy" src="img/mac-browse.webp" width="1070" height="800" alt="Skerry on macOS: category browser"></div>
         </div>
-        <p class="cap">Content area of the Mac window, demo data.</p>
       </div>
-
-      <div class="panel wide" role="tabpanel" tabindex="0" id="panel-tv" aria-labelledby="tab-tv">
+      <div class="panel" role="tabpanel" tabindex="0" id="panel-tv" aria-labelledby="tab-tv">
         <div class="copy">
           <h3>Made for the remote.</h3>
-          <p>Focus, not touch: every screen is built around the Siri Remote, with Back behaving the way the platform expects. Android TV gets the same treatment with the D-pad.</p>
+          <p>Focus, not touch: every screen is built around the Siri Remote, with Back behaving the way the platform expects. The Android TV app gets the same care with the D-pad.</p>
         </div>
-        <div class="shot pair">
+        <div class="pair">
           <div class="frame"><img loading="lazy" src="img/tv-home.webp" width="1280" height="720" alt="Skerry on Apple TV: Home with live and recommended rows"></div>
           <div class="frame"><img loading="lazy" src="img/tv-browse.webp" width="1280" height="720" alt="Skerry on Apple TV: Browse with category filters"></div>
         </div>
-        <p class="cap">Apple TV shown. Android TV screenshots are still to come.</p>
       </div>
     </div>
-    <p class="cap" style="margin-top:2.2rem">Every screenshot is the built-in demo mode: fictional channels, fictional chat, a test pattern for video.</p>
+    <p class="cap">The Apple apps' screenshots still use the simpler demo artwork; they are due for the same photo treatment. Android TV screenshots are still to come.</p>
   </div>
 </section>
 
-<section id="chat" class="chat">
-  <div class="wrap">
-    <div class="head">
-      <h2>Chat that keeps up.</h2>
-      <p class="lede">Drawn natively, not scraped into a web page, and happy to be busy.</p>
-    </div>
-    <div class="chat-stage">
-      <ul class="callouts">
-        <li class="l" style="top:27%"><strong>Highlighted mentions</strong>Messages that name you stand out without shouting.</li>
-        <li class="l" style="top:82%"><strong>Subscription notices</strong>Announcements get their own style, in italics.</li>
-        <li class="r" style="top:31%"><strong>Badges and replies</strong>Who is a subscriber or a mod, and what a message answers.</li>
-        <li class="r" style="top:54%"><strong>Emotes, animated too</strong>7TV, BetterTTV and FrankerFaceZ, including zero-width overlays.</li>
-      </ul>
-      <div class="frame phone"><img loading="lazy" src="img/chat-crop.webp" width="900" height="1158" alt="Live chat with colored names, badges, replies, emotes and a highlighted mention"></div>
-    </div>
-    <p class="cap" style="text-align:center;max-width:none;margin-top:1.6rem">Connected through Twitch's documented EventSub chat interface. Scroll up to read and a pill takes you back to live. Stress-tested in demo mode at about 16 messages a second.</p>
-  </div>
-</section>
-
-<section id="try" class="alt">
-  <div class="wrap try">
+<section id="try">
+  <div class="wrap split try">
     <div>
-      <h2>Try it in five minutes.</h2>
+      <h2>Run the demo.</h2>
       <p class="lede">Demo mode needs no account and no network, so you can see every screen straight away.</p>
-      <p><strong>No pre-built downloads yet.</strong> Skerry is built from source for now; there are no store or TestFlight builds.</p>
-      <p>You need JDK 21, the Android SDK and an emulator or a phone. The Apple apps build with Xcode and XcodeGen on the same shared framework; <code>apple/README.md</code> walks through it.</p>
+      <p><strong>There are no pre-built downloads yet.</strong> Skerry builds from source: JDK 21, the Android SDK and an emulator or a phone. The Apple apps build with Xcode; <code>apple/README.md</code> walks through it.</p>
       <a class="btn primary" href="https://github.com/Deuspheara/skerry#try-it-in-five-minutes-android-phone-demo-mode">Read the full steps</a>
     </div>
     <div class="code">
@@ -427,13 +404,12 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
   </div>
 </section>
 
-<section id="core">
+<section id="core" class="alt">
   <div class="wrap">
     <div class="head">
-      <h2>One Kotlin core. Five native UIs.</h2>
+      <h2>One Kotlin core.<br>Five native UIs.</h2>
       <p class="lede">The logic is written once in Kotlin Multiplatform. The screens are written natively and only render state.</p>
     </div>
-
     <svg class="arch-svg" viewBox="0 0 960 330" role="img" aria-labelledby="arch-t arch-d">
       <title id="arch-t">Architecture</title>
       <desc id="arch-d">Five native UIs (Android TV and Android phone in Jetpack Compose; iPhone, Mac and Apple TV in SwiftUI) all connect to one layer of presenters that expose state and take events, which sit on the shared Kotlin core modules: core, stream, chat, player-api and presenters.</desc>
@@ -460,7 +436,6 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
       <div class="tier"><span class="label">Presenters</span><div class="chips"><span class="chip">StateFlow&lt;UiState&gt; out</span><span class="chip">onEvent(…) in</span></div></div>
       <div class="tier"><span class="label">Shared Kotlin modules</span><div class="chips"><span class="chip">core</span><span class="chip">stream</span><span class="chip">chat</span><span class="chip">player-api</span><span class="chip">presenters</span></div></div>
     </div>
-
     <div class="facts">
       <div><strong>A rule the build enforces</strong><p>Shared code may not touch Android or <code>java.*</code> APIs. A Gradle check fails the build if it does.</p></div>
       <div><strong>36 languages</strong><p>Translations are generated into each app at build time, and right-to-left layouts are supported.</p></div>
@@ -469,7 +444,7 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
   </div>
 </section>
 
-<section id="fine-print" class="alt">
+<section id="fine-print">
   <div class="wrap">
     <div class="notice">
       <h2>The fine print, up front.</h2>
@@ -494,12 +469,14 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
       <a href="https://github.com/Deuspheara/skerry/blob/main/PRIVACY.md">Privacy</a>
       <a href="https://github.com/Deuspheara/skerry/issues">Issues</a>
     </nav>
-    <p>Skerry is an unofficial, independent project and is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. or Amazon.com, Inc. Twitch, the Twitch logo and the Glitch logo are trademarks of Twitch Interactive, Inc. or its affiliates. Emotes belong to their creators and are loaded from 7TV, BetterTTV and FrankerFaceZ at runtime. Screenshots show fictional demo data.</p>
+    <p>Skerry is an unofficial, independent project and is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. or Amazon.com, Inc. Twitch, the Twitch logo and the Glitch logo are trademarks of Twitch Interactive, Inc. or its affiliates. Emotes belong to their creators and are loaded from 7TV, BetterTTV and FrankerFaceZ at runtime. Screenshots and recordings show fictional demo data; the photographs are public domain or CC0 (credits in the repository).</p>
   </div>
 </footer>
 
 <script>
 (function(){
+  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Tabs
   var tabs=[].slice.call(document.querySelectorAll('.tab'));
   function show(tab,focus,animate){
     tabs.forEach(function(t){
@@ -522,18 +499,23 @@ adb shell run-as com.twitchplayer.phone touch files/demo</code></pre>
   });
   show(tabs[0]);
 
-  var chat=document.getElementById('chat');
-  if('IntersectionObserver' in window){
-    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){chat.classList.add('in');io.disconnect()}})},{threshold:.2});
-    io.observe(chat.querySelector('.chat-stage'));
-  }else{chat.classList.add('in')}
+  // Live recordings play only while visible, and never with reduced motion (the poster stays).
+  var vids=[].slice.call(document.querySelectorAll('video[data-live]'));
+  if(!reduce&&'IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){
+      var v=e.target;
+      if(e.isIntersecting){v.preload='auto';var p=v.play();if(p&&p.catch)p.catch(function(){})}else{v.pause()}
+    })},{threshold:.25});
+    vids.forEach(function(v){io.observe(v)});
+  }
 
+  // Copy button
   var btn=document.querySelector('[data-copy]'),st=document.getElementById('copy-status');
   function say(m){btn.textContent=m;st.textContent=m;setTimeout(function(){btn.textContent='Copy';st.textContent=''},1800)}
   btn.addEventListener('click',function(){
-    var t=btn.parentElement.querySelector('code').innerText;
+    var code=btn.parentElement.querySelector('code'),t=code.innerText;
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){say('Copied')},function(){say('Select and copy')})}
-    else{var r=document.createRange();r.selectNodeContents(btn.parentElement.querySelector('code'));var s=getSelection();s.removeAllRanges();s.addRange(r);say('Selected, press copy')}
+    else{var r=document.createRange();r.selectNodeContents(code);var s=getSelection();s.removeAllRanges();s.addRange(r);say('Selected, press copy')}
   });
 })();
 </script>

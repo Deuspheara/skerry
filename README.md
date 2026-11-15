@@ -16,7 +16,7 @@ One shared Kotlin Multiplatform core, native UIs on top.</p>
   <img src="site/img/phone-player.webp" width="19%" alt="Android: a live stream with chat">
   <img src="site/img/ios-home.webp" width="19%" alt="iPhone: home with a floating tab bar">
   <img src="site/img/ios-player.webp" width="19%" alt="iPhone: player with chat">
-  <img src="site/img/phone-channel.webp" width="19%" alt="Android: channel page">
+  <img src="site/img/phone-following.webp" width="19%" alt="Android: who is live from the people you follow">
 </p>
 <p align="center">
   <img src="site/img/mac-home.webp" width="49%" alt="macOS: live channels grid">

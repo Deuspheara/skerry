@@ -86,7 +86,7 @@ private class DemoRepository(private val context: Context) : TwitchRepository {
 
     private fun demoReplay(i: Int, title: String, duration: String, seed: Int, style: Int): Replay {
         val seconds = duration.split(':').fold(0) { acc, part -> acc * 60 + (part.toIntOrNull() ?: 0) }
-        return Replay("r$i", title, duration, DemoData.artFor(seed + 40 + i, (style + i + 1) % 4), System.currentTimeMillis() - (i + 1) * 86_400_000L, seconds, 1_200 * (i + 3))
+        return Replay("r$i", title, duration, DemoData.artFor(seed + 1000 * (i + 1), (style + i + 1) % 4), System.currentTimeMillis() - (i + 1) * 86_400_000L, seconds, 1_200 * (i + 3))
     }
 
     override suspend fun channel(login: String): ChannelDetails {
@@ -101,7 +101,7 @@ private class DemoRepository(private val context: Context) : TwitchRepository {
             replays = titles.mapIndexed { i, t -> demoReplay(i, t, durations[i], seed, style) },
             replaysCursor = "p2",
             similar = DemoData.channels.filter { it.isLive && it.login != login }.take(8),
-            clips = if (!demoEvents(context)) emptyList() else List(4) { i -> ChannelClip("demo-clip-$i", "Clip ${i + 1}", DemoData.artFor(seed + 60 + i, (style + i) % 4), 20 + i * 7, 1200 * (i + 1)) },
+            clips = if (!demoEvents(context)) emptyList() else List(4) { i -> ChannelClip("demo-clip-$i", "Clip ${i + 1}", DemoData.artFor(seed + 1000 * (i + 7), (style + i) % 4), 20 + i * 7, 1200 * (i + 1)) },
             schedule = if (!demoEvents(context)) emptyList() else listOf(ScheduledStream("Soirée échecs", "Échecs", System.currentTimeMillis() + 86_400_000L, 0L)),
         )
     }
@@ -146,13 +146,17 @@ private class DemoVods(private val context: Context, private val real: VodResolv
     }
 }
 
+private val SCENIC_CHANNELS = setOf("lunaria", "maitrekoi", "ines", "oriel", "manon")
+
 private class DemoResolver(private val context: Context) : TwitchPlaybackResolver {
     override suspend fun resolve(channel: String): ResolvedStream {
         // `adb shell settings put global twitchtv_demo_hls http://10.0.2.2:8099/live.m3u8` plays a real HLS live stream (ad markers, latency).
         android.provider.Settings.Global.getString(context.contentResolver, "twitchtv_demo_hls")?.takeIf { it.isNotBlank() }?.let { url ->
             return ResolvedStream(channel, url, listOf(StreamVariant("720p60", "720p60", 3_400_000, 1280, 720, 60f, "avc1.4D401F,mp4a.40.2", url)))
         }
-        val clip = "asset:///demo_stream.mp4"
+        // `touch files/demo-scenic` (debug builds) swaps the test pattern for a looping photo clip on the channels that have one, for screen recordings.
+        val scenic = java.io.File(context.filesDir, "demo-scenic").exists() && channel in SCENIC_CHANNELS
+        val clip = if (scenic) "asset:///demo_scenic_$channel.mp4" else "asset:///demo_stream.mp4"
         val variants = listOf(
             StreamVariant("720p60", "720p60", 3_400_000, 1280, 720, 60f, "avc1.4D401F,mp4a.40.2", clip),
             StreamVariant("480p30", "480p", 1_400_000, 852, 480, 30f, "avc1.4D401F,mp4a.40.2", clip),

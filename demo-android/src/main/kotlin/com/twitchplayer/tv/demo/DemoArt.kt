@@ -13,7 +13,7 @@ import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.request.Options
 
-/** Draws the prototype's abstract artwork (palette only) for `demoart://x/<seed>/<style>` so demo screens need no network. */
+/** Draws the demo artwork: a bundled photo for the seeds [DemoPhotos] knows, otherwise abstract art (palette only) for `demoart://x/<seed>/<style>` so demo screens need no network. */
 internal class DemoArtFetcher(private val data: Uri, private val options: Options) : Fetcher {
     override suspend fun fetch(): FetchResult {
         val parts = data.path.orEmpty().trim('/').split('/')
@@ -22,8 +22,9 @@ internal class DemoArtFetcher(private val data: Uri, private val options: Option
         val size = options.size
         val w = (size.width as? coil3.size.Dimension.Pixels)?.px ?: 400
         val h = (size.height as? coil3.size.Dimension.Pixels)?.px ?: 225
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        draw(Canvas(bitmap), w.toFloat(), h.toFloat(), seed, style)
+        val bitmap = DemoPhotos.render(options.context, seed, w, h) ?: Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also {
+            draw(Canvas(it), w.toFloat(), h.toFloat(), seed, style)
+        }
         return ImageFetchResult(bitmap.asImage(), isSampled = false, dataSource = DataSource.MEMORY)
     }
 

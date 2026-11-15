@@ -49,8 +49,8 @@ internal object DemoData {
 
     private fun catName(id: String) = cats.first { it.id == id }.name
 
-    private fun Chan.stream() = LiveStream(id, id, name, title, cat, catName(cat), viewers, art(seed + 500, style), null)
-    private fun Chan.ref() = ChannelRef(id, id, name, null, live, viewers)
+    private fun Chan.stream() = LiveStream(id, id, name, title, cat, catName(cat), viewers, art(seed + 500, style), art(seed, style))
+    private fun Chan.ref() = ChannelRef(id, id, name, art(seed, style), live, viewers)
 
     val liveStreams: List<LiveStream> = chans.filter { it.live }.map { it.stream() }
     val followedLive: List<LiveStream> = chans.filter { it.live && it.id in followedIds }.map { it.stream() }
