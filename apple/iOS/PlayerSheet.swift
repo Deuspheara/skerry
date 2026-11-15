@@ -13,9 +13,19 @@ struct PlayerSheet: View {
     @State private var controlsVisible = true
     @State private var hideTask: Task<Void, Never>?
     @State private var replyTo: ChatLine?
-    @State private var keyboard = KeyboardObserver()
+    /// The bottom safe area as the system lays it out: the home indicator's, or the keyboard's height while it is up (and while it is dragged).
+    @State private var keyboardInset: CGFloat = 0
 
     private let miniHeight = SheetGeometry.miniHeight
+
+    /// Debug only (`-fake-keyboard <points>`): the simulator with a hardware keyboard shows none.
+    private static var fakeKeyboard: CGFloat? {
+        #if DEBUG
+        LaunchMode.argument("-fake-keyboard").flatMap(Double.init).map { CGFloat($0) }
+        #else
+        nil
+        #endif
+    }
 
     /// The screen without the keyboard, and its real safe areas; measured with `onGeometryChange`, which reports only when they change (never per frame).
     struct ScreenMetrics: Equatable {
@@ -31,6 +41,11 @@ struct PlayerSheet: View {
         // The reader ignores the keyboard, so `metrics` is the screen minus the real safe areas whether or not the keyboard is up. The sheet is laid out in
         // full-screen coordinates (it covers the status bar and the home indicator); the keyboard only shortens the expanded sheet.
         .ignoresSafeArea(.keyboard)
+        // Outside the modifier above, so it sees the keyboard: the system moves this safe area with the keyboard frame by frame, including while the
+        // viewer drags the keyboard down with the chat, which the keyboard notifications (start and end only) cannot follow.
+        .background {
+            Color.clear.onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { keyboardInset = $0 }
+        }
         .onGeometryChange(for: ScreenMetrics.self) { ScreenMetrics(size: $0.size, insets: $0.safeAreaInsets) } action: { metrics = $0 }
         .onAppear {
             scheduleHide()
@@ -60,7 +75,7 @@ struct PlayerSheet: View {
 
         ZStack(alignment: .topLeading) {
             if !fullscreen {
-                details(playback, session, top: base.expandedVideoHeight, bottom: max(keyboard.height, insets.bottom), base: base)
+                details(playback, session, top: base.expandedVideoHeight, bottom: max(Self.fakeKeyboard ?? keyboardInset, insets.bottom), base: base)
                     .frame(width: size.width, height: base.expandedHeight, alignment: .topLeading)
                     .sheetCover(progress, color: Theme.surface)
             }
@@ -304,5 +319,13 @@ private struct SheetChat: View {
     var body: some View {
         ChatList(lines: playback.chat, settings: playback.chatSettings, frozen: progress.isDragging) { replyTo = $0 }
             .equatable()
+            // The lines fade out at both edges (the opacity follows the theme: it is a mask, not a colour), so they slide under the input instead of being cut.
+            .mask(
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 18)
+                    Rectangle()
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 26)
+                },
+            )
     }
 }
