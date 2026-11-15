@@ -367,8 +367,8 @@ struct ChatList: View, Equatable {
                         Label(unread > 0 ? plural("chat_new_messages", unread) : String(localized: "chat_back_to_live"), systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                     }
                     .foregroundStyle(Theme.accentText).buttonStyle(.plain)
-                    // Over the video the label needs something to read against; over the chat it sits on the faded lines and has no ground of its own.
-                    .background { if overVideo { Capsule().fill(.regularMaterial) } }
+                    // A pill tinted with the accent (same in light and dark): no material or glass, which rendered as a dark block.
+                    .background(Capsule().fill(Theme.accent.opacity(overVideo ? 0.35 : 0.16)))
                     .padding(.vertical, 6)
                 }
                 #endif
