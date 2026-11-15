@@ -305,7 +305,8 @@ struct ChatList: View, Equatable {
 
     var body: some View {
         ScrollViewReader { proxy in
-            VStack(spacing: 0) {
+            // The back-to-live pill floats over the bottom of the chat (no strip reserved under the list, no fade on the pill).
+            ZStack(alignment: .bottom) {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         let animated = Set(lines.suffix(8).map(\.id))
@@ -320,7 +321,7 @@ struct ChatList: View, Equatable {
                         VStack(spacing: 0) {
                             LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 18)
                             Rectangle()
-                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: atBottom ? 26 : 0)
+                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 26)
                         }
                     } else {
                         Rectangle()
@@ -366,9 +367,7 @@ struct ChatList: View, Equatable {
                     } label: {
                         Label(unread > 0 ? plural("chat_new_messages", unread) : String(localized: "chat_back_to_live"), systemImage: "arrow.down").font(.footnote.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
                     }
-                    .foregroundStyle(.primary).buttonStyle(.plain)
-                    .glassCapsule(interactive: true)
-                    .padding(.vertical, 6)
+                    .glassCapsule(interactive: true).buttonStyle(.plain).padding(.bottom, 10)
                 }
                 #endif
             }
